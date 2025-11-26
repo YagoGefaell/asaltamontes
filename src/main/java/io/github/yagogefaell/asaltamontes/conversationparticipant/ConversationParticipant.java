@@ -1,4 +1,4 @@
-package io.github.yagogefaell.asaltamontes.messages;
+package io.github.yagogefaell.asaltamontes.conversationparticipant;
 
 import io.github.yagogefaell.asaltamontes.conversation.Conversation;
 import io.github.yagogefaell.asaltamontes.users.User;
@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="messages")
-public class Message {
+@Table(name="conversationparticipants", uniqueConstraints = @UniqueConstraint(columnNames =  {"conversation_id", "user_id"}))
+public class ConversationParticipant {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,14 +25,13 @@ public class Message {
     private Conversation conversation;
 
     @ManyToOne
-    @JoinColumn(name = "sender_id", nullable = false)
-    private User sender;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String textMessage;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 10)
+    private ParticipantRole role = ParticipantRole.MEMBER;
 
-    private LocalDateTime sendedAt = LocalDateTime.now();
-    private boolean read = false;
-    private LocalDateTime deletedAt;
+    private LocalDateTime joinedAt = LocalDateTime.now();
 
 }
