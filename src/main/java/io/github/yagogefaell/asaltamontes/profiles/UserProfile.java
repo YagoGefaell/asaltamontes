@@ -4,7 +4,15 @@ import java.sql.Date;
 import java.time.LocalDateTime;
 
 import io.github.yagogefaell.asaltamontes.users.User;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.MapsId;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,8 +32,11 @@ public class UserProfile {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "first_name", nullable = false)
+    private String firstName;
+
+    @Column(name = "last_name", nullable = false)
+    private String lastName;
 
     @Column(name = "bio", length = 500)
     private String bio;
@@ -36,8 +47,8 @@ public class UserProfile {
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
-    @Column(name = "birthdate")
-    private Date birthdate;
+    @Column(name = "birth-date")
+    private Date birthDate;
 
     @Column(name = "instagram_profile_url")
     private String instagramProfileUrl;

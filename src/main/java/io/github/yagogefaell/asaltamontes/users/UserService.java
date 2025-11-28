@@ -9,17 +9,17 @@ public interface UserService {
 
     User registerUser(String username, String email, String password);
 
-    User findById(Long id);
+    User findById(long id);
 
     User findByEmail(String email);
 
     Page<User> findAll(Pageable pageable);
 
-    User updateUser(Long id, UpdateUserRequest request);
+    User updateUser(long id, UpdateUserRequest request);
 
-    void changePassword(Long id, String oldPassword, String newPassword);
+    void changePassword(long id, String oldPassword, String newPassword);
 
-    void deleteUser(Long id);
-
+    void deleteUser(long id);
+    
     Page<User> searchUsers(String usernameQuery, Pageable pageable);
 }

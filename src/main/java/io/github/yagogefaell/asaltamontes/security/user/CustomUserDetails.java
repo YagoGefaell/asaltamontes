@@ -1,16 +1,17 @@
 package io.github.yagogefaell.asaltamontes.security.user;
 
-import io.github.yagogefaell.asaltamontes.users.User;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Collections;
+import io.github.yagogefaell.asaltamontes.users.User;
 
 public class CustomUserDetails implements UserDetails {
 
-    private User user;
+    private final User user;
 
     public CustomUserDetails(User user) {
         this.user = user;

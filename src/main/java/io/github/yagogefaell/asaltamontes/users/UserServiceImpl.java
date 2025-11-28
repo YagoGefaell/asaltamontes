@@ -26,6 +26,9 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(email)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El email ya está registrado");
+        } else if (userRepository.existsByUsername(username)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El nombre de usuario ya está en uso");
         }
 
         User user = new User();
@@ -33,12 +36,13 @@ public class UserServiceImpl implements UserService {
         user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setRole(UserRole.USER);
+        user.setIsVerified(false);
 
         return userRepository.save(user);
     }
 
     @Override
-    public User findById(Long id) {
+    public User findById(long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
@@ -51,13 +55,15 @@ public class UserServiceImpl implements UserService {
                         new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
     }
 
+    @SuppressWarnings("null")
     @Override
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
+    @SuppressWarnings("null")
     @Override
-    public User updateUser(Long id, UpdateUserRequest request) {
+    public User updateUser(long id, UpdateUserRequest request) {
         User user = findById(id);
 
         if (request.email() != null &&
@@ -80,7 +86,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(Long id, String oldPassword, String newPassword) {
+    public void changePassword(long id, String oldPassword, String newPassword) {
         User user = findById(id);
 
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
@@ -93,7 +99,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void deleteUser(Long id) {
+    public void deleteUser(long id) {
         if (!userRepository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Usuario no encontrado");

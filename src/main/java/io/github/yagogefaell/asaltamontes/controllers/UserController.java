@@ -1,23 +1,25 @@
 package io.github.yagogefaell.asaltamontes.controllers;
 
-import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 
 import io.github.yagogefaell.asaltamontes.users.User;
 import io.github.yagogefaell.asaltamontes.users.UserService;
 import io.github.yagogefaell.asaltamontes.users.dto.ChangePasswordRequest;
 import io.github.yagogefaell.asaltamontes.users.dto.PublicUserResponse;
-import io.github.yagogefaell.asaltamontes.users.dto.RegisterUserRequest;
 import io.github.yagogefaell.asaltamontes.users.dto.UpdateUserRequest;
 import io.github.yagogefaell.asaltamontes.users.dto.UserResponse;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.PathVariable;
 
 
 
@@ -30,23 +32,6 @@ public class UserController {
 
     public UserController(UserService userService) {
         this.userService = userService;
-    }
-
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse register(@RequestBody RegisterUserRequest request) {
-        User user = userService.registerUser(
-            request.username(),
-            request.email(),
-            request.password()
-        );
-
-        return new UserResponse(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getRole().name()
-        );
     }
 
     @GetMapping("/{id}")
