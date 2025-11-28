@@ -3,7 +3,7 @@ package io.github.yagogefaell.asaltamontes.security.auth;
 import io.github.yagogefaell.asaltamontes.security.auth.dto.*;
 import io.github.yagogefaell.asaltamontes.security.jwt.JwtUtil;
 import io.github.yagogefaell.asaltamontes.users.User;
-import io.github.yagogefaell.asaltamontes.users.UserService;
+import io.github.yagogefaell.asaltamontes.users.UserServiceImpl;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final JwtUtil jwtUtil;
-    private final UserService userService;
+    private final UserServiceImpl userService;
 
-    public AuthController(JwtUtil jwtUtil, UserService userService) {
+    public AuthController(JwtUtil jwtUtil, UserServiceImpl userService) {
         this.jwtUtil = jwtUtil;
         this.userService = userService;
     }

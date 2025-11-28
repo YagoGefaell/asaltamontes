@@ -21,7 +21,7 @@ public class User {
     private String username;
 
     @Column(nullable = false,  length = 100)
-    private String password;
+    private String passwordHash;
 
     @Column(nullable = false, unique = true, length = 255)
     private String email;
@@ -30,8 +30,16 @@ public class User {
     @Column(name = "role", nullable = false, length = 10)
     private UserRole role;
 
+    @Column(name = "is_verified", nullable = false)
+    private Boolean isVerified;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "last_connection")
     private LocalDateTime lastConnection;
 
     // Hooks para auditoría automática

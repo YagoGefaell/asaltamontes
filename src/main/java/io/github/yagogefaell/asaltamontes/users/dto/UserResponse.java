@@ -1,4 +1,4 @@
-package io.github.yagogefaell.asaltamontes.users.settings.dto;
+package io.github.yagogefaell.asaltamontes.users.dto;
 
 public record UserResponse(
     Long id,
