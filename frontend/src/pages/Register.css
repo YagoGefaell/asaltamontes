@@ -1,0 +1,38 @@
+.register-container {
+  padding: 0.4rem 2rem;
+  max-width: 480px;
+  margin: 0 auto;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-color);
+}
+
+.register-title {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--primary);
+  margin-top: 2rem;
+}
+
+.register-subtitle {
+  text-align: center;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-bottom: 2rem;
+}
+
+
+
+.register-login {
+  margin-top: 1.6rem;
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.register-login span {
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}

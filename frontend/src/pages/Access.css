@@ -1,0 +1,67 @@
+.access-container {
+  padding: 1.5rem;
+  max-width: 480px;
+  margin: 0 auto;
+  text-align: center;
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background);  /* Fondo adaptativo */
+  color: var(--text-color);            /* Texto adaptativo */
+  min-height: 80vh;
+}
+
+.access-header {
+  margin-top: 2rem;
+}
+
+.access-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--primary);                /* Rosa principal */
+}
+
+.access-subtitle {
+  font-size: 1rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-top: 0.5rem;
+}
+
+/* Imagen */
+.access-illustration img {
+  width: 80%;
+  max-width: 260px;
+  margin: 2.5rem auto;
+  display: block;
+}
+
+/* Botones */
+.access-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-secondary {
+  background-color: var(--card-bg);
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  padding: 1rem;
+  font-size: 1.1rem;
+  border-radius: 12px;
+  font-weight: bold;
+}

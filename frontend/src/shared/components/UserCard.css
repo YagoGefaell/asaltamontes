@@ -1,0 +1,46 @@
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: none;
+  color: var(--text-color);
+  padding: 0.5rem 0;
+  cursor: pointer;
+  transition: color 0.15s ease, filter 0.15s ease;
+  -webkit-tap-highlight-color: transparent; /* quita el highlight azul en móviles */
+}
+
+.user-card.pressed {
+  color: #888; /* letras grisáceas */
+
+}
+
+.user-card.pressed .user-username {
+  color: var(--pressed-color);
+}
+
+.user-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: filter 0.15s ease;
+}
+
+.user-card.pressed .user-avatar {
+  filter: brightness(0.7); /* oscurece la imagen */
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-weight: 600;
+}
+
+.user-username {
+  font-size: 0.875rem;
+  color: var(--primary);
+}

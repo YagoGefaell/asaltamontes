@@ -1,0 +1,56 @@
+/* Formulario */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.3rem;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.input-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+/* Inputs */
+.input-group input {
+  padding: 0.9rem;
+  background: var(--card-bg);
+  border: 1.8px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--text-color);
+  transition: border-color 0.2s ease-in-out, background 0.2s;
+}
+
+.input-group input::placeholder {
+  color: var(--text-color);
+  opacity: 0.5;
+}
+
+.input-group input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Botón */
+.login-btn {
+  background-color: var(--primary);
+  color: white;
+  padding: 1rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.login-btn:hover {
+  opacity: 0.9;
+}

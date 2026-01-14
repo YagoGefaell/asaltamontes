@@ -1,0 +1,32 @@
+.btn {
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  border: none;
+}
+
+/* Variantes */
+.btn.primary {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn.secondary {
+  background-color: var(--card-bg);
+  color: var(--primary);
+  border: 2px solid var(--primary);
+}
+
+/* Hover */
+.btn:hover {
+  opacity: 0.9;
+}
+
+/* Disabled */
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

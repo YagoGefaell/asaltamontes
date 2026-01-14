@@ -1,0 +1,32 @@
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: var(--card-bg);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  border-top: 1px solid var(--border-color);
+  box-shadow: 0 -1px 5px rgba(0,0,0,0.05);
+  z-index: 20;
+}
+
+.bottom-nav a {
+  text-decoration: none;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.bottom-nav a svg {
+  font-size: 1.4rem;
+}
+
+.bottom-nav a.active {
+  color: var(--primary);
+}

@@ -1,0 +1,99 @@
+.user-profile-page {
+  padding: 1.2rem;
+  min-height: 100vh;
+  background-color: var(--background);
+  color: var(--text-color);
+  font-family: "Inter", sans-serif;
+  box-sizing: border-box;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 1.2rem;
+}
+
+.profile-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background-color: var(--card-bg);
+  margin-bottom: 0.6rem;
+}
+
+.profile-username {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.profile-bio {
+  margin-top: 0.4rem;
+  font-size: 0.95rem;
+  opacity: 0.7;
+}
+
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 1rem 0;
+  padding: 0.8rem 0;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-number {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.primary-button {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: none;
+  background-color: var(--primary);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primary-button:active {
+  background-color: var(--pressed-color);
+}
+
+.secondary-button {
+  flex: 1;
+  padding: 0.6rem;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background-color: transparent;
+  color: var(--primary);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.secondary-button:active {
+  opacity: 0.7;
+}
