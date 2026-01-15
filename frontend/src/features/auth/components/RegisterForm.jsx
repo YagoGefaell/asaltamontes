@@ -1,50 +1,31 @@
 // src/features/auth/components/RegisterForm.jsx
 import React, { useState } from "react";
 import Button from "../../../shared/components/Button";
+import FormError from "../../../shared/components/FormError.jsx";
 import "./RegisterForm.css";
 
-export default function RegisterForm({ onSubmit, emailErrorMessage, userErrorMessage }) {
-  const [name, setName] = useState("");
+export default function RegisterForm({ onSubmit, emailErrorMessage, userErrorMessage, passwordErrorMessage }) {
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) onSubmit({ name, email, password });
+    if (onSubmit) onSubmit({ username, email, password });
   };
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
+    <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="input-group">
-        <label>Nombre</label>
+        <label>Username</label>
         <input
           type="text"
-          placeholder="Tu nombre"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          placeholder="Tu username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
-        {userErrorMessage && (
-          <p className="form-error">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="error-icon"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              width="16"
-              height="16"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-              />
-            </svg>
-            {userErrorMessage}
-          </p>
-        )}
+        <FormError message={userErrorMessage} />
       </div>
 
       <div className="input-group">
@@ -56,27 +37,7 @@ export default function RegisterForm({ onSubmit, emailErrorMessage, userErrorMes
           onChange={(e) => setEmail(e.target.value)}
           required
         />
-        {emailErrorMessage && (
-          <p className="form-error">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="error-icon"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              width="16"
-              height="16"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-              />
-            </svg>
-            {emailErrorMessage}
-          </p>
-        )}
+        <FormError message={emailErrorMessage} />
       </div>
 
       <div className="input-group">
@@ -88,6 +49,7 @@ export default function RegisterForm({ onSubmit, emailErrorMessage, userErrorMes
           onChange={(e) => setPassword(e.target.value)}
           required
         />
+        <FormError message={passwordErrorMessage} />
       </div>
 
       <Button type="submit" variant="primary">

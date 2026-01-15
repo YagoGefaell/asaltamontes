@@ -30,7 +30,7 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public String getUsername() {
         // Este método debe devolver un valor único que identifique al usuario
-        return user.getEmail();
+        return user.getUsername();
     }
 
     @Override

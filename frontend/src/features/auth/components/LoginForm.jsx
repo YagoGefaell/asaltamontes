@@ -4,23 +4,23 @@ import Button from "../../../shared/components/Button";
 import "./LoginForm.css";
 
 function LoginForm({ onSubmit, errorMessage }) {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) onSubmit({ email, password });
+    if (onSubmit) onSubmit({ username, password });
   };
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
+    <form className="form" onSubmit={handleSubmit} noValidate>
       <div className="input-group">
-        <label>Email</label>
+        <label>Username</label>
         <input
-          type="email"
-          placeholder="tuemail@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          placeholder="Tu username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
         />
       </div>

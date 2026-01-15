@@ -9,15 +9,13 @@ function Login() {
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
 
-  const handleLogin = async ({ email, password }) => {
+  const handleLogin = async ({ username, password }) => {
     try {
-      await login(email, password);
+      await login(username, password);
       setErrorMessage(""); // limpiar error si todo va bien
       navigate("/home");
     } catch (err) {
-      console.log(err);
       setErrorMessage(err.message);
-      console.error("Error al iniciar sesión:", errorMessage);
     }
   };
 

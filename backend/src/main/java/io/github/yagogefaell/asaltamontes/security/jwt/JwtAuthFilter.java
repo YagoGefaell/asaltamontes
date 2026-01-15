@@ -31,6 +31,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // 1️⃣ Ignorar rutas públicas
+        String path = request.getServletPath();
+        if (path.startsWith("/auth/")) { 
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 2️⃣ Intentar extraer cookie JWT
         Cookie cookie = WebUtils.getCookie(request, "accessToken");
         String jwt = null;
         String username = null;
@@ -44,6 +52,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
 
+        // 3️⃣ Validar usuario y setear contexto
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             var userDetails = userDetailsService.loadUserByUsername(username);
 

@@ -39,7 +39,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Void> login(@RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -85,7 +85,7 @@ public class AuthController {
     // ---------------- REGISTRO ----------------
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
-        User user = userService.registerUser(request.name(), request.email(), request.password());
+        User user = userService.registerUser(request.username(), request.email(), request.password());
 
         String accessToken = jwtUtil.generateAccessToken(user.getEmail());
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());

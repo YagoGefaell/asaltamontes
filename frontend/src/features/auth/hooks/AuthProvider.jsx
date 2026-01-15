@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./auth.context";
+import { registerRequest, loginRequest, logoutRequest, verifySessionRequest } from "../services/auth.service.js";
 
 function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -9,14 +10,9 @@ function AuthProvider({ children }) {
   useEffect(() => {
     const verifySession = async () => {
       try {
-        const res = await fetch("http://localhost:8080/auth/verify", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        setIsAuthenticated(res.ok);
+        await verifySessionRequest();
+        setIsAuthenticated(true);
       } catch (error) {
-        console.error("Error verificando sesión:", error);
         setIsAuthenticated(false);
       } finally {
         setCheckingAuth(false);
@@ -27,43 +23,20 @@ function AuthProvider({ children }) {
   }, []);
 
   // ---------------- LOGIN ----------------
-  const login = async (email, password) => {
-    const res = await fetch("http://localhost:8080/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include", // enviar cookies
-      body: JSON.stringify({ email, password }),
-    });
-
-    if (!res.ok) throw new Error("Usuario o contraseña incorrectos");
+  const login = async (username, password) => {
+    await loginRequest({ username, password });
     setIsAuthenticated(true);
   };
 
   // ---------------- REGISTER ----------------
-  const register = async (name, email, password) => {
-    const res = await fetch("http://localhost:8080/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ name, email, password }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw errorData;
-    }
-
+  const register = async (username, email, password) => {
+    await registerRequest({ username, email, password });
     setIsAuthenticated(true);
   };
 
-
-
   // ---------------- LOGOUT ----------------
   const logout = async () => {
-    await fetch("http://localhost:8080/auth/logout", {
-      method: "POST",
-      credentials: "include", // enviar cookies para borrarlas en backend
-    });
+    await logoutRequest();
     setIsAuthenticated(false);
   };
 

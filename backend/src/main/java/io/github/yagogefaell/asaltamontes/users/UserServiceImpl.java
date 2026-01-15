@@ -29,33 +29,55 @@ public class UserServiceImpl implements UserService {
     public User registerUser(String username, String email, String password) {
         Map<String, String> errors = new HashMap<>();
 
-        if (userRepository.existsByEmail(email)) {
-            errors.put("email", "Email already registered");
+        // Validar username
+        if (username == null || username.isBlank()) {
+            errors.put("username", "Username requerido");
+        } else if (username.length() < 3 || username.length() > 50) {
+            errors.put("username", "Debe tener entre 3 y 50 caracteres");
+        } else if (!username.matches("^[a-zA-Z0-9._]+$")) {
+            errors.put("username", "No se permiten espacios ni caracteres especiales");
         }
 
+        // Validar email
+        if (email == null || email.isBlank()) {
+            errors.put("email", "Email requerido");
+        } else if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+            errors.put("email", "Formato de email inválido");
+        }
+
+        // Validar password
+        if (password == null || password.isBlank()) {
+            errors.put("password", "Contraseña requerida");
+        } else if (password.length() < 6) {
+            errors.put("password", "Contraseña demasiado corta");
+        } else if (password.contains(" ")) {
+            errors.put("password", "No se permiten espacios");
+        }
+
+        // Validar duplicados
         if (userRepository.existsByUsername(username)) {
-            errors.put("username", "Username already taken");
+            errors.put("username", "Username ya registrado");
         }
 
+        if (userRepository.existsByEmail(email)) {
+            errors.put("email", "Email ya registrado");
+        }
+
+        // Lanzar excepción si hay errores
         if (!errors.isEmpty()) {
             throw new MultipleFieldConflictException(errors);
         }
 
-        try {
-            User user = new User();
-            user.setUsername(username);
-            user.setEmail(email);
-            user.setPasswordHash(passwordEncoder.encode(password));
-            user.setRole(UserRole.USER);
-            user.setIsVerified(false);
+        // Crear usuario
+        User user = new User();
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPasswordHash(passwordEncoder.encode(password));
+        user.setRole(UserRole.USER);
+        user.setIsVerified(false);
 
-            return userRepository.save(user);
-        } catch (Exception e) {
-            // 500 Internal Server Error → cualquier otro fallo
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        return userRepository.save(user);
     }
-
 
     @Override
     public User findById(long id) {
@@ -84,7 +106,7 @@ public class UserServiceImpl implements UserService {
             !request.email().equals(user.getEmail()) &&
             userRepository.existsByEmail(request.email())) {
 
-            throw new ResponseStatusException(HttpStatus.CONFLICT);
+            throw new MultipleFieldConflictException(Map.of("email", "Email already registered"));
         }
 
         if (request.username() != null) {

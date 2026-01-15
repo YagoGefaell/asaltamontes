@@ -9,14 +9,16 @@ const Register = () => {
   const { register } = useAuth();
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
   const [userErrorMessage, setUserErrorMessage] = useState("");
+  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
 
-  const handleRegister = async ({ name, email, password }) => {
+  const handleRegister = async ({ username, email, password }) => {
     try {
-      await register(name, email, password);
+      await register(username, email, password);
       navigate("/home");
     } catch (err) {
       setEmailErrorMessage(err.email || "");
       setUserErrorMessage(err.username || "");
+      setPasswordErrorMessage(err.password || "");
     }
   };
 
@@ -29,7 +31,7 @@ const Register = () => {
       <h2 className="register-title">Crear Cuenta</h2>
       <p className="register-subtitle">Únete a Asaltamontes Female 💖</p>
 
-      <RegisterForm onSubmit={handleRegister} emailErrorMessage={emailErrorMessage} userErrorMessage={userErrorMessage} />
+      <RegisterForm onSubmit={handleRegister} emailErrorMessage={emailErrorMessage} userErrorMessage={userErrorMessage} passwordErrorMessage={passwordErrorMessage} />
 
       <p className="register-login">
         ¿Ya tienes cuenta?{" "}
