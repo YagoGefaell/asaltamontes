@@ -48,9 +48,15 @@ function AuthProvider({ children }) {
       body: JSON.stringify({ name, email, password }),
     });
 
-    if (!res.ok) throw new Error("Patata");
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw errorData;
+    }
+
     setIsAuthenticated(true);
   };
+
+
 
   // ---------------- LOGOUT ----------------
   const logout = async () => {
