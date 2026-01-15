@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../features/auth/hooks/useAuth.jsx";
+import { useAuth } from "../features/auth/hooks/useAuth.js";
 import LoginForm from "../features/auth/components/LoginForm.jsx"; // Importa tu formulario real
 import "./Login.css";
 

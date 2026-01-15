@@ -1,5 +1,5 @@
 import { Navigate } from "react-router-dom";
-import { useAuth } from "../features/auth/hooks/useAuth.jsx";
+import { useAuth } from "../features/auth/hooks/useAuth.js";
 
 function AuthGuard({ children }) {
   const { isAuthenticated, checkingAuth } = useAuth();
