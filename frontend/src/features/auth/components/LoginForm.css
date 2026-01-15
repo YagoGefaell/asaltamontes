@@ -54,3 +54,16 @@
 .login-btn:hover {
   opacity: 0.9;
 }
+
+.form-error {
+  margin: 0;
+  color: var(--primary); /* color del texto */
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center; /* centra el ícono con el texto */
+  gap: 0.4rem; /* espacio entre icono y mensaje */
+}
+
+.error-icon {
+  color: var(--primary); /* controla el color del SVG */
+}

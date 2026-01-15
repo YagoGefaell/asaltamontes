@@ -1,94 +1,70 @@
 import { useState, useEffect } from "react";
-import { AuthContext } from "./auth.context.js";
-import { loginRequest, registerRequest } from "../services/auth.service";
+import { AuthContext } from "./auth.context";
 
 function AuthProvider({ children }) {
-  const tokenFromStorage = localStorage.getItem("token");
-  const refreshFromStorage = localStorage.getItem("refreshToken");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
-  const [token, setToken] = useState(tokenFromStorage);
-  const [refreshToken, setRefreshToken] = useState(refreshFromStorage);
-  const [isAuthenticated, setIsAuthenticated] = useState(!!tokenFromStorage);
-  const [checkingAuth, setCheckingAuth] = useState(!!tokenFromStorage);
-
+  // ---------------- Verificar sesión al cargar ----------------
   useEffect(() => {
-    if (!token) {
-      if (!refreshToken) return
-      fetch("http://localhost:8080/auth/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken })
-      })
-      .then((res) => {
-          if (!res.ok) throw new Error();
-          return res.json();
-        })
-      .then((data => {
-          setToken(data.accessToken);
-          localStorage.setItem("token", data.accessToken);
-          setIsAuthenticated(true);
-        }))
-      .catch(() => {
-          localStorage.clear();
-          setToken(null);
-          setRefreshToken(null);
-          setIsAuthenticated(false);
+    const verifySession = async () => {
+      try {
+        const res = await fetch("http://localhost:8080/auth/verify", {
+          method: "GET",
+          credentials: "include",
         });
-    }
 
-    fetch("http://localhost:8080/auth/verify", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error();
-        setIsAuthenticated(true);
-      })
-      .catch(() => {
-        localStorage.clear();
-        setToken(null);
-        setRefreshToken(null);
+        setIsAuthenticated(res.ok);
+      } catch (error) {
+        console.error("Error verificando sesión:", error);
         setIsAuthenticated(false);
-      })
-      .finally(() => setCheckingAuth(false));
-  }, [token]);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
 
+    verifySession();
+  }, []);
+
+  // ---------------- LOGIN ----------------
   const login = async (email, password) => {
-    const { accessToken, refreshToken } = await loginRequest({
-      email,
-      password,
+    const res = await fetch("http://localhost:8080/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include", // enviar cookies
+      body: JSON.stringify({ email, password }),
     });
-    setToken(accessToken);
-    setRefreshToken(refreshToken);
+
+    if (!res.ok) throw new Error("Usuario o contraseña incorrectos");
     setIsAuthenticated(true);
-    localStorage.setItem("token", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
   };
 
-  const logout = () => {
-    localStorage.clear();
-    setToken(null);
-    setRefreshToken(null);
+  // ---------------- REGISTER ----------------
+  const register = async (name, email, password) => {
+    const res = await fetch("http://localhost:8080/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!res.ok) throw new Error("Patata");
+    setIsAuthenticated(true);
+  };
+
+  // ---------------- LOGOUT ----------------
+  const logout = async () => {
+    await fetch("http://localhost:8080/auth/logout", {
+      method: "POST",
+      credentials: "include", // enviar cookies para borrarlas en backend
+    });
     setIsAuthenticated(false);
   };
 
-  const register = async (name, email, password) => {
-    const { accessToken, refreshToken } = await registerRequest({
-      name,
-      email,
-      password,
-    });
-    setToken(accessToken);
-    setRefreshToken(refreshToken);
-    setIsAuthenticated(true);
-    localStorage.setItem("token", accessToken);
-    localStorage.setItem("refreshToken", refreshToken);
-  };
-
+  // ---------------- CONTEXT PROVIDER ----------------
   return (
     <AuthContext.Provider
       value={{
-        token,
-        refreshToken,
         isAuthenticated,
         checkingAuth,
         login,

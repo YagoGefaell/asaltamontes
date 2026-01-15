@@ -1,5 +1,8 @@
 package io.github.yagogefaell.asaltamontes.users;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -7,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import io.github.yagogefaell.asaltamontes.exceptions.MultipleFieldConflictException;
 import io.github.yagogefaell.asaltamontes.users.dto.UpdateUserRequest;
 
 @Service
@@ -23,45 +27,55 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User registerUser(String username, String email, String password) {
+        Map<String, String> errors = new HashMap<>();
+
         if (userRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El email ya está registrado");
-        } else if (userRepository.existsByUsername(username)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El nombre de usuario ya está en uso");
+            errors.put("email", "Email already registered");
         }
 
-        User user = new User();
-        user.setUsername(username);
-        user.setEmail(email);
-        user.setPasswordHash(passwordEncoder.encode(password));
-        user.setRole(UserRole.USER);
-        user.setIsVerified(false);
+        if (userRepository.existsByUsername(username)) {
+            errors.put("username", "Username already taken");
+        }
 
-        return userRepository.save(user);
+        if (!errors.isEmpty()) {
+            throw new MultipleFieldConflictException(errors);
+        }
+
+        try {
+            User user = new User();
+            user.setUsername(username);
+            user.setEmail(email);
+            user.setPasswordHash(passwordEncoder.encode(password));
+            user.setRole(UserRole.USER);
+            user.setIsVerified(false);
+
+            return userRepository.save(user);
+        } catch (Exception e) {
+            // 500 Internal Server Error → cualquier otro fallo
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
+
 
     @Override
     public User findById(long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+                        new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @Override
     public User findByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado"));
+                        new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
-    @SuppressWarnings("null")
     @Override
     public Page<User> findAll(Pageable pageable) {
         return userRepository.findAll(pageable);
     }
 
-    @SuppressWarnings("null")
     @Override
     public User updateUser(long id, UpdateUserRequest request) {
         User user = findById(id);
@@ -70,8 +84,7 @@ public class UserServiceImpl implements UserService {
             !request.email().equals(user.getEmail()) &&
             userRepository.existsByEmail(request.email())) {
 
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "El email ya está en uso por otro usuario");
+            throw new ResponseStatusException(HttpStatus.CONFLICT);
         }
 
         if (request.username() != null) {
@@ -90,8 +103,7 @@ public class UserServiceImpl implements UserService {
         User user = findById(id);
 
         if (!passwordEncoder.matches(oldPassword, user.getPasswordHash())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "La contraseña actual no es correcta");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST);
         }
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
@@ -101,8 +113,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public void deleteUser(long id) {
         if (!userRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Usuario no encontrado");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         userRepository.deleteById(id);
     }

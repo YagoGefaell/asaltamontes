@@ -6,6 +6,8 @@ import Login from "../pages/Login.jsx";
 import Register from "../pages/Register.jsx";
 import Access from "../pages/Access.jsx";
 
+import LogOut from "../pages/LogOut.jsx";
+
 export function AppRouter() {
   return (
     <Routes>
@@ -15,6 +17,7 @@ export function AppRouter() {
 
       <Route path="/" element={<AuthGuard><Home /></AuthGuard>} />
       <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
+      <Route path="/logout" element={<AuthGuard><LogOut /></AuthGuard>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

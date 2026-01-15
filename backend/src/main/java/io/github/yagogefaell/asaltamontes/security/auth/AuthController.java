@@ -1,26 +1,24 @@
 package io.github.yagogefaell.asaltamontes.security.auth;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.github.yagogefaell.asaltamontes.security.auth.dto.AuthResponse;
 import io.github.yagogefaell.asaltamontes.security.auth.dto.LoginRequest;
-import io.github.yagogefaell.asaltamontes.security.auth.dto.RefreshTokenRequest;
-import io.github.yagogefaell.asaltamontes.security.auth.dto.RefreshTokenResponse;
 import io.github.yagogefaell.asaltamontes.security.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.security.jwt.JwtUtil;
 import io.github.yagogefaell.asaltamontes.users.User;
 import io.github.yagogefaell.asaltamontes.users.UserServiceImpl;
+import io.github.yagogefaell.asaltamontes.utils.CookieUtil;
 
 @RestController
 @RequestMapping("/auth")
@@ -39,76 +37,87 @@ public class AuthController {
 
     // ---------------- LOGIN ----------------
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
-            );
+    public ResponseEntity<Void> login(@RequestBody LoginRequest request) {
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(request.email(), request.password())
+        );
 
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
-            String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-            return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken));
-        } catch (AuthenticationException e) {
-            return ResponseEntity.status(401).body(new AuthResponse(null, null));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(500).body(new AuthResponse(null, null));
-        }
+        String accessToken = jwtUtil.generateAccessToken(userDetails.getUsername());
+        String refreshToken = jwtUtil.generateRefreshToken(userDetails.getUsername());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(accessToken).toString());
+        headers.add(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(refreshToken).toString());
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .build();
+    }
+
+
+    // ---------------- LOGOUT ----------------
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.clear("accessToken", "/").toString())
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.clear("refreshToken", "/").toString())
+            .build();
     }
 
     // ---------------- REFRESH TOKEN ----------------
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> refresh(@RequestBody RefreshTokenRequest request) {
-        String username = jwtUtil.extractUsername(request.refreshToken());
+    public ResponseEntity<Void> refresh(@CookieValue("refreshToken") String refreshToken) {
+        String username = jwtUtil.extractUsername(refreshToken);
 
-        if (!jwtUtil.isTokenValid(request.refreshToken(), username)) {
+        if (!jwtUtil.isTokenValid(refreshToken, username)) {
             return ResponseEntity.status(401).build();
         }
 
-        String accessToken = jwtUtil.generateAccessToken(username);
+        String newAccessToken = jwtUtil.generateAccessToken(username);
 
-        return ResponseEntity.ok(new RefreshTokenResponse(accessToken));
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(newAccessToken).toString())
+            .build();
     }
 
     // ---------------- REGISTRO ----------------
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
-        try {
-            User user = userService.registerUser(request.name(), request.email(), request.password());
+    public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
+        User user = userService.registerUser(request.name(), request.email(), request.password());
 
-            String accessToken = jwtUtil.generateAccessToken(user.getEmail());
-            String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
+        String accessToken = jwtUtil.generateAccessToken(user.getEmail());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
 
-            return ResponseEntity.ok(new AuthResponse(accessToken, refreshToken));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new AuthResponse(null, null));
-        }
+        return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(accessToken).toString())
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(refreshToken).toString())
+            .build();
     }
 
     // ---------------- VERIFICAR TOKEN ----------------
     @GetMapping("/verify")
-    public ResponseEntity<Void> verifyToken(@RequestHeader("Authorization") String authHeader) {
+    public ResponseEntity<Void> verifyToken(
+            @CookieValue(name = "accessToken", required = false) String accessToken) {
+
         try {
-            System.out.println("Authorization header: " + authHeader);
-            
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (accessToken == null || accessToken.isBlank()) {
                 return ResponseEntity.status(401).build();
             }
 
-            String token = authHeader.substring(7);
-            String email = jwtUtil.extractUsername(token);
+            String email = jwtUtil.extractUsername(accessToken);
 
-            if (!jwtUtil.isTokenValid(token, email)) {
+            // Si el token no es válido
+            if (!jwtUtil.isTokenValid(accessToken, email)) {
                 return ResponseEntity.status(401).build();
             }
 
-            // ✅ Token válido, no devolvemos datos
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(401).build();
         }
     }
+
 
 }
