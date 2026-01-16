@@ -1,6 +1,6 @@
-// src/features/auth/components/LoginForm.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "../../../shared/components/Button";
+import Input from "../../../shared/components/Input.jsx";
 import "./LoginForm.css";
 
 function LoginForm({ onSubmit, errorMessage }) {
@@ -14,49 +14,24 @@ function LoginForm({ onSubmit, errorMessage }) {
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
-      <div className="input-group">
-        <label>Username</label>
-        <input
-          type="text"
-          placeholder="Tu username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-      </div>
+      <Input
+        label="Nombre de Usuario"
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="tuusuario"
+        required
+      />
 
-      <div className="input-group">
-        <label>Contraseña</label>
-        <input
-          type="password"
-          placeholder="••••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        {errorMessage && (
-          <p className="form-error">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="error-icon"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              width="16"
-              height="16"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M12 2a10 10 0 100 20 10 10 0 000-20z"
-              />
-            </svg>
-            {errorMessage}
-          </p>
-        )}
-      </div>
+      <Input
+        label="Contraseña"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••••"
+        error={errorMessage}
+        required
+      />
 
       <Button type="submit" variant="primary">
         Entrar

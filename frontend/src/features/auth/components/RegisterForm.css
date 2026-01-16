@@ -22,7 +22,6 @@
 .input-group input {
   padding: 0.9rem;
   background: var(--card-bg);
-  border: 1.8px solid var(--border-color, #ddd);
   border-radius: 10px;
   font-size: 1rem;
   color: var(--text-color);

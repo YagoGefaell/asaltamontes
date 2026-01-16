@@ -26,7 +26,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User registerUser(String username, String email, String password) {
+    public User registerUser(String username, String email, String password, String confirmPassword) {
         Map<String, String> errors = new HashMap<>();
 
         // Validar username
@@ -52,6 +52,12 @@ public class UserServiceImpl implements UserService {
             errors.put("password", "Contraseña demasiado corta");
         } else if (password.contains(" ")) {
             errors.put("password", "No se permiten espacios");
+        }
+        // Validar confirmPassword
+        if (confirmPassword == null || confirmPassword.isBlank()) {
+            errors.put("confirmPassword", "Confirmación de contraseña requerida");
+        } else if (!password.equals(confirmPassword)) {
+            errors.put("confirmPassword", "Las contraseñas no coinciden");
         }
 
         // Validar duplicados

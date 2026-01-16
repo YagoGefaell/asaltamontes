@@ -1,56 +1,67 @@
 // src/features/auth/components/RegisterForm.jsx
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "../../../shared/components/Button";
-import FormError from "../../../shared/components/FormError.jsx";
+import Input from "../../../shared/components/Input.jsx";
 import "./RegisterForm.css";
 
-export default function RegisterForm({ onSubmit, emailErrorMessage, userErrorMessage, passwordErrorMessage }) {
+export default function RegisterForm({
+  onSubmit,
+  emailErrorMessage,
+  userErrorMessage,
+  passwordErrorMessage,
+  confirmPasswordErrorMessage,
+}) {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) onSubmit({ username, email, password });
+    if (onSubmit) onSubmit({ username, email, password, confirmPassword });
   };
 
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
-      <div className="input-group">
-        <label>Username</label>
-        <input
-          type="text"
-          placeholder="Tu username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-        />
-        <FormError message={userErrorMessage} />
-      </div>
+      <Input
+        label="Nombre de Usuario"
+        type="text"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        placeholder="tuusuario"
+        error={userErrorMessage}
+        required
+      />
 
-      <div className="input-group">
-        <label>Email</label>
-        <input
-          type="email"
-          placeholder="tuemail@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <FormError message={emailErrorMessage} />
-      </div>
+      <Input
+        label="Email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="tuemail@example.com"
+        error={emailErrorMessage}
+        required
+      />
 
-      <div className="input-group">
-        <label>Contraseña</label>
-        <input
-          type="password"
-          placeholder="••••••••••"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <FormError message={passwordErrorMessage} />
-      </div>
+      <Input
+        label="Contraseña"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="••••••••••"
+        error={passwordErrorMessage}
+        required
+      />
+
+      <Input
+        label="Confirmar Contraseña"
+        type="password"
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        placeholder={password ? "" : "••••••••••"}
+        error={confirmPasswordErrorMessage}
+        required
+      />
 
       <Button type="submit" variant="primary">
         Crear Cuenta

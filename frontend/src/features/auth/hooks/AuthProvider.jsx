@@ -12,7 +12,7 @@ function AuthProvider({ children }) {
       try {
         await verifySessionRequest();
         setIsAuthenticated(true);
-      } catch (error) {
+      } catch (err) {
         setIsAuthenticated(false);
       } finally {
         setCheckingAuth(false);
@@ -29,8 +29,8 @@ function AuthProvider({ children }) {
   };
 
   // ---------------- REGISTER ----------------
-  const register = async (username, email, password) => {
-    await registerRequest({ username, email, password });
+  const register = async (username, email, password, confirmPassword) => {
+    await registerRequest({ username, email, password, confirmPassword });
     setIsAuthenticated(true);
   };
 

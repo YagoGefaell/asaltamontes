@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://192.168.1.42:8080/auth";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/auth";
 
 // ---------------- LOGIN ----------------
 export async function loginRequest({ username, password }) {
@@ -14,12 +14,12 @@ export async function loginRequest({ username, password }) {
 }
 
 // ---------------- REGISTER ----------------
-export async function registerRequest({ username, email, password }) {
+export async function registerRequest({ username, email, password, confirmPassword }) {
   const res = await fetch(`${API_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ username, email, password }),
+    body: JSON.stringify({ username, email, password, confirmPassword }),
   });
 
   if (!res.ok) {

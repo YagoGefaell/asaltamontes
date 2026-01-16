@@ -85,7 +85,7 @@ public class AuthController {
     // ---------------- REGISTRO ----------------
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
-        User user = userService.registerUser(request.username(), request.email(), request.password());
+        User user = userService.registerUser(request.username(), request.email(), request.password(), request.confirmPassword());
 
         String accessToken = jwtUtil.generateAccessToken(user.getEmail());
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());

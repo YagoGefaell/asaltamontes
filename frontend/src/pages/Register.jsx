@@ -10,15 +10,17 @@ const Register = () => {
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
   const [userErrorMessage, setUserErrorMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+  const [confirmPasswordErrorMessage, setConfirmPasswordErrorMessage] = useState("");
 
-  const handleRegister = async ({ username, email, password }) => {
+  const handleRegister = async ({ username, email, password, confirmPassword }) => {
     try {
-      await register(username, email, password);
+      await register(username, email, password, confirmPassword);
       navigate("/home");
     } catch (err) {
       setEmailErrorMessage(err.email || "");
       setUserErrorMessage(err.username || "");
       setPasswordErrorMessage(err.password || "");
+      setConfirmPasswordErrorMessage(err.confirmPassword || "");
     }
   };
 
@@ -31,7 +33,7 @@ const Register = () => {
       <h2 className="register-title">Crear Cuenta</h2>
       <p className="register-subtitle">Únete a Asaltamontes Female 💖</p>
 
-      <RegisterForm onSubmit={handleRegister} emailErrorMessage={emailErrorMessage} userErrorMessage={userErrorMessage} passwordErrorMessage={passwordErrorMessage} />
+      <RegisterForm onSubmit={handleRegister} emailErrorMessage={emailErrorMessage} userErrorMessage={userErrorMessage} passwordErrorMessage={passwordErrorMessage} confirmPasswordErrorMessage={confirmPasswordErrorMessage} />
 
       <p className="register-login">
         ¿Ya tienes cuenta?{" "}

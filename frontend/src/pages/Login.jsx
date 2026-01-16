@@ -1,8 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth.js";
-import LoginForm from "../features/auth/components/LoginForm.jsx"; // Importa tu formulario real
+import LoginForm from "../features/auth/components/LoginForm.jsx";
 import "./Login.css";
-import { useState } from "react";
 
 function Login() {
   const { login } = useAuth();
@@ -12,7 +12,7 @@ function Login() {
   const handleLogin = async ({ username, password }) => {
     try {
       await login(username, password);
-      setErrorMessage(""); // limpiar error si todo va bien
+      setErrorMessage("");
       navigate("/home");
     } catch (err) {
       setErrorMessage(err.message);
