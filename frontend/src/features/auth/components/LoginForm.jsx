@@ -18,8 +18,8 @@ function LoginForm({ onSubmit, errorMessage }) {
         label="Nombre de Usuario"
         type="text"
         value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        placeholder="tuusuario"
+        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+        placeholder="Usuario"
         required
       />
 

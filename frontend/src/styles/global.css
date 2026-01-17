@@ -1,25 +1,10 @@
-.page-container {
-  padding: 1.2rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.input {
-  width: 100%;
-  padding: 0.75rem;
-  margin: 1rem 0;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-}
-
+/* Tema claro */
 :root {
   --background: #fafafa;
   --text-color: #222;
   --card-bg: #ffffff;
   --primary: #ff4f8b;
-  
-  /* NUEVA VARIABLE PARA PRESSED */
-  --pressed-color: #ff7aa0; /* color grisáceo para cuando se presiona */
+  --pressed-color: #ff7aa0;
 }
 
 /* Tema oscuro */
@@ -29,16 +14,15 @@
     --text-color: #e6e6e6;
     --card-bg: #1b1b1b;
     --primary: #ff4f8b;
-    --pressed-color: #e63978; /* gris más claro en tema oscuro */
+    --pressed-color: #e63978;
   }
 }
-
 
 /* Aplicación del tema global */
 body {
   background-color: var(--background);
   color: var(--text-color);
-  font-family: "Inter", sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
   padding: 0;
 }

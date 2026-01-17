@@ -7,18 +7,21 @@ import "./Register.css";
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+
+  const [fullNameErrorMessage, setFullNameErrorMessage] = useState("");
+  const [usernameErrorMessage, setUsernameErrorMessage] = useState("");
   const [emailErrorMessage, setEmailErrorMessage] = useState("");
-  const [userErrorMessage, setUserErrorMessage] = useState("");
   const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
   const [confirmPasswordErrorMessage, setConfirmPasswordErrorMessage] = useState("");
 
-  const handleRegister = async ({ username, email, password, confirmPassword }) => {
+  const handleRegister = async ({ fullName, username, email, password, confirmPassword }) => {
     try {
-      await register(username, email, password, confirmPassword);
+      await register(fullName, username, email, password, confirmPassword);
       navigate("/home");
     } catch (err) {
+      setFullNameErrorMessage(err.fullName || "");
+      setUsernameErrorMessage(err.username || "");
       setEmailErrorMessage(err.email || "");
-      setUserErrorMessage(err.username || "");
       setPasswordErrorMessage(err.password || "");
       setConfirmPasswordErrorMessage(err.confirmPassword || "");
     }
@@ -33,7 +36,7 @@ const Register = () => {
       <h2 className="register-title">Crear Cuenta</h2>
       <p className="register-subtitle">Únete a Asaltamontes Female 💖</p>
 
-      <RegisterForm onSubmit={handleRegister} emailErrorMessage={emailErrorMessage} userErrorMessage={userErrorMessage} passwordErrorMessage={passwordErrorMessage} confirmPasswordErrorMessage={confirmPasswordErrorMessage} />
+      <RegisterForm onSubmit={handleRegister} fullNameErrorMessage={fullNameErrorMessage} usernameErrorMessage={usernameErrorMessage} emailErrorMessage={emailErrorMessage} passwordErrorMessage={passwordErrorMessage} confirmPasswordErrorMessage={confirmPasswordErrorMessage} />
 
       <p className="register-login">
         ¿Ya tienes cuenta?{" "}

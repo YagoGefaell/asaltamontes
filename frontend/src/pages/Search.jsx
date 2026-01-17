@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import UserCard from "../../shared/components/UserCard";
+import UserCard from "../shared/components/UserCard";
 import "./Search.css";
 
 const MAX_RESULTS = 20;

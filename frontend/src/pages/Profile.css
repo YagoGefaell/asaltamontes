@@ -1,0 +1,125 @@
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Avatar centrado grande */
+.profile-avatar-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.profile-avatar {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  border: 1px solid var(--primary);
+  object-fit: cover;
+}
+
+/* Info principal centrada */
+.profile-main {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.username {
+  font-size: 1.6rem;
+  margin: 0.3rem 0;
+}
+
+.full-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.2rem 0;
+}
+
+.bio {
+  font-style: italic;
+  margin: 0.5rem 0 1.5rem 0;
+  color: #555;
+}
+
+/* Estadísticas estilo botones grandes tipo móvil */
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  gap: 2rem;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.count {
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.label {
+  font-size: 0.85rem;
+  color: var(--text-color);
+}
+
+/* Botones principales estilo móvil */
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  width: 100%;
+}
+
+.edit-btn, .settings-btn {
+  padding: 0.7rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  width: 100%;
+  transition: background-color 0.2s;
+  font-size: 1rem;
+}
+
+.edit-btn {
+  background-color: var(--primary);
+  color: white;
+}
+
+.edit-btn:active {
+  background-color: var(--pressed-color);
+}
+
+.settings-btn {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid #ccc;
+}
+
+.settings-btn:active {
+  background-color: #ddd;
+}
+
+/* Placeholder extra */
+.profile-extra {
+  margin-top: 2rem;
+}
+
+.placeholder-text {
+  font-style: italic;
+  color: #888;
+  text-align: center;
+  line-height: 1.4;
+}

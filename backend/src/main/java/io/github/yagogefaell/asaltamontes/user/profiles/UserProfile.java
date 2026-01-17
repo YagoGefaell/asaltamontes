@@ -1,16 +1,17 @@
-package io.github.yagogefaell.asaltamontes.profiles;
+package io.github.yagogefaell.asaltamontes.user.profiles;
 
-import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-import io.github.yagogefaell.asaltamontes.users.User;
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.OneToOne;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -25,50 +26,40 @@ import lombok.NoArgsConstructor;
 public class UserProfile {
 
     @Id
-    private Long userId; // mismo que user.id
+    private Long userId;
 
     @OneToOne
     @MapsId
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private UserAccount user;
 
-    @Column(name = "first_name", nullable = false)
-    private String firstName;
-
-    @Column(name = "last_name", nullable = false)
-    private String lastName;
+    @Column(name = "full_name")
+    private String fullName;
 
     @Column(name = "bio", length = 500)
     private String bio;
 
-    @Column(name = "location")
-    private String location;
+    @Column(name = "city")
+    private String city;
 
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
 
-    @Column(name = "birth-date")
-    private Date birthDate;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "running_level")
+    private RunningLevel runningLevel;
 
-    @Column(name = "instagram_profile_url")
-    private String instagramProfileUrl;
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
-    @Column(name = "strava_profile_url")
-    private String stravaProfileUrl;
+    @Column(name = "phone_number")
+    private String phoneNumber;
 
     @Column(name = "is_public_profile", nullable = false)
-    private boolean isPublicProfile;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    private Boolean isPublicProfile;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 
     @PreUpdate
     protected void onUpdate() {

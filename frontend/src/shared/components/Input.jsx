@@ -1,4 +1,3 @@
-// src/shared/components/Input.jsx
 import { useState } from "react";
 import FormError from "./FormError";
 import "./Input.css";
@@ -10,41 +9,61 @@ export default function Input({
   onChange,
   error,
   placeholder,
+  as, // <-- nuevo prop
+  children,
   ...props
 }) {
   const [showPassword, setShowPassword] = useState(false);
 
-  // Bloquear espacios si es password
   const handleKeyDown = (e) => {
-    if (e.key === " ") {
-      e.preventDefault();
-    }
+    if (type === "password" && e.key === " ") e.preventDefault();
   };
+
+  let inputElement;
+
+  if (as === "textarea") {
+    inputElement = (
+      <textarea
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        {...props}
+      />
+    );
+  } else if (as === "select") {
+    inputElement = (
+      <select value={value} onChange={onChange} {...props}>
+        {children}
+      </select>
+    );
+  } else {
+    // input normal (text, email, password, etc)
+    inputElement = (
+      <input
+        type={showPassword ? "text" : type}
+        value={value}
+        onChange={onChange}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        {...props}
+      />
+    );
+  }
 
   return (
     <div className="input-group">
       {label && <label>{label}</label>}
       <div className="input-wrapper">
-        <input
-          type={showPassword ? "text" : type}
-          value={value}
-          onChange={onChange}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          {...props}
-        />
+        {inputElement}
 
         {type === "password" && (
           <button
             type="button"
             className="toggle-password-btn"
             onClick={() => setShowPassword(!showPassword)}
-            aria-label={
-              showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
-            }
+            aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
           >
             {showPassword ? (
-              // Icono ojo abierto
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -69,7 +88,6 @@ export default function Input({
                 />
               </svg>
             ) : (
-              // Icono ojo cerrado
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"

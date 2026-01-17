@@ -7,13 +7,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import io.github.yagogefaell.asaltamontes.users.User;
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 
 public class CustomUserDetails implements UserDetails {
 
-    private final User user;
+    private final UserAccount user;
 
-    public CustomUserDetails(User user) {
+    public CustomUserDetails(UserAccount user) {
         this.user = user;
     }
 
@@ -53,7 +53,7 @@ public class CustomUserDetails implements UserDetails {
         return true;
     }
 
-    public User getUser() {
+    public UserAccount getUser() {
         return user;
     }
 }

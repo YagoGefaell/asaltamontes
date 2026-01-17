@@ -1,0 +1,181 @@
+/* Página */
+.profile-edit-page {
+  max-width: 720px;
+  margin: 30px auto;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-color);
+  padding: 0 15px;
+}
+
+.profile-edit-page h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* Formulario */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Username pequeño debajo del nombre */
+.username {
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: -8px;
+  margin-left: 5px;
+}
+
+/* AvatarUploader */
+.avatar-uploader {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--primary);
+}
+
+/* Inputs dentro de SectionCard */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 10px;
+}
+
+.input-group label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.input-group input,
+.input-group select,
+.input-group textarea {
+  border-radius: 12px;
+  border: 1px solid #ccc;
+  padding: 10px 14px;
+  font-size: 1rem;
+  background-color: var(--background);
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.input-group input:focus,
+.input-group select:focus,
+.input-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 5px rgba(255, 79, 139, 0.3);
+}
+
+.input-group input:disabled {
+  background-color: #eee;
+  cursor: not-allowed;
+}
+
+/* Textarea */
+.input-group textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* SectionCard */
+.section-card {
+  background-color: var(--card-bg);
+  border-radius: 15px;
+  padding: 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ToggleSwitch */
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-switch .slider {
+  position: relative;
+  width: 50px;
+  height: 26px;
+  background-color: #ccc;
+  border-radius: 13px;
+  transition: background-color 0.2s;
+}
+
+.toggle-switch .slider::before {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 2px;
+  top: 2px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.toggle-switch input:checked + .slider::before {
+  transform: translateX(24px);
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: var(--primary);
+}
+
+.toggle-switch .label-text {
+  font-size: 0.95rem;
+  color: var(--text-color);
+}
+
+/* Botón guardar */
+.btn.primary {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  background-color: var(--primary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn.primary:hover {
+  background-color: var(--pressed-color);
+  transform: scale(1.02);
+}
+
+.btn.primary:active {
+  transform: scale(0.98);
+}
+
+/* Scroll y responsive */
+@media (max-width: 600px) {
+  .avatar-uploader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .avatar-preview {
+    width: 60px;
+    height: 60px;
+  }
+}

@@ -31,28 +31,29 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+
         String path = request.getServletPath();
-        if (path.startsWith("/auth/")) { 
+
+        if (path.startsWith("/auth/")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         Cookie cookie = WebUtils.getCookie(request, "accessToken");
-        String jwt = null;
-        String username = null;
+        String jwt = (cookie != null) ? cookie.getValue() : null;
+        String email = null;
 
-        if (cookie != null) {
-            jwt = cookie.getValue();
+        if (jwt != null) {
             try {
-                username = jwtUtil.extractUsername(jwt);
+                email = jwtUtil.extractUsername(jwt);
             } catch (Exception e) {
-                logger.warn("Token JWT inválido desde cookie: " + e.getMessage());
+                logger.warn("Token JWT inválido: " + e.getMessage());
             }
         }
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                var userDetails = userDetailsService.loadUserByUsername(username);
+                var userDetails = userDetailsService.loadUserByUsername(email);
 
                 if (jwtUtil.isTokenValid(jwt, userDetails.getUsername())) {
                     var authToken = new UsernamePasswordAuthenticationToken(
@@ -61,17 +62,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                             userDetails.getAuthorities()
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
                 }
             } catch (UsernameNotFoundException e) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                logger.warn("Usuario no encontrado para JWT: " + email);
             }
         }
 
         filterChain.doFilter(request, response);
     }
+
 }

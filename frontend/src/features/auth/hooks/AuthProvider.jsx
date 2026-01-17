@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./auth.context";
-import { registerRequest, loginRequest, logoutRequest, verifySessionRequest } from "../services/auth.service.js";
+import {
+  registerRequest,
+  loginRequest,
+  logoutRequest,
+  verifySessionRequest,
+  refreshTokenRequest,
+} from "../services/auth.service.js";
 
 function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -8,36 +14,67 @@ function AuthProvider({ children }) {
 
   // ---------------- Verificar sesión al cargar ----------------
   useEffect(() => {
+    let mounted = true;
+
     const verifySession = async () => {
       try {
-        await verifySessionRequest();
-        setIsAuthenticated(true);
-      } catch (err) {
-        setIsAuthenticated(false);
+        const isValid = await verifySessionRequest();
+        if (mounted) setIsAuthenticated(isValid);
+      } catch {
+        if (mounted) setIsAuthenticated(false);
       } finally {
-        setCheckingAuth(false);
+        if (mounted) setCheckingAuth(false);
       }
     };
 
     verifySession();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // ---------------- LOGIN ----------------
   const login = async (username, password) => {
-    await loginRequest({ username, password });
-    setIsAuthenticated(true);
+    try {
+      await loginRequest({ username, password });
+      setIsAuthenticated(true);
+    } catch (err) {
+      setIsAuthenticated(false);
+      throw err; // Para que el componente que llama pueda mostrar mensaje de error
+    }
   };
 
   // ---------------- REGISTER ----------------
-  const register = async (username, email, password, confirmPassword) => {
-    await registerRequest({ username, email, password, confirmPassword });
-    setIsAuthenticated(true);
+  const register = async (fullName, username, email, password, confirmPassword) => {
+    try {
+      await registerRequest({ fullName, username, email, password, confirmPassword });
+      setIsAuthenticated(true);
+    } catch (err) {
+      setIsAuthenticated(false);
+      throw err;
+    }
   };
 
   // ---------------- LOGOUT ----------------
   const logout = async () => {
-    await logoutRequest();
-    setIsAuthenticated(false);
+    try {
+      await logoutRequest();
+    } finally {
+      setIsAuthenticated(false);
+    }
+  };
+
+  // ---------------- REFRESH TOKEN ----------------
+  const refreshToken = async () => {
+    try {
+      await refreshTokenRequest();
+      setIsAuthenticated(true);
+      return true;
+    } catch {
+      setIsAuthenticated(false);
+      return false;
+    }
   };
 
   // ---------------- CONTEXT PROVIDER ----------------
@@ -49,6 +86,7 @@ function AuthProvider({ children }) {
         login,
         logout,
         register,
+        refreshToken,
       }}
     >
       {children}

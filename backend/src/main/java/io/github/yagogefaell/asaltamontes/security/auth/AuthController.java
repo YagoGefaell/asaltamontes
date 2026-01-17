@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.github.yagogefaell.asaltamontes.security.auth.dto.LoginRequest;
 import io.github.yagogefaell.asaltamontes.security.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.security.jwt.JwtUtil;
-import io.github.yagogefaell.asaltamontes.users.User;
-import io.github.yagogefaell.asaltamontes.users.UserServiceImpl;
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import io.github.yagogefaell.asaltamontes.utils.CookieUtil;
 
 @RestController
@@ -25,13 +24,13 @@ import io.github.yagogefaell.asaltamontes.utils.CookieUtil;
 public class AuthController {
 
     private final JwtUtil jwtUtil;
-    private final UserServiceImpl userService;
+    private final AuthService authService;
     private final AuthenticationManager authenticationManager;
     
 
-    public AuthController(JwtUtil jwtUtil, UserServiceImpl userService, AuthenticationManager authenticationManager) {
+    public AuthController(JwtUtil jwtUtil, AuthService authService, AuthenticationManager authenticationManager) {
         this.jwtUtil = jwtUtil;
-        this.userService = userService;
+        this.authService = authService;
         this.authenticationManager = authenticationManager;
     }
 
@@ -56,7 +55,6 @@ public class AuthController {
                 .build();
     }
 
-
     // ---------------- LOGOUT ----------------
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
@@ -76,7 +74,6 @@ public class AuthController {
         }
 
         String newAccessToken = jwtUtil.generateAccessToken(username);
-
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(newAccessToken).toString())
             .build();
@@ -85,7 +82,8 @@ public class AuthController {
     // ---------------- REGISTRO ----------------
     @PostMapping("/register")
     public ResponseEntity<Void> register(@RequestBody RegisterRequest request) {
-        User user = userService.registerUser(request.username(), request.email(), request.password(), request.confirmPassword());
+
+        UserAccount user = authService.register(request);
 
         String accessToken = jwtUtil.generateAccessToken(user.getEmail());
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
@@ -106,10 +104,10 @@ public class AuthController {
                 return ResponseEntity.status(401).build();
             }
 
-            String email = jwtUtil.extractUsername(accessToken);
+            String username = jwtUtil.extractUsername(accessToken);
 
             // Si el token no es válido
-            if (!jwtUtil.isTokenValid(accessToken, email)) {
+            if (!jwtUtil.isTokenValid(accessToken, username)) {
                 return ResponseEntity.status(401).build();
             }
 
@@ -118,6 +116,4 @@ public class AuthController {
             return ResponseEntity.status(401).build();
         }
     }
-
-
 }

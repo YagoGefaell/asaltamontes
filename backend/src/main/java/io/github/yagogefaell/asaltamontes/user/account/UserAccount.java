@@ -1,4 +1,4 @@
-package io.github.yagogefaell.asaltamontes.users;
+package io.github.yagogefaell.asaltamontes.user.account;
 
 import java.time.LocalDateTime;
 
@@ -21,10 +21,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name="users")
-public class User {
+public class UserAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
@@ -37,7 +37,7 @@ public class User {
 
     @Enumerated(EnumType.STRING) // guardará "USER" o "ADMIN" en la columna
     @Column(name = "role", nullable = false, length = 10)
-    private UserRole role;
+    private UserAccountRole role;
 
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;

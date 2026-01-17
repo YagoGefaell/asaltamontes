@@ -6,7 +6,7 @@ import "./Navbar.css";
 const Navbar = () => {
   return (
     <nav className="bottom-nav">
-      <NavLink to="/" className={({ isActive }) => (isActive ? "active" : "")}>
+      <NavLink to="/home" className={({ isActive }) => (isActive ? "active" : "")}>
         <FaHome />
       </NavLink>
       <NavLink to="/search" className={({ isActive }) => (isActive ? "active" : "")}>
@@ -15,7 +15,7 @@ const Navbar = () => {
       <NavLink to="/messages" className={({ isActive }) => (isActive ? "active" : "")}>
         <FaEnvelope />
       </NavLink>
-      <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : "")}>
+      <NavLink to="/me" className={({ isActive }) => (isActive ? "active" : "")}>
         <FaUser />
       </NavLink>
     </nav>

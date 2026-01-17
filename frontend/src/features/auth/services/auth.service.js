@@ -5,7 +5,7 @@ export async function loginRequest({ username, password }) {
   const res = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include", // muy importante: enviar cookies
+    credentials: "include",
     body: JSON.stringify({ username, password }),
   });
 
@@ -14,12 +14,12 @@ export async function loginRequest({ username, password }) {
 }
 
 // ---------------- REGISTER ----------------
-export async function registerRequest({ username, email, password, confirmPassword }) {
+export async function registerRequest({ fullName, username, email, password, confirmPassword }) {
   const res = await fetch(`${API_URL}/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ username, email, password, confirmPassword }),
+    body: JSON.stringify({ fullName, username, email, password, confirmPassword }),
   });
 
   if (!res.ok) {
@@ -42,11 +42,43 @@ export async function logoutRequest() {
 
 // ---------------- VERIFY SESSION ----------------
 export async function verifySessionRequest() {
-  const res = await fetch(`${API_URL}/verify`, {
-    method: "GET",
-    credentials: "include",
-  });
+  try {
+    const res = await fetch(`${API_URL}/verify`, {
+      method: "GET",
+      credentials: "include",
+    });
 
-  if (!res.ok) throw new Error("Error al verificar la sesión");
-  return;
+    if (res.ok) return true;
+
+    if (res.status === 401) {
+      const refreshed = await refreshTokenRequest();
+      if (!refreshed) return false;
+
+      const retryRes = await fetch(`${API_URL}/verify`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      return retryRes.ok;
+    }
+
+    return false;
+  } catch (err) {
+    return false;
+  }
+}
+
+
+// ---------------- REFRESH TOKEN ----------------
+export async function refreshTokenRequest() {
+  try {
+    const res = await fetch(`${API_URL}/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
