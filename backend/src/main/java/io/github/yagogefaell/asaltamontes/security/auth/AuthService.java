@@ -24,4 +24,12 @@ public class AuthService {
                 request.confirmPassword()
         );
     }
+
+    public UserAccount loadUserById(String idString) {
+        return userService.loadUserById(idString);
+    }
+
+    public UserAccount loadUserByUsername(String username) {
+        return userService.loadUserByUsername(username);
+    }
 }

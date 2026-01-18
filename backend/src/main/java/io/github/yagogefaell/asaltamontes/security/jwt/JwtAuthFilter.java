@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 
-import io.github.yagogefaell.asaltamontes.security.user.CustomUserDetailsService;
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -21,11 +22,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final CustomUserDetailsService userDetailsService;
+    private final UserService userService;
 
-    public JwtAuthFilter(JwtUtil jwtUtil, CustomUserDetailsService userDetailsService) {
+    public JwtAuthFilter(JwtUtil jwtUtil, UserService userService) {
         this.jwtUtil = jwtUtil;
-        this.userDetailsService = userDetailsService;
+        this.userService = userService;
     }
 
     @Override
@@ -41,21 +42,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         Cookie cookie = WebUtils.getCookie(request, "accessToken");
         String jwt = (cookie != null) ? cookie.getValue() : null;
-        String email = null;
+        String idString = null;
 
         if (jwt != null) {
             try {
-                email = jwtUtil.extractUsername(jwt);
+                idString = jwtUtil.extractId(jwt);
             } catch (Exception e) {
                 logger.warn("Token JWT inválido: " + e.getMessage());
             }
         }
 
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (idString != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                var userDetails = userDetailsService.loadUserByUsername(email);
+                UserAccount userDetails = userService.loadUserById(idString);
 
-                if (jwtUtil.isTokenValid(jwt, userDetails.getUsername())) {
+                if (jwtUtil.isTokenValid(jwt, userDetails)) {
                     var authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,
@@ -66,7 +67,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (UsernameNotFoundException e) {
-                logger.warn("Usuario no encontrado para JWT: " + email);
+                logger.warn("Usuario no encontrado para JWT: " + idString);
             }
         }
 

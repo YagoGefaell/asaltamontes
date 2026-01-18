@@ -7,13 +7,13 @@ import io.github.yagogefaell.asaltamontes.exceptions.MultipleFieldConflictExcept
 import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccountRole;
-import io.github.yagogefaell.asaltamontes.user.profiles.RunningLevel;
 import io.github.yagogefaell.asaltamontes.user.profiles.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.profiles.UserProfileRepository;
 import io.github.yagogefaell.asaltamontes.user.profiles.dto.ChangeProfileDTO;
 import io.github.yagogefaell.asaltamontes.user.profiles.dto.UserMeDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +21,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
 
     // ------------------ REGISTRO ------------------
-
     @Transactional
     public UserAccount registerUserWithProfile(
             String fullName,
@@ -183,7 +182,6 @@ public class UserService {
     }
 
     // ------------------ DTO ------------------
-
     private UserMeDTO assembleUserMeDTO(UserAccount user, UserProfile profile) {
         return new UserMeDTO(
                 user.getId(),
@@ -214,4 +212,15 @@ public class UserService {
         return assembleUserMeDTO(user, profile);
     }
 
+    public UserAccount loadUserById(String idString) {
+        return userAccountRepository.findById(Long.parseLong(idString))
+                .orElseThrow(() -> {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+                });
+    }
+
+    public UserAccount loadUserByUsername(String username) {
+        return userAccountRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
 }

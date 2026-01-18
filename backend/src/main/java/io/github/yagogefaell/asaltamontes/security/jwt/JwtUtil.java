@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.security.jwt;
 
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -25,14 +26,14 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String username) {
+    public String generateAccessToken(String idString) {
 
         Map<String, Object> claims = new HashMap<>();
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(username)
+                .subject(idString)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getExpiration()))
                 .and()
@@ -41,10 +42,10 @@ public class JwtUtil {
                 
     }
 
-    public String generateRefreshToken(String username) {
+    public String generateRefreshToken(String idString) {
         return Jwts.builder()
                 .claims()
-                .subject(username)
+                .subject(idString)
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getRefreshExpiration()))
                 .and()
@@ -53,7 +54,7 @@ public class JwtUtil {
                 
     }
 
-    public String extractUsername(String token) {
+    public String extractId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -78,8 +79,9 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public boolean isTokenValid(String token, String username) {
-        return extractUsername(token).equals(username) && !isTokenExpired(token);
+    public boolean isTokenValid(String token, UserAccount userDetails) { 
+        final String idString = extractId(token); 
+        System.out.println("Validando token para idString: " + idString + " y usuario: " + userDetails.getId());
+        return idString.equals(userDetails.getId().toString()) && !isTokenExpired(token); 
     }
-
 }

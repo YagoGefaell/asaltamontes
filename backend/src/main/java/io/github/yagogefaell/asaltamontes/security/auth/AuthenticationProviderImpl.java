@@ -8,26 +8,30 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import io.github.yagogefaell.asaltamontes.security.user.CustomUserDetailsService;
-import io.github.yagogefaell.asaltamontes.security.user.CustomUserDetails;
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.UserService;
 
 @Component
 public class AuthenticationProviderImpl implements AuthenticationProvider {
 
-    private final CustomUserDetailsService userDetailsService;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final AuthService authService;
 
-    public AuthenticationProviderImpl(CustomUserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
-        this.userDetailsService = userDetailsService;
+    public AuthenticationProviderImpl(UserService userService, PasswordEncoder passwordEncoder, AuthService authService) {
+        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.authService = authService;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String email = authentication.getName();
+        String username = authentication.getName();
         String password = authentication.getCredentials().toString();
 
-        CustomUserDetails userDetails = (CustomUserDetails) userDetailsService.loadUserByUsername(email);
+        String idString = authService.loadUserByUsername(username).getUsername();
+
+        UserAccount userDetails = userService.loadUserByUsername(idString);
 
         if (passwordEncoder.matches(password, userDetails.getPassword())) {
             return new UsernamePasswordAuthenticationToken(

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserAccountRepository extends JpaRepository<UserAccount,Long> {
+    Optional<UserAccount> findById(Long id);
     Optional<UserAccount> findByEmailIgnoreCase(String email);
     Optional<UserAccount> findByUsernameIgnoreCase(String username);
     @Query("SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END FROM UserAccount u WHERE u.username = :username AND u.id <> :userId")
