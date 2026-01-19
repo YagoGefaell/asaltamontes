@@ -1,14 +1,16 @@
+/* --- CONTENEDOR GENERAL --- */
 .access-container {
   padding: 1.5rem;
   max-width: 480px;
   margin: 0 auto;
   text-align: center;
   font-family: 'Inter', sans-serif;
-  background-color: var(--background);  /* Fondo adaptativo */
-  color: var(--text-color);            /* Texto adaptativo */
+  background-color: var(--background);
+  color: var(--text-color);
   min-height: 80vh;
 }
 
+/* --- HEADER --- */
 .access-header {
   margin-top: 2rem;
 }
@@ -16,31 +18,32 @@
 .access-title {
   font-size: 2rem;
   font-weight: 800;
-  color: var(--primary);                /* Rosa principal */
+  color: var(--primary);
 }
 
 .access-subtitle {
   font-size: 1rem;
-  color: var(--text-color);
-  opacity: 0.7;
+  color: var(--text-muted);
   margin-top: 0.5rem;
 }
 
-/* Imagen */
+/* --- ILUSTRACIÓN --- */
 .access-illustration img {
   width: 80%;
   max-width: 260px;
   margin: 2.5rem auto;
   display: block;
+  filter: drop-shadow(0 4px 10px var(--shadow-color));
 }
 
-/* Botones */
+/* --- BOTONES --- */
 .access-buttons {
   display: flex;
   flex-direction: column;
   gap: 1rem;
 }
 
+/* Botón principal */
 .btn-primary {
   background-color: var(--primary);
   color: white;
@@ -50,18 +53,35 @@
   border-radius: 12px;
   font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  background-color: var(--primary-light);
 }
 
+.btn-primary:active {
+  transform: scale(0.97);
+}
+
+/* Botón secundario */
 .btn-secondary {
-  background-color: var(--card-bg);
+  background-color: var(--surface);
   border: 2px solid var(--primary);
   color: var(--primary);
   padding: 1rem;
   font-size: 1.1rem;
   border-radius: 12px;
   font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background-color: var(--hover-color);
+}
+
+.btn-secondary:active {
+  background-color: var(--primary-soft);
+  border-color: var(--primary-light);
 }

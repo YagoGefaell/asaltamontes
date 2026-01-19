@@ -74,7 +74,6 @@ export default function EditProfile() {
 
   return (
     <div className="profile-edit-page">
-      <h1>Editar Perfil</h1>
       <form onSubmit={handleSubmit} className="profile-edit-form">
         <SectionCard>
           <AvatarUploader key={userProfile.profilePictureUrl} value={profilePictureUrl} onChange={setProfilePictureUrl} />

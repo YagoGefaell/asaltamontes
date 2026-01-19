@@ -1,7 +1,7 @@
 /* Página */
 .profile-edit-page {
   max-width: 720px;
-  margin: 30px auto;
+  margin: 0px auto;
   font-family: 'Inter', sans-serif;
   color: var(--text-color);
   padding: 0 15px;
@@ -92,7 +92,6 @@
 .section-card {
   background-color: var(--card-bg);
   border-radius: 15px;
-  padding: 20px;
   box-shadow: 0 3px 10px rgba(0,0,0,0.08);
   display: flex;
   flex-direction: column;

@@ -1,0 +1,57 @@
+.settings-menu {
+  background: var(--background);
+  color: var(--text-color);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Sección */
+.settings-section {
+  margin-bottom: 2rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.8; /* más suave, estilo Duolingo */
+}
+
+/* Lista */
+.section-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Item */
+.settings-item {
+  background: var(--card-bg);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.6rem;
+  border-radius: 14px;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  font-weight: 500;
+  cursor: pointer;
+
+  transition: background 0.2s ease, color 0.2s ease;
+  border: 1px solid var(--border-soft, rgba(0,0,0,0.08));
+  box-shadow: 0 2px 4px var(--shadow-color, rgba(0,0,0,0.05));
+}
+
+/* Hover */
+.settings-item:hover {
+  background: var(--pressed-color);
+  color: #fff;
+}
+
+/* Flecha */
+.arrow {
+  font-size: 1.2rem;
+  opacity: 0.6;
+}

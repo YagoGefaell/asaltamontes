@@ -1,0 +1,51 @@
+/* Contenedor principal */
+main {
+  background: var(--background);
+  color: var(--text-color);
+  min-height: calc(100vh - 70px); /* 70px = altura del navbar */
+  padding: 20px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
+/* Navbar fijo abajo */
+.navbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: var(--card-bg);
+  border-top: 1px solid rgba(0,0,0,0.1);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -2px 6px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+
+/* Botones del navbar */
+.navbar button,
+.navbar a {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  font-size: 18px;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s;
+}
+
+.navbar button:active,
+.navbar a:active {
+  color: var(--primary);
+  transform: scale(0.95);
+}
+
+/* Iconos */
+.navbar .icon {
+  font-size: 24px;
+}

@@ -1,61 +1,95 @@
+/* --- CONTENEDOR GENERAL --- */
 .profile-page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 2rem 1rem;
   min-height: 100vh;
+  background: var(--background);
+  color: var(--text-color);
+}
+
+/* --- HEADER SUPERIOR --- */
+.profile-header {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0rem 1rem;
   box-sizing: border-box;
 }
 
-/* Avatar centrado grande */
+.profile-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-color);
+}
+
+/* Icono ajustes */
+.settings-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--text-color);
+}
+
+.settings-icon { 
+  width: 26px; 
+  height: 26px; 
+}
+
+/* --- AVATAR --- */
 .profile-avatar-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .profile-avatar {
-  width: 180px;
-  height: 180px;
+  width: 160px;
+  height: 160px;
   border-radius: 50%;
-  border: 1px solid var(--primary);
+  border: 3px solid var(--primary);
   object-fit: cover;
+  box-shadow: 0 4px 12px var(--shadow-color);
 }
 
-/* Info principal centrada */
+/* --- CONTENIDO PRINCIPAL --- */
 .profile-main {
   width: 100%;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  max-width: 420px;
   text-align: center;
+  padding: 0 1rem;
+  box-sizing: border-box;
 }
 
 .username {
-  font-size: 1.6rem;
-  margin: 0.3rem 0;
+  font-size: 1.7rem;
+  font-weight: 700;
+  margin: 0.4rem 0;
+  color: var(--text-color);
 }
 
 .full-name {
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 600;
-  margin: 0.2rem 0;
+  color: var(--text-muted);
 }
 
 .bio {
   font-style: italic;
-  margin: 0.5rem 0 1.5rem 0;
-  color: #555;
+  margin: 0.6rem 0 1.6rem 0;
+  color: var(--text-soft);
+  line-height: 1.4;
 }
 
-/* Estadísticas estilo botones grandes tipo móvil */
+/* --- ESTADÍSTICAS --- */
 .profile-stats {
   display: flex;
-  justify-content: space-around;
-  width: 100%;
-  margin-bottom: 1.5rem;
-  gap: 2rem;
+  justify-content: center;
+  gap: 3rem;
+  margin-bottom: 1.8rem;
 }
 
 .stat {
@@ -66,60 +100,47 @@
 
 .count {
   font-weight: 700;
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  color: var(--text-color);
 }
 
 .label {
   font-size: 0.85rem;
-  color: var(--text-color);
+  color: var(--text-muted);
 }
 
-/* Botones principales estilo móvil */
-.profile-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.8rem;
-  width: 100%;
-}
-
-.edit-btn, .settings-btn {
-  padding: 0.7rem;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  border: none;
-  width: 100%;
-  transition: background-color 0.2s;
-  font-size: 1rem;
-}
-
+/* --- BOTÓN EDITAR PERFIL --- */
 .edit-btn {
+  padding: 0.8rem;
+  width: 100%;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1rem;
   background-color: var(--primary);
   color: white;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+.edit-btn:hover {
+  background-color: var(--primary-light);
 }
 
 .edit-btn:active {
-  background-color: var(--pressed-color);
+  transform: scale(0.97);
 }
 
-.settings-btn {
-  background-color: var(--card-bg);
-  color: var(--text-color);
-  border: 1px solid #ccc;
-}
-
-.settings-btn:active {
-  background-color: #ddd;
-}
-
-/* Placeholder extra */
+/* --- SECCIÓN EXTRA --- */
 .profile-extra {
   margin-top: 2rem;
+  padding: 0 1rem;
+  color: var(--text-soft);
 }
 
 .placeholder-text {
   font-style: italic;
-  color: #888;
   text-align: center;
-  line-height: 1.4;
+  line-height: 1.5;
+  color: var(--text-soft);
 }

@@ -10,25 +10,57 @@ import Access from "../pages/Access.jsx";
 import Profile from "../pages/Profile.jsx";
 import Search from "../pages/Search.jsx";
 import EditProfile from "../pages/EditProfile.jsx";
-
+import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
+import SettingsPage from "../shared/wrappers/SettingsPage.jsx";
 import LogOut from "../pages/LogOut.jsx";
 
 export function AppRouter() {
   return (
     <Routes>
+      {/* Rutas públicas */}
       <Route path="/access" element={<Access />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      <Route element={<MainLayout />}>
-        <Route path="/" element={<AuthGuard><Home /></AuthGuard>} />
-        <Route path="/home" element={<AuthGuard><Home /></AuthGuard>} />
-        <Route path="/logout" element={<AuthGuard><LogOut /></AuthGuard>} />
-        <Route path="/me" element={<AuthGuard><Profile /></AuthGuard>} />
-        <Route path="/search" element={<AuthGuard><Search /></AuthGuard>} />
-        <Route path="/me/edit" element={<AuthGuard><EditProfile /></AuthGuard>} />
+      {/* Rutas protegidas */}
+      <Route
+        path="/"
+        element={
+          <AuthGuard>
+            <MainLayout />
+          </AuthGuard>
+        }
+      >
+        <Route index element={<Home />} />
+        <Route path="home" element={<Home />} />
+        <Route path="logout" element={<LogOut />} />
+        <Route path="me" element={<Profile />} />
+        <Route path="search" element={<Search />} />
       </Route>
 
+      {/* SETTINGS fuera de MainLayout pero protegido */}
+      <Route
+        path="/settings"
+        element={
+          <AuthGuard>
+            <SettingsPage title="Ajustes" backTo="/me">
+              <SettingsMenu />
+            </SettingsPage>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/settings/profile"
+        element={
+          <AuthGuard>
+            <SettingsPage title="Ajustes" backTo="/me">
+              <EditProfile />
+            </SettingsPage>
+          </AuthGuard>
+        }
+      />
+
+      {/* Catch-all */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

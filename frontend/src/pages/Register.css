@@ -1,11 +1,14 @@
+/* --- CONTENEDOR GENERAL --- */
 .register-container {
   padding: 0.4rem 2rem;
   max-width: 480px;
   margin: 0 auto;
   font-family: 'Inter', sans-serif;
   color: var(--text-color);
+  background: var(--background);
 }
 
+/* --- TÍTULO --- */
 .register-title {
   text-align: center;
   font-size: 1.8rem;
@@ -14,23 +17,28 @@
   margin-top: 2rem;
 }
 
+/* --- SUBTÍTULO --- */
 .register-subtitle {
   text-align: center;
-  color: var(--text-color);
-  opacity: 0.7;
+  color: var(--text-muted);
   margin-bottom: 2rem;
 }
 
+/* --- ENLACE A LOGIN --- */
 .register-login {
   margin-top: 1.6rem;
   text-align: center;
   font-size: 0.95rem;
-  color: var(--text-color);
-  opacity: 0.8;
+  color: var(--text-soft);
 }
 
 .register-login span {
   color: var(--primary);
   font-weight: 600;
   cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.register-login span:hover {
+  color: var(--primary-light);
 }
