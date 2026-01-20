@@ -50,11 +50,6 @@
   background: rgba(0,0,0,0.06);
 }
 
-.back-btn:active {
-  background: var(--pressed-color);
-  color: white;
-}
-
 .back-icon {
   width: 22px;
   height: 22px;

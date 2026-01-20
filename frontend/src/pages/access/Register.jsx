@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import RegisterForm from "../features/auth/components/RegisterForm.jsx";
-import { useAuth } from "../features/auth/hooks/useAuth.js";
+import RegisterForm from "../../features/auth/components/RegisterForm.jsx";
+import { useAuth } from "../../features/auth/hooks/useAuth.js";
 import { useState } from "react";
 import "./Register.css";
 

@@ -1,0 +1,46 @@
+/* Contenedor principal del formulario */
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  max-width: 500px;
+  margin: 0 auto;
+  background: none;
+  padding: 0;
+}
+
+/* Foto de perfil arriba */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.4rem;
+}
+
+.avatar-image {
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border-color);
+}
+
+/* Checkbox */
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+.checkbox-field input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+/* Botón guardar */
+.edit-profile-form button[type="submit"] {
+  margin-top: 0.4rem;
+}

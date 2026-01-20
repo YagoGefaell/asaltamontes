@@ -3,6 +3,13 @@ package io.github.yagogefaell.asaltamontes.user.service;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import io.github.yagogefaell.asaltamontes.exceptions.MultipleFieldConflictException;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccountRepository;
@@ -12,12 +19,6 @@ import io.github.yagogefaell.asaltamontes.user.profiles.UserProfileRepository;
 import io.github.yagogefaell.asaltamontes.user.profiles.dto.ChangeProfileDTO;
 import io.github.yagogefaell.asaltamontes.user.profiles.dto.UserMeDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -64,6 +65,8 @@ public class UserService implements UserDetailsService {
             errors.put("fullName", "Nombre completo requerido");
         } else if (fullName.length() < 3 || fullName.length() > 50) {
             errors.put("fullName", "Debe tener entre 3 y 50 caracteres");
+        } else if (!fullName.matches("^[a-zA-ZÀ-ÿ\\s]+$")) {
+            errors.put("fullName", "No se permiten números ni caracteres especiales");
         }
 
         if (username == null || username.isBlank()) {
@@ -126,10 +129,6 @@ public class UserService implements UserDetailsService {
             profile.setProfilePictureUrl(dto.profilePictureUrl().trim());
         }
 
-        if (dto.runningLevel() != null) {
-            profile.setRunningLevel(dto.runningLevel());
-        }
-
         if (dto.isPublicProfile() != null) {
             profile.setIsPublicProfile(dto.isPublicProfile());
         }
@@ -140,35 +139,75 @@ public class UserService implements UserDetailsService {
     private void validateChangeProfile(ChangeProfileDTO dto) {
         Map<String, String> errors = new HashMap<>();
 
-        if (dto.fullName() != null) {
-            String fullName = dto.fullName().trim();
-            if (fullName.length() < 3 || fullName.length() > 50) {
-                errors.put("fullName", "Debe tener entre 3 y 50 caracteres");
+        // USERNAME
+        if (dto.username() != null) {
+            String username = dto.username().trim();
+
+            if (username == null || username.isBlank()) {
+                errors.put("username", "Username requerido");
+            } else if (username.length() < 3 || username.length() > 50) {
+                errors.put("username", "Debe tener entre 3 y 50 caracteres");
+            } else if (!username.matches("^[a-zA-Z0-9._]+$")) {
+                errors.put("username", "No se permiten espacios ni caracteres especiales");
+            } else if (userAccountRepository.existsByUsername(username)) {
+                errors.put("username", "Username ya registrado");
             }
         }
 
+        // EMAIL
+        if (dto.email() != null) {
+            String email = dto.email().trim();
+
+            if (email == null || email.isBlank()) {
+                errors.put("email", "Email requerido");
+            } else if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
+                errors.put("email", "Formato de email inválido");
+            } else if (userAccountRepository.existsByEmailIgnoreCase(email)) {
+                errors.put("email", "Email ya registrado");
+            }
+        }
+
+        // FULL NAME
+        if (dto.fullName() != null) {
+            String fullName = dto.fullName().trim();
+            if (fullName == null || fullName.isBlank()) {
+                errors.put("fullName", "Nombre completo requerido");
+            } else if (fullName.length() < 3 || fullName.length() > 50) {
+                errors.put("fullName", "Debe tener entre 3 y 50 caracteres");
+            } else if (!fullName.matches("^[a-zA-ZÀ-ÿ\\s]+$")) {
+                errors.put("fullName", "No se permiten números ni caracteres especiales");
+            }
+        }
+
+        // BIO
         if (dto.bio() != null) {
             if (dto.bio().length() > 500) {
                 errors.put("bio", "Máximo 500 caracteres");
             }
         }
 
+        // CITY
         if (dto.city() != null) {
-            if (dto.city().length() < 2 || dto.city().length() > 50) {
+            String city = dto.city().trim();
+            if (city.length() < 2 || city.length() > 50) {
                 errors.put("city", "Debe tener entre 2 y 50 caracteres");
             }
         }
 
+        // PROFILE PICTURE URL
         if (dto.profilePictureUrl() != null) {
-            if (!dto.profilePictureUrl().startsWith("http")) {
-                errors.put("profilePictureUrl", "URL de imagen no válida");
+            String url = dto.profilePictureUrl().trim();
+            if (!url.matches("^(http|https)://.*$")) {
+                errors.put("profilePictureUrl", "Debe ser una URL válida con http o https");
             }
         }
 
+        // THROW IF ERRORS
         if (!errors.isEmpty()) {
             throw new MultipleFieldConflictException(errors);
         }
     }
+
 
     // ------------------ DELETE ------------------
     @Transactional

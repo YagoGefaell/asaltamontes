@@ -3,6 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  width: 100%;
 }
 
 .input-group label {
@@ -12,13 +13,16 @@
   opacity: 0.85;
 }
 
-/* --- WRAPPER DEL INPUT (incluye icono) --- */
+/* --- WRAPPER DEL INPUT (incluye iconos o botones) --- */
 .input-wrapper {
   display: flex;
   align-items: center;
   position: relative;
-  border-radius: 10px;
+
   background: var(--surface);
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -29,10 +33,14 @@
   flex: 1;
   border: none;
   background: transparent;
+
   padding: 0.9rem 1rem;
-  padding-right: 3rem;
+  padding-right: 3rem; /* espacio para iconos */
+
   font-size: 1rem;
   color: var(--text-color);
+
+  resize: none; /* textarea sin resize feo */
 }
 
 .input-wrapper input::placeholder,
@@ -40,16 +48,30 @@
   color: var(--text-soft);
 }
 
-.input-wrapper input:focus,
-.input-wrapper textarea:focus,
-.input-wrapper select:focus {
-  outline: none;
-}
-
-/* --- FOCUS STATE (solo afecta al borde, NO al icono) --- */
+/* --- FOCUS (solo afecta al wrapper) --- */
 .input-wrapper:focus-within {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+/* --- DISABLED --- */
+.input-wrapper input:disabled,
+.input-wrapper textarea:disabled,
+.input-wrapper select:disabled {
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+
+.input-wrapper:has(input:disabled),
+.input-wrapper:has(textarea:disabled),
+.input-wrapper:has(select:disabled) {
+  background: var(--disabled-bg);
+  border-color: var(--border-soft);
+}
+
+/* Eliminar borde feo del textarea */
+.input-wrapper textarea:focus {
+  outline: none;
 }
 
 /* --- BOTÓN DEL OJO (PASSWORD) --- */
@@ -58,14 +80,15 @@
   right: 0.9rem;
   top: 50%;
   transform: translateY(-50%);
+
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
+
   display: flex;
   align-items: center;
 
-  /* Color fijo del icono */
   color: var(--text-muted);
 }
 
@@ -74,7 +97,7 @@
   color: var(--text-muted) !important;
 }
 
-/* Hover opcional (si quieres quitarlo, dímelo) */
+/* Hover del icono */
 .toggle-password-btn:hover {
   color: var(--primary);
 }
@@ -84,4 +107,11 @@
   width: 20px;
   height: 20px;
   pointer-events: none;
+}
+
+/* --- ERROR --- */
+.form-error {
+  color: var(--error);
+  font-size: 0.8rem;
+  margin-top: 0.2rem;
 }

@@ -1,14 +1,14 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../features/auth/hooks/useAuth.js";
 
-function AuthGuard({ children }) {
+function AuthGuard() {
   const { isAuthenticated, checkingAuth } = useAuth();
 
   if (checkingAuth) {
     return null;
   }
 
-  return isAuthenticated ? children : <Navigate to="/access" replace />;
+  return isAuthenticated ? <Outlet /> : <Navigate to="/access" replace />;
 }
 
 export default AuthGuard;

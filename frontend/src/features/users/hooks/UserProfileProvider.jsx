@@ -23,6 +23,7 @@ export function UserProfileProvider({ children }) {
             setUserProfile(data);
           } catch (err) {
             setUserProfile(null);
+            throw err;
           } finally {
             setLoading(false);
           }
@@ -33,15 +34,18 @@ export function UserProfileProvider({ children }) {
 
     const updateUserProfile = async (profileData) => {
       setLoading(true);
+
       try {
         const updatedData = await updateUserProfileRequest(profileData);
         setUserProfile(updatedData);
-      } catch (err) {
-        throw err;
-      } finally {
         setLoading(false);
+        return updatedData;
+      } catch (err) {
+        setLoading(false);
+        throw err;
       }
     };
+
 
   return (
     <UserProfileContext.Provider value={{ userProfile, loading, updateUserProfile }}>
