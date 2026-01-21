@@ -1,7 +1,7 @@
 package io.github.yagogefaell.asaltamontes.user.controllers;
 
-import org.springframework.security.core.Authentication;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,7 +33,7 @@ public class UserController {
             @RequestBody ChangeProfileDTO dto
     ) {
         return ResponseEntity.ok(
-                userService.editProfile(authentication.getName(), dto)
+                userService.editProfile(dto)
         );
     }
 }

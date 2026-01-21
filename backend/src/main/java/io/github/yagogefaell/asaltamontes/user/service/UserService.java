@@ -104,17 +104,21 @@ public class UserService implements UserDetailsService {
 
     // ------------------ EDICIÓN DE PERFIL ------------------
     @Transactional
-    public UserMeDTO editProfile(String username, ChangeProfileDTO dto) {
-        UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
-
+    public UserMeDTO editProfile(ChangeProfileDTO dto) {
         validateChangeProfile(dto);
+
+        UserAccount user = userAccountRepository.findById(dto.id())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         UserProfile profile = userProfileRepository.findById(user.getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         if (dto.fullName() != null) {
             profile.setFullName(dto.fullName().trim());
+        }
+
+        if (dto.username() != null) {
+            user.setUsername(dto.username().trim());
         }
 
         if (dto.bio() != null) {
@@ -241,7 +245,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public UserMeDTO getMe(String username) {
+    public UserMeDTO getMe(String username) {//algo muy importante//
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -258,6 +262,7 @@ public class UserService implements UserDetailsService {
                 });
     }
 
+    @Override
     public UserAccount loadUserByUsername(String username) {
         return userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));

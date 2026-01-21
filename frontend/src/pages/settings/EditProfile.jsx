@@ -1,5 +1,6 @@
 import "./EditProfile.css";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Input from "../../shared/components/Input.jsx";
 import Button from "../../shared/components/Button.jsx";
 import ToggleSwitch from "../../shared/components/ToggleSwitch.jsx";
@@ -7,6 +8,7 @@ import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 
 export default function EditProfile() {
   const { userProfile, loading, updateUserProfile } = useUserProfile();
+  const navigate = useNavigate();
 
   const [form, setForm] = useState({
     fullName: "",
@@ -60,10 +62,15 @@ export default function EditProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {};
+    const payload = {
+      id: userProfile.userId
+    };
 
     if (form.fullName !== userProfile.fullName)
       payload.fullName = capitalizeWords(form.fullName);
+
+    if (form.username !== userProfile.username)
+      payload.username = form.username.trim();
 
     if (form.bio !== userProfile.bio) payload.bio = form.bio.trim();
 
@@ -77,15 +84,23 @@ export default function EditProfile() {
 
     try {
       await updateUserProfile(payload);
+      navigate("/me");
     } catch (err) {
-      let parsed;
-      parsed = JSON.parse(err.message);
+      let parsed = {};
+
+      try {
+        parsed = JSON.parse(err.message);
+      } catch (e) {
+        console.error("Respuesta no JSON:", err.message);
+      }
+
       setFullNameError(parsed.fullName || "");
       setUsernameError(parsed.username || "");
       setBioError(parsed.bio || "");
       setCityError(parsed.city || "");
       setProfilePictureError(parsed.profilePictureUrl || "");
     }
+
   };
 
   return (

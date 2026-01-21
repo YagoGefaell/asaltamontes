@@ -11,7 +11,7 @@ main {
 /* Navbar fijo abajo */
 .navbar {
   position: fixed;
-  bottom: 0;
+  bottom: 0px;
   left: 0;
   width: 100%;
   height: 70px;
