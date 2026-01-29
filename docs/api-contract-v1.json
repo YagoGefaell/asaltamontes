@@ -1,0 +1,95 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "API Asaltamontes",
+        "version": "1.0.0",
+        "description": "Contrato entre frontend y backend para la aplicación el traspaso de datos"
+    },
+    "servers": [
+        {
+        "url": "http://localhost:8080",
+        "description": "Servidor de desarrollo local"
+        }
+    ],
+    "paths": {
+    "/auth/register": {
+        "post": {
+            "summary": "Registrar nueva corredora",
+            "requestBody": {
+            "required": true,
+            "content": {
+                "application/json": {
+                "schema": {
+                    "type": "object",
+                    "required": ["fullName", "username", "email", "password"],
+                    "properties": {
+                    "fullName": { "type": "string", "example": "María Runner" },
+                    "username": { "type": "string", "example": "runner123" },
+                    "email": { "type": "string", "format": "email", "example": "runner@example.com" },
+                    "password": { "type": "string", "example": "SuperSecret123" }
+                    }
+                }
+                }
+            }
+            },
+            "responses": {
+            "201": {
+                "description": "Usuario registrado correctamente",
+                "content": {
+                "application/json": {
+                    "schema": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "integer", "example": 1 },
+                        "username": { "type": "string", "example": "runner123" },
+                        "email": { "type": "string", "format": "email", "example": "runner@example.com" },
+                        "fullName": { "type": "string", "example": "María Runner" },
+                        "createdAt": { "type": "string", "format": "date-time", "example": "2026-01-29T12:00:00Z" }
+                    }
+                    }
+                }
+                }
+            },
+            "400": {
+                "description": "Errores de validación múltiples",
+                "content": {
+                "application/json": {
+                    "schema": {
+                    "type": "object",
+                    "properties": {
+                        "status": { "type": "integer", "example": 400 },
+                        "error": { "type": "string", "example": "Bad Request" },
+                        "errors": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                            "field": { "type": "string", "example": "email" },
+                            "message": { "type": "string", "example": "Email already in use" }
+                            }
+                        }
+                        }
+                    }
+                    },
+                    "examples": {
+                    "multipleErrors": {
+                        "value": {
+                        "status": 400,
+                        "error": "Bad Request",
+                        "errors": [
+                            { "field": "username", "message": "Username already in use" },
+                            { "field": "email", "message": "Email already in use" },
+                            { "field": "password", "message": "Contraseña demasiado corta" },
+                            { "field": "fullName", "message": "Debe tener entre 3 y 50 caracteres" }
+                        ]
+                        }
+                    }
+                    }
+                }
+                }
+            }
+            }
+        }
+    }
+    }
+}

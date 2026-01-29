@@ -8,6 +8,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
@@ -26,7 +27,8 @@ import lombok.NoArgsConstructor;
 public class UserProfile {
 
     @Id
-    private Long userId;
+    @GeneratedValue
+    private long userId;
 
     @OneToOne
     @MapsId

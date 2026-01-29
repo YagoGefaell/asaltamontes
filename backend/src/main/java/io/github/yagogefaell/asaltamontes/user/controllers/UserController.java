@@ -32,7 +32,7 @@ public class UserController {
             Authentication authentication,
             @RequestBody ChangeProfileDTO dto
     ) {
-        return ResponseEntity.ok(
+        return ResponseEntity.ok( 
                 userService.editProfile(dto)
         );
     }

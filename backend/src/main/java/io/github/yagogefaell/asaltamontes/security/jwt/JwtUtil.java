@@ -1,12 +1,5 @@
 package io.github.yagogefaell.asaltamontes.security.jwt;
 
-import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-
-import org.springframework.stereotype.Component;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
@@ -14,6 +7,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 import javax.crypto.SecretKey;
+
+import org.springframework.stereotype.Component;
+
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtil {
@@ -26,14 +26,14 @@ public class JwtUtil {
         this.signingKey = Keys.hmacShaKeyFor(jwtProperties.getSecretKey().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateAccessToken(String idString) {
+    public String generateAccessToken(Long id) {
 
         Map<String, Object> claims = new HashMap<>();
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(idString)
+                .subject(id.toString())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getExpiration()))
                 .and()
@@ -42,10 +42,10 @@ public class JwtUtil {
                 
     }
 
-    public String generateRefreshToken(String idString) {
+    public String generateRefreshToken(Long id) {
         return Jwts.builder()
                 .claims()
-                .subject(idString)
+                .subject(id.toString())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getRefreshExpiration()))
                 .and()
@@ -54,8 +54,8 @@ public class JwtUtil {
                 
     }
 
-    public String extractId(String token) {
-        return extractClaim(token, Claims::getSubject);
+    public Long extractId(String token) {
+        return Long.valueOf(extractClaim(token, Claims::getSubject));
     }
 
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -80,8 +80,7 @@ public class JwtUtil {
     }
 
     public boolean isTokenValid(String token, UserAccount userDetails) { 
-        final String idString = extractId(token); 
-        System.out.println("Validando token para idString: " + idString + " y usuario: " + userDetails.getId());
-        return idString.equals(userDetails.getId().toString()) && !isTokenExpired(token); 
+        final Long id = extractId(token); 
+        return id.equals(userDetails.getId()) && !isTokenExpired(token); 
     }
 }

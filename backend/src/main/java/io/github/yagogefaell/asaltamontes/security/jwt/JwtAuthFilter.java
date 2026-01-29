@@ -2,6 +2,7 @@ package io.github.yagogefaell.asaltamontes.security.jwt;
 
 import java.io.IOException;
 
+import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -30,8 +31,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getServletPath();
 
@@ -42,19 +43,19 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         Cookie cookie = WebUtils.getCookie(request, "accessToken");
         String jwt = (cookie != null) ? cookie.getValue() : null;
-        String idString = null;
+        Long id = null;
 
         if (jwt != null) {
             try {
-                idString = jwtUtil.extractId(jwt);
+                id = jwtUtil.extractId(jwt);
             } catch (Exception e) {
                 logger.warn("Token JWT inválido: " + e.getMessage());
             }
         }
 
-        if (idString != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (id != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                UserAccount userDetails = userService.loadUserById(idString);
+                UserAccount userDetails = userService.loadUserById(id);
 
                 if (jwtUtil.isTokenValid(jwt, userDetails)) {
                     var authToken = new UsernamePasswordAuthenticationToken(
@@ -67,7 +68,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
             } catch (UsernameNotFoundException e) {
-                logger.warn("Usuario no encontrado para JWT: " + idString);
+                logger.warn("Usuario no encontrado para JWT: " + id);
             }
         }
 

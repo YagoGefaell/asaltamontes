@@ -110,7 +110,7 @@ public class UserService implements UserDetailsService {
         UserAccount user = userAccountRepository.findById(dto.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        UserProfile profile = userProfileRepository.findById(user.getId())
+        UserProfile profile = userProfileRepository.findById(dto.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         if (dto.fullName() != null) {
@@ -153,7 +153,7 @@ public class UserService implements UserDetailsService {
                 errors.put("username", "Debe tener entre 3 y 50 caracteres");
             } else if (!username.matches("^[a-zA-Z0-9._]+$")) {
                 errors.put("username", "No se permiten espacios ni caracteres especiales");
-            } else if (userAccountRepository.existsByUsername(username)) {
+            } else if (userAccountRepository.existsByUsernameExceptId(username, dto.id())) {
                 errors.put("username", "Username ya registrado");
             }
         }
@@ -245,7 +245,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public UserMeDTO getMe(String username) {//algo muy importante//
+    public UserMeDTO getMe(String username) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
@@ -255,8 +255,11 @@ public class UserService implements UserDetailsService {
         return assembleUserMeDTO(user, profile);
     }
 
-    public UserAccount loadUserById(String idString) {
-        return userAccountRepository.findById(Long.parseLong(idString))
+    public UserAccount loadUserById(Long id) {
+        if (id == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de usuario requerido");
+        }
+        return userAccountRepository.findById(id)
                 .orElseThrow(() -> {
                     throw new ResponseStatusException(HttpStatus.NOT_FOUND);
                 });

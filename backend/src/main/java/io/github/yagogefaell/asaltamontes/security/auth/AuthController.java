@@ -26,7 +26,6 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final AuthService authService;
     private final AuthenticationManager authenticationManager;
-    
 
     public AuthController(JwtUtil jwtUtil, AuthService authService, AuthenticationManager authenticationManager) {
         this.jwtUtil = jwtUtil;
@@ -41,10 +40,10 @@ public class AuthController {
             new UsernamePasswordAuthenticationToken(request.username(), request.password())
         );
 
-        UserAccount userDetails = (UserAccount) authentication.getPrincipal();
+        UserAccount user = (UserAccount) authentication.getPrincipal();
 
-        String accessToken = jwtUtil.generateAccessToken(userDetails.getId().toString());
-        String refreshToken = jwtUtil.generateRefreshToken(userDetails.getId().toString());
+        String accessToken = jwtUtil.generateAccessToken(user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(accessToken).toString());
@@ -67,15 +66,15 @@ public class AuthController {
     // ---------------- REFRESH TOKEN ----------------
     @PostMapping("/refresh")
     public ResponseEntity<Void> refresh(@CookieValue("refreshToken") String refreshToken) {
-        String idString = jwtUtil.extractId(refreshToken);
+        Long id = jwtUtil.extractId(refreshToken);
 
-        UserAccount userDetails = authService.loadUserById(idString);
+        UserAccount user = authService.loadUserById(id);
 
-        if (!jwtUtil.isTokenValid(refreshToken, userDetails)) {
+        if (!jwtUtil.isTokenValid(refreshToken, user)) {
             return ResponseEntity.status(401).build();
         }
 
-        String newAccessToken = jwtUtil.generateAccessToken(userDetails.getId().toString());
+        String newAccessToken = jwtUtil.generateAccessToken(user.getId());
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(newAccessToken).toString())
             .build();
@@ -87,8 +86,8 @@ public class AuthController {
 
         UserAccount user = authService.register(request);
 
-        String accessToken = jwtUtil.generateAccessToken(user.getId().toString());
-        String refreshToken = jwtUtil.generateRefreshToken(user.getId().toString());
+        String accessToken = jwtUtil.generateAccessToken(user.getId());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getId());
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(accessToken).toString())
@@ -110,13 +109,13 @@ public class AuthController {
             }
 
             // Extraer id del token
-            String idString = jwtUtil.extractId(accessToken);
+            Long id = jwtUtil.extractId(accessToken);
 
             // Cargar usuario (Spring Security estándar)
-            UserAccount userDetails = authService.loadUserById(idString);
+            UserAccount user = authService.loadUserById(id);
 
             // Validar token
-            if (!jwtUtil.isTokenValid(accessToken, userDetails)) {
+            if (!jwtUtil.isTokenValid(accessToken, user)) {
                 return ResponseEntity.status(401)
                     .header(HttpHeaders.SET_COOKIE, CookieUtil.clear("accessToken", "/").toString())
                     .build();

@@ -1,7 +1,7 @@
 package io.github.yagogefaell.asaltamontes.user.profiles.dto;
 
 public record ChangeProfileDTO(
-    Long id,
+    long id,
     String username,
     String email,
     String fullName,

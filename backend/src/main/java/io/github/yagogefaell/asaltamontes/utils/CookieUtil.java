@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.utils;
 
 import org.springframework.http.ResponseCookie;
+import org.springframework.lang.NonNull;
 
 public final class CookieUtil {
 
@@ -26,7 +27,7 @@ public final class CookieUtil {
             .build();
     }
 
-    public static ResponseCookie clear(String name, String path) {
+    public static ResponseCookie clear(@NonNull String name, @NonNull String path) {
         return ResponseCookie.from(name, "")
             .httpOnly(true)
             .secure(true)

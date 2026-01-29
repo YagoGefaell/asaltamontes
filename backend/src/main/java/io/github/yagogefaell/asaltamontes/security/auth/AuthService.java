@@ -25,8 +25,8 @@ public class AuthService {
         );
     }
 
-    public UserAccount loadUserById(String idString) {
-        return userService.loadUserById(idString);
+    public UserAccount loadUserById(Long id) {
+        return userService.loadUserById(id);
     }
 
     public UserAccount loadUserByUsername(String username) {
