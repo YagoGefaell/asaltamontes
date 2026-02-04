@@ -1,34 +1,80 @@
 package io.github.yagogefaell.asaltamontes.exceptions;
 
-import java.util.HashMap;
+import java.time.Instant;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Manejo de errores de validación (@Valid)
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Map<String, String> handleValidationErrors(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
+    public ProblemDetail handleValidation(MethodArgumentNotValidException ex,
+                                        HttpServletRequest request) {
 
-        ex.getBindingResult()
-          .getFieldErrors()
-          .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
+        Map<String, String> fields = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .collect(Collectors.toMap(
+                        FieldError::getField,
+                        FieldError::getDefaultMessage,
+                        (a, b) -> a // en caso de conflicto, se queda con el primero
+                ));
 
-        return errors;
+        return buildProblem(
+                HttpStatus.BAD_REQUEST,
+                "Validation error",
+                "One or more fields are invalid",
+                request,
+                fields
+        );
     }
 
-    // Manejo de conflictos de registro (usuarios duplicados)
     @ExceptionHandler(MultipleFieldConflictException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public Map<String, String> handleMultipleFieldConflict(MultipleFieldConflictException ex) {
-        return ex.getErrors();
+    public ProblemDetail handleConflict(MultipleFieldConflictException ex,
+                                        HttpServletRequest request) {
+
+        return buildProblem(
+                HttpStatus.CONFLICT,
+                "Conflict",
+                "Duplicate values detected",
+                request,
+                ex.getErrors()
+        );
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ProblemDetail handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
+        return buildProblem(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage(), request, null);
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ProblemDetail handleUserNotFound(UserNotFoundException ex, HttpServletRequest req) {
+        return buildProblem(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), req, null);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleGeneric(Exception ex, HttpServletRequest req) {
+        return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred", req, null);
+    }
+
+    private ProblemDetail buildProblem(HttpStatus status, String title, String detail, HttpServletRequest req, Map<String, ?> errors) {
+        ProblemDetail problem = ProblemDetail.forStatus(status);
+        problem.setTitle(title);
+        problem.setDetail(detail);
+        problem.setProperty("path", req.getRequestURI());
+        problem.setProperty("timestamp", Instant.now());
+        if (errors != null) {
+            problem.setProperty("errors", errors);
+        }
+        return problem;
     }
 }

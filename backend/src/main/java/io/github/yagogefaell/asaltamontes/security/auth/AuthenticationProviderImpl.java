@@ -14,28 +14,24 @@ import io.github.yagogefaell.asaltamontes.user.service.UserService;
 @Component
 public class AuthenticationProviderImpl implements AuthenticationProvider {
 
-    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
-    private final AuthService authService;
+    private final UserService userService;
 
-    public AuthenticationProviderImpl(UserService userService, PasswordEncoder passwordEncoder, AuthService authService) {
-        this.userService = userService;
+    public AuthenticationProviderImpl(PasswordEncoder passwordEncoder, UserService userService) {
         this.passwordEncoder = passwordEncoder;
-        this.authService = authService;
+        this.userService = userService;
     }
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        String username = authentication.getName();
+        Long id = ((UserAccount) authentication.getPrincipal()).getId();
         String password = authentication.getCredentials().toString();
 
-        String idString = authService.loadUserByUsername(username).getUsername();
+        UserAccount user = userService.loadUserById(id);
 
-        UserAccount userDetails = userService.loadUserByUsername(idString);
-
-        if (passwordEncoder.matches(password, userDetails.getPassword())) {
+        if (passwordEncoder.matches(password, user.getPassword())) {
             return new UsernamePasswordAuthenticationToken(
-                    userDetails, password, userDetails.getAuthorities());
+                    user, password, user.getAuthorities());
         } else {
             throw new BadCredentialsException("Invalid username or password");
         }

@@ -4,13 +4,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import io.github.yagogefaell.asaltamontes.exceptions.MultipleFieldConflictException;
+import io.github.yagogefaell.asaltamontes.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.account.UserAccountRole;
@@ -216,8 +219,9 @@ public class UserService implements UserDetailsService {
     // ------------------ DELETE ------------------
     @Transactional
     public void deleteUser(long id) {
+
         if (!userAccountRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new UserNotFoundException(id);
         }
 
         userProfileRepository.deleteById(id);
@@ -245,29 +249,25 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public UserMeDTO getMe(String username) {
-        UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    public UserMeDTO getMe(Long userId) {
+        UserAccount user = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-        UserProfile profile = userProfileRepository.findById(user.getId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        UserProfile profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         return assembleUserMeDTO(user, profile);
     }
 
     public UserAccount loadUserById(Long id) {
-        if (id == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ID de usuario requerido");
-        }
         return userAccountRepository.findById(id)
-                .orElseThrow(() -> {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-                });
+                .orElseThrow(() -> new UserNotFoundException(id));
     }
 
     @Override
-    public UserAccount loadUserByUsername(String username) {
+    public UserDetails loadUserByUsername(String username) {
         return userAccountRepository.findByUsernameIgnoreCase(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() ->
+                        new UsernameNotFoundException("User not found: " + username));
     }
 }

@@ -1,6 +1,5 @@
 package io.github.yagogefaell.asaltamontes.user.controllers;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -8,10 +7,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.profiles.dto.ChangeProfileDTO;
 import io.github.yagogefaell.asaltamontes.user.profiles.dto.UserMeDTO;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,20 +24,21 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public ResponseEntity<UserMeDTO> getMe(Authentication authentication) {
-        return ResponseEntity.ok(
-                userService.getMe(authentication.getName())
-        );
+    public UserMeDTO getMe(Authentication authentication) {
+        return userService.getMe(((UserAccount) authentication.getPrincipal()).getId());
     }
 
     @PatchMapping("/me")
-    public ResponseEntity<UserMeDTO> editMe(
+    public UserMeDTO editMe(
             Authentication authentication,
-            @RequestBody ChangeProfileDTO dto
+            @Valid @RequestBody ChangeProfileDTO dto
     ) {
-        return ResponseEntity.ok( 
-                userService.editProfile(dto)
-        );
+        return userService.editProfile(dto);
+    }
+
+    @GetMapping("/")
+    public String getUsers(@RequestParam String param) {
+        return new String();
     }
 }
 
