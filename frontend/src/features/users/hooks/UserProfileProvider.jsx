@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../auth/hooks/useAuth.js";
-import { getMeRequest } from "../services/users.service.js";
+import { getMeRequest, updateUserProfileRequest, getUsersByUsername } from "../services/users.service.js";
 import { UserProfileContext } from "./user.context";
-import { updateUserProfileRequest } from "../services/users.service.js";
 
 export function UserProfileProvider({ children }) {
     const { isAuthenticated } = useAuth();
@@ -46,9 +45,22 @@ export function UserProfileProvider({ children }) {
       }
     };
 
+    const searchUsersByUsername = async (query) => {
+      setLoading(true);
+
+      try {
+        const users = await getUsersByUsername(query);
+        setLoading(false);
+        return users;
+      } catch (err) {
+        setLoading(false);
+        throw err;
+      }
+    };
+
 
   return (
-    <UserProfileContext.Provider value={{ userProfile, loading, updateUserProfile }}>
+    <UserProfileContext.Provider value={{ userProfile, loading, updateUserProfile, searchUsersByUsername }}>
       {children}
     </UserProfileContext.Provider>
   );

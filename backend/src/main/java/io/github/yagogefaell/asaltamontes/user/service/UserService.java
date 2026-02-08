@@ -1,26 +1,26 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
-import io.github.yagogefaell.asaltamontes.exceptions.MultipleFieldConflictException;
-import io.github.yagogefaell.asaltamontes.exceptions.UserNotFoundException;
-import io.github.yagogefaell.asaltamontes.user.account.UserAccount;
-import io.github.yagogefaell.asaltamontes.user.account.UserAccountRepository;
-import io.github.yagogefaell.asaltamontes.user.account.UserAccountRole;
-import io.github.yagogefaell.asaltamontes.user.profiles.UserProfile;
-import io.github.yagogefaell.asaltamontes.user.profiles.UserProfileRepository;
-import io.github.yagogefaell.asaltamontes.user.profiles.dto.ChangeProfileDTO;
-import io.github.yagogefaell.asaltamontes.user.profiles.dto.UserMeDTO;
+import io.github.yagogefaell.asaltamontes.common.exceptions.MultipleFieldConflictException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
+import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.domain.UserAccountRole;
+import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
+import io.github.yagogefaell.asaltamontes.user.dto.ChangeProfile;
+import io.github.yagogefaell.asaltamontes.user.dto.UserMe;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearch;
+import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -107,14 +107,14 @@ public class UserService implements UserDetailsService {
 
     // ------------------ EDICIÓN DE PERFIL ------------------
     @Transactional
-    public UserMeDTO editProfile(ChangeProfileDTO dto) {
-        validateChangeProfile(dto);
+    public UserMe editProfile(Long userId, ChangeProfile dto) {
+        validateChangeProfile(userId, dto);
 
-        UserAccount user = userAccountRepository.findById(dto.id())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        UserAccount user = userAccountRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
-        UserProfile profile = userProfileRepository.findById(dto.id())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        UserProfile profile = userProfileRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
 
         if (dto.fullName() != null) {
             profile.setFullName(dto.fullName().trim());
@@ -143,7 +143,7 @@ public class UserService implements UserDetailsService {
         return assembleUserMeDTO(user, profile);
     }
 
-    private void validateChangeProfile(ChangeProfileDTO dto) {
+    private void validateChangeProfile(Long userId, ChangeProfile dto) {
         Map<String, String> errors = new HashMap<>();
 
         // USERNAME
@@ -156,7 +156,7 @@ public class UserService implements UserDetailsService {
                 errors.put("username", "Debe tener entre 3 y 50 caracteres");
             } else if (!username.matches("^[a-zA-Z0-9._]+$")) {
                 errors.put("username", "No se permiten espacios ni caracteres especiales");
-            } else if (userAccountRepository.existsByUsernameExceptId(username, dto.id())) {
+            } else if (userAccountRepository.existsByUsernameExceptId(username, userId)) {
                 errors.put("username", "Username ya registrado");
             }
         }
@@ -229,8 +229,8 @@ public class UserService implements UserDetailsService {
     }
 
     // ------------------ DTO ------------------
-    private UserMeDTO assembleUserMeDTO(UserAccount user, UserProfile profile) {
-        return new UserMeDTO(
+    private UserMe assembleUserMeDTO(UserAccount user, UserProfile profile) {
+        return new UserMe(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
@@ -249,7 +249,7 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional(readOnly = true)
-    public UserMeDTO getMe(Long userId) {
+    public UserMe getMe(Long userId) {
         UserAccount user = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
@@ -257,6 +257,19 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
         return assembleUserMeDTO(user, profile);
+    }
+    
+    public List<UserSearch> searchUsersByUsername(String query, Long excludeId) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+
+        return userAccountRepository.searchUsersByUsername(query, excludeId)
+            .stream()
+            .map(u -> new UserSearch(
+                u.getUsername()
+            ))
+            .toList();
     }
 
     public UserAccount loadUserById(Long id) {

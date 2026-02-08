@@ -1,9 +1,9 @@
 import "./EditProfile.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Input from "../../shared/components/Input.jsx";
-import Button from "../../shared/components/Button.jsx";
-import ToggleSwitch from "../../shared/components/ToggleSwitch.jsx";
+import Input from "../../shared/forms/Input.jsx";
+import Button from "../../shared/forms/Button.jsx";
+import ToggleSwitch from "../../shared/ui/ToggleSwitch.jsx";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 
 export default function EditProfile() {
@@ -25,7 +25,6 @@ export default function EditProfile() {
   const [cityError, setCityError] = useState("");
   const [profilePictureError, setProfilePictureError] = useState("");
 
-  // ⭐ INICIALIZAR FORMULARIO CORRECTAMENTE
   useEffect(() => {
     if (!loading && userProfile) {
       setForm({

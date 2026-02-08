@@ -28,3 +28,18 @@ export async function updateUserProfileRequest(profileData) {
   const text = await response.text();
   return text ? JSON.parse(text) : null;
 }
+
+export async function getUsersByUsername(query) {
+  const response = await fetch(`${API_URL}/search?query=${query}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Error buscando usuarios");
+  }
+
+  const users = await response.json();
+  return users;
+}

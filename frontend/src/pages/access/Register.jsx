@@ -19,11 +19,11 @@ const Register = () => {
       await register(fullName, username, email, password, confirmPassword);
       navigate("/home");
     } catch (err) {
-      setFullNameErrorMessage(err.fullName || "");
-      setUsernameErrorMessage(err.username || "");
-      setEmailErrorMessage(err.email || "");
-      setPasswordErrorMessage(err.password || "");
-      setConfirmPasswordErrorMessage(err.confirmPassword || "");
+      setFullNameErrorMessage(err.errors.fullName || "");
+      setUsernameErrorMessage(err.errors.username || "");
+      setEmailErrorMessage(err.errors.email || "");
+      setPasswordErrorMessage(err.errors.password || "");
+      setConfirmPasswordErrorMessage(err.errors.confirmPassword || "");
     }
   };
 

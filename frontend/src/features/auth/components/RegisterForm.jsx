@@ -1,7 +1,7 @@
 // src/features/auth/components/RegisterForm.jsx
 import { useState } from "react";
-import Button from "../../../shared/components/Button";
-import Input from "../../../shared/components/Input.jsx";
+import Button from "../../../shared/forms/Button.jsx";
+import Input from "../../../shared/forms/Input.jsx";
 import "./RegisterForm.css";
 
 export default function RegisterForm({

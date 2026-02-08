@@ -1,18 +1,18 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import AuthGuard from "./AuthGuard.jsx";
+import AuthGuard from "./guards/AuthGuard.jsx";
 
 import MainLayout from "../shared/layouts/MainLayout.jsx";
 
-import Home from "../pages/Home.jsx";
+import Home from "../pages/home/Home.jsx";
 import Login from "../pages/access/Login.jsx";
 import Register from "../pages/access/Register.jsx";
 import Access from "../pages/access/Access.jsx";
-import Profile from "../pages/Profile.jsx";
-import Search from "../pages/Search.jsx";
+import Profile from "../pages/profile/Profile.jsx";
+import Search from "../pages/search/Search.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
-import SettingsPage from "../shared/wrappers/SettingsPage.jsx";
-import LogOut from "../pages/LogOut.jsx";
+import SettingsPage from "../shared/layouts/SettingsPage.jsx";
+import LogOut from "../pages/access/LogOut.jsx";
 
 export function AppRouter() {
   return (
