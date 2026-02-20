@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.lang.NonNull;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -66,7 +67,7 @@ public class GlobalExceptionHandler {
         return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred", req, null);
     }
 
-    private ProblemDetail buildProblem(HttpStatus status, String title, String detail, HttpServletRequest req, Map<String, ?> errors) {
+    private ProblemDetail buildProblem(@NonNull HttpStatus status, String title, String detail, HttpServletRequest req, Map<String, ?> errors) {
         ProblemDetail problem = ProblemDetail.forStatus(status);
         problem.setTitle(title);
         problem.setDetail(detail);
