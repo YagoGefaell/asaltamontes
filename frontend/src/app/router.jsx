@@ -9,6 +9,9 @@ import Register from "../pages/access/Register.jsx";
 import Access from "../pages/access/Access.jsx";
 import Profile from "../pages/profile/Profile.jsx";
 import Search from "../pages/search/Search.jsx";
+import Messages from "../pages/messages/Messages.jsx";
+import Notifications from "../pages/notifications/Notifications.jsx";
+import Communities from "../pages/communities/Communities.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
@@ -37,6 +40,9 @@ export function AppRouter() {
           <Route path="logout" element={<LogOut />} />
           <Route path="me" element={<Profile />} />
           <Route path="search" element={<Search />} />
+          <Route path="messages" element={<Messages />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="communities" element={<Communities />} />
         </Route>
 
         {/* ---- Rutas de Settings ---- */}

@@ -1,34 +1,63 @@
+/* MOBILE-FIRST DESIGN */
+
 .home-container {
-  max-width: 480px;
-  margin: 0 auto;
-  padding-bottom: 5rem; /* espacio para navbar inferior */
+  width: 100%;
+  padding-bottom: 5rem;
   background-color: var(--background);
   color: var(--text-color);
   font-family: 'Inter', sans-serif;
 }
 
-/* STORIES */
+/* ===== STORIES ===== */
 .stories {
   display: flex;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 0.75rem;
+  padding: 0.75rem 0.5rem;
   overflow-x: auto;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
+  overflow-y: hidden;
+  border-bottom: 1px solid var(--border-soft);
+  background-color: var(--surface);
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.stories::-webkit-scrollbar {
+  display: none;
 }
 
 .story {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 70px;
+  min-width: 60px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.2s ease;
+  gap: 0.4rem;
+}
+
+.story:active {
+  transform: scale(0.95);
+}
+
+@media (min-width: 600px) {
+  .story:hover {
+    transform: scale(1.05);
+  }
+
+  .story:active {
+    transform: scale(1);
+  }
 }
 
 .story-avatar {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #ff9acb);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   padding: 3px;
+  flex-shrink: 0;
 }
 
 .story-avatar::after {
@@ -37,84 +66,257 @@
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background-color: var(--card-bg);
+  background-color: var(--surface);
 }
 
 .story-name {
-  font-size: 0.75rem;
-  margin-top: 0.4rem;
-  opacity: 0.8;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  width: 60px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* FEED */
+@media (min-width: 600px) {
+  .stories {
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .story {
+    min-width: 70px;
+    gap: 0.6rem;
+  }
+
+  .story-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .story-name {
+    font-size: 0.75rem;
+    width: 70px;
+  }
+}
+
+/* ===== FEED ===== */
 .feed {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  max-width: 100%;
 }
 
-/* POST CARD */
+@media (min-width: 600px) {
+  .feed {
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 580px;
+    margin: 0 auto;
+  }
+}
+
+/* ===== POST CARD ===== */
 .post-card {
-  background-color: var(--card-bg);
-  border-radius: 16px;
+  background-color: var(--surface);
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px var(--shadow-color);
+  border: 1px solid var(--border-soft);
 }
 
-/* HEADER */
+@media (min-width: 600px) {
+  .post-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    border: none;
+  }
+}
+
+/* ===== POST HEADER ===== */
 .post-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.75rem 1rem;
+  padding: 0.6rem 0.75rem;
+  gap: 0.5rem;
+}
+
+@media (min-width: 600px) {
+  .post-header {
+    padding: 0.75rem 1rem;
+  }
 }
 
 .post-user {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .post-avatar {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background-color: var(--primary);
+  flex-shrink: 0;
 }
 
 .post-username {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  color: var(--text-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (min-width: 600px) {
+  .post-username {
+    font-size: 0.9rem;
+  }
 }
 
 .post-menu {
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
+  color: var(--text-soft);
+  transition: color 0.2s ease;
+  padding: 0.2rem 0.4rem;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
 
-/* IMAGE */
+.post-menu:active {
+  color: var(--text-color);
+}
+
+@media (min-width: 600px) {
+  .post-menu {
+    font-size: 1.2rem;
+  }
+
+  .post-menu:hover {
+    color: var(--text-color);
+  }
+
+  .post-menu:active {
+    color: var(--text-soft);
+  }
+}
+
+/* ===== POST IMAGE ===== */
 .post-image {
   width: 100%;
-  height: 320px;
-  background: linear-gradient(135deg, #ddd, #f3f3f3);
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, var(--border-color), var(--background-alt));
 }
 
-/* ACTIONS */
+@media (min-width: 600px) {
+  .post-image {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+/* ===== POST ACTIONS ===== */
 .post-actions {
-  padding: 0.6rem 1rem;
-  font-size: 1.4rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 1.2rem;
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-soft);
 }
 
-/* CONTENT */
+@media (min-width: 600px) {
+  .post-actions {
+    padding: 0.6rem 1rem;
+    font-size: 1.4rem;
+    gap: 1rem;
+  }
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.3rem;
+  transition: all 0.2s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.action-btn:active {
+  transform: scale(0.9);
+}
+
+@media (min-width: 600px) {
+  .action-btn {
+    font-size: 1.4rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  .action-btn:hover {
+    background: var(--hover-color);
+    transform: scale(1.1);
+  }
+
+  .action-btn:active {
+    transform: scale(0.95);
+  }
+}
+
+.action-btn.liked {
+  color: var(--error);
+}
+
+/* ===== POST CONTENT ===== */
 .post-content {
-  padding: 0 1rem 1rem;
-  font-size: 0.9rem;
+  padding: 0.75rem;
+  font-size: 0.85rem;
+}
+
+@media (min-width: 600px) {
+  .post-content {
+    padding: 0.75rem 1rem 1rem;
+    font-size: 0.9rem;
+  }
 }
 
 .post-likes {
   font-weight: 600;
   display: block;
   margin-bottom: 0.3rem;
+  color: var(--text-color);
+  font-size: 0.8rem;
+}
+
+@media (min-width: 600px) {
+  .post-likes {
+    font-size: 0.85rem;
+  }
+}
+
+.post-content p {
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* ===== LARGER SCREENS ===== */
+@media (min-width: 1024px) {
+  .feed {
+    max-width: 600px;
+  }
+
+  .post-card {
+    border-radius: 16px;
+  }
 }
