@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.auth.controller;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,7 +14,7 @@ import io.github.yagogefaell.asaltamontes.auth.dto.LoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
 import io.github.yagogefaell.asaltamontes.auth.service.AuthService;
-import io.github.yagogefaell.asaltamontes.common.coockies.CookieUtil;
+import io.github.yagogefaell.asaltamontes.common.cookies.CookieUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import lombok.RequiredArgsConstructor;
 
@@ -44,9 +45,10 @@ public class AuthController {
             .build();
     }
 
+
     // ---------------- REFRESH TOKEN ----------------
     @PostMapping("/refresh")
-    public ResponseEntity<Void> refresh(@CookieValue("refreshToken") String refreshToken) {
+    public ResponseEntity<Void> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         String newAccessToken = authService.refreshAccessToken(refreshToken);
         
         return ResponseEntity.ok()
@@ -62,7 +64,7 @@ public class AuthController {
 
         TokenPairs tokens = authService.generateTokens(user);
 
-        return ResponseEntity.ok()
+        return ResponseEntity.status(HttpStatus.CREATED)
             .header(HttpHeaders.SET_COOKIE, CookieUtil.accessToken(tokens.accessToken()).toString())
             .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())
             .build();

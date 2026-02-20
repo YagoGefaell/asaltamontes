@@ -1,21 +1,29 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/auth";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 // ---------------- LOGIN ----------------
 export async function loginRequest({ username, password }) {
-  const res = await fetch(`${API_URL}/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify({ username, password }),
-  });
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ username, password }),
+    });
 
-  if (!res.ok) throw new Error("Usuario o contraseña incorrectos");
-  return; // ya no hay accessToken/refreshToken en body
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.message || "Usuario o contraseña incorrectos");
+    }
+    return; // ya no hay accessToken/refreshToken en body
+  } catch (err) {
+    console.error(`[Auth Login Error] ${API_URL}/auth/login:`, err);
+    throw err;
+  }
 }
 
 // ---------------- REGISTER ----------------
 export async function registerRequest({ fullName, username, email, password, confirmPassword }) {
-  const res = await fetch(`${API_URL}/register`, {
+  const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -31,7 +39,7 @@ export async function registerRequest({ fullName, username, email, password, con
 
 // ---------------- LOGOUT ----------------
 export async function logoutRequest() {
-  const res = await fetch(`${API_URL}/logout`, {
+  const res = await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
     credentials: "include", // enviar cookies para que se borren
   });
@@ -43,7 +51,7 @@ export async function logoutRequest() {
 // ---------------- VERIFY SESSION ----------------
 export async function verifySessionRequest() {
   try {
-    const res = await fetch(`${API_URL}/verify`, {
+    const res = await fetch(`${API_URL}/auth/verify`, {
       method: "GET",
       credentials: "include",
     });
@@ -54,7 +62,7 @@ export async function verifySessionRequest() {
       const refreshed = await refreshTokenRequest();
       if (!refreshed) return false;
 
-      const retryRes = await fetch(`${API_URL}/verify`, {
+      const retryRes = await fetch(`${API_URL}/auth/verify`, {
         method: "GET",
         credentials: "include",
       });
@@ -72,7 +80,7 @@ export async function verifySessionRequest() {
 // ---------------- REFRESH TOKEN ----------------
 export async function refreshTokenRequest() {
   try {
-    const res = await fetch(`${API_URL}/refresh`, {
+    const res = await fetch(`${API_URL}/auth/refresh`, {
       method: "POST",
       credentials: "include",
     });

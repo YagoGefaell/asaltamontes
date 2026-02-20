@@ -1,8 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080/api/users";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 // ---------------- LOAD USER INFORMATION ----------------
 export async function getMeRequest() {
-  const res = await fetch(`${API_URL}/me`, {
+  const res = await fetch(`${API_URL}/api/users/me`, {
     method: "GET",
     credentials: "include",
   });
@@ -13,7 +13,7 @@ export async function getMeRequest() {
 
 // ---------------- UPDATE USER PROFILE ----------------
 export async function updateUserProfileRequest(profileData) {
-  const response = await fetch(`${API_URL}/me`, {
+  const response = await fetch(`${API_URL}/api/users/me`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -30,7 +30,7 @@ export async function updateUserProfileRequest(profileData) {
 }
 
 export async function getUsersByUsername(query) {
-  const response = await fetch(`${API_URL}/search?query=${query}`, {
+  const response = await fetch(`${API_URL}/api/users/search?query=${query}`, {
     method: "GET",
     credentials: "include",
   });

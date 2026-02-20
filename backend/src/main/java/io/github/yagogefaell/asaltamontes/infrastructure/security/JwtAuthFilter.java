@@ -5,14 +5,15 @@ import java.io.IOException;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.WebUtils;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidTokenException;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -43,32 +44,41 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         Cookie cookie = WebUtils.getCookie(request, "accessToken");
         String jwt = (cookie != null) ? cookie.getValue() : null;
-        Long id = null;
 
-        if (jwt != null) {
-            try {
-                id = jwtUtil.extractId(jwt);
-            } catch (Exception e) {
-                logger.warn("Token JWT inválido: " + e.getMessage());
-            }
-        }
+        if (jwt != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-        if (id != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
+                if (!jwtUtil.isTokenValid(jwt)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                Claims claims = jwtUtil.extractAllClaims(jwt);
+
+                if (jwtUtil.isExpired(claims)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                Long id = jwtUtil.extractId(claims);
+
                 UserAccount userDetails = userService.loadUserById(id);
 
-                if (jwtUtil.isTokenValid(jwt, userDetails)) {
-                    var authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                var authToken = new UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.getAuthorities()
+                );
 
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
-                }
-            } catch (UsernameNotFoundException e) {
-                logger.warn("Usuario no encontrado para JWT: " + id);
+                authToken.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+            } catch (Exception e) {
+                logger.warn(e.getMessage());
+                throw new InvalidTokenException(e.getMessage());
             }
         }
 

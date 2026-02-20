@@ -24,10 +24,10 @@ public class AuthenticationProviderImpl implements AuthenticationProvider {
 
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
-        Long id = ((UserAccount) authentication.getPrincipal()).getId();
+        String username = authentication.getPrincipal().toString();
         String password = authentication.getCredentials().toString();
 
-        UserAccount user = userService.loadUserById(id);
+        UserAccount user = (UserAccount) userService.loadUserByUsername(username);
 
         if (passwordEncoder.matches(password, user.getPassword())) {
             return new UsernamePasswordAuthenticationToken(

@@ -11,6 +11,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidTokenExceptio
 import io.github.yagogefaell.asaltamontes.infrastructure.security.JwtUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
+import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -22,9 +23,9 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public TokenPairs login(String username, String password) {
-        UserAccount userFromDb = (UserAccount) userService.loadUserByUsername(username);
+
         var authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userFromDb, password)
+                new UsernamePasswordAuthenticationToken(username, password)
         );
 
         UserAccount user = (UserAccount) authentication.getPrincipal();
@@ -33,15 +34,41 @@ public class AuthService {
     }
 
     public String refreshAccessToken(String refreshToken) {
-        Long id = jwtUtil.extractId(refreshToken);
 
-        UserAccount user = loadUserById(id);
+        Claims claims = validateToken(refreshToken);
 
-        if (!jwtUtil.isTokenValid(refreshToken, user)) {
-            throw new InvalidTokenException("Refresh token inválido o expirado");
+        Long id = jwtUtil.extractId(claims);
+
+        return jwtUtil.generateAccessToken(id);
+    }
+
+    public UserAccount verifyAccessToken(String accessToken) {
+
+        Claims claims = validateToken(accessToken);
+
+        Long id = jwtUtil.extractId(claims);
+
+        return loadUserById(id);
+    }
+
+    private Claims validateToken(String token) {
+
+        if (token == null || token.isBlank()) {
+            throw new InvalidTokenException("Token no proporcionado");
         }
 
-        return jwtUtil.generateAccessToken(user.getId());
+        try {
+            Claims claims = jwtUtil.extractAllClaims(token);
+
+            if (jwtUtil.isExpired(claims)) {
+                throw new InvalidTokenException("Token expirado");
+            }
+
+            return claims;
+
+        } catch (Exception e) {
+            throw new InvalidTokenException("Token inválido");
+        }
     }
 
     @Transactional
@@ -53,21 +80,6 @@ public class AuthService {
                 request.password(),
                 request.confirmPassword()
         );
-    }
-
-    public UserAccount verifyAccessToken(String accessToken) {
-        if (accessToken == null || accessToken.isBlank()) {
-            throw new InvalidTokenException("Access token no proporcionado");
-        }
-
-        Long id = jwtUtil.extractId(accessToken);
-        UserAccount user = loadUserById(id);
-
-        if (!jwtUtil.isTokenValid(accessToken, user)) {
-            throw new InvalidTokenException("Access token inválido o expirado");
-        }
-
-        return user;
     }
 
     public TokenPairs generateTokens(UserAccount user) {

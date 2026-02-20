@@ -1,4 +1,4 @@
-package io.github.yagogefaell.asaltamontes.common.coockies;
+package io.github.yagogefaell.asaltamontes.common.cookies;
 
 import org.springframework.http.ResponseCookie;
 import org.springframework.lang.NonNull;
@@ -30,7 +30,7 @@ public final class CookieUtil {
     public static ResponseCookie clear(@NonNull String name, @NonNull String path) {
         return ResponseCookie.from(name, "")
             .httpOnly(true)
-            .secure(true)
+            .secure(false) // Set to true in production (https)
             .sameSite("Strict")
             .path(path)
             .maxAge(0)
