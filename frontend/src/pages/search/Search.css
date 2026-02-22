@@ -1,5 +1,4 @@
 .search-page {
-  padding: 1rem;
   background-color: var(--background);
   min-height: 100vh;
   color: var(--text-color);
@@ -8,34 +7,109 @@
 }
 
 .search-input-container {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
+  position: sticky;
+  top: 0;
+  background: var(--background);
+  z-index: 10;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color, #f1f3f5);
 }
 
 .search-input-container input {
   width: 100%;
-  padding: 0.3rem 0.5rem;
+  padding: 0.875rem 1rem;
   border-radius: 8px;
-  border: 0.9px solid var(--primary);
+  border: 1px solid var(--input-border, #dee2e6);
   font-size: 1rem;
-  background-color: var(--background);
+  background-color: var(--input-bg, white);
   color: var(--text-color);
   box-sizing: border-box;
+  transition: border-color 0.2s ease;
 }
 
 .search-input-container input:focus {
   outline: none;
+  border-color: var(--primary, #007bff);
+}
+
+.search-input-container input::placeholder {
+  color: var(--text-muted);
 }
 
 .search-results {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  padding-bottom: 100px;
+}
+
+.search-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.search-error {
+  background: var(--error-bg);
+  color: var(--error);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 500;
+  border: 1px solid var(--error);
+  margin-top: 1rem;
+}
+
+.search-hint {
+  text-align: center;
+  margin-top: 1rem;
+  color: var(--text-soft);
+  font-size: 0.875rem;
+  font-style: italic;
 }
 
 .no-results {
   text-align: center;
-  margin-top: 1rem;
-  color: var(--text-color);
-  opacity: 0.6;
+  margin-top: 2rem;
+  color: var(--text-muted);
   font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* Load more functionality */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.load-more-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+  margin-bottom: 20px; /* Espacio adicional para el último elemento */
 }

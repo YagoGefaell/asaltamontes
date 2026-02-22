@@ -6,8 +6,9 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.MultipleFieldConflictException;
-import io.github.yagogefaell.asaltamontes.user.dto.ChangeProfile;
+import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -15,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 public class UserValidator {
 
     private final UserAccountRepository userAccountRepository;
+    private final UserFollowRepository userFollowRepository;
 
     // -----------------------------
     // VALIDACIÓN DE REGISTRO
@@ -41,7 +43,7 @@ public class UserValidator {
     // -----------------------------
     // VALIDACIÓN DE EDICIÓN DE PERFIL
     // -----------------------------
-    public void validateProfileChange(Long userId, ChangeProfile dto) {
+    public void validateProfileChange(Long userId, UserUpdateDto dto) {
         Map<String, String> errors = new HashMap<>();
 
         if (dto.username() != null) {
@@ -135,6 +137,17 @@ public class UserValidator {
 
         if (password != null && !password.equals(confirmPassword)) {
             errors.put("confirmPassword", "Las contraseñas no coinciden");
+        }
+    }
+
+    public void validateFollowAction(long followerId, long followingId) {
+        if (followerId == followingId) {
+            throw new IllegalArgumentException("No puedes seguirte a ti mismo");
+        }
+
+        boolean alreadyFollowing = userFollowRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
+        if (alreadyFollowing) {
+            throw new IllegalStateException("Ya sigues a este usuario");
         }
     }
 }

@@ -26,7 +26,7 @@ import lombok.NoArgsConstructor;
 public class UserProfile {
 
     @Id
-    private Long userId; // NO @GeneratedValue
+    private Long userId;
 
     @OneToOne
     @MapsId
@@ -54,6 +54,12 @@ public class UserProfile {
 
     @Column(name = "phone_number")
     private String phoneNumber;
+
+    @Column(name = "followers_count", nullable = false)
+    private Long followersCount = 0L;
+
+    @Column(name = "following_count", nullable = false)
+    private Long followingCount = 0L;
 
     @Column(name = "is_public_profile", nullable = false)
     private Boolean isPublicProfile;

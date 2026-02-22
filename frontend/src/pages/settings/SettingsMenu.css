@@ -55,3 +55,19 @@
   font-size: 1.2rem;
   opacity: 0.6;
 }
+
+/* Logout item styling */
+.logout-item {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
+.logout-item:hover {
+  background: var(--error);
+  color: #fff;
+}
+
+.logout-item .arrow {
+  color: inherit;
+}

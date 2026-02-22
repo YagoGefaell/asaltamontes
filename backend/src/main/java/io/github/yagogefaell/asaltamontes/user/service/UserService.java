@@ -1,7 +1,7 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
-import java.util.List;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,12 +12,14 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundExceptio
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccountRole;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
-import io.github.yagogefaell.asaltamontes.user.dto.ChangeProfile;
-import io.github.yagogefaell.asaltamontes.user.dto.UserMe;
-import io.github.yagogefaell.asaltamontes.user.dto.UserSearch;
+import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSelfDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserProfileDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 @RequiredArgsConstructor
@@ -28,7 +30,7 @@ public class UserService implements UserDetailsService {
     private final UserValidator validator;
     private final UserProfileUpdater updater;
     private final UserAssembler assembler;
-
+    private final PasswordEncoder passwordEncoder;
     // ------------------ REGISTRO ------------------
     @Transactional
     public UserAccount registerUserWithProfile(
@@ -43,7 +45,7 @@ public class UserService implements UserDetailsService {
         UserAccount user = new UserAccount();
         user.setUsername(username);
         user.setEmail(email);
-        user.setPasswordHash(password);
+        user.setPasswordHash(passwordEncoder.encode(password));
         user.setRole(UserAccountRole.USER);
         user.setIsVerified(false);
 
@@ -61,7 +63,7 @@ public class UserService implements UserDetailsService {
 
     // ------------------ EDICIÓN DE PERFIL ------------------
     @Transactional
-    public UserMe editProfile(long id, ChangeProfile dto) {
+    public UserSelfDto editProfile(long id, UserUpdateDto dto) {
 
         validator.validateProfileChange(id, dto);
 
@@ -78,7 +80,7 @@ public class UserService implements UserDetailsService {
 
     // ------------------ GET ME ------------------
     @Transactional(readOnly = true)
-    public UserMe getMe(long id) {
+    public UserSelfDto getMe(long id) {
         UserAccount user = userAccountRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
@@ -100,21 +102,33 @@ public class UserService implements UserDetailsService {
     }
 
     // ------------------ SEARCH ------------------
-    public List<UserSearch> searchUsersByUsername(String query, Long excludeId) {
+    public Page<UserSearchDto> searchUsersByUsername(String query, Long excludeId, Pageable pageable) {
         if (query == null || query.isBlank()) {
-            return List.of();
+            return Page.empty(pageable);
         }
 
-        return userAccountRepository.searchUsersByUsername(query, excludeId)
-                .stream()
-                .map(assembler::toUserSearch)
-                .toList();
+        return userAccountRepository.searchUsersByUsername(query, excludeId, pageable);
     }
 
     // ------------------ LOAD USER ------------------
     public UserAccount loadUserById(long id) {
         return userAccountRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
+    }
+
+    // ------------------ GET USER BY USERNAME ------------------
+    public UserProfileDto getUserByUsername(String username) {
+        UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
+
+        UserProfile profile = userProfileRepository.findById(user.getId())
+                .orElseThrow(() -> new UserNotFoundException(username));
+
+        return assembler.toUserProfile(user, profile);
+    }
+
+    public Page<UserSearchDto> getAllUsers(Long excludeId, Pageable pageable) {
+        return userAccountRepository.searchAllUsers(excludeId, pageable);
     }
 
     @Override

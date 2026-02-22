@@ -1,0 +1,23 @@
+package io.github.yagogefaell.asaltamontes.user.dto;
+
+import java.time.LocalDate;
+
+public record UserSelfDto(
+    Long userId,
+    String username,
+    String email,
+    Boolean isVerified,
+
+    String fullName,
+    String bio,
+    String city,
+    String profilePictureUrl,
+    String runningLevel,
+
+    LocalDate birthDate,
+    String phoneNumber,
+    Boolean isPublicProfile,
+
+    Long followersCount,
+    Long followingCount
+) {}

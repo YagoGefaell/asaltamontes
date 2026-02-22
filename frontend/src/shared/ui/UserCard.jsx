@@ -1,15 +1,19 @@
 // UserCard.jsx
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatters } from "../../utils/helpers";
 import "./UserCard.css";
 
 const MIN_PRESS_DURATION = 150; // duración mínima en ms
 
-const UserCard = ({ name, username, avatar }) => {
+const UserCard = ({ fullName, username, profilePictureUrl }) => {
   const [pressed, setPressed] = useState(false);
   const pressStartTime = useRef(0);
   const timeoutRef = useRef(null);
   const navigate = useNavigate();
+
+  // Usar función utilitaria para generar avatar
+  const avatarSrc = formatters.avatar(profilePictureUrl, fullName, username);
 
   const handlePressStart = () => {
     pressStartTime.current = Date.now();
@@ -44,9 +48,9 @@ const UserCard = ({ name, username, avatar }) => {
       onTouchEnd={handlePressEnd}
       onTouchCancel={handlePressEnd}
     >
-      <img src={avatar} alt={username} className="user-avatar" />
+      <img src={avatarSrc} alt={username} className="user-avatar" />
       <div className="user-info">
-        <span className="user-name">{name}</span>
+        <span className="user-name">{fullName || username}</span>
         <span className="user-username">@{username}</span>
       </div>
     </div>

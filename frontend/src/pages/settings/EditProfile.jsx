@@ -5,6 +5,7 @@ import Input from "../../shared/forms/Input.jsx";
 import Button from "../../shared/forms/Button.jsx";
 import ToggleSwitch from "../../shared/ui/ToggleSwitch.jsx";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
+import { formatters } from "../../utils/helpers";
 
 export default function EditProfile() {
   const { userProfile, loading, updateUserProfile } = useUserProfile();
@@ -32,9 +33,7 @@ export default function EditProfile() {
         username: userProfile.username || "",
         bio: userProfile.bio || "",
         city: userProfile.city || "",
-        profilePictureUrl:
-          userProfile.profilePictureUrl ||
-          `https://api.dicebear.com/7.x/avataaars/svg?seed=${userProfile.username}`,
+        profilePictureUrl: userProfile.profilePictureUrl || "",
         isPublicProfile: userProfile.isPublicProfile || false,
       });
     }
@@ -106,7 +105,7 @@ export default function EditProfile() {
     <form onSubmit={handleSubmit} className="edit-profile-form">
       <div className="avatar-section">
         <img
-          src={form.profilePictureUrl || "/default-avatar.png"}
+          src={formatters.avatar(form.profilePictureUrl, form.fullName, form.username)}
           alt="Foto de perfil"
           className="avatar-image"
         />

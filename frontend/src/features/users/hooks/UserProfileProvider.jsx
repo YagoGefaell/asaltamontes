@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../auth/hooks/useAuth.js";
-import { getMeRequest, updateUserProfileRequest, getUsersByUsername } from "../services/users.service.js";
+import { getMeRequest, updateUserProfileRequest, getUsersByUsername, getUserByUsername } from "../services/users.service.js";
 import { UserProfileContext } from "./user.context";
 
 export function UserProfileProvider({ children }) {
@@ -58,9 +58,18 @@ export function UserProfileProvider({ children }) {
       }
     };
 
+    const getUserProfile = async (username) => {
+      try {
+        const user = await getUserByUsername(username);
+        return user;
+      } catch (err) {
+        throw err;
+      }
+    };
+
 
   return (
-    <UserProfileContext.Provider value={{ userProfile, loading, updateUserProfile, searchUsersByUsername }}>
+    <UserProfileContext.Provider value={{ userProfile, loading, updateUserProfile, searchUsersByUsername, getUserProfile }}>
       {children}
     </UserProfileContext.Provider>
   );

@@ -1,0 +1,198 @@
+/* Estilos compartidos para páginas de Followers y Following */
+.followers-page,
+.following-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--text-color);
+}
+
+/* Headers */
+.followers-header,
+.following-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--background);
+  z-index: 10;
+}
+
+.followers-title,
+.following-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-color);
+  text-align: center;
+}
+
+/* Back button - positioned absolutely to the left */
+.back-btn {
+  position: absolute;
+  left: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  transition: background 0.15s ease;
+}
+
+.back-btn:hover {
+  background: rgba(0,0,0,0.06);
+}
+
+.back-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Search input - same style as Search page */
+.search-input-container {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-input-container input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--border-color, #dee2e6);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: var(--input-bg, white);
+  color: var(--text-color);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.search-input-container input:focus {
+  border-color: var(--primary, #007bff);
+}
+
+.search-input-container input::placeholder {
+  color: var(--text-muted, #6c757d);
+}
+
+/* Results containers */
+.followers-results,
+.following-results {
+  flex: 1;
+  padding-bottom: 2rem; /* Espacio adicional al final */
+}
+
+/* Loading */
+.followers-loading,
+.following-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* Error messages */
+.followers-error,
+.following-error {
+  text-align: center;
+  color: var(--error);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+/* No results - same style as Search page */
+.no-results {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 2rem 1rem;
+  font-style: italic;
+}
+
+/* Results count */
+.results-count {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  padding: 0.5rem 0 1rem 0;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+/* Load more functionality */
+.load-more-container {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 0;
+}
+
+.load-more-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.load-more-btn:hover:not(:disabled) {
+  background: var(--primary-light);
+  transform: translateY(-1px);
+}
+
+.load-more-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.loading-more {
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .followers-header,
+  .following-header {
+    padding: 0.75rem;
+  }
+  
+  .search-input-container {
+    padding: 0.75rem;
+  }
+  
+  .followers-results,
+  .following-results {
+    padding: 0.75rem;
+  }
+  
+  .results-count {
+    font-size: 0.85rem;
+    padding: 0.5rem 0;
+  }
+  
+  .load-more-btn {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .search-input-container input {
+    background: var(--input-bg-dark, #2c3e50);
+    border-color: var(--border-color-dark, #495057);
+  }
+}

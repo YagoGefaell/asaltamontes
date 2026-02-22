@@ -1,8 +1,12 @@
 import { useState, useEffect } from "react";
+import { formatters } from "../../utils/helpers";
 import "./AvatarUploader.css";
 
-export default function AvatarUploader({ value, onChange }) {
+export default function AvatarUploader({ value, onChange, fullName, username }) {
   const [preview, setPreview] = useState(value);
+  
+  // Generar avatar por defecto usando la función utilitaria
+  const defaultAvatar = formatters.avatar(null, fullName, username);
 
   useEffect(() => {
     setPreview(value);
@@ -17,7 +21,7 @@ export default function AvatarUploader({ value, onChange }) {
   return (
     <div className="avatar-uploader">
       <img
-        src={preview || "/default-avatar.png"}
+        src={preview || defaultAvatar}
         alt="Avatar"
         className="avatar-preview"
       />

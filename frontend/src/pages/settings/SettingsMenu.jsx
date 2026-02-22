@@ -1,8 +1,21 @@
 import "./SettingsMenu.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 
 export default function SettingsMenu() {
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    if (window.confirm("¿Estás segura de que quieres cerrar sesión?")) {
+      try {
+        await logout();
+        navigate("/access");
+      } catch (error) {
+        console.error("Error al cerrar sesión:", error);
+      }
+    }
+  };
 
   const sections = [
     {
@@ -26,6 +39,10 @@ export default function SettingsMenu() {
       title: "Soporte",
       items: [{ label: "Centro de ayuda", path: "/settings/help" }],
     },
+    {
+      title: "Sesión",
+      items: [{ label: "Cerrar sesión", action: handleLogout, isAction: true }],
+    },
   ];
 
   return (
@@ -37,8 +54,8 @@ export default function SettingsMenu() {
             {section.items.map((item) => (
               <li
                 key={item.label}
-                className="settings-item"
-                onClick={() => navigate(item.path)}
+                className={`settings-item ${item.isAction ? 'logout-item' : ''}`}
+                onClick={() => item.isAction ? item.action() : navigate(item.path)}
               >
                 <span>{item.label}</span>
                 <span className="arrow">›</span>

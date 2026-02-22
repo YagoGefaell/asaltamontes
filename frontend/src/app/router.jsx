@@ -8,6 +8,9 @@ import Login from "../pages/access/Login.jsx";
 import Register from "../pages/access/Register.jsx";
 import Access from "../pages/access/Access.jsx";
 import Profile from "../pages/profile/Profile.jsx";
+import UserProfile from "../pages/profile/UserProfile.jsx";
+import Followers from "../pages/profile/Followers.jsx";
+import Following from "../pages/profile/Following.jsx";
 import Search from "../pages/search/Search.jsx";
 import Messages from "../pages/messages/Messages.jsx";
 import Notifications from "../pages/notifications/Notifications.jsx";
@@ -15,7 +18,6 @@ import Communities from "../pages/communities/Communities.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
-import LogOut from "../pages/access/LogOut.jsx";
 
 export function AppRouter() {
   return (
@@ -37,13 +39,17 @@ export function AppRouter() {
         <Route path="/" element={<MainLayout />}>
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
-          <Route path="logout" element={<LogOut />} />
           <Route path="me" element={<Profile />} />
+          <Route path="users/:username" element={<UserProfile />} />
           <Route path="search" element={<Search />} />
           <Route path="messages" element={<Messages />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="communities" element={<Communities />} />
         </Route>
+
+        {/* ---- Rutas de Followers/Following (sin navbar) ---- */}
+        <Route path="/me/followers" element={<Followers />} />
+        <Route path="/me/following" element={<Following />} />
 
         {/* ---- Rutas de Settings ---- */}
         <Route

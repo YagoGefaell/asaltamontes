@@ -31,6 +31,16 @@ export const formatters = {
   username: (username) => {
     return username.toLowerCase().trim()
   },
+
+  /**
+   * Generate avatar URL with fallback to UI Avatars
+   */
+  avatar: (profilePictureUrl, fullName, username) => {
+    if (profilePictureUrl) return profilePictureUrl;
+    
+    const name = fullName || username || 'Usuario';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ff4f8b&color=fff&size=200&bold=true`;
+  },
 }
 
 /**

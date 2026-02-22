@@ -1,11 +1,8 @@
 package io.github.yagogefaell.asaltamontes.user.dto;
 
-import java.time.LocalDate;
 
-public record UserMe(
-    Long userId,
+public record UserProfileDto(
     String username,
-    String email,
     Boolean isVerified,
 
     String fullName,
@@ -14,10 +11,8 @@ public record UserMe(
     String profilePictureUrl,
     String runningLevel,
 
-    LocalDate birthDate,
-    String phoneNumber,
     Boolean isPublicProfile,
 
-    Integer followersCount,
-    Integer followingCount
+    Long followersCount,
+    Long followingCount
 ) {}

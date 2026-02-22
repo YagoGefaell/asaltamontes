@@ -4,13 +4,14 @@ import org.springframework.stereotype.Component;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
-import io.github.yagogefaell.asaltamontes.user.dto.UserMe;
-import io.github.yagogefaell.asaltamontes.user.dto.UserSearch;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSelfDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserProfileDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 
 @Component
 public class UserAssembler {
-    public UserMe toUserMe(UserAccount user, UserProfile profile) {
-        return new UserMe(
+    public UserSelfDto toUserMe(UserAccount user, UserProfile profile) {
+        return new UserSelfDto(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
@@ -23,13 +24,32 @@ public class UserAssembler {
                 profile.getBirthDate(),
                 profile.getPhoneNumber(),
                 profile.getIsPublicProfile(),
-                0,
-                0
+                profile.getFollowersCount(),
+                profile.getFollowingCount()
         );
     }
 
-    public UserSearch toUserSearch(UserAccount user) {
-        return new UserSearch(user.getUsername());
+    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile) {
+        return new UserProfileDto(
+                user.getUsername(),
+                user.getIsVerified(),
+                safe(profile.getFullName()),
+                safe(profile.getBio()),
+                safe(profile.getCity()),
+                safe(profile.getProfilePictureUrl()),
+                profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
+                profile.getIsPublicProfile(),
+                profile.getFollowersCount(),
+                profile.getFollowingCount()
+        );
+    }
+
+    public UserSearchDto toUserSearch(UserAccount user, UserProfile profile) {
+        return new UserSearchDto(
+                user.getUsername(),
+                safe(profile.getFullName()),
+                safe(profile.getProfilePictureUrl())
+        );
     }
 
     private String safe(String value) {

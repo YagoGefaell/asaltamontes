@@ -30,6 +30,7 @@
  * @property {boolean} loading - Loading state
  * @property {Function} updateUserProfile - Update profile function
  * @property {Function} searchUsersByUsername - Search users function
+ * @property {Function} getUserProfile - Get user profile by username function
  */
 
 /**

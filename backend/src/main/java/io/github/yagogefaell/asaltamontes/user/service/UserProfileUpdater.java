@@ -6,12 +6,12 @@ import org.springframework.stereotype.Component;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
-import io.github.yagogefaell.asaltamontes.user.dto.ChangeProfile;
+import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 
 @Component
 public class UserProfileUpdater {
 
-    public void applyChanges(UserAccount user, UserProfile profile, ChangeProfile dto) {
+    public void applyChanges(UserAccount user, UserProfile profile, UserUpdateDto dto) {
 
         // USERNAME
         Optional.ofNullable(dto.username())

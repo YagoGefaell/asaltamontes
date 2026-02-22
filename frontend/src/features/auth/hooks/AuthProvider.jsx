@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./auth.context";
+import { apiClient } from "../../../lib/api-client.js";
 import {
   registerRequest,
   loginRequest,
@@ -15,6 +16,12 @@ function AuthProvider({ children }) {
   // ---------------- Verificar sesión al cargar ----------------
   useEffect(() => {
     let mounted = true;
+
+    apiClient.setLogoutCallback(() => {
+      if (mounted) {
+        setIsAuthenticated(false)
+      }
+    })
 
     const verifySession = async () => {
       try {

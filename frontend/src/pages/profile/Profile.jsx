@@ -1,82 +1,256 @@
 import "./Profile.css";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
+import { useFollow } from "../../features/users/hooks/useFollow";
+import { formatters } from "../../utils/helpers";
+import Button from "../../shared/forms/Button";
+import Loading from "../../shared/components/Loading";
 
-function Profile() {
-  const { userProfile, loading } = useUserProfile();
+function Profile({ 
+  userData = null, 
+  isOwnProfile = true, 
+  loading = false, 
+  error = null, 
+  onBack = null 
+}) {
+  const { userProfile, loading: contextLoading } = useUserProfile();
   const navigate = useNavigate();
+  
+  // Follow functionality
+  const {
+    loading: followLoading,
+    error: followError,
+    followersCount: hookFollowersCount,
+    followingCount: hookFollowingCount,
+    isFollowing,
+    toggleFollow,
+    resetError,
+    initializeFollowState
+  } = useFollow();
 
-  if (loading) return <p className="loading">Cargando perfil...</p>;
-  if (!userProfile)
-    return <p className="no-profile">No hay perfil disponible.</p>;
+  // Use props data if provided, otherwise use context data
+  const profileData = userData || userProfile;
+  const isLoading = loading || contextLoading;
+
+  // Initialize follow data when profileData changes
+  useEffect(() => {
+    if (profileData) {
+      initializeFollowState(profileData);
+    }
+  }, [profileData, initializeFollowState]);
+
+  const handleFollowToggle = async () => {
+    if (!profileData?.username) return;
+    
+    const success = await toggleFollow(profileData.username);
+    if (success) {
+      resetError();
+    }
+  };
+
+  const handleShowFollowers = () => {
+    if (isOwnProfile) {
+      navigate("/me/followers");
+    }
+  };
+
+  const handleShowFollowing = () => {
+    if (isOwnProfile) {
+      navigate("/me/following");
+    }
+  };
+  
+  if (isLoading) return <Loading />;
+  
+  if (error) {
+    return (
+      <div className="profile-page">
+        <div className={`profile-header ${!isOwnProfile ? 'other-profile' : ''}`}>
+          {onBack && (
+            <button
+              className="back-btn"
+              onClick={onBack}
+              aria-label="Volver atrás"
+            >
+              <svg
+                className="back-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+          {isOwnProfile && <h2 className="profile-title">Perfil</h2>}
+        </div>
+        <div className="error-message">
+          <p>{error}</p>
+          <Button onClick={() => navigate("/search")}>Volver a la búsqueda</Button>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!profileData) {
+    return isOwnProfile ? (
+      <p className="no-profile">No hay perfil disponible.</p>
+    ) : null;
+  }
 
   const {
     username = "usuario",
     fullName = "Nombre completo",
-    bio = "Agrega una bio breve...",
+    bio = isOwnProfile ? "Agrega una bio breve..." : "Sin biografía",
+    city = "",
     profilePictureUrl,
     followersCount = 0,
     followingCount = 0,
-  } = userProfile;
+    runningLevel = "BEGINNER",
+    isVerified = false,
+    isPublicProfile = true,
+  } = profileData;
+
+  const levelLabels = {
+    BEGINNER: "Principiante",
+    INTERMEDIATE: "Intermedio", 
+    ADVANCED: "Avanzado",
+    EXPERT: "Experto"
+  };
 
   return (
     <div className="profile-page">
-      {/* Barra superior con icono de ajustes */}
-      <div className="profile-header">
-        <h2 className="profile-title">Perfil</h2>
-        <button
-          className="settings-icon-btn"
-          onClick={() => navigate("/settings/")}
-          aria-label="Ir a ajustes"
-        >
-          <svg
-            className="settings-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* Barra superior con icono de ajustes o botón volver */}
+      <div className={`profile-header ${!isOwnProfile ? 'other-profile' : ''}`}>
+        {onBack && (
+          <button
+            className="back-btn"
+            onClick={onBack}
+            aria-label="Volver atrás"
           >
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-        </button>
+            <svg
+              className="back-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+          </button>
+        )}
+        {isOwnProfile && <h2 className="profile-title">Perfil</h2>}
+        {isOwnProfile && (
+          <button
+            className="settings-icon-btn"
+            onClick={() => navigate("/settings/")}
+            aria-label="Ir a ajustes"
+          >
+            <svg
+              className="settings-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="profile-avatar-container">
         <img
-          src={
-            profilePictureUrl ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
-          }
+          src={formatters.avatar(profilePictureUrl, fullName, username)}
           alt={`${username}'s avatar`}
           className="profile-avatar"
         />
+        {isVerified && (
+          <div className="verified-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2">
+              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        )}
       </div>
 
       <div className="profile-main">
         <h2 className="username">@{username}</h2>
         <p className="full-name">{fullName}</p>
         <p className="bio">{bio}</p>
+        
+        {city && (
+          <p className="city">
+            <span className="city-icon">📍</span>
+            {city}
+          </p>
+        )}
+        
+        <div className="running-level">
+          <span className="level-label">Nivel: </span>
+          <span className={`level-badge level-${runningLevel.toLowerCase()}`}>
+            {levelLabels[runningLevel] || runningLevel}
+          </span>
+        </div>
 
         <div className="profile-stats">
-          <div className="stat">
-            <span className="count">{followersCount}</span>
+          <div 
+            className={`stat ${isOwnProfile ? 'clickable' : ''}`}
+            onClick={isOwnProfile ? handleShowFollowers : undefined}
+          >
+            <span className="count">{hookFollowersCount}</span>
             <span className="label">Seguidores</span>
           </div>
-          <div className="stat">
-            <span className="count">{followingCount}</span>
+          <div 
+            className={`stat ${isOwnProfile ? 'clickable' : ''}`}
+            onClick={isOwnProfile ? handleShowFollowing : undefined}
+          >
+            <span className="count">{hookFollowingCount}</span>
             <span className="label">Siguiendo</span>
           </div>
         </div>
 
-        <div className="profile-extra">
-          <p className="placeholder-text">
-            Aquí podrías agregar logros, links, badges o información adicional
-            del usuario.
-          </p>
-        </div>
+        {!isOwnProfile && (
+          <div className="profile-actions">
+            <Button 
+              variant={isFollowing ? "outline" : "primary"}
+              onClick={handleFollowToggle}
+              loading={followLoading}
+              disabled={followLoading}
+            >
+              {followLoading ? 'Cargando...' : (isFollowing ? 'Dejar de seguir' : 'Seguir')}
+            </Button>
+            {followError && (
+              <div className="follow-error">
+                <p>{followError}</p>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {!isOwnProfile && !isPublicProfile && (
+          <div className="private-profile-notice">
+            <p>Este perfil es privado</p>
+          </div>
+        )}
+
+        {isOwnProfile && (
+          <div className="profile-extra">
+            <p className="placeholder-text">
+              Aquí podrías agregar logros, links, badges o información adicional
+              del usuario.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

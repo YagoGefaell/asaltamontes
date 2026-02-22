@@ -1,6 +1,6 @@
 package io.github.yagogefaell.asaltamontes.user.dto;
 
-public record ChangeProfile(
+public record UserUpdateDto(
     String username,
     String email,
     String fullName,

@@ -1,24 +1,26 @@
 import { API_CONFIG } from '../config/constants.js'
 
-/**
- * Custom fetch wrapper with improved error handling and configuration
- */
 class ApiClient {
-  constructor(baseURL = API_CONFIG.BASE_URL) {
+  constructor(enableAutoRefresh = true, baseURL = API_CONFIG.BASE_URL) {
     this.baseURL = baseURL
     this.timeout = API_CONFIG.TIMEOUT
+    this.enableAutoRefresh = enableAutoRefresh
+    this.isRefreshing = false
+    this.refreshPromise = null
+    this.logoutCallback = null
   }
 
-  /**
-   * Create fetch request with timeout and common options
-   */
   async request(endpoint, options = {}) {
+    return this._makeRequest(endpoint, options, false)
+  }
+
+  async _makeRequest(endpoint, options = {}, isRetry = false) {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
     const config = {
-      credentials: 'include', // Crucial: include cookies
-      mode: 'cors', // Enable CORS
+      credentials: 'include',
+      mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -29,15 +31,32 @@ class ApiClient {
     }
 
     try {
-      // Enhanced logging for debugging
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`API: ${config.method || 'GET'} ${endpoint}`);
-        // Log cookies being sent
-        console.log('📤 Cookies being sent:', document.cookie || 'NO COOKIES');
-      }
-      
       const response = await fetch(`${this.baseURL}${endpoint}`, config)
       clearTimeout(timeoutId)
+      
+      if ((response.status === 401 || response.status === 403) && 
+          !isRetry && 
+          this.enableAutoRefresh && 
+          !this._isAuthEndpoint(endpoint)) {
+        try {
+          const refreshSuccess = await this._handleTokenRefresh()
+          if (refreshSuccess) {
+            return this._makeRequest(endpoint, options, true)
+          } else {
+            const error = new Error('Session expired')
+            error.status = response.status
+            throw error
+          }
+        } catch (refreshError) {
+          if (refreshError.status) {
+            throw refreshError
+          } else {
+            const error = new Error('Authentication failed')
+            error.status = response.status
+            throw error
+          }
+        }
+      }
       
       return await this.handleResponse(response)
     } catch (error) {
@@ -46,43 +65,76 @@ class ApiClient {
     }
   }
 
-  /**
-   * Handle response and extract data
-   */
-  async handleResponse(response) {
-    // Enhanced logging for auth endpoints
-    if (process.env.NODE_ENV === 'development' && response.url.includes('auth')) {
-      console.group('📥 Auth Response Details');
-      console.log('Status:', response.status);
-      console.log('URL:', response.url);
-      
-      // Log all response headers
-      console.log('All headers:');
-      for (let [key, value] of response.headers.entries()) {
-        console.log(`  ${key}: ${value}`);
-        // Special attention to Set-Cookie
-        if (key.toLowerCase() === 'set-cookie') {
-          console.log(`🍪 FOUND Set-Cookie: ${value}`);
-        }
-      }
-      
-      // Multiple attempts to get Set-Cookie
-      const setCookieHeader = response.headers.get('Set-Cookie');
-      const setCookieLower = response.headers.get('set-cookie');
-      console.log('Set-Cookie (case sensitive):', setCookieHeader);
-      console.log('set-cookie (lowercase):', setCookieLower);
-      
-      // Check if cookies changed
-      console.log('Document.cookie before checking:', document.cookie || 'NO COOKIES');
-      
-      // Wait a moment and check again
-      setTimeout(() => {
-        console.log('Document.cookie 100ms later:', document.cookie || 'NO COOKIES');
-      }, 100);
-      
-      console.groupEnd();
+  async _handleTokenRefresh() {
+    if (this.isRefreshing && this.refreshPromise) {
+      return await this.refreshPromise
     }
+
+    this.isRefreshing = true
+    this.refreshPromise = this._performRefresh()
     
+    try {
+      const result = await this.refreshPromise
+      return result
+    } finally {
+      this.isRefreshing = false
+      this.refreshPromise = null
+    }
+  }
+
+  async _performRefresh() {
+    try {
+      const { refreshTokenRequest } = await import('../features/auth/services/auth.service.js')
+      const success = await refreshTokenRequest()
+      
+      if (success) {
+        return true
+      } else {
+        this._handleLogout()
+        return false
+      }
+    } catch (error) {
+      this._handleLogout()
+      return false
+    }
+  }
+
+  _isAuthEndpoint(endpoint) {
+    const authEndpoints = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout', '/auth/verify']
+    return authEndpoints.some(authPath => endpoint.includes(authPath))
+  }
+
+  setLogoutCallback(callback) {
+    this.logoutCallback = callback
+  }
+
+  _handleLogout() {
+    if (this.logoutCallback) {
+      this.logoutCallback()
+    }
+  }
+
+  /**
+   * Enhanced cookie debugging
+   */
+  _logCookieDetails(context) {
+    console.group(`🍪 Cookie Debug - ${context}`)
+    console.log('Raw document.cookie:', document.cookie)
+    
+    if (document.cookie) {
+      const cookies = document.cookie.split(';')
+      console.log('Parsed cookies:')
+      cookies.forEach(cookie => {
+        const [name, value] = cookie.trim().split('=')
+        console.log(`  ${name}: ${value?.substring(0, 50)}...`)
+      })
+    } else {
+      console.log('❌ NO COOKIES FOUND')
+    }
+    console.groupEnd()
+  }
+
+  async handleResponse(response) {
     if (response.ok) {
       const contentType = response.headers.get('content-type')
       
@@ -94,14 +146,12 @@ class ApiClient {
       return text || null
     }
 
-    // Handle different error status codes
     let errorMessage = 'An error occurred'
     
     try {
       const errorData = await response.json()
       errorMessage = errorData.message || errorData.error || errorMessage
       
-      // For validation errors, preserve the structure
       if (response.status === 400 && errorData.errors) {
         const error = new Error(errorMessage)
         error.status = response.status
@@ -109,7 +159,6 @@ class ApiClient {
         throw error
       }
     } catch (parseError) {
-      // If parsing JSON fails, use status text or generic message based on status code
       if (response.status >= 500) {
         errorMessage = 'Error del servidor. Por favor, inténtalo más tarde.'
       } else if (response.status === 401) {
@@ -128,9 +177,6 @@ class ApiClient {
     throw error
   }
 
-  /**
-   * Handle different types of errors
-   */
   handleError(error) {
     if (error.name === 'AbortError') {
       const timeoutError = new Error('Request timeout')
@@ -181,8 +227,11 @@ class ApiClient {
   }
 }
 
-// Create and export default instance
+// Create and export instances
 export const apiClient = new ApiClient()
 
-// Export class for custom instances if needed
-export default ApiClient
+// Auth client without automatic refresh (to avoid infinite loops)
+export const authApiClient = new ApiClient(false)
+
+export default apiClient
+export { ApiClient }
