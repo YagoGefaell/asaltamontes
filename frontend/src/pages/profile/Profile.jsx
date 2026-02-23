@@ -1,6 +1,7 @@
 import "./Profile.css";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 import { useFollow } from "../../features/users/hooks/useFollow";
 import { formatters } from "../../utils/helpers";
@@ -14,6 +15,7 @@ function Profile({
   error = null, 
   onBack = null 
 }) {
+  const { currentUser, setCurrentUser } = useAuth();
   const { userProfile, loading: contextLoading } = useUserProfile();
   const navigate = useNavigate();
   
@@ -32,6 +34,17 @@ function Profile({
   // Use props data if provided, otherwise use context data
   const profileData = userData || userProfile;
   const isLoading = loading || contextLoading;
+
+  // Initialize currentUser in AuthContext when own profile loads
+  useEffect(() => {
+    if (isOwnProfile && profileData && !currentUser) {
+      setCurrentUser({
+        username: profileData.username,
+        followersCount: profileData.followersCount || 0,
+        followingCount: profileData.followingCount || 0,
+      });
+    }
+  }, [isOwnProfile, profileData, currentUser, setCurrentUser]);
 
   // Initialize follow data when profileData changes
   useEffect(() => {
@@ -108,12 +121,22 @@ function Profile({
     bio = isOwnProfile ? "Agrega una bio breve..." : "Sin biografía",
     city = "",
     profilePictureUrl,
-    followersCount = 0,
-    followingCount = 0,
     runningLevel = "BEGINNER",
     isVerified = false,
     isPublicProfile = true,
+    followersCount = 0,
+    followingCount = 0,
   } = profileData;
+
+  // For own profile, use the data from currentUser (updated in real-time)
+  // For other profiles, use hook data that updates when following/unfollowing
+  const displayFollowersCount = isOwnProfile && currentUser 
+    ? currentUser.followersCount 
+    : (isOwnProfile ? followersCount : hookFollowersCount);
+  
+  const displayFollowingCount = isOwnProfile && currentUser 
+    ? currentUser.followingCount 
+    : (isOwnProfile ? followingCount : hookFollowingCount);
 
   const levelLabels = {
     BEGINNER: "Principiante",
@@ -207,14 +230,14 @@ function Profile({
             className={`stat ${isOwnProfile ? 'clickable' : ''}`}
             onClick={isOwnProfile ? handleShowFollowers : undefined}
           >
-            <span className="count">{hookFollowersCount}</span>
+            <span className="count">{displayFollowersCount}</span>
             <span className="label">Seguidores</span>
           </div>
           <div 
             className={`stat ${isOwnProfile ? 'clickable' : ''}`}
             onClick={isOwnProfile ? handleShowFollowing : undefined}
           >
-            <span className="count">{hookFollowingCount}</span>
+            <span className="count">{displayFollowingCount}</span>
             <span className="label">Siguiendo</span>
           </div>
         </div>

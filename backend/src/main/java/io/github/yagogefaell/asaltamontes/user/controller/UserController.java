@@ -58,8 +58,9 @@ public class UserController {
     }
 
     @GetMapping("{username}")
-    public UserProfileDto getUserByUsername(@PathVariable String username) {
-        return userService.getUserByUsername(username);
+    public UserProfileDto getUserByUsername(Authentication authentication, @PathVariable String username) {
+        Long requesterId = ((UserAccount) authentication.getPrincipal()).getId();
+        return userService.getUserByUsername(username, requesterId);
     }
 }
 

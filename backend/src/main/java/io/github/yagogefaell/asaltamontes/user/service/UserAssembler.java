@@ -29,7 +29,7 @@ public class UserAssembler {
         );
     }
 
-    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile) {
+    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile, boolean isFollowing) {
         return new UserProfileDto(
                 user.getUsername(),
                 user.getIsVerified(),
@@ -39,6 +39,7 @@ public class UserAssembler {
                 safe(profile.getProfilePictureUrl()),
                 profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
                 profile.getIsPublicProfile(),
+                isFollowing,
                 profile.getFollowersCount(),
                 profile.getFollowingCount()
         );

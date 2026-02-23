@@ -6,11 +6,12 @@ function Button({
   children, 
   variant = "primary", 
   type = "button", 
+  size = "medium",
   loading = false,
   disabled = false,
   ...props 
 }) {
-  const className = `btn ${variant}`;
+  const className = `btn ${variant} ${size}`;
   const isDisabled = disabled || loading;
   
   return (

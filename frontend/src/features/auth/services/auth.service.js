@@ -11,9 +11,10 @@ export async function loginRequest({ username, password }) {
 
 export async function registerRequest({ fullName, username, email, password, confirmPassword }) {
   try {
-    await authApiClient.post('/auth/register', { fullName, username, email, password, confirmPassword })
-    return;
+    const response = await authApiClient.post('/auth/register', { fullName, username, email, password, confirmPassword })
+    return response;
   } catch (error) {
+    // Re-throw the error with all its properties preserved
     throw error
   }
 }

@@ -19,11 +19,25 @@ const Register = () => {
       await register(fullName, username, email, password, confirmPassword);
       navigate("/home");
     } catch (err) {
-      setFullNameErrorMessage(err.errors.fullName || "");
-      setUsernameErrorMessage(err.errors.username || "");
-      setEmailErrorMessage(err.errors.email || "");
-      setPasswordErrorMessage(err.errors.password || "");
-      setConfirmPasswordErrorMessage(err.errors.confirmPassword || "");
+      // Check if error has validation errors structure
+      if (err.errors) {
+        setFullNameErrorMessage(err.errors.fullName || "");
+        setUsernameErrorMessage(err.errors.username || "");
+        setEmailErrorMessage(err.errors.email || "");
+        setPasswordErrorMessage(err.errors.password || "");
+        setConfirmPasswordErrorMessage(err.errors.confirmPassword || "");
+      } else {
+        // Handle generic error message (e.g., 409 Conflict)
+        const errorMsg = err.message || "Error al registrarse";
+        
+        // If it's a duplicate user error, set username error
+        if (err.status === 409 || errorMsg.includes("ya existe")) {
+          setUsernameErrorMessage(errorMsg);
+        } else {
+          // Show as a general error on all fields or as an alert
+          setEmailErrorMessage(errorMsg);
+        }
+      }
     }
   };
 

@@ -47,6 +47,23 @@
   flex: 1;
 }
 
+.user-card-action {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.user-card-action button {
+  min-width: 95px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  pointer-events: auto;
+}
+
 .user-name {
   font-weight: 500;
   font-size: 0.95rem;

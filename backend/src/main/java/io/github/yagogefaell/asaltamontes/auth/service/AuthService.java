@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
 import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidTokenException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidUsernameOrPasswordException;
 import io.github.yagogefaell.asaltamontes.infrastructure.security.JwtUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
@@ -23,14 +24,17 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public TokenPairs login(String username, String password) {
+        try {
+            var authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
+            
+            UserAccount user = (UserAccount) authentication.getPrincipal();
+            return generateTokens(user);
 
-        var authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-
-        UserAccount user = (UserAccount) authentication.getPrincipal();
-
-        return generateTokens(user);
+        } catch (Exception e) {
+            throw new InvalidUsernameOrPasswordException();
+        }
     }
 
     public String refreshAccessToken(String refreshToken) {

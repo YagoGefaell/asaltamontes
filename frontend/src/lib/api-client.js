@@ -147,18 +147,19 @@ class ApiClient {
     }
 
     let errorMessage = 'An error occurred'
-    
+    let errors = null
+
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      // ProblemDetail uses 'detail', but also support 'message' and 'error' for compatibility
+      errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage
       
-      if (response.status === 400 && errorData.errors) {
-        const error = new Error(errorMessage)
-        error.status = response.status
-        error.errors = errorData.errors
-        throw error
+      // Extract individual field errors if present
+      if (errorData.errors) {
+        errors = errorData.errors
       }
     } catch (parseError) {
+      // JSON parsing failed, use a generic message based on status
       if (response.status >= 500) {
         errorMessage = 'Error del servidor. Por favor, inténtalo más tarde.'
       } else if (response.status === 401) {
@@ -167,6 +168,8 @@ class ApiClient {
         errorMessage = 'Acceso denegado'
       } else if (response.status === 404) {
         errorMessage = 'Recurso no encontrado'
+      } else if (response.status === 409) {
+        errorMessage = 'El usuario ya existe'
       } else {
         errorMessage = response.statusText || errorMessage
       }
@@ -174,6 +177,12 @@ class ApiClient {
 
     const error = new Error(errorMessage)
     error.status = response.status
+    
+    // Attach field errors if they exist
+    if (errors) {
+      error.errors = errors
+    }
+    
     throw error
   }
 

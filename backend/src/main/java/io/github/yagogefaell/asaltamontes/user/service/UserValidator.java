@@ -82,6 +82,25 @@ public class UserValidator {
     }
 
     // -----------------------------
+    // VALIDACIÓN INICIO DE SESIÓN
+    // -----------------------------
+    public void validateLogin(String username, String password) {
+        Map<String, String> errors = new HashMap<>();
+
+        if (username == null || username.isBlank()) {
+            errors.put("username", "Username requerido");
+        }
+
+        if (password == null || password.isBlank()) {
+            errors.put("password", "Contraseña requerida");
+        }
+
+        if (!errors.isEmpty()) {
+            throw new MultipleFieldConflictException(errors);
+        }
+    }   
+
+    // -----------------------------
     // VALIDACIONES INDIVIDUALES
     // -----------------------------
     private void validateFullName(String fullName, Map<String, String> errors) {

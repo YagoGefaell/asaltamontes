@@ -12,6 +12,7 @@ import {
 function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
 
   // ---------------- Verificar sesión al cargar ----------------
   useEffect(() => {
@@ -84,16 +85,51 @@ function AuthProvider({ children }) {
     }
   };
 
+  // ---------------- UPDATE FOLLOW COUNTS ----------------
+  const incrementFollowing = () => {
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      followingCount: (prev.followingCount || 0) + 1
+    } : null);
+  };
+
+  const decrementFollowing = () => {
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      followingCount: Math.max(0, (prev.followingCount || 0) - 1)
+    } : null);
+  };
+
+  const incrementFollowers = () => {
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      followersCount: (prev.followersCount || 0) + 1
+    } : null);
+  };
+
+  const decrementFollowers = () => {
+    setCurrentUser(prev => prev ? {
+      ...prev,
+      followersCount: Math.max(0, (prev.followersCount || 0) - 1)
+    } : null);
+  };
+
   // ---------------- CONTEXT PROVIDER ----------------
   return (
     <AuthContext.Provider
       value={{
         isAuthenticated,
         checkingAuth,
+        currentUser,
         login,
         logout,
         register,
         refreshToken,
+        setCurrentUser,
+        incrementFollowing,
+        decrementFollowing,
+        incrementFollowers,
+        decrementFollowers,
       }}
     >
       {children}

@@ -62,7 +62,7 @@ export async function followUserRequest(username) {
     const result = await apiClient.post(`/api/users/follow/${username}`)
     return result
   } catch (error) {
-    throw new Error(error.message || "Error siguiendo usuario")
+    throw error
   }
 }
 
@@ -71,7 +71,7 @@ export async function unfollowUserRequest(username) {
     const result = await apiClient.delete(`/api/users/follow/${username}`)
     return result
   } catch (error) {
-    throw new Error(error.message || "Error dejando de seguir usuario")
+    throw error
   }
 }
 

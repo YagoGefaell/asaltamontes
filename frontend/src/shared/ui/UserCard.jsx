@@ -1,58 +1,79 @@
 // UserCard.jsx
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatters } from "../../utils/helpers";
+import Button from "../forms/Button";
 import "./UserCard.css";
 
-const MIN_PRESS_DURATION = 150; // duración mínima en ms
-
-const UserCard = ({ fullName, username, profilePictureUrl }) => {
+const UserCard = ({ 
+  fullName, 
+  username, 
+  profilePictureUrl, 
+  showFollowButton = false,
+  isFollowing = false,
+  onFollowToggle = null,
+  followLoading = false 
+}) => {
   const [pressed, setPressed] = useState(false);
-  const pressStartTime = useRef(0);
-  const timeoutRef = useRef(null);
   const navigate = useNavigate();
 
   // Usar función utilitaria para generar avatar
   const avatarSrc = formatters.avatar(profilePictureUrl, fullName, username);
 
-  const handlePressStart = () => {
-    pressStartTime.current = Date.now();
+  const handleCardClick = (e) => {
+    // Don't navigate if clicking on a button or inside button container
+    const target = e.target;
+    if (target.closest('button') || target.closest('.user-card-action')) {
+      return;
+    }
+    
+    navigate(`/users/${username}`);
+  };
+
+  const handlePressStart = (e) => {
+    // Don't activate press effect on button area
+    if (e.target.closest('button') || e.target.closest('.user-card-action')) {
+      return;
+    }
     setPressed(true);
   };
 
-  const handlePressEnd = () => {
-    const elapsed = Date.now() - pressStartTime.current;
-    const remaining = MIN_PRESS_DURATION - elapsed;
+  const handlePressEnd = (e) => {
+    setPressed(false);
+  };
 
-    const finish = () => {
-      setPressed(false)
-      navigate(`/users/${username}`);
-    };
-
-    if (remaining > 0) {
-      // asegurar duración mínima
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(finish, remaining);
-    } else {
-      setPressed(false);
+  const handleFollowClick = (e) => {
+    e.stopPropagation();
+    if (onFollowToggle && !followLoading) {
+      onFollowToggle(username);
     }
   };
 
   return (
     <div
       className={`user-card ${pressed ? "pressed" : ""}`}
+      onClick={handleCardClick}
       onMouseDown={handlePressStart}
       onMouseUp={handlePressEnd}
       onMouseLeave={handlePressEnd}
-      onTouchStart={handlePressStart}
-      onTouchEnd={handlePressEnd}
-      onTouchCancel={handlePressEnd}
     >
       <img src={avatarSrc} alt={username} className="user-avatar" />
       <div className="user-info">
         <span className="user-name">{fullName || username}</span>
         <span className="user-username">@{username}</span>
       </div>
+      {showFollowButton && (
+        <div className="user-card-action">
+          <Button
+            variant={isFollowing ? "outline" : "primary"}
+            size="small"
+            onClick={handleFollowClick}
+            disabled={followLoading}
+          >
+            {followLoading ? '...' : (isFollowing ? 'Siguiendo' : 'Seguir')}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

@@ -52,6 +52,11 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(InvalidUsernameOrPasswordException.class)
+    public ProblemDetail handleInvalidUsernameOrPassword(InvalidUsernameOrPasswordException ex, HttpServletRequest request) {
+        return buildProblem(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage(), request, null);
+    }
+
     @ExceptionHandler(InvalidTokenException.class)
     public ProblemDetail handleInvalidToken(InvalidTokenException ex, HttpServletRequest request) {
         return buildProblem(HttpStatus.UNAUTHORIZED, "Unauthorized", ex.getMessage(), request, null);

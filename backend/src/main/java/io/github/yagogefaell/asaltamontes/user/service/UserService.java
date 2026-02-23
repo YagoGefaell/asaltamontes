@@ -14,6 +14,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccountRole;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
 import io.github.yagogefaell.asaltamontes.user.dto.UserSelfDto;
 import io.github.yagogefaell.asaltamontes.user.dto.UserProfileDto;
@@ -27,6 +28,7 @@ public class UserService implements UserDetailsService {
 
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
+    private final UserFollowRepository userFollowRepository;
     private final UserValidator validator;
     private final UserProfileUpdater updater;
     private final UserAssembler assembler;
@@ -117,14 +119,16 @@ public class UserService implements UserDetailsService {
     }
 
     // ------------------ GET USER BY USERNAME ------------------
-    public UserProfileDto getUserByUsername(String username) {
+    public UserProfileDto getUserByUsername(String username, Long requesterId) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UserNotFoundException(username));
 
         UserProfile profile = userProfileRepository.findById(user.getId())
                 .orElseThrow(() -> new UserNotFoundException(username));
 
-        return assembler.toUserProfile(user, profile);
+        boolean isFollowing = userFollowRepository.existsByFollowerIdAndFollowingId(requesterId, user.getId());
+
+        return assembler.toUserProfile(user, profile, isFollowing);
     }
 
     public Page<UserSearchDto> getAllUsers(Long excludeId, Pageable pageable) {

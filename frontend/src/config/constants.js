@@ -4,7 +4,7 @@
 
 // API Configuration
 export const API_CONFIG = {
-  BASE_URL: import.meta.env.VITE_API_URL || 'http://192.168.1.42:8080',
+  BASE_URL: 'http://localhost:8080',
   ENDPOINTS: {
     // Auth endpoints
     AUTH: {

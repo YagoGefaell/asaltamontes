@@ -12,6 +12,7 @@ public record UserProfileDto(
     String runningLevel,
 
     Boolean isPublicProfile,
+    Boolean isFollowing,
 
     Long followersCount,
     Long followingCount

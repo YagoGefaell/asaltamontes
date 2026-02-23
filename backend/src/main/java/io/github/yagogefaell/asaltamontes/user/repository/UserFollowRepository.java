@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserFollow;
-import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto;
 import jakarta.transaction.Transactional;
 
 @Repository
@@ -26,28 +26,38 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
     void deleteByFollowerIdAndFollowingId(Long followerId, Long followingId);
 
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto(
             u.username,
             u.profile.fullName,
-            u.profile.profilePictureUrl
+            u.profile.profilePictureUrl,
+            CASE WHEN EXISTS (
+                SELECT 1 FROM UserFollow f2
+                WHERE f2.follower.id = :followerId
+                AND f2.following.id = u.id
+            ) THEN true ELSE false END
         )
         FROM UserFollow f
         JOIN f.following u
         WHERE f.follower.id = :followerId
         ORDER BY u.username ASC
     """)
-    Page<UserSearchDto> findFollowingByFollowerId(Long followerId, Pageable pageable);
+    Page<UserSearchFollowDto> findFollowingByFollowerId(Long followerId, Pageable pageable);
 
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto(
             u.username,
             u.profile.fullName,
-            u.profile.profilePictureUrl
+            u.profile.profilePictureUrl,
+            CASE WHEN EXISTS (
+                SELECT 1 FROM UserFollow f2
+                WHERE f2.follower.id = :followingId
+                AND f2.following.id = u.id
+            ) THEN true ELSE false END
         )
         FROM UserFollow f
         JOIN f.follower u
         WHERE f.following.id = :followingId
         ORDER BY u.username ASC
     """)
-    Page<UserSearchDto> findFollowersByFollowingId(Long followingId, Pageable pageable);
+    Page<UserSearchFollowDto> findFollowersByFollowingId(Long followingId, Pageable pageable);
 }
