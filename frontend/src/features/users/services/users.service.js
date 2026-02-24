@@ -6,6 +6,9 @@ export async function getMeRequest() {
     const userData = await apiClient.get('/api/users/me')
     return userData
   } catch (error) {
+    if (error.status === 401 || error.status === 403) {
+      return null
+    }
     throw new Error("Error al cargar la información del usuario")
   }
 }

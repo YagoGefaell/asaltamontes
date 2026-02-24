@@ -86,6 +86,42 @@ export const storage = {
       return false
     }
   },
+
+  /**
+   * Clear application-specific localStorage data
+   */
+  clearAppData: () => {
+    try {
+      // Common keys that might be stored by the app
+      const appKeys = [
+        'user', 'auth', 'token', 'session', 'profile',
+        'settings', 'preferences', 'theme', 'language',
+        'asaltamontes', 'app-state', 'redux-persist'
+      ]
+      
+      // Remove each key if it exists
+      appKeys.forEach(key => {
+        if (localStorage.getItem(key)) {
+          localStorage.removeItem(key)
+        }
+      })
+      
+      // Also remove any keys that start with app name
+      Object.keys(localStorage).forEach(key => {
+        if (key.toLowerCase().includes('asaltamontes') || 
+            key.toLowerCase().includes('auth') ||
+            key.toLowerCase().includes('user')) {
+          localStorage.removeItem(key)
+        }
+      })
+      
+      console.log('✅ Application localStorage cleaned')
+      return true
+    } catch (error) {
+      console.warn('Error clearing app localStorage:', error)
+      return false
+    }
+  },
 }
 
 /**
@@ -181,4 +217,24 @@ export const urlUtils = {
     
     return result
   },
+}
+
+// Make localStorage cleanup available globally for debugging
+if (typeof window !== 'undefined') {
+  window.clearAppStorage = () => {
+    storage.clearAppData()
+    console.log('🧹 Application storage cleared manually')
+  }
+  
+  window.inspectStorage = () => {
+    console.group('📦 Storage Inspector')
+    console.log('localStorage keys:', Object.keys(localStorage))
+    console.log('localStorage size:', new Blob(Object.values(localStorage)).size + ' bytes')
+    Object.keys(localStorage).forEach(key => {
+      console.log(`${key}:`, localStorage.getItem(key)?.substring(0, 100) + '...')
+    })
+    console.groupEnd()
+  }
+  
+  console.log('🛠️ Storage utilities available: clearAppStorage() and inspectStorage()')
 }

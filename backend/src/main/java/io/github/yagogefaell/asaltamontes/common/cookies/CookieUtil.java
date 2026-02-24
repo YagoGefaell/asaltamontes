@@ -7,7 +7,7 @@ public final class CookieUtil {
 
     private CookieUtil() {}
 
-    public static ResponseCookie accessToken(String token) {
+    /* public static ResponseCookie accessToken(String token) {
         return ResponseCookie.from("accessToken", token)
             .httpOnly(true)
             .secure(false) // Set to true in production (https)
@@ -15,7 +15,7 @@ public final class CookieUtil {
             .path("/")
             .maxAge(60 * 60)
             .build();
-    }
+    } */
 
     public static ResponseCookie refreshToken(String token) {
         return ResponseCookie.from("refreshToken", token)

@@ -13,8 +13,8 @@ function BackendStatus() {
     const checkBackendStatus = async () => {
       try {
         // Try a simple endpoint to check if backend is reachable
-        // Don't use /auth/verify as it expects cookies
-        await apiClient.get('/auth/verify')
+        // /api/users/me will return 401 if not authenticated
+        await apiClient.get('/api/users/me')
         setStatus('online')
         setError(null)
       } catch (err) {

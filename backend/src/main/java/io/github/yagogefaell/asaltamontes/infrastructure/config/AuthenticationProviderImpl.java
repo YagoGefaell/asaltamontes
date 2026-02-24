@@ -1,4 +1,4 @@
-package io.github.yagogefaell.asaltamontes.auth.service;
+package io.github.yagogefaell.asaltamontes.infrastructure.config;
 
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.BadCredentialsException;

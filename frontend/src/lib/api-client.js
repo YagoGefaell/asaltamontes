@@ -1,4 +1,5 @@
 import { API_CONFIG } from '../config/constants.js'
+import { getAccessToken } from '../features/auth/services/auth-token.js'
 
 class ApiClient {
   constructor(enableAutoRefresh = true, baseURL = API_CONFIG.BASE_URL) {
@@ -18,12 +19,18 @@ class ApiClient {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), this.timeout)
 
+    const accessToken = getAccessToken()
+    const authHeader = accessToken && !this._isTokenlessEndpoint(endpoint)
+      ? { Authorization: `Bearer ${accessToken}` }
+      : {}
+
     const config = {
       credentials: 'include',
       mode: 'cors',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        ...authHeader,
         ...options.headers,
       },
       signal: controller.signal,
@@ -100,8 +107,13 @@ class ApiClient {
   }
 
   _isAuthEndpoint(endpoint) {
-    const authEndpoints = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout', '/auth/verify']
+    const authEndpoints = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/logout']
     return authEndpoints.some(authPath => endpoint.includes(authPath))
+  }
+
+  _isTokenlessEndpoint(endpoint) {
+    const tokenlessEndpoints = ['/auth/login', '/auth/register', '/auth/refresh']
+    return tokenlessEndpoints.some(authPath => endpoint.includes(authPath))
   }
 
   setLogoutCallback(callback) {

@@ -11,7 +11,6 @@ export const API_CONFIG = {
       LOGIN: '/auth/login',
       REGISTER: '/auth/register',
       LOGOUT: '/auth/logout',
-      VERIFY: '/auth/verify',
       REFRESH: '/auth/refresh',
     },
     // User endpoints

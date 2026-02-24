@@ -19,10 +19,9 @@ export function UserProfileProvider({ children }) {
           setLoading(true);
           try {
             const data = await getMeRequest();
-            setUserProfile(data);
+            setUserProfile(data || null);
           } catch (err) {
             setUserProfile(null);
-            throw err;
           } finally {
             setLoading(false);
           }
