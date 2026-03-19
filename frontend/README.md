@@ -1,16 +1,156 @@
-# React + Vite
+# Asaltamontes Frontend - React Web Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Modern, responsive React web application for the Asaltamontes Female social network. This project provides the user interface for community connection, focusing on trail running and mountain sports for women.
 
-Currently, two official plugins are available:
+## Table of Contents
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+  - [Overview](#overview)
+  - [Authentication Strategy](#authentication-strategy)
+  - [Tech Stack](#tech-stack)
+  - [Project Structure](#project-structure)
+  - [Features & Roadmap](#features--roadmap)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
 
-## React Compiler
+-----
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## Overview
 
-## Expanding the ESLint configuration
+The Asaltamontes frontend is a Single Page Application (SPA) currently in its MVP phase. It focuses on user identity, social discovery, and secure session management. The application is built to be lightweight, using native Web APIs like **Fetch** for network requests and **React Context** for global state management.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+-----
+
+## Authentication Strategy
+
+The application implements a robust security flow to handle JWT tokens without exposing them to XSS attacks via LocalStorage.
+
+1.  **In-Memory Access Token:** Upon login, the Access Token is stored in a React Context variable. It is lost on page refresh to ensure maximum security.
+2.  **Silent Refresh:** - The application uses an `AuthContext` with a `useEffect` hook that triggers on mount.
+      - This hook calls the `/api/auth/refresh` endpoint using `credentials: 'include'` to send the `HttpOnly` Refresh Token cookie automatically.
+      - If the cookie is valid, the backend returns a new Access Token, restoring the session silently after a page reload.
+3.  **Interceptor Logic:** Manual interceptors are implemented within the fetch wrappers. If a request fails due to an expired token, the application attempts to call the refresh endpoint before forcing a logout, ensuring a seamless user experience.
+
+-----
+
+## Tech Stack
+
+  - **Core:** React 19
+  - **Build Tool:** Vite 7.2.4 (SWC)
+  - **Routing:** React Router (BrowserRouter)
+  - **State Management:** React Context API
+  - **API Client:** Native Fetch API
+  - **Styling:** Standard CSS (Modular approach)
+  - **Icons:** React Icons 5.5
+  - **Testing:** Vitest 2.0 & React Testing Library
+
+-----
+
+## Project Structure
+
+```text
+frontend/
+├── src/
+│   ├── app/
+│   │   ├── App.jsx            # Root component & Providers
+│   │   ├── router.jsx         # Browser Router definitions
+│   │   └── guards/            # Protected Routes (AuthGuard)
+│   ├── modules/               # Page-level modules
+│   │   ├── auth/              # Login & Registration
+│   │   ├── profile/           # User's personal profile
+│   │   ├── search/            # User discovery
+│   │   └── settings/          # Account configuration
+│   ├── features/              # Business logic hooks & Fetch services
+│   ├── shared/                # Reusable UI components
+│   ├── hooks/                 # Global utility hooks (useAuth, etc.)
+│   └── styles/                # Global and component-specific CSS
+├── vite.config.js             # Vite configuration
+└── package.json               # Dependencies and scripts
+```
+
+-----
+
+## Features & Roadmap
+
+### Currently Functional
+
+  - **User Authentication:** Complete Login and Registration flows.
+  - **Identity Management:** View and edit personal profiles and account settings.
+  - **Social Discovery:** Search functionality to find other users within the Asaltamontes community.
+  - **Social Interaction:** Fully functional "Follow/Unfollow" system to connect with other runners.
+  - **Route Protection:** Guarded routes to prevent unauthenticated access to the dashboard and profile.
+
+### Planned for Future Release
+
+  - **Community Groups:** Modules for creating and joining trail running meetups.
+  - **Event Management:** Integration for race registration and event discovery.
+  - **Direct Messaging:** Real-time chat interface for user coordination.
+  - **Notification System:** In-app alerts for new followers and upcoming events.
+
+-----
+
+## Prerequisites
+
+  - **Node.js 18.0.0 or higher**
+  - **npm 9.0.0 or higher**
+  - **Running Backend:** The application requires the Asaltamontes Backend API to be active (default: `http://localhost:8080`).
+
+-----
+
+## Installation
+
+1.  **Clone and Navigate:**
+
+    ```bash
+    cd frontend
+    ```
+
+2.  **Install Dependencies:**
+
+    ```bash
+    npm install
+    ```
+
+3.  **Start Development Server:**
+
+    ```bash
+    npm run dev
+    ```
+
+    The application will be available at `http://localhost:5173`.
+
+-----
+
+## Configuration
+
+The application uses Vite environment variables for configuration. Create a `.env.local` file in the root of the `frontend` directory:
+
+```env
+VITE_API_BASE_URL=http://localhost:8080/api
+VITE_APP_NAME=Asaltamontes Female
+```
+
+### Build for Production
+
+To generate a production-ready bundle:
+
+```bash
+npm run build
+```
+
+### Testing
+
+To run the Vitest suite:
+
+```bash
+npm run test        # Watch mode
+npm run test:run    # Single run
+```
+
+-----
+
+**Last Updated:** March 2026
+
+For information regarding the API and database, please refer to the [Backend README](../backend/README.md).
+
+-----

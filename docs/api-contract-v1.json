@@ -1,95 +1,553 @@
 {
-    "openapi": "3.0.3",
-    "info": {
-        "title": "API Asaltamontes",
-        "version": "1.0.0",
-        "description": "Contrato entre frontend y backend para la aplicación el traspaso de datos"
-    },
-    "servers": [
-        {
-        "url": "http://localhost:8080",
-        "description": "Servidor de desarrollo local"
-        }
-    ],
-    "paths": {
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Asaltamontes API",
+    "version": "1.0.0",
+    "description": "API contract between frontend and backend for data exchange"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
     "/auth/register": {
-        "post": {
-            "summary": "Registrar nueva corredora",
-            "requestBody": {
-            "required": true,
+      "post": {
+        "summary": "Register new user",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fullName", "username", "email", "password", "confirmPassword"],
+                "properties": {
+                  "fullName": { "type": "string", "example": "María Runner" },
+                  "username": { "type": "string", "example": "runner123" },
+                  "email": { "type": "string", "format": "email", "example": "runner@example.com" },
+                  "password": { "type": "string", "example": "SuperSecret123" },
+                  "confirmPassword": { "type": "string", "example": "SuperSecret123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User successfully registered",
+            "headers": {
+              "Set-Cookie": {
+                "schema": { "type": "string" },
+                "description": "Refresh token in HttpOnly cookie"
+              }
+            },
             "content": {
-                "application/json": {
+              "application/json": {
                 "schema": {
-                    "type": "object",
-                    "required": ["fullName", "username", "email", "password"],
-                    "properties": {
-                    "fullName": { "type": "string", "example": "María Runner" },
-                    "username": { "type": "string", "example": "runner123" },
-                    "email": { "type": "string", "format": "email", "example": "runner@example.com" },
-                    "password": { "type": "string", "example": "SuperSecret123" }
-                    }
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+                  }
                 }
-                }
+              }
             }
-            },
-            "responses": {
-            "201": {
-                "description": "Usuario registrado correctamente",
-                "content": {
-                "application/json": {
-                    "schema": {
-                    "type": "object",
-                    "properties": {
-                        "id": { "type": "integer", "example": 1 },
-                        "username": { "type": "string", "example": "runner123" },
-                        "email": { "type": "string", "format": "email", "example": "runner@example.com" },
-                        "fullName": { "type": "string", "example": "María Runner" },
-                        "createdAt": { "type": "string", "format": "date-time", "example": "2026-01-29T12:00:00Z" }
-                    }
-                    }
-                }
-                }
-            },
-            "400": {
-                "description": "Errores de validación múltiples",
-                "content": {
-                "application/json": {
-                    "schema": {
-                    "type": "object",
-                    "properties": {
-                        "status": { "type": "integer", "example": 400 },
-                        "error": { "type": "string", "example": "Bad Request" },
-                        "errors": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                            "field": { "type": "string", "example": "email" },
-                            "message": { "type": "string", "example": "Email already in use" }
-                            }
+          },
+          "400": {
+            "description": "Validation errors",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "integer", "example": 400 },
+                    "error": { "type": "string", "example": "Bad Request" },
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": { "type": "string", "example": "email" },
+                          "message": { "type": "string", "example": "Email already in use" }
                         }
-                        }
+                      }
                     }
-                    },
-                    "examples": {
-                    "multipleErrors": {
-                        "value": {
-                        "status": 400,
-                        "error": "Bad Request",
-                        "errors": [
-                            { "field": "username", "message": "Username already in use" },
-                            { "field": "email", "message": "Email already in use" },
-                            { "field": "password", "message": "Contraseña demasiado corta" },
-                            { "field": "fullName", "message": "Debe tener entre 3 y 50 caracteres" }
-                        ]
-                        }
-                    }
-                    }
+                  }
                 }
-                }
+              }
             }
-            }
+          }
         }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "User login",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "runner123" },
+                  "password": { "type": "string", "example": "SuperSecret123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful login",
+            "headers": {
+              "Set-Cookie": {
+                "schema": { "type": "string" },
+                "description": "Refresh token in HttpOnly cookie"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "User logout",
+        "tags": ["Authentication"],
+        "responses": {
+          "200": {
+            "description": "Successful logout",
+            "headers": {
+              "Set-Cookie": {
+                "schema": { "type": "string" },
+                "description": "Refresh token cookie cleared"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "summary": "Refresh access token",
+        "tags": ["Authentication"],
+        "parameters": [
+          {
+            "name": "refreshToken",
+            "in": "cookie",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Refresh token stored in cookie"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token successfully refreshed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired refresh token"
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "summary": "Get authenticated user information",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "User information",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "userId": { "type": "integer", "example": 1 },
+                    "username": { "type": "string", "example": "runner123" },
+                    "email": { "type": "string", "example": "runner@example.com" },
+                    "isVerified": { "type": "boolean", "example": true },
+                    "fullName": { "type": "string", "example": "María Runner" },
+                    "bio": { "type": "string", "example": "Passionate runner" },
+                    "city": { "type": "string", "example": "Madrid" },
+                    "profilePictureUrl": { "type": "string", "example": "https://example.com/pic.jpg" },
+                    "runningLevel": { "type": "string", "example": "INTERMEDIATE" },
+                    "birthDate": { "type": "string", "format": "date", "example": "1990-05-15" },
+                    "phoneNumber": { "type": "string", "example": "+34600000000" },
+                    "isPublicProfile": { "type": "boolean", "example": true },
+                    "followersCount": { "type": "integer", "example": 150 },
+                    "followingCount": { "type": "integer", "example": 200 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Update authenticated user profile",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "newusername" },
+                  "email": { "type": "string", "example": "newemail@example.com" },
+                  "fullName": { "type": "string", "example": "María Runner Updated" },
+                  "bio": { "type": "string", "example": "New bio" },
+                  "city": { "type": "string", "example": "Barcelona" },
+                  "profilePictureUrl": { "type": "string", "example": "https://example.com/newpic.jpg" },
+                  "isPublicProfile": { "type": "boolean", "example": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/paths/~1api~1users~1me/get/responses/200/content/application~1json/schema"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid data"
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/users/search": {
+      "get": {
+        "summary": "Search users",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Search term for username"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Page size"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "default": "username" },
+            "description": "Sort field"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": { "type": "string", "example": "runner123" },
+                          "fullName": { "type": "string", "example": "María Runner" },
+                          "profilePictureUrl": { "type": "string", "example": "https://example.com/pic.jpg" }
+                        }
+                      }
+                    },
+                    "pageable": { "type": "object" },
+                    "totalPages": { "type": "integer", "example": 5 },
+                    "totalElements": { "type": "integer", "example": 100 },
+                    "size": { "type": "integer", "example": 20 },
+                    "number": { "type": "integer", "example": 0 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/users/{username}": {
+      "get": {
+        "summary": "Get user public profile",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username of the user to query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "username": { "type": "string", "example": "runner123" },
+                    "isVerified": { "type": "boolean", "example": true },
+                    "fullName": { "type": "string", "example": "María Runner" },
+                    "bio": { "type": "string", "example": "Passionate runner" },
+                    "city": { "type": "string", "example": "Madrid" },
+                    "profilePictureUrl": { "type": "string", "example": "https://example.com/pic.jpg" },
+                    "runningLevel": { "type": "string", "example": "INTERMEDIATE" },
+                    "isPublicProfile": { "type": "boolean", "example": true },
+                    "isFollowing": { "type": "boolean", "example": false },
+                    "followersCount": { "type": "integer", "example": 150 },
+                    "followingCount": { "type": "integer", "example": 200 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/users/follow/{username}": {
+      "post": {
+        "summary": "Follow a user",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username of the user to follow"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User successfully followed"
+          },
+          "400": {
+            "description": "Cannot follow yourself or already following this user"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Unfollow a user",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username of the user to unfollow"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully unfollowed"
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "User not found or not following"
+          }
+        }
+      }
+    },
+    "/api/users/following": {
+      "get": {
+        "summary": "Get users followed by authenticated user",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Page size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of followed users",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": { "type": "string", "example": "runner456" },
+                          "fullName": { "type": "string", "example": "Juan Runner" },
+                          "profilePictureUrl": { "type": "string", "example": "https://example.com/pic2.jpg" },
+                          "isFollowing": { "type": "boolean", "example": true }
+                        }
+                      }
+                    },
+                    "totalPages": { "type": "integer", "example": 10 },
+                    "totalElements": { "type": "integer", "example": 200 },
+                    "size": { "type": "integer", "example": 20 },
+                    "number": { "type": "integer", "example": 0 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/users/followers": {
+      "get": {
+        "summary": "Get authenticated user's followers",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 0 },
+            "description": "Page number"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 20 },
+            "description": "Page size"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Paginated list of followers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "username": { "type": "string", "example": "runner789" },
+                          "fullName": { "type": "string", "example": "Ana Runner" },
+                          "profilePictureUrl": { "type": "string", "example": "https://example.com/pic3.jpg" },
+                          "isFollowing": { "type": "boolean", "example": false }
+                        }
+                      }
+                    },
+                    "totalPages": { "type": "integer", "example": 8 },
+                    "totalElements": { "type": "integer", "example": 150 },
+                    "size": { "type": "integer", "example": 20 },
+                    "number": { "type": "integer", "example": 0 }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
     }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
     }
+  }
 }
