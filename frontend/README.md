@@ -10,7 +10,7 @@ Modern, responsive React web application for the Asaltamontes Female social netw
   - [Project Structure](#project-structure)
   - [Features & Roadmap](#features--roadmap)
   - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+  - [Installation & Deployment](#installation--deployment)
   - [Configuration](#configuration)
 
 -----
@@ -43,6 +43,7 @@ The application implements a robust security flow to handle JWT tokens without e
   - **Styling:** Standard CSS (Modular approach)
   - **Icons:** React Icons 5.5
   - **Testing:** Vitest 2.0 & React Testing Library
+  - **Containerization:** Docker
 
 -----
 
@@ -64,6 +65,7 @@ frontend/
 │   ├── shared/                # Reusable UI components
 │   ├── hooks/                 # Global utility hooks (useAuth, etc.)
 │   └── styles/                # Global and component-specific CSS
+├── Dockerfile                 # Production-ready Docker image (Nginx)
 ├── vite.config.js             # Vite configuration
 └── package.json               # Dependencies and scripts
 ```
@@ -91,48 +93,48 @@ frontend/
 
 ## Prerequisites
 
-  - **Node.js 18.0.0 or higher**
+  - **Docker & Docker Compose** (Highly recommended for full-stack integration)
+  - **Node.js 18.0.0 or higher** (For local development only)
   - **npm 9.0.0 or higher**
-  - **Running Backend:** The application requires the Asaltamontes Backend API to be active (default: `http://localhost:8080`).
 
 -----
 
-## Installation
+## Installation & Deployment
 
-1.  **Clone and Navigate:**
+### 1\. Using Docker (Recommended)
 
-    ```bash
-    cd frontend
-    ```
+To run the frontend as part of the entire Asaltamontes ecosystem, navigate to the **project root** and run:
 
-2.  **Install Dependencies:**
+```bash
+docker-compose --env-file .env up --build
+```
 
-    ```bash
-    npm install
-    ```
+*The frontend will be served at `http://localhost:5173`.*
 
-3.  **Start Development Server:**
+### 2\. Local Standalone Development
 
-    ```bash
-    npm run dev
-    ```
+If you only wish to run the frontend independently:
 
-    The application will be available at `http://localhost:5173`.
+1.  **Navigate to directory:** `cd frontend`
+2.  **Install dependencies:** `npm install`
+3.  **Start Dev Server:** `npm run dev`
 
 -----
 
 ## Configuration
 
-The application uses Vite environment variables for configuration. Create a `.env.local` file in the root of the `frontend` directory:
+The application uses Vite environment variables. For Dockerized environments, variables are managed via the root `.env`. For local development, create a `.env.local` file in the `frontend` directory:
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080/api
 VITE_APP_NAME=Asaltamontes Female
 ```
 
+> **Note:** When running via Docker, ensure `VITE_API_BASE_URL` points to the public address of your backend (usually `localhost:8080`) so the browser can reach the API.
+
 ### Build for Production
 
-To generate a production-ready bundle:
+To generate an optimized bundle:
 
 ```bash
 npm run build
@@ -143,13 +145,13 @@ npm run build
 To run the Vitest suite:
 
 ```bash
-npm run test        # Watch mode
-npm run test:run    # Single run
+npm run test         # Watch mode
+npm run test:run     # Single run
 ```
 
 -----
 
-**Last Updated:** March 2026
+*Last Updated:* March 2026
 
 For information regarding the API and database, please refer to the [Backend README](../backend/README.md).
 

@@ -49,7 +49,7 @@ The project is in an early stage. Core foundational features are implemented, wh
 
   - **Core:** Java 21, Spring Boot 3.5.10
   - **Security:** Spring Security + JWT (JSON Web Tokens)
-  - **Data:** Spring Data JPA, Hibernate, PostgreSQL 12+
+  - **Data:** Spring Data JPA, Hibernate, PostgreSQL 15
   - **Build:** Maven
 
 ### Frontend
@@ -59,20 +59,23 @@ The project is in an early stage. Core foundational features are implemented, wh
   - **Testing:** Vitest
   - **Styling:** CSS/Tailwind
 
+### Infrastructure
+
+  - **Containerization:** Docker & Docker Compose
+  - **Environment Management:** Dotenv (.env)
+
 -----
 
 ## Architecture & Infrastructure
 
-### Current Setup
+### Containerized Setup
 
-The project currently runs as a standard localized setup. Developers need PostgreSQL, Java, and Node.js installed directly on their host machines to run the development environment.
+The project is fully containerized, allowing for a seamless "one-command" setup. By using **Docker Compose**, we ensure that the database, backend, and frontend environments are identical for every developer, eliminating configuration drift.
 
 ### Deployment Roadmap
 
-To ensure enterprise-level professionalism and scalability as the platform features are completed, the infrastructure is scheduled for the following upgrades:
-
-1.  **Containerization:** Complete migration to **Docker** using `docker-compose`. This will allow new developers to spin up the database, backend, and frontend with a single command, standardizing the development environment.
-2.  **Orchestration:** Future implementation of **Kubernetes (K8s)** for high availability, auto-scaling during high-traffic community events, and streamlined deployments.
+1.  **Orchestration:** Future implementation of **Kubernetes (K8s)** for high availability, auto-scaling during high-traffic community events, and streamlined deployments.
+2.  **CI/CD:** Automated pipelines for testing and container image deployment.
 
 -----
 
@@ -80,43 +83,31 @@ To ensure enterprise-level professionalism and scalability as the platform featu
 
 ### Prerequisites
 
-  - **Java 21+**
-  - **Node.js 18+**
-  - **PostgreSQL 12+**
+  - **Docker** and **Docker Compose** installed.
+  - A `.env` file in the root directory with the required variables (`JWT_SECRET`, `DATABASE_PASSWORD`, etc.).
 
-### 1\. Database Setup
+### 1\. Launch the Full Stack
 
-Create your local PostgreSQL database:
-
-```sql
-CREATE DATABASE asaltamontes;
-CREATE USER asaltamontes_user WITH PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE asaltamontes TO asaltamontes_user;
-```
-
-### 2\. Backend Initialization
-
-Navigate to the backend directory, configure your environment variables with your database credentials and a secure `JWT_SECRET`, then run the server:
+The easiest way to run the entire project (Frontend, Backend, and Database) is using Docker Compose from the root directory:
 
 ```bash
-cd backend
-mvn clean install
-mvn spring-boot:run
+docker-compose --env-file .env up --build
 ```
 
-*The backend API will be available at `http://localhost:8080`*
+### 2\. Access the Services
 
-### 3\. Frontend Initialization
+Once the containers are healthy, the platform will be available at:
 
-In a new terminal, navigate to the frontend directory, install dependencies, and start the Vite development server:
+  - **Frontend:** `http://localhost:5173`
+  - **Backend API:** `http://localhost:8080`
+  - **PostgreSQL DB:** `localhost:5433` (Accessible via pgAdmin or DBeaver)
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+### 3\. Manual Development (Optional)
 
-*The web app will open at `http://localhost:5173`*
+If you prefer to run services individually for debugging:
+
+  - **Backend:** Use VS Code's `F5` (Run and Debug) to load the `.env` file automatically via `launch.json`.
+  - **Frontend:** Run `npm install` and `npm run dev` inside the `/frontend` folder.
 
 -----
 
@@ -124,16 +115,17 @@ npm run dev
 
 ```text
 asaltamontes/
-├── backend/                  # Spring Boot REST API
-│   ├── src/main/java/...     # Domain logic (Auth, Users, Communities)
-│   ├── src/main/resources/   # Application properties & DB configurations
-│   └── README.md             # Detailed Backend documentation
-├── frontend/                 # React Single Page Application (SPA)
-│   ├── src/                  # React components, hooks, and views
-│   ├── package.json          # Node dependencies
-│   └── README.md             # Detailed Frontend documentation
-├── docs/                     # OpenAPI contracts & technical specs
-└── README.md                 # Project overview (You are here)
+├── backend/                # Spring Boot REST API (Dockerized)
+│   ├── src/main/java/...   # Domain logic (Auth, Users, Communities)
+│   ├── src/main/resources/ # Application properties & DB configurations
+│   └── Dockerfile          # Backend container definition
+├── frontend/               # React Single Page Application (SPA)
+│   ├── src/                # React components, hooks, and views
+│   ├── Dockerfile          # Frontend container definition
+│   └── package.json        # Node dependencies
+├── docs/                   # OpenAPI contracts & technical specs
+├── docker-compose.yml      # Orchestration for all services
+└── README.md               # Project overview (You are here)
 ```
 
 -----
@@ -142,8 +134,8 @@ asaltamontes/
 
 For deep dives into specific areas of the application, please refer to our dedicated documentation files:
 
-  - **[Backend Setup & API Specs](./backend/README.md)**
-  - **[Frontend Architecture & UI](./frontend/README.md)**
+  - **[Backend Setup & API Specs](https://www.google.com/search?q=./backend/README.md)**
+  - **[Frontend Architecture & UI](https://www.google.com/search?q=./frontend/README.md)**
   - **API Contract:** Check the `/docs` folder for the OpenAPI specifications.
 
 -----
@@ -154,8 +146,12 @@ We welcome contributions as we build this platform.
 
 1.  Fork the repository.
 2.  Create a feature branch (`git checkout -b feature/FeatureName`).
-3.  Commit your changes (`git commit -m 'Add FeatureName'`).
+3.  Commit your changes (`git commit -m 'feat: add FeatureName'`).
 4.  Push to the branch (`git push origin feature/FeatureName`).
 5.  Open a Pull Request.
+
+-----
+
+*Last Updated:* March 2026
 
 -----
