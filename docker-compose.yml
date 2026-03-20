@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      - POSTGRES_DB=asaltamontes
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - asaltamontes-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend_app
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=jdbc:postgresql://postgres:5433/asaltamontes
+    ports:
+      - "8080:8080"
+    networks:
+      - asaltamontes-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend_app
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - asaltamontes-net
+
+networks:
+  asaltamontes-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
