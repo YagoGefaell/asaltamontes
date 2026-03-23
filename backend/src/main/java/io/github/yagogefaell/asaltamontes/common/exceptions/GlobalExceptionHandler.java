@@ -27,7 +27,7 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.toMap(
                         FieldError::getField,
                         FieldError::getDefaultMessage,
-                        (a, b) -> a // en caso de conflicto, se queda con el primero
+                        (a, b) -> a
                 ));
 
         return buildProblem(

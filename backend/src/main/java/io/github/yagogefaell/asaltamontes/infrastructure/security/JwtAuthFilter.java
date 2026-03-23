@@ -10,6 +10,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidTokenException;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -81,8 +82,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
 
             } catch (Exception e) {
-                logger.warn(e.getMessage());
                 SecurityContextHolder.clearContext();
+                throw new InvalidTokenException(jwt);
             }
         }
 

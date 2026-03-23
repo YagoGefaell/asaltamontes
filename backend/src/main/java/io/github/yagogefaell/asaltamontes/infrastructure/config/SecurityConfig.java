@@ -36,12 +36,12 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/ws-asaltamontes/**").permitAll()
                     .anyRequest().authenticated())
-                // .httpBasic(Customizer.withDefaults()) // autenticación básica (usuario y contraseña) para testing
                 .sessionManagement(
-                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // JWT = sin sesión
-                .authenticationProvider(authenticationProvider) // proveedor de autenticación personalizado
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) // filtramos JWT antes del filtro por defecto
+                        session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationProvider(authenticationProvider)
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) 
                 .build();
     }
 
