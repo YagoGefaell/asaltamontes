@@ -134,8 +134,8 @@ asaltamontes/
 
 For deep dives into specific areas of the application, please refer to our dedicated documentation files:
 
-  - **[Backend Setup & API Specs](https://www.google.com/search?q=./backend/README.md)**
-  - **[Frontend Architecture & UI](https://www.google.com/search?q=./frontend/README.md)**
+  - **[Backend Setup & API Specs](./backend/README.md)**
+  - **[Frontend Architecture & UI](./frontend/README.md)**
   - **API Contract:** Check the `/docs` folder for the OpenAPI specifications.
 
 -----

@@ -4,15 +4,15 @@ Backend REST API for the Asaltamontes Female platform. Built with Spring Boot an
 
 ## Table of Contents
 
-  - [Overview](https://www.google.com/search?q=%23overview)
-  - [Architecture & Security Flow](https://www.google.com/search?q=%23architecture--security-flow)
-  - [Tech Stack](https://www.google.com/search?q=%23tech-stack)
-  - [Project Structure](https://www.google.com/search?q=%23project-structure)
-  - [Roadmap & Future Implementation](https://www.google.com/search?q=%23roadmap--future-implementation)
-  - [Prerequisites](https://www.google.com/search?q=%23prerequisites)
-  - [Configuration & Environment](https://www.google.com/search?q=%23configuration--environment)
-  - [Installation & Running](https://www.google.com/search?q=%23installation--running)
-  - [API Endpoints](https://www.google.com/search?q=%23api-endpoints)
+  - [Overview](#overview)
+  - [Architecture & Security Flow](#architecture--security-flow)
+  - [Tech Stack](#tech-stack)
+  - [Project Structure](#project-structure)
+  - [Roadmap & Future Implementation](#roadmap--future-implementation)
+  - [Prerequisites](#prerequisites)
+  - [Configuration & Environment](#configuration--environment)
+  - [Installation & Running](#installation--running)
+  - [API Endpoints](#api-endpoints)
 
 -----
 
