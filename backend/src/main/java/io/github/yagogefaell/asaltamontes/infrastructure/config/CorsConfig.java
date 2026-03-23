@@ -15,13 +15,12 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(List.of(
-            "http://localhost:5173", "http://192.168.1.42:5173", // tu frontend
-            "chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop" // Postman Chrome extension
-        ));
+        configuration.setAllowedOriginPatterns(List.of("*"));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true); // Muy importante para cookies HttpOnly
+        configuration.setAllowCredentials(true);
+
+        configuration.setExposedHeaders(List.of("Authorization"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
