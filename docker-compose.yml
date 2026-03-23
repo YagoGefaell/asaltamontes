@@ -1,7 +1,5 @@
-version: '3.8'
-
 services:
-  postgres:
+  db:
     image: postgres:13
     container_name: postgres_db
     environment:
@@ -21,11 +19,11 @@ services:
       dockerfile: Dockerfile
     container_name: backend_app
     depends_on:
-      - postgres
+      - db
     env_file:
       - .env
     environment:
-      - DATABASE_URL=jdbc:postgresql://postgres:5433/asaltamontes
+      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "8080:8080"
     networks:
