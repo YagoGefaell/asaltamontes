@@ -11,12 +11,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
 @Entity
-@Setter
-@Getter
+@Data
 @Table(name = "messages")
 public class Message {
 
@@ -25,20 +23,17 @@ public class Message {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
-    private UserAccount sender;
+    @JoinColumn(name = "conversation_id", nullable = false)
+    private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "receiver_id", nullable = false)
-    private UserAccount receiver;
+    @JoinColumn(name = "sender_id", nullable = false)
+    private UserAccount sender;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "sent_at", nullable = false)
-    private LocalDateTime sentAt;
-
-    @Column(nullable = false)
-    private boolean isRead = false;
+    @Column(name = "sent_at", nullable = false, updatable = false)
+    private LocalDateTime sentAt = LocalDateTime.now();
 
 }
