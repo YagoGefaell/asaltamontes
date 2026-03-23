@@ -11,10 +11,14 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Column;
 import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
+@Setter
+@Getter
 @Table(name = "messages")
-public class Mensaje {
+public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
