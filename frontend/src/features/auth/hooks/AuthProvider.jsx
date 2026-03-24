@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { AuthContext } from "./auth.context";
 import { apiClient } from "../../../lib/api-client.js";
 import { useWebSocket } from "../../messages/hooks/useWebSocket.js";
+import { getMeRequest } from "../../users/services/users.service.js";
 import {
   registerRequest,
   loginRequest,
@@ -16,7 +17,30 @@ function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
 
   // WebSocket handshake starts as soon as auth is confirmed.
-  useWebSocket(isAuthenticated);
+  const { sendMessage, websocketClient, websocketConnected } = useWebSocket(isAuthenticated);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCurrentUser = async () => {
+      if (!isAuthenticated || currentUser) return;
+
+      try {
+        const me = await getMeRequest();
+        if (mounted && me) {
+          setCurrentUser(me);
+        }
+      } catch {
+        // Keep current auth flow resilient; profile can load later.
+      }
+    };
+
+    loadCurrentUser();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, currentUser]);
 
   // ---------------- Verificar sesión al cargar ----------------
   useEffect(() => {
@@ -137,6 +161,9 @@ function AuthProvider({ children }) {
         decrementFollowing,
         incrementFollowers,
         decrementFollowers,
+        sendMessage,
+        websocketClient,
+        websocketConnected,
       }}
     >
       {children}

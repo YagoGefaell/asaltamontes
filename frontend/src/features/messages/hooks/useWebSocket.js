@@ -1,13 +1,14 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Client } from "@stomp/stompjs";
 import { getAccessToken } from "../../auth/services/auth-token.js";
 import { API_CONFIG } from "../../../config/constants.js";
 
 export function useWebSocket(isAuthenticated) {
   const clientRef = useRef(null);
+  const [client, setClient] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    // Connect only when auth is confirmed and token exists.
     if (!isAuthenticated) {
       if (clientRef.current) {
         clientRef.current.deactivate();
@@ -17,46 +18,53 @@ export function useWebSocket(isAuthenticated) {
     }
 
     const connectWebSocket = () => {
-      const token = getAccessToken();
       const backendOrigin = API_CONFIG.BASE_URL.replace(/\/$/, "");
       const wsOrigin = backendOrigin.replace(/^http/i, "ws");
       const brokerURL = `${wsOrigin}/ws-asaltamontes`;
 
-      if (!token) {
-        console.warn("No access token available for WebSocket connection");
-        return;
-      }
-
-      const client = new Client({
+      const stompClient = new Client({
         brokerURL,
-        connectHeaders: {
-          Authorization: `Bearer ${token}`,
-        },
         heartbeatIncoming: 4000,
         heartbeatOutgoing: 4000,
         reconnectDelay: 5000,
-        debug: (msg) => console.log("[WebSocket]", msg),
+        // debug: (msg) => console.log("[WebSocket]", msg),
+
+        beforeConnect: () => {
+          const freshToken = getAccessToken();
+          if (!freshToken) {
+            throw new Error("No hay token disponible para el handshake websocket");
+          }
+
+          stompClient.connectHeaders = {
+            Authorization: `Bearer ${freshToken}`,
+          };
+        },
+
         onConnect: () => {
-          console.log("✓ WebSocket connected successfully", brokerURL);
+          setClient(stompClient);
+          setIsConnected(true);
+          console.log("✓ WebSocket connected successfully");
         },
         onStompError: (frame) => {
           console.error("[WebSocket Error]", frame.headers["message"], frame.body);
         },
-        onWebSocketError: (event) => {
-          console.error("[WebSocket Connection Error]", event);
+        onWebSocketError: () => {
+          setIsConnected(false);
+          console.error("[WebSocket Connection Error]");
         },
         onWebSocketClose: (event) => {
+          setClient(null);
+          setIsConnected(false);
           console.warn("[WebSocket Closed]", event.code, event.reason || "sin motivo");
         },
       });
 
-      clientRef.current = client;
-      client.activate();
+      clientRef.current = stompClient;
+      stompClient.activate();
     };
 
     connectWebSocket();
 
-    // Cleanup: disconnect on unmount or auth change
     return () => {
       if (clientRef.current) {
         clientRef.current.deactivate();
@@ -65,4 +73,24 @@ export function useWebSocket(isAuthenticated) {
       }
     };
   }, [isAuthenticated]);
+
+  // ✨ UTILIDAD: Un método seguro para enviar mensajes desde cualquier componente
+  const sendMessage = useCallback((destination, body) => {
+    if (clientRef.current && clientRef.current.connected) {
+      clientRef.current.publish({
+        destination,
+        body: JSON.stringify(body),
+      });
+      return true;
+    } else {
+      console.warn("No se pudo enviar el mensaje: WebSocket no conectado");
+      return false;
+    }
+  }, []);
+
+  return {
+    websocketClient: client,
+    websocketConnected: isConnected,
+    sendMessage,
+  };
 }

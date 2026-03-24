@@ -12,4 +12,7 @@ export const AuthContext = createContext({
   decrementFollowing: () => {},
   incrementFollowers: () => {},
   decrementFollowers: () => {},
+  sendMessage: () => false,
+  websocketClient: null,
+  websocketConnected: false,
 });

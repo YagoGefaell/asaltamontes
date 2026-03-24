@@ -17,3 +17,11 @@ export async function createOrGetPrivateConversationRequest(recipientUsername) {
     throw new Error(error.message || "Error creando conversación");
   }
 }
+
+export async function getConversationMessagesRequest(conversationId) {
+  try {
+    return await apiClient.get(`/api/conversations/${conversationId}/messages`);
+  } catch (error) {
+    throw new Error(error.message || "Error cargando mensajes");
+  }
+}

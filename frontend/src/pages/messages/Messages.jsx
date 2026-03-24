@@ -1,8 +1,12 @@
 import "./Messages.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Loading from "../../shared/components/Loading";
-import { getMyConversationsRequest } from "../../features/messages/services/messages.service.js";
+import {
+  getConversationMessagesRequest,
+  getMyConversationsRequest,
+} from "../../features/messages/services/messages.service.js";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 
 const mapConversationToChat = (conversation) => {
   const unread = Number(conversation?.unreadCount || 0);
@@ -19,11 +23,25 @@ const mapConversationToChat = (conversation) => {
 const Messages = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { currentUser, sendMessage, websocketClient, websocketConnected } = useAuth();
 
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedChat, setSelectedChat] = useState(null);
+  const [chatMessages, setChatMessages] = useState({});
+  const [draftMessage, setDraftMessage] = useState("");
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const subscriptionRef = useRef(null);
+  const messagesEndRef = useRef(null);
+
+  const currentMessages = selectedChat ? (chatMessages[selectedChat.id] || []) : [];
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
+    }
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -82,6 +100,134 @@ const Messages = () => {
       document.body.classList.remove(className);
     };
   }, [selectedChat]);
+
+  useEffect(() => {
+    if (!selectedChat) return;
+    scrollToBottom();
+  }, [selectedChat, currentMessages.length, loadingHistory]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadConversationHistory = async () => {
+      if (!selectedChat?.id) return;
+
+      setLoadingHistory(true);
+      try {
+        const history = await getConversationMessagesRequest(selectedChat.id);
+        if (!mounted) return;
+
+        const normalized = (history || []).map((message) => ({
+          id: message.id,
+          content: message.content,
+          senderUsername: message.senderUsername,
+        }));
+
+        setChatMessages((prev) => ({
+          ...prev,
+          [selectedChat.id]: normalized,
+        }));
+      } catch (historyError) {
+        if (mounted) {
+          console.error("Error cargando historial", historyError);
+        }
+      } finally {
+        if (mounted) {
+          setLoadingHistory(false);
+        }
+      }
+    };
+
+    loadConversationHistory();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedChat]);
+
+  useEffect(() => {
+    if (!websocketClient || !websocketConnected || !selectedChat) {
+      return;
+    }
+
+    if (subscriptionRef.current) {
+      subscriptionRef.current.unsubscribe();
+      subscriptionRef.current = null;
+    }
+
+    subscriptionRef.current = websocketClient.subscribe("/user/queue/messages", (frame) => {
+      try {
+        const payload = JSON.parse(frame.body);
+        const conversationId = payload?.conversationId;
+
+        // Show incoming messages only in the currently open chat.
+        if (!conversationId || conversationId !== selectedChat.id) {
+          return;
+        }
+
+        setChatMessages((prev) => {
+          const previous = prev[conversationId] || [];
+          return {
+            ...prev,
+            [conversationId]: [
+              ...previous,
+              {
+                id: payload.id || `${Date.now()}-${Math.random()}`,
+                content: payload.content,
+                senderUsername: payload.senderUsername,
+              },
+            ],
+          };
+        });
+      } catch (parseError) {
+        console.error("Error parseando mensaje websocket", parseError);
+      }
+    });
+
+    return () => {
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
+    };
+  }, [websocketClient, websocketConnected, selectedChat]);
+
+  const handleSendMessage = () => {
+    const content = draftMessage.trim();
+
+    if (!content || !selectedChat || !websocketClient || !websocketConnected || !currentUser?.username) {
+      return;
+    }
+
+    const payload = {
+      conversationId: selectedChat.id,
+      senderUsername: currentUser.username,
+      receiverUsername: selectedChat.name,
+      content,
+    };
+
+    const wasSent = sendMessage("/app/chat.private", payload);
+    if (!wasSent) {
+      return;
+    }
+
+    setChatMessages((prev) => {
+      const previous = prev[selectedChat.id] || [];
+      return {
+        ...prev,
+        [selectedChat.id]: [
+          ...previous,
+          {
+            id: `local-${Date.now()}`,
+            content,
+            senderUsername: currentUser.username,
+          },
+        ],
+      };
+    });
+
+    setDraftMessage("");
+  };
 
   return (
     <div className="messages-page">
@@ -151,14 +297,45 @@ const Messages = () => {
           </div>
 
           <div className="messages">
-            <div className="message received">
-              Conversacion abierta con @{selectedChat.name}. El historial de mensajes llegara en el siguiente paso.
-            </div>
+            {loadingHistory && <Loading />}
+
+            {!loadingHistory && currentMessages.length === 0 && (
+              <div className="message received">Empieza la conversacion con @{selectedChat.name}</div>
+            )}
+
+            {currentMessages.map((message) => {
+              const isSent = message.senderUsername === currentUser?.username;
+              return (
+                <div
+                  key={message.id}
+                  className={`message ${isSent ? "sent" : "received"}`}
+                >
+                  {message.content}
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="message-input">
-            <input type="text" placeholder="Escribe un mensaje..." />
-            <button>Enviar</button>
+            <input
+              type="text"
+              placeholder="Escribe un mensaje..."
+              value={draftMessage}
+              onChange={(e) => setDraftMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleSendMessage();
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleSendMessage}
+              disabled={!draftMessage.trim() || !websocketConnected}
+            >
+              Enviar
+            </button>
           </div>
         </>
       )}
