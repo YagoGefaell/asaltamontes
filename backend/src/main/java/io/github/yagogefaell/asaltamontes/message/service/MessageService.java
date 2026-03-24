@@ -3,6 +3,9 @@ package io.github.yagogefaell.asaltamontes.message.service;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatResponse;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatSummary;
+import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.PrivateMessage;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
@@ -62,6 +65,19 @@ public class MessageService {
         return savedMessage;
     }
 
+    @Transactional
+    public ChatResponse getOrCreatePrivateConversation(String currentUsername, String recipientUsername) {
+        return conversationRepository.findPrivateConversation(currentUsername, recipientUsername)
+            .map(conv -> new ChatResponse(conv.getId(), recipientUsername))
+            .orElseGet(() -> {
+                UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
+                UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
+
+                Conversation newConv = createPrivateConversation(me, other);
+                return new ChatResponse(newConv.getId(), recipientUsername);
+            });
+    }
+
     private Conversation createPrivateConversation(UserAccount user1, UserAccount user2) {
         Conversation conv = new Conversation();
         conv.setGroup(false);
@@ -81,9 +97,13 @@ public class MessageService {
         return savedConv;
     }
 
-    public List<Message> getChatHistory(String user1, String user2) {
+    public List<ChatSummary> getUserConversations(String username) {
+        return conversationRepository.findActiveChatsForUser(username);
+    }
+
+    public List<MessageDto> getChatHistory(String user1, String user2) {
         return conversationRepository.findPrivateConversation(user1, user2)
-                .map(conv -> messageRepository.findByConversationIdOrderBySentAtAsc(conv.getId()))
+                .map(conv -> messageRepository.findMessagesByConversationId(conv.getId()))
                 .orElse(List.of());
     }
 }
