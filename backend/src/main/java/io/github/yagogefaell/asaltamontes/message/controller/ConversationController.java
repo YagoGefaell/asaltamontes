@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponse;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummary;
+import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 
 import java.util.List;
@@ -46,16 +47,14 @@ public class ConversationController {
         return ResponseEntity.ok(summaries);
     }
 
-    /* @GetMapping("/{conversationId}/messages")
+    @GetMapping("/{conversationId}/messages")
     public ResponseEntity<List<MessageDto>> getChatHistory(
             @AuthenticationPrincipal UserDetails currentUser,
             @PathVariable Long conversationId) {
-        
-        // El servicio debe validar que el currentUser pertenece a esta sala antes de devolver datos
         List<MessageDto> history = messageService.getConversationHistory(
                 conversationId, 
                 currentUser.getUsername()
         );
         return ResponseEntity.ok(history);
-    } */
+    }
 }
