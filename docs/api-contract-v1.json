@@ -539,9 +539,177 @@
           }
         }
       }
+    },
+    "/api/conversations/private/{recipientUsername}": {
+      "post": {
+        "summary": "Get or create private conversation",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "recipientUsername",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username of the recipient"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation found or created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "404": {
+            "description": "Recipient user not found"
+          }
+        }
+      }
+    },
+    "/api/conversations": {
+      "get": {
+        "summary": "Get authenticated user's conversations",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Conversation summaries",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ChatSummary"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversationId}/messages": {
+      "get": {
+        "summary": "Get conversation history",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "format": "int64" },
+            "description": "Conversation ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation messages",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MessageDto"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not authenticated"
+          },
+          "500": {
+            "description": "Unexpected server error or access denied by server-side validation"
+          }
+        }
+      }
+    },
+    "/ws-asaltamontes": {
+      "get": {
+        "summary": "WebSocket STOMP handshake endpoint",
+        "tags": ["Messages", "WebSocket"],
+        "description": "STOMP over WebSocket endpoint used for realtime private messages. The client connects to this URL and then sends a STOMP CONNECT frame with an Authorization header in format 'Bearer <accessToken>'.",
+        "responses": {
+          "101": {
+            "description": "Switching Protocols"
+          },
+          "401": {
+            "description": "Invalid or missing token during STOMP CONNECT"
+          }
+        },
+        "x-stomp": {
+          "applicationDestinationPrefix": "/app",
+          "userDestinationPrefix": "/user",
+          "brokerPrefixes": ["/queue", "/topic"],
+          "publish": {
+            "destination": "/app/chat.private",
+            "payload": {
+              "$ref": "#/components/schemas/PrivateMessage"
+            }
+          },
+          "subscribe": [
+            {
+              "destination": "/user/queue/messages",
+              "payload": {
+                "$ref": "#/components/schemas/PrivateMessage"
+              }
+            }
+          ]
+        }
+      }
     }
   },
   "components": {
+    "schemas": {
+      "ChatResponse": {
+        "type": "object",
+        "properties": {
+          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "contactUsername": { "type": "string", "example": "runner123" }
+        }
+      },
+      "ChatSummary": {
+        "type": "object",
+        "properties": {
+          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "contactUsername": { "type": "string", "example": "runner123" },
+          "unreadCount": { "type": "integer", "example": 3 },
+          "lastMessageAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:15:30" }
+        }
+      },
+      "MessageDto": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "format": "int64", "example": 5001 },
+          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "senderUsername": { "type": "string", "example": "runner123" },
+          "content": { "type": "string", "example": "Nos vemos a las 7 en el parque" },
+          "sentAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:16:00" }
+        }
+      },
+      "PrivateMessage": {
+        "type": "object",
+        "required": ["conversationId", "senderUsername", "receiverUsername", "content"],
+        "properties": {
+          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "senderUsername": { "type": "string", "example": "runner123" },
+          "receiverUsername": { "type": "string", "example": "runner456" },
+          "content": { "type": "string", "example": "Hola!" }
+        }
+      }
+    },
     "securitySchemes": {
       "bearerAuth": {
         "type": "http",
