@@ -94,7 +94,7 @@ JWT_REFRESH_EXPIRATION_MS=604800000
 ### 2. Running with Docker (Recommended)
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 ### 3. Local Development

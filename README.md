@@ -88,7 +88,7 @@ nano .env
 The easiest way to run the entire project (Frontend, Backend, and Database) is using Docker Compose from the root directory:
 
 ```bash
-docker-compose --env-file .env up --build
+docker compose --env-file .env up --build
 ```
 
 ### 2\. Access the Services
