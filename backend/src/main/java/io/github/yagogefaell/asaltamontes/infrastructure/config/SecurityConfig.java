@@ -35,13 +35,13 @@ public class SecurityConfig {
                 .csrf(customizer -> customizer.disable())
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/auth/**").permitAll()
-                    .requestMatchers("/ws-asaltamontes/**").permitAll()
-                    .anyRequest().authenticated())
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/ws-asaltamontes/**").permitAll()
+                        .anyRequest().authenticated())
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class) 
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
 
