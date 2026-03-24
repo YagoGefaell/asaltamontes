@@ -50,7 +50,6 @@ The project is in an early stage. Core foundational features are implemented, wh
 
 - **Core:** React 19, Vite
 - **Routing:** React Router
-- **Testing:** Vitest
 - **Styling:** CSS/Tailwind
 
 ### Infrastructure
@@ -67,7 +66,7 @@ The project is fully containerized, allowing for a seamless "one-command" setup.
 ### Deployment Roadmap
 
 1. **Orchestration:** Future implementation of **Kubernetes (K8s)** for high availability, auto-scaling during high-traffic community events, and streamlined deployments.
-2. **CI/CD:** Automated pipelines for testing and container image deployment.
+2. **CI/CD:** Automated pipelines for container image deployment.
 
 ## Quick Start
 
