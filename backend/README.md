@@ -4,22 +4,27 @@ Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Sp
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Core Features](#core-features)
-- [Architecture & Messaging Flow](#architecture--messaging-flow)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Installation & Running](#installation--running)
-- [API & WebSocket Endpoints](#api--websocket-endpoints)
-- [Roadmap](#roadmap)
-
----
+- [Asaltamontes Backend - REST API \& Real-Time Messaging](#asaltamontes-backend---rest-api--real-time-messaging)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [Core Features](#core-features)
+  - [Architecture \& Messaging Flow](#architecture--messaging-flow)
+    - [1. Security Strategy](#1-security-strategy)
+    - [2. Messaging Engine](#2-messaging-engine)
+  - [Tech Stack](#tech-stack)
+  - [Project Structure](#project-structure)
+  - [Installation \& Running](#installation--running)
+    - [1. Environment Configuration](#1-environment-configuration)
+    - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
+    - [3. Local Development](#3-local-development)
+  - [API \& WebSocket Endpoints](#api--websocket-endpoints)
+    - [REST API](#rest-api)
+    - [WebSocket (STOMP)](#websocket-stomp)
+  - [Roadmap](#roadmap)
 
 ## Overview
 
 Asaltamontes provides a secure and scalable foundation for a female-focused trail running community. It handles complex user relationships and real-time communication with a focus on data integrity and stateless security.
-
----
 
 ## Core Features
 
@@ -29,23 +34,20 @@ Asaltamontes provides a secure and scalable foundation for a female-focused trai
 - **Real-Time Communication:** Bi-directional messaging via WebSockets (STOMP).
 - **Validation & Security:** Centralized exception handling and strict input validation.
 
----
-
 ## Architecture & Messaging Flow
 
 ### 1. Security Strategy
+
 - **Access Token:** Short-lived, passed via `Authorization: Bearer` header.
 - **Refresh Token:** Long-lived, delivered via `HttpOnly`, `Secure`, `SameSite=Strict` cookie for silent renewal.
 
 ### 2. Messaging Engine
+
 The system uses a **Conversation-Participant-Message** pattern. This ensures that:
+
 - Fetching the "Inbox" (list of chats) is an $O(1)$ operation relative to the total number of messages.
 - Support for group chats is native to the database schema.
 - Unread message counters are tracked per participant for maximum performance.
-
-
-
----
 
 ## Tech Stack
 
@@ -55,8 +57,6 @@ The system uses a **Conversation-Participant-Message** pattern. This ensures tha
 - **Persistence:** Spring Data JPA, Hibernate 6, PostgreSQL 15
 - **Tooling:** Lombok, Maven, Docker & Docker Compose
 - **Environment:** Spring Dotenv for secure variable management
-
----
 
 ## Project Structure
 
@@ -76,12 +76,12 @@ backend/
 └── .env.example               # Environment template
 ```
 
----
-
 ## Installation & Running
 
 ### 1. Environment Configuration
+
 Create a `.env` file in the root directory:
+
 ```env
 DATABASE_URL=jdbc:postgresql://db:5432/asaltamontes
 DATABASE_USERNAME=postgres
@@ -92,35 +92,35 @@ JWT_REFRESH_EXPIRATION_MS=604800000
 ```
 
 ### 2. Running with Docker (Recommended)
+
 ```bash
 docker-compose up --build
 ```
 
 ### 3. Local Development
+
 ```bash
 ./mvnw spring-boot:run
 ```
 
----
-
 ## API & WebSocket Endpoints
 
 ### REST API
-| Method | Endpoint | Description | Auth |
-|--------|----------|-------------|------|
-| POST | `/api/auth/login` | Authentication & Cookie issuance | Public |
-| GET | `/api/users/{id}` | User profile data | JWT |
-| POST | `/api/users/{id}/follow`| Follow/Unfollow toggle | JWT |
-| GET | `/api/messages/chats` | Fetch active conversations | JWT |
+
+| Method | Endpoint                 | Description                      | Auth   |
+| ------ | ------------------------ | -------------------------------- | ------ |
+| POST   | `/api/auth/login`        | Authentication & Cookie issuance | Public |
+| GET    | `/api/users/{id}`        | User profile data                | JWT    |
+| POST   | `/api/users/{id}/follow` | Follow/Unfollow toggle           | JWT    |
+| GET    | `/api/messages/chats`    | Fetch active conversations       | JWT    |
 
 ### WebSocket (STOMP)
-| Type | Destination | Description |
-|------|-------------|-------------|
-| **App Destination** | `/app/chat.private` | Send a 1-to-1 message |
-| **User Queue** | `/user/queue/messages` | Subscribe to incoming private messages |
-| **Broker** | `/topic/**` | Public/Group announcements |
 
----
+| Type                | Destination            | Description                            |
+| ------------------- | ---------------------- | -------------------------------------- |
+| **App Destination** | `/app/chat.private`    | Send a 1-to-1 message                  |
+| **User Queue**      | `/user/queue/messages` | Subscribe to incoming private messages |
+| **Broker**          | `/topic/**`            | Public/Group announcements             |
 
 ## Roadmap
 
@@ -129,8 +129,4 @@ docker-compose up --build
 - [ ] **Events Module:** Core domain for "Quedadas" (Trail running meetups).
 - [ ] **Database Migrations:** Integrating Flyway for version-controlled schemas.
 
------
-
 *Last Updated:* March 2026
-
------

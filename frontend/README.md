@@ -1,158 +1,132 @@
-# Asaltamontes Frontend - React Web Application
+# Asaltamontes Backend - REST API & Real-Time Messaging
 
-Modern, responsive React web application for the Asaltamontes Female social network. This project provides the user interface for community connection, focusing on trail running and mountain sports for women.
+Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Spring Boot 3.5**, and **PostgreSQL**, this API serves as the foundational architecture for user authentication, social networking, and high-performance real-time messaging.
 
 ## Table of Contents
 
+- [Asaltamontes Backend - REST API \& Real-Time Messaging](#asaltamontes-backend---rest-api--real-time-messaging)
+  - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
-  - [Authentication Strategy](#authentication-strategy)
+  - [Core Features](#core-features)
+  - [Architecture \& Messaging Flow](#architecture--messaging-flow)
+    - [1. Security Strategy](#1-security-strategy)
+    - [2. Messaging Engine](#2-messaging-engine)
   - [Tech Stack](#tech-stack)
   - [Project Structure](#project-structure)
-  - [Features & Roadmap](#features--roadmap)
-  - [Prerequisites](#prerequisites)
-  - [Installation & Deployment](#installation--deployment)
-  - [Configuration](#configuration)
-
------
+  - [Installation \& Running](#installation--running)
+    - [1. Environment Configuration](#1-environment-configuration)
+    - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
+    - [3. Local Development](#3-local-development)
+  - [API \& WebSocket Endpoints](#api--websocket-endpoints)
+    - [REST API](#rest-api)
+    - [WebSocket (STOMP)](#websocket-stomp)
+  - [Roadmap](#roadmap)
 
 ## Overview
 
-The Asaltamontes frontend is a Single Page Application (SPA) currently in its MVP phase. It focuses on user identity, social discovery, and secure session management. The application is built to be lightweight, using native Web APIs like **Fetch** for network requests and **React Context** for global state management.
+Asaltamontes provides a secure and scalable foundation for a female-focused trail running community. It handles complex user relationships and real-time communication with a focus on data integrity and stateless security.
 
------
+## Core Features
 
-## Authentication Strategy
+- **Stateless Authentication:** Dual-token strategy (JWT Access Token + HttpOnly Refresh Cookie).
+- **Social Graph:** Robust follow/unfollow system and user profile management.
+- **Scalable Messaging:** 1-to-1 and group-ready chat architecture using a 3-table schema.
+- **Real-Time Communication:** Bi-directional messaging via WebSockets (STOMP).
+- **Validation & Security:** Centralized exception handling and strict input validation.
 
-The application implements a robust security flow to handle JWT tokens without exposing them to XSS attacks via LocalStorage.
+## Architecture & Messaging Flow
 
-1.  **In-Memory Access Token:** Upon login, the Access Token is stored in a React Context variable. It is lost on page refresh to ensure maximum security.
-2.  **Silent Refresh:** - The application uses an `AuthContext` with a `useEffect` hook that triggers on mount.
-      - This hook calls the `/api/auth/refresh` endpoint using `credentials: 'include'` to send the `HttpOnly` Refresh Token cookie automatically.
-      - If the cookie is valid, the backend returns a new Access Token, restoring the session silently after a page reload.
-3.  **Interceptor Logic:** Manual interceptors are implemented within the fetch wrappers. If a request fails due to an expired token, the application attempts to call the refresh endpoint before forcing a logout, ensuring a seamless user experience.
+### 1. Security Strategy
 
------
+- **Access Token:** Short-lived, passed via `Authorization: Bearer` header.
+- **Refresh Token:** Long-lived, delivered via `HttpOnly`, `Secure`, `SameSite=Strict` cookie for silent renewal.
+
+### 2. Messaging Engine
+
+The system uses a **Conversation-Participant-Message** pattern. This ensures that:
+
+- Fetching the "Inbox" (list of chats) is an $O(1)$ operation relative to the total number of messages.
+- Support for group chats is native to the database schema.
+- Unread message counters are tracked per participant for maximum performance.
 
 ## Tech Stack
 
-  - **Core:** React 19
-  - **Build Tool:** Vite 7.2.4 (SWC)
-  - **Routing:** React Router (BrowserRouter)
-  - **State Management:** React Context API
-  - **API Client:** Native Fetch API
-  - **Styling:** Standard CSS (Modular approach)
-  - **Icons:** React Icons 5.5
-  - **Testing:** Vitest 2.0 & React Testing Library
-  - **Containerization:** Docker
-
------
+- **Core:** Java 21 (LTS), Spring Boot 3.5.x
+- **Security:** Spring Security, JJWT (JSON Web Tokens)
+- **Messaging:** Spring WebSocket, STOMP Protocol
+- **Persistence:** Spring Data JPA, Hibernate 6, PostgreSQL 15
+- **Tooling:** Lombok, Maven, Docker & Docker Compose
+- **Environment:** Spring Dotenv for secure variable management
 
 ## Project Structure
 
 ```text
-frontend/
-├── src/
-│   ├── app/
-│   │   ├── App.jsx            # Root component & Providers
-│   │   ├── router.jsx         # Browser Router definitions
-│   │   └── guards/            # Protected Routes (AuthGuard)
-│   ├── modules/               # Page-level modules
-│   │   ├── auth/              # Login & Registration
-│   │   ├── profile/           # User's personal profile
-│   │   ├── search/            # User discovery
-│   │   └── settings/          # Account configuration
-│   ├── features/              # Business logic hooks & Fetch services
-│   ├── shared/                # Reusable UI components
-│   ├── hooks/                 # Global utility hooks (useAuth, etc.)
-│   └── styles/                # Global and component-specific CSS
-├── Dockerfile                 # Production-ready Docker image (Nginx)
-├── vite.config.js             # Vite configuration
-└── package.json               # Dependencies and scripts
+backend/
+├── src/main/java/.../asaltamontes/
+│   ├── auth/                  # JWT logic, Login/Register controllers
+│   ├── user/                  # Social Graph and Profile management
+│   ├── message/               # Messaging Domain
+│   │   ├── domain/            # Entities: Conversation, Participant, Message
+│   │   ├── dto/               # Immutable Java Records (PrivateMessage, ChatSummary)
+│   │   ├── repository/        # Optimized JPQL for chat threading
+│   │   └── controller/        # WebSocket handlers (@MessageMapping)
+│   ├── infrastructure/        # WebSocketConfig, Security Filters, Global CORS
+│   └── common/                # Global Exception Handlers & Constants
+├── Dockerfile                 # Optimized multi-stage build
+└── .env.example               # Environment template
 ```
 
------
+## Installation & Running
 
-## Features & Roadmap
+### 1. Environment Configuration
 
-### Currently Functional
-
-  - **User Authentication:** Complete Login and Registration flows.
-  - **Identity Management:** View and edit personal profiles and account settings.
-  - **Social Discovery:** Search functionality to find other users within the Asaltamontes community.
-  - **Social Interaction:** Fully functional "Follow/Unfollow" system to connect with other runners.
-  - **Route Protection:** Guarded routes to prevent unauthenticated access to the dashboard and profile.
-
-### Planned for Future Release
-
-  - **Community Groups:** Modules for creating and joining trail running meetups.
-  - **Event Management:** Integration for race registration and event discovery.
-  - **Direct Messaging:** Real-time chat interface for user coordination.
-  - **Notification System:** In-app alerts for new followers and upcoming events.
-
------
-
-## Prerequisites
-
-  - **Docker & Docker Compose** (Highly recommended for full-stack integration)
-  - **Node.js 18.0.0 or higher** (For local development only)
-  - **npm 9.0.0 or higher**
-
------
-
-## Installation & Deployment
-
-### 1\. Using Docker (Recommended)
-
-To run the frontend as part of the entire Asaltamontes ecosystem, navigate to the **project root** and run:
-
-```bash
-docker-compose --env-file .env up --build
-```
-
-*The frontend will be served at `http://localhost:5173`.*
-
-### 2\. Local Standalone Development
-
-If you only wish to run the frontend independently:
-
-1.  **Navigate to directory:** `cd frontend`
-2.  **Install dependencies:** `npm install`
-3.  **Start Dev Server:** `npm run dev`
-
------
-
-## Configuration
-
-The application uses Vite environment variables. For Dockerized environments, variables are managed via the root `.env`. For local development, create a `.env.local` file in the `frontend` directory:
+Create a `.env` file in the root directory:
 
 ```env
-VITE_API_BASE_URL=http://localhost:8080/api
-VITE_APP_NAME=Asaltamontes Female
+DATABASE_URL=jdbc:postgresql://db:5432/asaltamontes
+DATABASE_USERNAME=postgres
+DATABASE_PASSWORD=your_secure_password
+JWT_SECRET=your_minimum_32_characters_secret_key
+JWT_EXPIRATION_MS=900000
+JWT_REFRESH_EXPIRATION_MS=604800000
 ```
 
-> **Note:** When running via Docker, ensure `VITE_API_BASE_URL` points to the public address of your backend (usually `localhost:8080`) so the browser can reach the API.
-
-### Build for Production
-
-To generate an optimized bundle:
+### 2. Running with Docker (Recommended)
 
 ```bash
-npm run build
+docker-compose up --build
 ```
 
-### Testing
-
-To run the Vitest suite:
+### 3. Local Development
 
 ```bash
-npm run test         # Watch mode
-npm run test:run     # Single run
+./mvnw spring-boot:run
 ```
 
------
+## API & WebSocket Endpoints
+
+### REST API
+
+| Method | Endpoint                 | Description                      | Auth   |
+| ------ | ------------------------ | -------------------------------- | ------ |
+| POST   | `/api/auth/login`        | Authentication & Cookie issuance | Public |
+| GET    | `/api/users/{id}`        | User profile data                | JWT    |
+| POST   | `/api/users/{id}/follow` | Follow/Unfollow toggle           | JWT    |
+| GET    | `/api/messages/chats`    | Fetch active conversations       | JWT    |
+
+### WebSocket (STOMP)
+
+| Type                | Destination            | Description                            |
+| ------------------- | ---------------------- | -------------------------------------- |
+| **App Destination** | `/app/chat.private`    | Send a 1-to-1 message                  |
+| **User Queue**      | `/user/queue/messages` | Subscribe to incoming private messages |
+| **Broker**          | `/topic/**`            | Public/Group announcements             |
+
+## Roadmap
+
+- [ ] **Push Notifications:** Firebase Cloud Messaging for offline alerts.
+- [ ] **Media Support:** Image and GPX file sharing within chats.
+- [ ] **Events Module:** Core domain for "Quedadas" (Trail running meetups).
+- [ ] **Database Migrations:** Integrating Flyway for version-controlled schemas.
 
 *Last Updated:* March 2026
-
-For information regarding the API and database, please refer to the [Backend README](../backend/README.md).
-
------
