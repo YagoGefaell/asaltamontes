@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AuthContext } from "./auth.context";
 import { apiClient } from "../../../lib/api-client.js";
+import { useWebSocket } from "../../messages/hooks/useWebSocket.js";
 import {
   registerRequest,
   loginRequest,
@@ -14,6 +15,9 @@ function AuthProvider({ children }) {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // WebSocket handshake starts as soon as auth is confirmed.
+  useWebSocket(isAuthenticated);
+
   // ---------------- Verificar sesión al cargar ----------------
   useEffect(() => {
     let mounted = true;
@@ -21,6 +25,7 @@ function AuthProvider({ children }) {
     apiClient.setLogoutCallback(() => {
       if (mounted) {
         setIsAuthenticated(false)
+        setCurrentUser(null)
       }
     })
 
@@ -70,6 +75,7 @@ function AuthProvider({ children }) {
       await logoutRequest();
     } finally {
       setIsAuthenticated(false);
+      setCurrentUser(null);
     }
   };
 
@@ -81,6 +87,7 @@ function AuthProvider({ children }) {
       return true;
     } catch {
       setIsAuthenticated(false);
+      setCurrentUser(null);
       return false;
     }
   };
