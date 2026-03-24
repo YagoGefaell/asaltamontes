@@ -7,6 +7,7 @@ import { useFollow } from "../../features/users/hooks/useFollow";
 import { formatters } from "../../utils/helpers";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
+import { createOrGetPrivateConversationRequest } from "../../features/messages/services/messages.service.js";
 
 function Profile({ 
   userData = null, 
@@ -30,6 +31,8 @@ function Profile({
     resetError,
     initializeFollowState
   } = useFollow();
+  const [openChatLoading, setOpenChatLoading] = useState(false);
+  const [openChatError, setOpenChatError] = useState(null);
 
   // Use props data if provided, otherwise use context data
   const profileData = userData || userProfile;
@@ -71,6 +74,22 @@ function Profile({
   const handleShowFollowing = () => {
     if (isOwnProfile) {
       navigate("/me/following");
+    }
+  };
+
+  const handleOpenChat = async () => {
+    if (!profileData?.username) return;
+
+    setOpenChatLoading(true);
+    setOpenChatError(null);
+
+    try {
+      const conversation = await createOrGetPrivateConversationRequest(profileData.username);
+      navigate("/messages", { state: { selectedConversation: conversation } });
+    } catch (err) {
+      setOpenChatError(err.message || "Error abriendo conversación");
+    } finally {
+      setOpenChatLoading(false);
     }
   };
   
@@ -252,9 +271,22 @@ function Profile({
             >
               {followLoading ? 'Cargando...' : (isFollowing ? 'Dejar de seguir' : 'Seguir')}
             </Button>
+            <Button
+              variant="primary"
+              onClick={handleOpenChat}
+              loading={openChatLoading}
+              disabled={openChatLoading}
+            >
+              {openChatLoading ? "Cargando..." : "Abrir chat"}
+            </Button>
             {followError && (
               <div className="follow-error">
                 <p>{followError}</p>
+              </div>
+            )}
+            {openChatError && (
+              <div className="follow-error">
+                <p>{openChatError}</p>
               </div>
             )}
           </div>

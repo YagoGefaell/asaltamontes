@@ -12,7 +12,10 @@ const UserCard = ({
   showFollowButton = false,
   isFollowing = false,
   onFollowToggle = null,
-  followLoading = false 
+  followLoading = false,
+  showChatButton = false,
+  onChatClick = null,
+  chatLoading = false,
 }) => {
   const [pressed, setPressed] = useState(false);
   const navigate = useNavigate();
@@ -38,7 +41,7 @@ const UserCard = ({
     setPressed(true);
   };
 
-  const handlePressEnd = (e) => {
+  const handlePressEnd = () => {
     setPressed(false);
   };
 
@@ -46,6 +49,13 @@ const UserCard = ({
     e.stopPropagation();
     if (onFollowToggle && !followLoading) {
       onFollowToggle(username);
+    }
+  };
+
+  const handleChatClick = (e) => {
+    e.stopPropagation();
+    if (onChatClick && !chatLoading) {
+      onChatClick(username);
     }
   };
 
@@ -71,6 +81,18 @@ const UserCard = ({
             disabled={followLoading}
           >
             {followLoading ? '...' : (isFollowing ? 'Siguiendo' : 'Seguir')}
+          </Button>
+        </div>
+      )}
+      {!showFollowButton && showChatButton && (
+        <div className="user-card-action">
+          <Button
+            variant="primary"
+            size="small"
+            onClick={handleChatClick}
+            disabled={chatLoading}
+          >
+            {chatLoading ? "..." : "Abrir chat"}
           </Button>
         </div>
       )}

@@ -1,17 +1,73 @@
 import "./Messages.css";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import Loading from "../../shared/components/Loading";
+import { getMyConversationsRequest } from "../../features/messages/services/messages.service.js";
+
+const mapConversationToChat = (conversation) => {
+  const unread = Number(conversation?.unreadCount || 0);
+  const username = conversation?.contactUsername || "Usuario";
+
+  return {
+    id: conversation?.conversationId,
+    name: username,
+    lastMsg: unread > 0 ? `${unread} mensajes sin leer` : "Sin mensajes todavía",
+    avatar: username.charAt(0).toUpperCase(),
+  };
+};
 
 const Messages = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const chats = [
-    { id: 1, name: "María García", lastMsg: "Hola! ¿Cómo estás?", avatar: "👩" },
-    { id: 2, name: "Laura Martínez", lastMsg: "Nos vemos mañana!", avatar: "👱‍♀️" },
-    { id: 3, name: "Sofía López", lastMsg: "Jajaja muy bueno!", avatar: "👩‍🦱" },
-  ];
-
+  const [chats, setChats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedChat, setSelectedChat] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchConversations = async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const conversations = await getMyConversationsRequest();
+        if (!mounted) return;
+
+        const mappedChats = conversations.map(mapConversationToChat);
+        setChats(mappedChats);
+
+        const selectedConversation = location.state?.selectedConversation;
+        if (selectedConversation) {
+          const selectedId = selectedConversation.conversationId;
+          const existing = mappedChats.find((chat) => chat.id === selectedId);
+
+          if (existing) {
+            setSelectedChat(existing);
+          } else {
+            setSelectedChat(mapConversationToChat(selectedConversation));
+          }
+        }
+      } catch (err) {
+        if (mounted) {
+          setChats([]);
+          setError(err.message || "Error al cargar conversaciones");
+        }
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchConversations();
+
+    return () => {
+      mounted = false;
+    };
+  }, [location.state]);
 
   useEffect(() => {
     const className = "chat-open";
@@ -44,7 +100,15 @@ const Messages = () => {
           </div>
 
           <div className="contacts-list">
-            {chats.map((chat) => (
+            {loading && <Loading />}
+
+            {!loading && error && <p className="contact-preview">{error}</p>}
+
+            {!loading && !error && chats.length === 0 && (
+              <p className="contact-preview">Aun no tienes conversaciones.</p>
+            )}
+
+            {!loading && !error && chats.map((chat) => (
               <button
                 key={chat.id}
                 type="button"
@@ -87,9 +151,9 @@ const Messages = () => {
           </div>
 
           <div className="messages">
-            <div className="message sent">Hola! ¿Que tal?</div>
-            <div className="message received">Hola! Muy bien, ¿y tu?</div>
-            <div className="message sent">Genial, ¿nos vemos pronto?</div>
+            <div className="message received">
+              Conversacion abierta con @{selectedChat.name}. El historial de mensajes llegara en el siguiente paso.
+            </div>
           </div>
 
           <div className="message-input">
