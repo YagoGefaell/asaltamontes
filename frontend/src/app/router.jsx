@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthGuard from "./guards/AuthGuard.jsx";
+import PublicOnlyGuard from "./guards/PublicOnlyGuard.jsx";
 
 import MainLayout from "../shared/layouts/MainLayout.jsx";
 
@@ -23,9 +24,11 @@ export function AppRouter() {
   return (
     <Routes>
       {/* -------------------- PÚBLICAS -------------------- */}
-      <Route path="/access" element={<Access />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+      <Route element={<PublicOnlyGuard />}>
+        <Route path="/access" element={<Access />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Route>
 
       {/* -------------------- PRIVADAS -------------------- */}
       <Route
