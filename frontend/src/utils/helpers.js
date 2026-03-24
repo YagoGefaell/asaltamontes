@@ -39,7 +39,7 @@ export const formatters = {
     if (profilePictureUrl) return profilePictureUrl;
     
     const name = fullName || username || 'Usuario';
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=ff4f8b&color=fff&size=200&bold=true`;
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=178B9F&color=fff&size=200&bold=true`;
   },
 }
 

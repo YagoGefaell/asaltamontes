@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import "./Access.css";
+import logo from "../../assets/logo01.png";
 
 const Access = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const Access = () => {
 
       <div className="access-illustration">
         <img
-          src="https://cdn-icons-png.flaticon.com/512/9131/9131529.png"
+          src={logo}
           alt="Women community"
         />
       </div>
