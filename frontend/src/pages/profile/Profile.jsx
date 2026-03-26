@@ -7,7 +7,6 @@ import { useFollow } from "../../features/users/hooks/useFollow";
 import { formatters } from "../../utils/helpers";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
-import { createOrGetPrivateConversationRequest } from "../../features/messages/services/messages.service.js";
 
 function Profile({ 
   userData = null, 
@@ -84,10 +83,16 @@ function Profile({
     setOpenChatError(null);
 
     try {
-      const conversation = await createOrGetPrivateConversationRequest(profileData.username);
-      navigate("/messages", { state: { selectedConversation: conversation } });
-    } catch (err) {
-      setOpenChatError(err.message || "Error abriendo conversación");
+      navigate("/messages", {
+        state: {
+          selectedConversation: {
+            contactUsername: profileData.username,
+            avatarUrl: profileData.profilePictureUrl || null,
+          },
+        },
+      });
+    } catch {
+      setOpenChatError("Error abriendo conversación");
     } finally {
       setOpenChatLoading(false);
     }

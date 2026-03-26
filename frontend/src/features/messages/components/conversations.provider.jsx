@@ -5,6 +5,7 @@ import { ConversationsContext } from "../hooks/conversations.context";
 import {
   getMyConversationsRequest,
   getConversationMessagesRequest,
+  createOrGetPrivateConversationRequest,
 } from "../services/messages.service.js";
 import { getUserByUsername } from "../../users/services/users.service.js";
 
@@ -49,6 +50,49 @@ export const ConversationsProvider = ({ children }) => {
 
     return mapped;
   }, [mapConversationToChat]);
+
+  const ensurePrivateConversation = useCallback(async (chat) => {
+    if (chat?.id) return chat;
+
+    const recipientUsername = chat?.name;
+    if (!recipientUsername) {
+      throw new Error("Usuario destino no valido");
+    }
+
+    const createdConversation = await createOrGetPrivateConversationRequest(recipientUsername);
+    const createdConversationId = createdConversation?.conversationId;
+
+    if (!createdConversationId) {
+      throw new Error("No se pudo crear la conversacion");
+    }
+
+    const mappedChat = {
+      id: createdConversationId,
+      name: createdConversation?.contactUsername || recipientUsername,
+      avatar: chat?.avatar || recipientUsername.trim().charAt(0).toUpperCase() || "?",
+      avatarUrl: chat?.avatarUrl || null,
+      unreadCount: 0,
+      lastMsg: chat?.lastMsg || "Abre la conversacion",
+    };
+
+    setChats((prevChats) => {
+      const exists = prevChats.some(
+        (existingChat) => String(existingChat.id) === String(createdConversationId)
+      );
+
+      if (exists) {
+        return prevChats.map((existingChat) => (
+          String(existingChat.id) === String(createdConversationId)
+            ? { ...existingChat, ...mappedChat }
+            : existingChat
+        ));
+      }
+
+      return [mappedChat, ...prevChats];
+    });
+
+    return mappedChat;
+  }, []);
 
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
@@ -208,6 +252,7 @@ export const ConversationsProvider = ({ children }) => {
         loadingChats,
         errorChats,
         upsertConversation,
+        ensurePrivateConversation,
         loadConversationMessages,
         activeChatId,
         setActiveChatId,

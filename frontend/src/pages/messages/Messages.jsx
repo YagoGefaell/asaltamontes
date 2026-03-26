@@ -18,6 +18,7 @@ const Messages = () => {
     setChatMessages,
     setActiveChatId,
     upsertConversation,
+    ensurePrivateConversation,
     loadConversationMessages,
     loadingChats, 
     errorChats
@@ -38,8 +39,10 @@ const Messages = () => {
 
   const handleEnterChat = useCallback(async (chat) => {
     setSelectedChat(chat);
-    setActiveChatId(chat.id);
-    await loadConversationMessages(chat.id);
+    setActiveChatId(chat.id || null);
+    if (chat.id) {
+      await loadConversationMessages(chat.id);
+    }
   }, [setActiveChatId, loadConversationMessages]);
 
   const handleLeaveChat = useCallback(() => {
@@ -52,11 +55,32 @@ const Messages = () => {
 
     if (!selectedConversation || selectedChat) return;
 
-    const existing = chats.find(
-      (c) => String(c.id) === String(selectedConversation.conversationId)
-    );
+    const conversationId = selectedConversation.conversationId;
 
+    if (!conversationId) {
+      const username = selectedConversation.contactUsername
+        || selectedConversation.username
+        || selectedConversation.name
+        || "usuario";
+
+      const tempChat = {
+        id: null,
+        name: username,
+        avatar: username.trim().charAt(0).toUpperCase() || "?",
+        avatarUrl: selectedConversation.avatarUrl || null,
+        unreadCount: 0,
+        lastMsg: selectedConversation.lastMessage || "Empieza la conversacion",
+      };
+
+      setSelectedChat(tempChat);
+      setActiveChatId(null);
+      navigate(location.pathname, { replace: true, state: {} });
+      return;
+    }
+
+    const existing = chats.find((c) => String(c.id) === String(conversationId));
     const targetChat = existing || upsertConversation(selectedConversation);
+
     if (targetChat) {
       setTimeout(() => {
         handleEnterChat(targetChat);
@@ -70,7 +94,8 @@ const Messages = () => {
     upsertConversation,
     navigate, 
     location.pathname, 
-    handleEnterChat
+    handleEnterChat,
+    setActiveChatId,
   ]);
 
   useEffect(() => {
@@ -86,17 +111,33 @@ const Messages = () => {
     scrollToBottom();
   }, [selectedChat, currentMessages.length]);
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const content = draftMessage.trim();
 
     if (!content || !selectedChat || !websocketConnected || !currentUser?.username) {
       return;
     }
 
+    let activeChat = selectedChat;
+    let conversationId = selectedChat.id;
+
+    if (!conversationId) {
+      try {
+        const ensuredChat = await ensurePrivateConversation(selectedChat);
+        activeChat = ensuredChat;
+        conversationId = ensuredChat.id;
+
+        setSelectedChat(ensuredChat);
+        setActiveChatId(ensuredChat.id);
+      } catch {
+        return;
+      }
+    }
+
     const payload = {
-      conversationId: selectedChat.id,
+      conversationId,
       senderUsername: currentUser.username,
-      receiverUsername: selectedChat.name,
+      receiverUsername: activeChat.name,
       content,
     };
 
@@ -105,21 +146,36 @@ const Messages = () => {
 
     const optimisticMessage = {
       id: `tmp-${Date.now()}`,
-      conversationId: selectedChat.id,
+      conversationId,
       senderUsername: currentUser.username,
       content,
     };
 
     setChatMessages((prev) => ({
       ...prev,
-      [selectedChat.id]: [...(prev[selectedChat.id] || []), optimisticMessage],
+      [conversationId]: [...(prev[conversationId] || []), optimisticMessage],
     }));
 
-    setChats((prevChats) => prevChats.map((chat) => (
-      String(chat.id) === String(selectedChat.id)
-        ? { ...chat, lastMsg: content }
-        : chat
-    )));
+    setChats((prevChats) => {
+      const updated = prevChats.map((chat) => (
+        String(chat.id) === String(conversationId)
+          ? { ...chat, lastMsg: content }
+          : chat
+      ));
+
+      const exists = updated.some((chat) => String(chat.id) === String(conversationId));
+      if (exists) return updated;
+
+      return [
+        {
+          ...activeChat,
+          id: conversationId,
+          lastMsg: content,
+          unreadCount: 0,
+        },
+        ...updated,
+      ];
+    });
 
     setDraftMessage("");
   };
