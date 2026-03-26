@@ -41,7 +41,13 @@ export async function registerRequest({ fullName, username, email, password, con
     return response;
   } catch (error) {
     // Re-throw the error with all its properties preserved
-    throw error
+    if (error.response && error.response.data) {
+      const err = new Error(error.response.data.message || "Error al registrar el usuario")
+      err.status = error.response.status
+      err.data = error.response.data
+      throw err
+    }
+    throw new Error(error.message || "Error al registrar el usuario")
   }
 }
 
@@ -50,7 +56,7 @@ export async function logoutRequest() {
   try {
     await authApiClient.post('/auth/logout')
     return;
-  } catch (error) {
+  } catch {
     throw new Error("Error al cerrar sesión")
   } finally {
     clearAccessToken()
@@ -82,7 +88,7 @@ export async function verifySessionRequest() {
     try {
       await apiClient.get('/api/users/me')
       return true
-    } catch (retryError) {
+    } catch {
       return false
     }
   }
@@ -97,7 +103,7 @@ export async function refreshTokenRequest() {
       setAccessToken(accessToken)
     }
     return true
-  } catch (error) {
+  } catch {
     return false
   }
 }

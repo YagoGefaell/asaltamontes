@@ -74,7 +74,6 @@ export function useWebSocket(isAuthenticated) {
     };
   }, [isAuthenticated]);
 
-  // ✨ UTILIDAD: Un método seguro para enviar mensajes desde cualquier componente
   const sendMessage = useCallback((destination, body) => {
     if (clientRef.current && clientRef.current.connected) {
       clientRef.current.publish({

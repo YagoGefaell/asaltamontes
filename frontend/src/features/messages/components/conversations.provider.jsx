@@ -1,0 +1,201 @@
+import { useState, useCallback, useEffect } from "react";
+import { useAuth } from "../../auth/hooks/useAuth"; 
+import { useGlobalMessageListener } from "../hooks/useGlobalMessageListener";
+import { ConversationsContext } from "../hooks/conversations.context";
+import {
+  getMyConversationsRequest,
+  getConversationMessagesRequest,
+} from "../services/messages.service.js";
+
+export const ConversationsProvider = ({ children }) => {
+  const { websocketClient, websocketConnected, isAuthenticated } = useAuth();
+
+  const [chats, setChats] = useState([]);
+  const [chatMessages, setChatMessages] = useState({});
+  const [loadingChats, setLoadingChats] = useState(false);
+  const [errorChats, setErrorChats] = useState(null);
+
+  const [activeChatId, setActiveChatId] = useState(null);
+
+  const mapConversationToChat = useCallback((conversation) => {
+    const username = conversation?.contactUsername || "usuario";
+    const firstChar = username.trim().charAt(0).toUpperCase();
+
+    return {
+      id: conversation?.conversationId,
+      name: username,
+      avatar: firstChar || "?",
+      unreadCount: Number(conversation?.unreadCount || 0),
+      lastMsg: "Abre la conversacion",
+      lastMessageAt: conversation?.lastMessageAt || null,
+    };
+  }, []);
+
+  const upsertConversation = useCallback((conversation) => {
+    if (!conversation?.conversationId) return null;
+
+    const mapped = mapConversationToChat(conversation);
+
+    setChats((prevChats) => {
+      const exists = prevChats.some(
+        (chat) => String(chat.id) === String(mapped.id)
+      );
+      if (exists) return prevChats;
+      return [mapped, ...prevChats];
+    });
+
+    return mapped;
+  }, [mapConversationToChat]);
+
+  const loadConversationMessages = useCallback(async (conversationId) => {
+    if (!conversationId) return;
+
+    const alreadyLoaded = chatMessages[conversationId];
+    if (alreadyLoaded) {
+      setChats((prevChats) => prevChats.map((chat) => (
+        String(chat.id) === String(conversationId)
+          ? { ...chat, unreadCount: 0 }
+          : chat
+      )));
+      return;
+    }
+
+    try {
+      const messages = await getConversationMessagesRequest(conversationId);
+      setChatMessages((prev) => ({
+        ...prev,
+        [conversationId]: Array.isArray(messages) ? messages : [],
+      }));
+      setChats((prevChats) => prevChats.map((chat) => (
+        String(chat.id) === String(conversationId)
+          ? { ...chat, unreadCount: 0 }
+          : chat
+      )));
+    } catch {
+      // No bloqueamos la UI del chat si falla la carga inicial del historial.
+    }
+  }, [chatMessages]);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setChats([]);
+      setChatMessages({});
+      setLoadingChats(false);
+      setErrorChats(null);
+      return;
+    }
+
+    let mounted = true;
+
+    const loadConversations = async () => {
+      setLoadingChats(true);
+      setErrorChats(null);
+
+      try {
+        const conversations = await getMyConversationsRequest();
+        if (!mounted) return;
+
+        const mappedChats = Array.isArray(conversations)
+          ? conversations.map(mapConversationToChat)
+          : [];
+
+        setChats(mappedChats);
+      } catch (error) {
+        if (!mounted) return;
+        setErrorChats(error.message || "Error cargando conversaciones");
+      } finally {
+        if (mounted) {
+          setLoadingChats(false);
+        }
+      }
+    };
+
+    loadConversations();
+
+    return () => {
+      mounted = false;
+    };
+  }, [isAuthenticated, mapConversationToChat]);
+
+  const handleNewMessage = useCallback((payload) => {
+    const conversationId = payload?.conversationId;
+    if (!conversationId) return;
+
+    setChatMessages((prev) => {
+      const previous = prev[conversationId] || [];
+      return {
+        ...prev,
+        [conversationId]: [
+          ...previous,
+          {
+            id: payload.id || `ws-${Date.now()}-${Math.random()}`,
+            content: payload.content,
+            senderUsername: payload.senderUsername,
+          },
+        ],
+      };
+    });
+
+    setChats((prevChats) => {
+      const existing = prevChats.find(
+        (chat) => String(chat.id) === String(conversationId)
+      );
+
+      if (!existing) {
+        const fallbackUsername = payload?.senderUsername || payload?.receiverUsername || "usuario";
+        const firstChar = fallbackUsername.trim().charAt(0).toUpperCase();
+        const isCurrentlyReading = String(activeChatId) === String(conversationId);
+
+        return [
+          {
+            id: conversationId,
+            name: fallbackUsername,
+            avatar: firstChar || "?",
+            unreadCount: isCurrentlyReading ? 0 : 1,
+            lastMsg: payload.content,
+          },
+          ...prevChats,
+        ];
+      }
+
+      return prevChats.map(chat => {
+        if (String(chat.id) === String(conversationId)) {
+          const isCurrentlyReading = String(activeChatId) === String(conversationId);
+          const newUnreadCount = isCurrentlyReading ? 0 : (chat.unreadCount || 0) + 1;
+
+          return {
+            ...chat,
+            lastMsg: payload.content,
+            unreadCount: newUnreadCount
+          };
+        }
+        return chat;
+      });
+    });
+  }, [activeChatId]);
+
+  useGlobalMessageListener(
+    websocketClient,
+    websocketConnected,
+    handleNewMessage
+  );
+
+  return (
+    <ConversationsContext.Provider 
+      value={{ 
+        chats, 
+        setChats, 
+        chatMessages, 
+        setChatMessages,
+        loadingChats,
+        errorChats,
+        upsertConversation,
+        loadConversationMessages,
+        activeChatId,
+        setActiveChatId
+      }}
+    >
+      {children}
+    </ConversationsContext.Provider>
+  );
+};
