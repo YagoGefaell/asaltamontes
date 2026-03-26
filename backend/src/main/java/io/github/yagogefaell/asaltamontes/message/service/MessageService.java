@@ -6,7 +6,6 @@ import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponse;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummary;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
-import io.github.yagogefaell.asaltamontes.message.dto.PrivateMessage;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
@@ -37,30 +36,29 @@ public class MessageService {
     }
 
     @Transactional
-    public Message saveMessage(PrivateMessage dto) {
-        UserAccount sender = (UserAccount) userService.loadUserByUsername(dto.senderUsername());
-        UserAccount receiver = (UserAccount) userService.loadUserByUsername(dto.receiverUsername());
-
-        Conversation conversation = conversationRepository
-                .findPrivateConversation(sender.getUsername(), receiver.getUsername())
-                .orElseGet(() -> createPrivateConversation(sender, receiver));
+    public Message saveMessage(Long conversationId, String senderUsername, String content) {
+        UserAccount sender = (UserAccount) userService.loadUserByUsername(senderUsername);
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new RuntimeException("La conversación no existe"));
 
         Message message = new Message();
         message.setConversation(conversation);
         message.setSender(sender);
-        message.setContent(dto.content());
+        message.setContent(content);
         message.setSentAt(LocalDateTime.now());
-
         Message savedMessage = messageRepository.save(message);
 
         conversation.setLastMessageAt(savedMessage.getSentAt());
         conversationRepository.save(conversation);
 
-        ConversationParticipant receiverParticipant = participantRepository
-                .findByConversationIdAndUserUsername(conversation.getId(), receiver.getUsername())
-                .orElseThrow();
-        receiverParticipant.setUnreadCount(receiverParticipant.getUnreadCount() + 1);
-        participantRepository.save(receiverParticipant);
+        List<ConversationParticipant> participants = participantRepository.findByConversationId(conversationId);
+        
+        for (ConversationParticipant participant : participants) {
+            if (!participant.getUser().getUsername().equals(senderUsername)) {
+                participant.setUnreadCount(participant.getUnreadCount() + 1);
+                participantRepository.save(participant);
+            }
+        }
 
         return savedMessage;
     }

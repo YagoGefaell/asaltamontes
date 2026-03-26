@@ -20,7 +20,7 @@ public class ChatController {
 
     @MessageMapping("/chat.private")
     public void processPrivateMessage(@Payload PrivateMessage message) {
-        messageService.saveMessage(message);
+        messageService.saveMessage(message.conversationId(), message.senderUsername(), message.content());
 
         messagingTemplate.convertAndSendToUser(
                 message.receiverUsername(),
