@@ -156,10 +156,6 @@ const Messages = () => {
                       chat.avatar
                     )}
                   </div>
-                  
-                  {chat.unreadCount > 0 && (
-                    <span className="unread-badge">{chat.unreadCount > 9 ? "9+" : chat.unreadCount}</span>
-                  )}
                 </div>
 
                 <div className="contact-info">
@@ -168,6 +164,8 @@ const Messages = () => {
                     {chat.lastMsg}
                   </span>
                 </div>
+
+                {chat.unreadCount > 0 && <span className="unread-dot" aria-label="Mensajes sin leer" />}
               </button>
             ))}
           </div>

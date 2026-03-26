@@ -161,36 +161,21 @@ body.chat-open .bottom-nav {
   flex-shrink: 0;
 }
 
-.unread-badge {
-  position: absolute;
-  top: -2px;
-  left: -2px;
-  background-color: var(--secondary);
-  color: var(--surface);
-  font-size: 0.7rem;
-  font-weight: 700;
-  height: 20px;
-  min-width: 20px;
-  border-radius: 10px;
-  padding: 0 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--surface);
-  box-sizing: border-box;
-  z-index: 2;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-.unread-badge {
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
 .contact-info {
   display: flex;
   flex-direction: column;
   min-width: 0;
   gap: 4px;
+  flex: 1;
+}
+
+.unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #facc15;
+  box-shadow: 0 0 0 2px var(--surface);
+  flex-shrink: 0;
 }
 
 .contact-name {
