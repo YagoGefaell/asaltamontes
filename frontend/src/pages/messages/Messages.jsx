@@ -150,7 +150,11 @@ const Messages = () => {
               >
                 <div className="avatar-wrapper">
                   <div className="contact-avatar" aria-hidden="true">
-                    {chat.avatar}
+                    {chat.avatarUrl ? (
+                      <img src={chat.avatarUrl} alt={chat.name} className="contact-avatar-image" />
+                    ) : (
+                      chat.avatar
+                    )}
                   </div>
                   
                   {chat.unreadCount > 0 && (
@@ -183,7 +187,11 @@ const Messages = () => {
             </button>
             <div className="chat-title">
               <div className="chat-avatar" aria-hidden="true">
-                {selectedChat.avatar}
+                {selectedChat.avatarUrl ? (
+                  <img src={selectedChat.avatarUrl} alt={selectedChat.name} className="chat-avatar-image" />
+                ) : (
+                  selectedChat.avatar
+                )}
               </div>
               <div className="chat-title-text">
                 <span className="chat-name">{selectedChat.name}</span>

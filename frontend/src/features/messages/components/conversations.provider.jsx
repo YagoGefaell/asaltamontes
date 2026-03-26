@@ -6,6 +6,7 @@ import {
   getMyConversationsRequest,
   getConversationMessagesRequest,
 } from "../services/messages.service.js";
+import { getUserByUsername } from "../../users/services/users.service.js";
 
 export const ConversationsProvider = ({ children }) => {
   const { websocketClient, websocketConnected, isAuthenticated } = useAuth();
@@ -25,6 +26,7 @@ export const ConversationsProvider = ({ children }) => {
       id: conversation?.conversationId,
       name: username,
       avatar: firstChar || "?",
+      avatarUrl: null,
       unreadCount: Number(conversation?.unreadCount || 0),
       lastMsg: "Abre la conversacion",
       lastMessageAt: conversation?.lastMessageAt || null,
@@ -96,7 +98,19 @@ export const ConversationsProvider = ({ children }) => {
         if (!mounted) return;
 
         const mappedChats = Array.isArray(conversations)
-          ? conversations.map(mapConversationToChat)
+          ? await Promise.all(conversations.map(async (conversation) => {
+              const baseChat = mapConversationToChat(conversation);
+
+              try {
+                const profile = await getUserByUsername(baseChat.name);
+                return {
+                  ...baseChat,
+                  avatarUrl: profile?.profilePictureUrl || null,
+                };
+              } catch {
+                return baseChat;
+              }
+            }))
           : [];
 
         setChats(mappedChats);
@@ -151,6 +165,7 @@ export const ConversationsProvider = ({ children }) => {
             id: conversationId,
             name: fallbackUsername,
             avatar: firstChar || "?",
+            avatarUrl: null,
             unreadCount: isCurrentlyReading ? 0 : 1,
             lastMsg: payload.content,
           },
