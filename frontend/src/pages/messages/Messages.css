@@ -137,7 +137,6 @@ body.chat-open .bottom-nav {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 2px solid var(--primary);
   background: linear-gradient(45deg, var(--primary), var(--primary-light));
   box-sizing: border-box;
   display: flex;
@@ -167,7 +166,7 @@ body.chat-open .bottom-nav {
   top: -2px;
   left: -2px;
   background-color: var(--secondary);
-  color: white;
+  color: var(--surface);
   font-size: 0.7rem;
   font-weight: 700;
   height: 20px;

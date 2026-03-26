@@ -158,7 +158,7 @@ const Messages = () => {
                   </div>
                   
                   {chat.unreadCount > 0 && (
-                    <span className="unread-badge">{chat.unreadCount}</span>
+                    <span className="unread-badge">{chat.unreadCount > 9 ? "9+" : chat.unreadCount}</span>
                   )}
                 </div>
 

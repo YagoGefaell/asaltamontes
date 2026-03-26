@@ -196,6 +196,8 @@ export const ConversationsProvider = ({ children }) => {
     handleNewMessage
   );
 
+  const totalUnreadCount = chats.reduce((total, chat) => total + (chat.unreadCount > 0 ? 1 : 0), 0);
+
   return (
     <ConversationsContext.Provider 
       value={{ 
@@ -208,7 +210,8 @@ export const ConversationsProvider = ({ children }) => {
         upsertConversation,
         loadConversationMessages,
         activeChatId,
-        setActiveChatId
+        setActiveChatId,
+        totalUnreadCount
       }}
     >
       {children}

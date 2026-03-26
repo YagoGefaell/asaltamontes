@@ -31,6 +31,35 @@
 
   border-radius: 12px;
   transition: color 0.2s ease, background-color 0.2s ease;
+  position: relative;
+}
+
+.unread-count {
+  position: absolute;
+  top: 5px;
+  right: 2px;
+  
+  background-color: var(--secondary);
+  color: var(--surface);
+  
+  font-size: 0.65rem;
+  font-weight: 700;
+  
+  min-width: 18px;
+  height: 18px;
+  border-radius: 10px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  border: 2px solid var(--surface);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.bottom-nav .active .unread-count {
+  border: 2px solid var(--primary-soft);
+  color: var(--primary-soft);
 }
 
 /* --- ESTADO ACTIVO (estilo Duolingo) --- */
