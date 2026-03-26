@@ -45,11 +45,12 @@ public class UserAssembler {
         );
     }
 
-    public UserSearchDto toUserSearch(UserAccount user, UserProfile profile) {
+    public UserSearchDto toUserSearch(UserAccount user, UserProfile profile, boolean isFollowing) {
         return new UserSearchDto(
                 user.getUsername(),
                 safe(profile.getFullName()),
-                safe(profile.getProfilePictureUrl())
+                safe(profile.getProfilePictureUrl()),
+                isFollowing
         );
     }
 

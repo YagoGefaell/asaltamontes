@@ -14,32 +14,40 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 @Repository
-public interface UserAccountRepository extends JpaRepository<UserAccount,Long> {
+public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
     @Query("""
-    SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
-        u.username,
-        p.fullName,
-        p.profilePictureUrl
-    )
-    FROM UserAccount u
-    LEFT JOIN u.profile p
-    WHERE u.username LIKE %:query%
-    AND u.id <> :excludeId
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
+            u.username,
+            p.fullName,
+            p.profilePictureUrl,
+            (CASE WHEN f.id IS NOT NULL THEN true ELSE false END)
+        )
+        FROM UserAccount u
+        LEFT JOIN u.profile p
+        LEFT JOIN UserFollow f ON f.following = u AND f.follower.id = :userId
+        WHERE u.id <> :userId
+        AND (:query IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')))
     """)
-    Page<UserSearchDto> searchUsersByUsername(String query, Long excludeId, Pageable pageable);
+    Page<UserSearchDto> searchUsersByUsername(
+        @Param("query") String query, 
+        @Param("userId") Long userId, 
+        Pageable pageable
+    );
 
     @Query("""
-    SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
-        u.username,
-        p.fullName,
-        p.profilePictureUrl
-    )
-    FROM UserAccount u
-    LEFT JOIN u.profile p
-    WHERE u.id <> :excludeId
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
+            u.username,
+            p.fullName,
+            p.profilePictureUrl,
+            (CASE WHEN f.id IS NOT NULL THEN true ELSE false END)
+        )
+        FROM UserAccount u
+        LEFT JOIN u.profile p
+        LEFT JOIN UserFollow f ON f.following = u AND f.follower.id = :userId
+        WHERE u.id <> :userId
     """)
-    Page<UserSearchDto> searchAllUsers(Long excludeId, Pageable pageable);
-
+    Page<UserSearchDto> searchAllUsers(@Param("userId") Long userId, Pageable pageable);
+    
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END 
         FROM UserAccount u 
@@ -54,7 +62,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount,Long> {
         WHERE LOWER(u.email) = LOWER(:email)
         AND u.id <> :id
     """)
-    boolean existsByEmailIgnoreCaseExceptId(String email, Long id);
+    boolean existsByEmailIgnoreCaseExceptId(@Param("email") String email, @Param("id") Long id);
 
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByUsername(String username);

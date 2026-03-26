@@ -11,7 +11,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.SelfFollowException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.domain.UserFollow;
-import io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
@@ -68,12 +68,12 @@ public class FollowService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserSearchFollowDto> getUsersFollowedBy(Long followerId, Pageable pageable) {
+    public Page<UserSearchDto> getUsersFollowedBy(Long followerId, Pageable pageable) {
         return userFollowRepository.findFollowingByFollowerId(followerId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<UserSearchFollowDto> getUsersFollowing(Long followingId, Pageable pageable) {
+    public Page<UserSearchDto> getUsersFollowing(Long followingId, Pageable pageable) {
         return userFollowRepository.findFollowersByFollowingId(followingId, pageable);
     }
 }

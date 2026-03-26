@@ -131,8 +131,8 @@ public class UserService implements UserDetailsService {
         return assembler.toUserProfile(user, profile, isFollowing);
     }
 
-    public Page<UserSearchDto> getAllUsers(Long excludeId, Pageable pageable) {
-        return userAccountRepository.searchAllUsers(excludeId, pageable);
+    public Page<UserSearchDto> getAllUsers(Long userId, Pageable pageable) {
+        return userAccountRepository.searchAllUsers(userId, pageable);
     }
 
     @Override

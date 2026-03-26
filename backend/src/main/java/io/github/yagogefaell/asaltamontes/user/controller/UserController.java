@@ -48,13 +48,13 @@ public class UserController {
             @RequestParam(required = false) String query,
             @PageableDefault(size = 20, sort = "username") Pageable pageable
     ) {
-        Long excludeId = ((UserAccount) authentication.getPrincipal()).getId();
+        Long userId = ((UserAccount) authentication.getPrincipal()).getId();
 
         if (query == null || query.isBlank()) {
-            return userService.getAllUsers(excludeId, pageable);
+            return userService.getAllUsers(userId, pageable);
         }
 
-        return userService.searchUsersByUsername(query, excludeId, pageable);
+        return userService.searchUsersByUsername(query, userId, pageable);
     }
 
     @GetMapping("{username}")

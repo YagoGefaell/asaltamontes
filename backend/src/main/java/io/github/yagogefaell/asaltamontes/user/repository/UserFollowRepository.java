@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserFollow;
-import io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 import jakarta.transaction.Transactional;
 
 @Repository
@@ -26,7 +26,7 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
     void deleteByFollowerIdAndFollowingId(Long followerId, Long followingId);
 
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto(
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
             u.username,
             u.profile.fullName,
             u.profile.profilePictureUrl,
@@ -41,10 +41,10 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         WHERE f.follower.id = :followerId
         ORDER BY u.username ASC
     """)
-    Page<UserSearchFollowDto> findFollowingByFollowerId(Long followerId, Pageable pageable);
+    Page<UserSearchDto> findFollowingByFollowerId(Long followerId, Pageable pageable);
 
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto(
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
             u.username,
             u.profile.fullName,
             u.profile.profilePictureUrl,
@@ -59,5 +59,5 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         WHERE f.following.id = :followingId
         ORDER BY u.username ASC
     """)
-    Page<UserSearchFollowDto> findFollowersByFollowingId(Long followingId, Pageable pageable);
+    Page<UserSearchDto> findFollowersByFollowingId(Long followingId, Pageable pageable);
 }

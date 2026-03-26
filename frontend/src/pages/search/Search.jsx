@@ -5,7 +5,6 @@ import "./Search.css";
 import { getAllUsersRequest } from "../../features/users/services/users.service";
 import {
   followUserRequest,
-  getFollowingRequest,
   unfollowUserRequest,
 } from "../../features/users/services/users.service.js";
 import { useAuth } from "../../features/auth/hooks/useAuth";
@@ -21,38 +20,7 @@ const Search = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [searchTimeout, setSearchTimeout] = useState(null);
-  const [followingUsernames, setFollowingUsernames] = useState([]);
   const initializedRef = useRef(false);
-
-  const loadFollowingUsernames = async () => {
-    try {
-      const usernames = [];
-      let page = 0;
-      let last = false;
-
-      while (!last) {
-        const pageData = await getFollowingRequest(page, 200);
-        const content = pageData?.content || [];
-
-        content.forEach((user) => {
-          if (user?.username) {
-            usernames.push(user.username);
-          }
-        });
-
-        last = pageData?.last ?? true;
-        page += 1;
-
-        if (content.length === 0) {
-          last = true;
-        }
-      }
-
-      setFollowingUsernames([...new Set(usernames)]);
-    } catch (err) {
-      console.warn("No se pudo cargar la lista de seguidos", err);
-    }
-  };
 
   const fetchUsers = useCallback(async (page = 0, query = "", reset = false) => {
     if (page === 0) {
@@ -64,10 +32,7 @@ const Search = () => {
 
     try {
       const pageData = await getAllUsersRequest(page, 20, query);
-      const newUsers = (pageData.content || []).map((user) => ({
-        ...user,
-        isFollowing: followingUsernames.includes(user.username),
-      }));
+      const newUsers = pageData.content || [];
 
       if (reset || page === 0) {
         setUsers(newUsers);
@@ -87,7 +52,7 @@ const Search = () => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [followingUsernames]);
+  }, []);
 
   useEffect(() => {
     if (initializedRef.current) {
@@ -95,18 +60,8 @@ const Search = () => {
     }
 
     initializedRef.current = true;
-    loadFollowingUsernames();
     fetchUsers(0, "", true);
   }, [fetchUsers]);
-
-  useEffect(() => {
-    setUsers((prev) =>
-      prev.map((user) => ({
-        ...user,
-        isFollowing: followingUsernames.includes(user.username),
-      }))
-    );
-  }, [followingUsernames]);
 
   const handleSearch = (e) => {
     const query = e.target.value;
@@ -138,11 +93,9 @@ const Search = () => {
 
       if (currentlyFollowing) {
         await unfollowUserRequest(username);
-        setFollowingUsernames((prev) => prev.filter((item) => item !== username));
         decrementFollowing();
       } else {
         await followUserRequest(username);
-        setFollowingUsernames((prev) => [...new Set([...prev, username])]);
         incrementFollowing();
       }
 

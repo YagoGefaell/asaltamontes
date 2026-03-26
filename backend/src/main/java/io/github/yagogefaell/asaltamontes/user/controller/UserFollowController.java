@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
-import io.github.yagogefaell.asaltamontes.user.dto.UserSearchFollowDto;
+import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 import io.github.yagogefaell.asaltamontes.user.service.FollowService;
 import lombok.RequiredArgsConstructor;
 
@@ -46,7 +46,7 @@ public class UserFollowController {
     }
 
     @GetMapping("/following")
-    public Page<UserSearchFollowDto> getFollowing(
+    public Page<UserSearchDto> getFollowing(
             Authentication authentication,
             @PageableDefault(size = 20, sort = "following.username") Pageable pageable
     ) {
@@ -55,7 +55,7 @@ public class UserFollowController {
     }
 
     @GetMapping("/followers")
-    public Page<UserSearchFollowDto> getFollowers(
+    public Page<UserSearchDto> getFollowers(
             Authentication authentication,
             @PageableDefault(size = 20, sort = "follower.username") Pageable pageable
     ) {
