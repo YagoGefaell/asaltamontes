@@ -21,6 +21,7 @@ export const ConversationsProvider = ({ children }) => {
   const mapConversationToChat = useCallback((conversation) => {
     const username = conversation?.contactUsername || "usuario";
     const firstChar = username.trim().charAt(0).toUpperCase();
+    const lastMessagePreview = (conversation?.lastMessage || "").trim();
 
     return {
       id: conversation?.conversationId,
@@ -28,7 +29,7 @@ export const ConversationsProvider = ({ children }) => {
       avatar: firstChar || "?",
       avatarUrl: null,
       unreadCount: Number(conversation?.unreadCount || 0),
-      lastMsg: "Abre la conversacion",
+      lastMsg: lastMessagePreview || "Abre la conversacion",
       lastMessageAt: conversation?.lastMessageAt || null,
     };
   }, []);

@@ -28,6 +28,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             c.id,
             other.user.username,
             me.unreadCount,
+            c.lastMessage,
             c.lastMessageAt
         )
         FROM Conversation c

@@ -49,6 +49,7 @@ public class MessageService {
         Message savedMessage = messageRepository.save(message);
 
         conversation.setLastMessageAt(savedMessage.getSentAt());
+        conversation.setLastMessage(savedMessage.getContent().length() > 30 ? savedMessage.getContent().substring(0, 30).trim() + "..." : savedMessage.getContent());
         conversationRepository.save(conversation);
 
         List<ConversationParticipant> participants = participantRepository.findByConversationId(conversationId);

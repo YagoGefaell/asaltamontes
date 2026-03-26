@@ -20,7 +20,7 @@ export function UserProfileProvider({ children }) {
           try {
             const data = await getMeRequest();
             setUserProfile(data || null);
-          } catch (err) {
+          } catch {
             setUserProfile(null);
           } finally {
             setLoading(false);
@@ -38,9 +38,9 @@ export function UserProfileProvider({ children }) {
         setUserProfile(updatedData);
         setLoading(false);
         return updatedData;
-      } catch (err) {
+      } catch {
         setLoading(false);
-        throw err;
+        return null;
       }
     };
 
@@ -51,9 +51,9 @@ export function UserProfileProvider({ children }) {
         const users = await getUsersByUsername(query);
         setLoading(false);
         return users;
-      } catch (err) {
+      } catch {
         setLoading(false);
-        throw err;
+        throw "Error al buscar usuarios";
       }
     };
 
@@ -61,8 +61,8 @@ export function UserProfileProvider({ children }) {
       try {
         const user = await getUserByUsername(username);
         return user;
-      } catch (err) {
-        throw err;
+      } catch {
+        throw "Error al obtener información del usuario";
       }
     };
 

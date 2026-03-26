@@ -22,6 +22,9 @@ public class Conversation {
     @Column(name = "group_name")
     private String groupName;
 
+    @Column(name = "last_message")
+    private String lastMessage;
+
     @Column(name = "last_message_at")
     private LocalDateTime lastMessageAt;
 

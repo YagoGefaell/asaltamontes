@@ -6,5 +6,6 @@ public record ChatSummary(
     Long conversationId,
     String contactUsername,
     int unreadCount,
+    String lastMessage,
     LocalDateTime lastMessageAt
 ) {}
