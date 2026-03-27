@@ -94,11 +94,13 @@ export const ConversationsProvider = ({ children }) => {
     return mappedChat;
   }, []);
 
-  const loadConversationMessages = useCallback(async (conversationId) => {
+  const loadConversationMessages = useCallback(async (conversationId, options = {}) => {
     if (!conversationId) return;
 
+    const { forceSyncRead = false } = options;
+
     const alreadyLoaded = chatMessages[conversationId];
-    if (alreadyLoaded) {
+    if (alreadyLoaded && !forceSyncRead) {
       setChats((prevChats) => prevChats.map((chat) => (
         String(chat.id) === String(conversationId)
           ? { ...chat, unreadCount: 0 }

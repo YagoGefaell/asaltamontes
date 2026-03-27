@@ -24,7 +24,27 @@ const Messages = () => {
     errorChats
   } = useContext(ConversationsContext);
 
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedChat, setSelectedChat] = useState(() => {
+    const selectedConversation = location.state?.selectedConversation;
+
+    if (!selectedConversation || selectedConversation.conversationId) {
+      return null;
+    }
+
+    const username = selectedConversation.contactUsername
+      || selectedConversation.username
+      || selectedConversation.name
+      || "usuario";
+
+    return {
+      id: null,
+      name: username,
+      avatar: username.trim().charAt(0).toUpperCase() || "?",
+      avatarUrl: selectedConversation.avatarUrl || null,
+      unreadCount: 0,
+      lastMsg: selectedConversation.lastMessage || "Empieza la conversacion",
+    };
+  });
   const [draftMessage, setDraftMessage] = useState("");
 
   const messagesEndRef = useRef(null);
@@ -58,22 +78,6 @@ const Messages = () => {
     const conversationId = selectedConversation.conversationId;
 
     if (!conversationId) {
-      const username = selectedConversation.contactUsername
-        || selectedConversation.username
-        || selectedConversation.name
-        || "usuario";
-
-      const tempChat = {
-        id: null,
-        name: username,
-        avatar: username.trim().charAt(0).toUpperCase() || "?",
-        avatarUrl: selectedConversation.avatarUrl || null,
-        unreadCount: 0,
-        lastMsg: selectedConversation.lastMessage || "Empieza la conversacion",
-      };
-
-      setSelectedChat(tempChat);
-      setActiveChatId(null);
       navigate(location.pathname, { replace: true, state: {} });
       return;
     }
@@ -95,7 +99,6 @@ const Messages = () => {
     navigate, 
     location.pathname, 
     handleEnterChat,
-    setActiveChatId,
   ]);
 
   useEffect(() => {
@@ -105,6 +108,41 @@ const Messages = () => {
 
     return () => document.body.classList.remove(className);
   }, [selectedChat]);
+
+  useEffect(() => {
+    if (!selectedChat || selectedChat.id) return;
+
+    const matchedChat = chats.find(
+      (chat) => chat.id && String(chat.name).toLowerCase() === String(selectedChat.name).toLowerCase()
+    );
+
+    if (!matchedChat) return;
+
+    const syncId = setTimeout(() => {
+      const syncedChat = {
+        ...matchedChat,
+        avatar: matchedChat.avatar || selectedChat.avatar,
+        avatarUrl: matchedChat.avatarUrl || selectedChat.avatarUrl || null,
+      };
+
+      setSelectedChat(syncedChat);
+      setActiveChatId(matchedChat.id);
+
+      setChats((prevChats) => prevChats.map((chat) => (
+        String(chat.id) === String(matchedChat.id)
+          ? {
+              ...chat,
+              avatar: chat.avatar || selectedChat.avatar,
+              avatarUrl: chat.avatarUrl || selectedChat.avatarUrl || null,
+            }
+          : chat
+      )));
+
+      loadConversationMessages(matchedChat.id, { forceSyncRead: true });
+    }, 0);
+
+    return () => clearTimeout(syncId);
+  }, [selectedChat, chats, setActiveChatId, setChats, loadConversationMessages]);
 
   useEffect(() => {
     if (!selectedChat) return;
