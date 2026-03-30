@@ -1,7 +1,6 @@
 // UserCard.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatters } from "../../utils/helpers";
 import Button from "../forms/Button";
 import "./UserCard.css";
 
@@ -18,10 +17,10 @@ const UserCard = ({
   chatLoading = false,
 }) => {
   const [pressed, setPressed] = useState(false);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const navigate = useNavigate();
-
-  // Usar función utilitaria para generar avatar
-  const avatarSrc = formatters.avatar(profilePictureUrl, fullName, username);
+  const initial = (username || "?").trim().charAt(0).toUpperCase() || "?";
+  const shouldShowImage = Boolean(profilePictureUrl) && !avatarLoadError;
 
   const handleCardClick = (e) => {
     // Don't navigate if clicking on a button or inside button container
@@ -67,7 +66,18 @@ const UserCard = ({
       onMouseUp={handlePressEnd}
       onMouseLeave={handlePressEnd}
     >
-      <img src={avatarSrc} alt={username} className="user-avatar" />
+      {shouldShowImage ? (
+        <img
+          src={profilePictureUrl}
+          alt={username}
+          className="user-avatar"
+          onError={() => setAvatarLoadError(true)}
+        />
+      ) : (
+        <div className="user-avatar user-avatar-fallback" aria-hidden="true">
+          {initial}
+        </div>
+      )}
       <div className="user-info">
         <span className="user-name">{fullName || username}</span>
         <span className="user-username">@{username}</span>

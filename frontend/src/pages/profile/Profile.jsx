@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 import { useFollow } from "../../features/users/hooks/useFollow";
-import { formatters } from "../../utils/helpers";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
 
@@ -32,6 +31,7 @@ function Profile({
   } = useFollow();
   const [openChatLoading, setOpenChatLoading] = useState(false);
   const [openChatError, setOpenChatError] = useState(null);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   // Use props data if provided, otherwise use context data
   const profileData = userData || userProfile;
@@ -169,6 +169,9 @@ function Profile({
     EXPERT: "Experto"
   };
 
+  const avatarInitial = username.trim().charAt(0).toUpperCase() || "?";
+  const shouldShowProfileImage = Boolean(profilePictureUrl) && !avatarLoadError;
+
   return (
     <div className="profile-page">
       {/* Barra superior con icono de ajustes o botón volver */}
@@ -216,11 +219,18 @@ function Profile({
       </div>
 
       <div className="profile-avatar-container">
-        <img
-          src={formatters.avatar(profilePictureUrl, fullName, username)}
-          alt={`${username}'s avatar`}
-          className="profile-avatar"
-        />
+        {shouldShowProfileImage ? (
+          <img
+            src={profilePictureUrl}
+            alt={`${username}'s avatar`}
+            className="profile-avatar"
+            onError={() => setAvatarLoadError(true)}
+          />
+        ) : (
+          <div className="profile-avatar profile-avatar-fallback" aria-hidden="true">
+            {avatarInitial}
+          </div>
+        )}
         {isVerified && (
           <div className="verified-badge">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#1DA1F2">

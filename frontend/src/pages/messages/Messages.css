@@ -70,6 +70,8 @@ body.chat-open .bottom-nav {
   border-radius: 50%;
   border: 1px solid var(--primary);
   background: linear-gradient(45deg, var(--primary), var(--primary-light));
+  color: #fff;
+  font-weight: 700;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -138,6 +140,8 @@ body.chat-open .bottom-nav {
   height: 44px;
   border-radius: 50%;
   background: linear-gradient(45deg, var(--primary), var(--primary-light));
+  color: #fff;
+  font-weight: 700;
   box-sizing: border-box;
   display: flex;
   align-items: center;

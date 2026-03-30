@@ -22,6 +22,9 @@ public class Conversation {
     @Column(name = "group_name")
     private String groupName;
 
+    @Column(name = "group_image")
+    private String groupImage;
+
     @Column(name = "last_message")
     private String lastMessage;
 

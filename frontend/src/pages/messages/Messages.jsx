@@ -31,7 +31,8 @@ const Messages = () => {
       return null;
     }
 
-    const username = selectedConversation.contactUsername
+    const username = selectedConversation.displayName
+      || selectedConversation.contactUsername
       || selectedConversation.username
       || selectedConversation.name
       || "usuario";
@@ -40,7 +41,7 @@ const Messages = () => {
       id: null,
       name: username,
       avatar: username.trim().charAt(0).toUpperCase() || "?",
-      avatarUrl: selectedConversation.avatarUrl || null,
+      avatarUrl: selectedConversation.displayImage || selectedConversation.avatarUrl || null,
       unreadCount: 0,
       lastMsg: selectedConversation.lastMessage || "Empieza la conversacion",
     };
@@ -245,7 +246,18 @@ const Messages = () => {
                 <div className="avatar-wrapper">
                   <div className="contact-avatar" aria-hidden="true">
                     {chat.avatarUrl ? (
-                      <img src={chat.avatarUrl} alt={chat.name} className="contact-avatar-image" />
+                      <img
+                        src={chat.avatarUrl}
+                        alt={chat.name}
+                        className="contact-avatar-image"
+                        onError={() => {
+                          setChats((prevChats) => prevChats.map((existingChat) => (
+                            String(existingChat.id) === String(chat.id)
+                              ? { ...existingChat, avatarUrl: null }
+                              : existingChat
+                          )));
+                        }}
+                      />
                     ) : (
                       chat.avatar
                     )}
@@ -280,7 +292,14 @@ const Messages = () => {
             <div className="chat-title">
               <div className="chat-avatar" aria-hidden="true">
                 {selectedChat.avatarUrl ? (
-                  <img src={selectedChat.avatarUrl} alt={selectedChat.name} className="chat-avatar-image" />
+                  <img
+                    src={selectedChat.avatarUrl}
+                    alt={selectedChat.name}
+                    className="chat-avatar-image"
+                    onError={() => {
+                      setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
+                    }}
+                  />
                 ) : (
                   selectedChat.avatar
                 )}

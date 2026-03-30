@@ -26,18 +26,25 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummary(
             c.id,
-            other.user.username,
+            CASE 
+                WHEN c.isGroup = true THEN c.groupName 
+                ELSE other.user.username 
+            END,
+            CASE 
+                WHEN c.isGroup = true THEN c.groupImage 
+                ELSE other.user.profile.profilePictureUrl 
+            END,
             me.unreadCount,
             c.lastMessage,
             c.lastMessageAt
         )
         FROM Conversation c
         JOIN c.participants me
-        JOIN c.participants other
+        LEFT JOIN c.participants other ON c.id = other.conversation.id 
+            AND other.user.username != :username 
+            AND c.isGroup = false
         WHERE me.user.username = :username
-          AND other.user.username != :username
-          AND c.isGroup = false
-        ORDER BY c.lastMessageAt DESC
+        ORDER BY c.lastMessageAt DESC NULLS LAST
     """)
     List<ChatSummary> findActiveChatsForUser(@Param("username") String username);
 }

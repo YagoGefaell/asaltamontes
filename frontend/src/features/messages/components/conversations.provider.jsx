@@ -7,7 +7,6 @@ import {
   getConversationMessagesRequest,
   createOrGetPrivateConversationRequest,
 } from "../services/messages.service.js";
-import { getUserByUsername } from "../../users/services/users.service.js";
 
 export const ConversationsProvider = ({ children }) => {
   const { websocketClient, websocketConnected, isAuthenticated, sendMessage } = useAuth();
@@ -53,15 +52,15 @@ export const ConversationsProvider = ({ children }) => {
   }, [clearUnreadCount, sendReadReceipt, getLastMessageId]);
 
   const mapConversationToChat = useCallback((conversation) => {
-    const username = conversation?.contactUsername || "usuario";
+    const username = conversation?.displayName || conversation?.contactUsername || "usuario";
     const firstChar = username.trim().charAt(0).toUpperCase();
     const lastMessagePreview = (conversation?.lastMessage || "").trim();
 
     return {
-      id: conversation?.conversationId,
+      id: conversation?.conversationId || conversation?.id,
       name: username,
       avatar: firstChar || "?",
-      avatarUrl: null,
+      avatarUrl: conversation?.displayImage || conversation?.avatarUrl || null,
       unreadCount: Number(conversation?.unreadCount || 0),
       lastMsg: lastMessagePreview || "Abre la conversacion",
       lastMessageAt: conversation?.lastMessageAt || null,
@@ -101,11 +100,12 @@ export const ConversationsProvider = ({ children }) => {
 
     const mappedChat = {
       id: createdConversationId,
-      name: createdConversation?.contactUsername || recipientUsername,
+      name: createdConversation?.displayName || createdConversation?.contactUsername || recipientUsername,
       avatar: chat?.avatar || recipientUsername.trim().charAt(0).toUpperCase() || "?",
-      avatarUrl: chat?.avatarUrl || null,
+      avatarUrl: createdConversation?.displayImage || chat?.avatarUrl || null,
       unreadCount: 0,
-      lastMsg: chat?.lastMsg || "Abre la conversacion",
+      lastMsg: createdConversation?.lastMessage || chat?.lastMsg || "Abre la conversacion",
+      lastMessageAt: createdConversation?.lastMessageAt || null,
     };
 
     setChats((prevChats) => {
@@ -171,19 +171,7 @@ export const ConversationsProvider = ({ children }) => {
         if (!mounted) return;
 
         const mappedChats = Array.isArray(conversations)
-          ? await Promise.all(conversations.map(async (conversation) => {
-              const baseChat = mapConversationToChat(conversation);
-
-              try {
-                const profile = await getUserByUsername(baseChat.name);
-                return {
-                  ...baseChat,
-                  avatarUrl: profile?.profilePictureUrl || null,
-                };
-              } catch {
-                return baseChat;
-              }
-            }))
+          ? conversations.map((conversation) => mapConversationToChat(conversation))
           : [];
 
         setChats(mappedChats);
