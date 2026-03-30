@@ -18,15 +18,14 @@ public class CorsConfig {
         configuration.setAllowedOriginPatterns(List.of(
             "http://localhost:[*]", 
             "http://127.0.0.1:[*]", 
-            "http://192.168.1.[*]",
+            "http://192.168.1.157",
+            "http://192.168.1.158",
             "chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop"
         ));
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-
-        configuration.setExposedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

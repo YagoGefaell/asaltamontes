@@ -38,7 +38,6 @@ public class SecurityConfig {
                 .csrf(customizer -> customizer.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/ws-asaltamontes/**").permitAll()
                         .anyRequest().authenticated())
