@@ -16,7 +16,7 @@ public class CorsConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:5173", "http://localhost", "http://192.168.1.*",
+            "http://localhost:[*]", "http://127.0.0.1:[*]", "http://192.168.1.[*]",
             "chrome-extension://fhbjgbiflinjbdggehcddcbncdddomop"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
