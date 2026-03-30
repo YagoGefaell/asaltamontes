@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { apiClient } from '../../lib/api-client.js'
+import { API_CONFIG } from '../../config/constants.js'
 import './BackendStatus.css'
 
 /**
@@ -56,7 +57,7 @@ function BackendStatus() {
           <span className="status-text">Servidor no disponible</span>
           <p className="status-description">{error}</p>
           <p className="status-help">
-            Asegúrate de que el backend esté ejecutándose en http://localhost:8080
+            Asegúrate de que el backend esté ejecutándose en {API_CONFIG.BASE_URL}
           </p>
         </div>
       </div>
