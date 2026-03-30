@@ -138,7 +138,7 @@ const Messages = () => {
           : chat
       )));
 
-      loadConversationMessages(matchedChat.id, { forceSyncRead: true });
+      loadConversationMessages(matchedChat.id);
     }, 0);
 
     return () => clearTimeout(syncId);

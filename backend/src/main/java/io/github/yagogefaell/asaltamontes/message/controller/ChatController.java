@@ -1,7 +1,11 @@
 package io.github.yagogefaell.asaltamontes.message.controller;
 
+import io.github.yagogefaell.asaltamontes.message.dto.ChatReadEvent;
 import io.github.yagogefaell.asaltamontes.message.dto.PrivateMessage;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
+
+import java.security.Principal;
+
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -27,5 +31,10 @@ public class ChatController {
                 "/queue/messages",
                 message
         );
+    }
+
+    @MessageMapping("/chat.read")
+    public void processReadReceipt(@Payload ChatReadEvent message, Principal principal) {
+        messageService.markConversationAsRead(message.conversationId(), principal.getName());
     }
 }

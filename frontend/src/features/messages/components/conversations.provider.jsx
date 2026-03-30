@@ -10,7 +10,7 @@ import {
 import { getUserByUsername } from "../../users/services/users.service.js";
 
 export const ConversationsProvider = ({ children }) => {
-  const { websocketClient, websocketConnected, isAuthenticated } = useAuth();
+  const { websocketClient, websocketConnected, isAuthenticated, sendMessage } = useAuth();
 
   const [chats, setChats] = useState([]);
   const [chatMessages, setChatMessages] = useState({});
@@ -18,6 +18,39 @@ export const ConversationsProvider = ({ children }) => {
   const [errorChats, setErrorChats] = useState(null);
 
   const [activeChatId, setActiveChatId] = useState(null);
+
+  const clearUnreadCount = useCallback((conversationId) => {
+    setChats((prevChats) => prevChats.map((chat) => (
+      String(chat.id) === String(conversationId)
+        ? { ...chat, unreadCount: 0 }
+        : chat
+    )));
+  }, []);
+
+  const getLastMessageId = useCallback((messages) => {
+    if (!Array.isArray(messages) || messages.length === 0) return null;
+
+    const rawLastId = messages[messages.length - 1]?.id;
+    const numericId = Number(rawLastId);
+
+    return Number.isInteger(numericId) ? numericId : null;
+  }, []);
+
+  const sendReadReceipt = useCallback((conversationId, lastMessageId = null) => {
+    if (!conversationId || !websocketConnected) return;
+
+    sendMessage("/app/chat.read", {
+      conversationId,
+      lastMessageId,
+    });
+  }, [sendMessage, websocketConnected]);
+
+  const markConversationAsRead = useCallback((conversationId, messages = null) => {
+    if (!conversationId) return;
+
+    clearUnreadCount(conversationId);
+    sendReadReceipt(conversationId, getLastMessageId(messages));
+  }, [clearUnreadCount, sendReadReceipt, getLastMessageId]);
 
   const mapConversationToChat = useCallback((conversation) => {
     const username = conversation?.contactUsername || "usuario";
@@ -94,36 +127,29 @@ export const ConversationsProvider = ({ children }) => {
     return mappedChat;
   }, []);
 
-  const loadConversationMessages = useCallback(async (conversationId, options = {}) => {
+  const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
 
-    const { forceSyncRead = false } = options;
-
     const alreadyLoaded = chatMessages[conversationId];
-    if (alreadyLoaded && !forceSyncRead) {
-      setChats((prevChats) => prevChats.map((chat) => (
-        String(chat.id) === String(conversationId)
-          ? { ...chat, unreadCount: 0 }
-          : chat
-      )));
+    if (alreadyLoaded) {
+      markConversationAsRead(conversationId, alreadyLoaded);
       return;
     }
 
     try {
       const messages = await getConversationMessagesRequest(conversationId);
+      const normalizedMessages = Array.isArray(messages) ? messages : [];
+
       setChatMessages((prev) => ({
         ...prev,
-        [conversationId]: Array.isArray(messages) ? messages : [],
+        [conversationId]: normalizedMessages,
       }));
-      setChats((prevChats) => prevChats.map((chat) => (
-        String(chat.id) === String(conversationId)
-          ? { ...chat, unreadCount: 0 }
-          : chat
-      )));
+      markConversationAsRead(conversationId, normalizedMessages);
     } catch {
       // No bloqueamos la UI del chat si falla la carga inicial del historial.
+      markConversationAsRead(conversationId);
     }
-  }, [chatMessages]);
+  }, [chatMessages, markConversationAsRead]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -182,6 +208,12 @@ export const ConversationsProvider = ({ children }) => {
     const conversationId = payload?.conversationId;
     if (!conversationId) return;
 
+    const isCurrentlyReading = String(activeChatId) === String(conversationId);
+    if (isCurrentlyReading) {
+      const payloadMessageId = Number.isInteger(Number(payload?.id)) ? Number(payload.id) : null;
+      sendReadReceipt(conversationId, payloadMessageId);
+    }
+
     setChatMessages((prev) => {
       const previous = prev[conversationId] || [];
       return {
@@ -205,7 +237,6 @@ export const ConversationsProvider = ({ children }) => {
       if (!existing) {
         const fallbackUsername = payload?.senderUsername || payload?.receiverUsername || "usuario";
         const firstChar = fallbackUsername.trim().charAt(0).toUpperCase();
-        const isCurrentlyReading = String(activeChatId) === String(conversationId);
 
         return [
           {
@@ -222,7 +253,6 @@ export const ConversationsProvider = ({ children }) => {
 
       return prevChats.map(chat => {
         if (String(chat.id) === String(conversationId)) {
-          const isCurrentlyReading = String(activeChatId) === String(conversationId);
           const newUnreadCount = isCurrentlyReading ? 0 : (chat.unreadCount || 0) + 1;
 
           return {
@@ -234,7 +264,7 @@ export const ConversationsProvider = ({ children }) => {
         return chat;
       });
     });
-  }, [activeChatId]);
+  }, [activeChatId, sendReadReceipt]);
 
   useGlobalMessageListener(
     websocketClient,

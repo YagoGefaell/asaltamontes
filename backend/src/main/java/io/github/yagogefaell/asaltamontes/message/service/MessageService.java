@@ -91,6 +91,19 @@ public class MessageService {
         return messageRepository.findMessagesByConversationId(conversationId);
     }
 
+    @Transactional
+    public void markConversationAsRead(Long conversationId, String username) {
+        ConversationParticipant participant = participantRepository
+                .findByConversationIdAndUserUsername(conversationId, username)
+                .orElseThrow(() -> new RuntimeException("No tienes permiso para acceder a este chat"));
+
+        if (participant.getUnreadCount() > 0) {
+            participant.setUnreadCount(0);
+            participantRepository.save(participant);
+        }
+    }
+
+
     private Conversation createPrivateConversation(UserAccount user1, UserAccount user2) {
         Conversation conv = new Conversation();
         conv.setGroup(false);
