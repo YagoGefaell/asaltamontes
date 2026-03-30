@@ -33,11 +33,11 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL}
     container_name: frontend_app
     ports:
       - "80:80"
-    args:
-      - VITE_API_URL=${VITE_API_URL}
     depends_on:
       - backend
     networks:
