@@ -11,6 +11,7 @@ import io.github.yagogefaell.asaltamontes.message.repository.ConversationReposit
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +25,34 @@ public class MessageService {
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository participantRepository;
     private final UserService userService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public MessageService(MessageRepository messageRepository, 
                           ConversationRepository conversationRepository,
                           ConversationParticipantRepository participantRepository,
-                          UserService userService) {
+                          UserService userService,
+                          SimpMessagingTemplate messagingTemplate) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
         this.userService = userService;
+        this.messagingTemplate = messagingTemplate;
+    }
+
+    @Transactional
+    public MessageDto processIncomingMessage(Long conversationId, String senderUsername, String content) {
+        Message savedMessage = saveMessage(conversationId, senderUsername, content);
+
+        MessageDto dto = new MessageDto(
+                savedMessage.getId(),
+                savedMessage.getConversation().getId(),
+                savedMessage.getSender().getUsername(),
+                savedMessage.getContent(),
+                savedMessage.getSentAt()
+        );
+
+        sendMessageToConversation(dto);
+        return dto;
     }
 
     @Transactional
@@ -103,6 +123,17 @@ public class MessageService {
         }
     }
 
+    private void sendMessageToConversation(MessageDto message) {
+        List<ConversationParticipant> participants = participantRepository.findByConversationId(message.conversationId());
+
+        for (ConversationParticipant participant : participants) {
+            messagingTemplate.convertAndSendToUser(
+                    participant.getUser().getUsername(),
+                    "/queue/messages",
+                    message
+            );
+        }
+    }
 
     private Conversation createPrivateConversation(UserAccount user1, UserAccount user2) {
         Conversation conv = new Conversation();

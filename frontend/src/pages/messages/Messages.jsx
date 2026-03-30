@@ -175,25 +175,11 @@ const Messages = () => {
 
     const payload = {
       conversationId,
-      senderUsername: currentUser.username,
-      receiverUsername: activeChat.name,
       content,
     };
 
-    const wasSent = sendMessage("/app/chat.private", payload);
+    const wasSent = sendMessage("/app/chat.send", payload);
     if (!wasSent) return;
-
-    const optimisticMessage = {
-      id: `tmp-${Date.now()}`,
-      conversationId,
-      senderUsername: currentUser.username,
-      content,
-    };
-
-    setChatMessages((prev) => ({
-      ...prev,
-      [conversationId]: [...(prev[conversationId] || []), optimisticMessage],
-    }));
 
     setChats((prevChats) => {
       const updated = prevChats.map((chat) => (

@@ -209,9 +209,10 @@ export const ConversationsProvider = ({ children }) => {
         [conversationId]: [
           ...previous,
           {
-            id: payload.id || `ws-${Date.now()}-${Math.random()}`,
+            id: payload.id,
             content: payload.content,
             senderUsername: payload.senderUsername,
+            sentAt: payload.sentAt,
           },
         ],
       };

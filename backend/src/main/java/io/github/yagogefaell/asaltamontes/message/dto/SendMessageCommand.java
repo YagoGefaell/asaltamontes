@@ -1,8 +1,6 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
-public record PrivateMessage(
+public record SendMessageCommand(
     Long conversationId,
-    String senderUsername, 
-    String receiverUsername,
     String content
 ) {}
