@@ -3,6 +3,9 @@
   flex-direction: column;
   height: 100vh;
   height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
   background: var(--background);
 }
 
@@ -15,6 +18,9 @@ body.chat-open .bottom-nav {
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--border-soft);
   background: var(--surface);
   position: sticky;
@@ -135,6 +141,9 @@ body.chat-open .bottom-nav {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--background);
 }
 
@@ -234,6 +243,9 @@ body.chat-open .bottom-nav {
 .messages {
   flex: 1;
   padding: 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -283,6 +295,10 @@ body.chat-open .bottom-nav {
   display: flex;
   gap: 8px;
   padding: 0.75rem;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border-top: 1px solid var(--border-soft);
   background: var(--surface);
   flex-shrink: 0;
@@ -293,7 +309,7 @@ body.chat-open .bottom-nav {
   padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: 18px;
-  font-size: 0.9rem;
+  font-size: 16px;
   background: var(--input-bg);
   color: var(--text-color);
   font-family: inherit;
