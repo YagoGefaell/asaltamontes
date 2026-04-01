@@ -1,0 +1,65 @@
+import Loading from "../../../shared/components/Loading";
+
+const ConversationsPane = ({
+  loadingChats,
+  errorChats,
+  chats,
+  onEnterChat,
+  onAvatarError,
+  formatMessageTime,
+}) => {
+  return (
+    <>
+      <div className="messages-header">
+        <h2 className="messages-title">Mensajes</h2>
+      </div>
+
+      <div className="contacts-list">
+        {loadingChats && <Loading />}
+
+        {!loadingChats && errorChats && <p className="contact-preview">{errorChats}</p>}
+
+        {!loadingChats && !errorChats && chats.length === 0 && (
+          <p className="contact-preview">Aun no tienes conversaciones.</p>
+        )}
+
+        {!loadingChats && !errorChats && chats.map((chat) => (
+          <button
+            key={chat.id}
+            type="button"
+            className="contact-item"
+            onClick={() => onEnterChat(chat)}
+          >
+            <div className="avatar-wrapper">
+              <div className="contact-avatar" aria-hidden="true">
+                {chat.avatarUrl ? (
+                  <img
+                    src={chat.avatarUrl}
+                    alt={chat.name}
+                    className="contact-avatar-image"
+                    onError={() => onAvatarError(chat.id)}
+                  />
+                ) : (
+                  chat.avatar
+                )}
+              </div>
+            </div>
+
+            <div className="contact-info">
+              <span className="contact-name">{chat.name}</span>
+              <span className="contact-preview">{chat.lastMsg}</span>
+            </div>
+
+            {chat.lastMessageAt && (
+              <span className="contact-time">{formatMessageTime(chat.lastMessageAt)}</span>
+            )}
+
+            {chat.unreadCount > 0 && <span className="unread-dot" aria-label="Mensajes sin leer" />}
+          </button>
+        ))}
+      </div>
+    </>
+  );
+};
+
+export default ConversationsPane;

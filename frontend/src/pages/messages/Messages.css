@@ -57,6 +57,29 @@ body.chat-open .bottom-nav {
   transform: scale(0.98);
 }
 
+.chat-back-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.chat-back-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.chat-back-icon {
+  width: 22px;
+  height: 22px;
+}
+
 .chat-title {
   display: flex;
   align-items: center;
@@ -199,6 +222,15 @@ body.chat-open .bottom-nav {
   text-overflow: ellipsis;
 }
 
+.contact-time {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 56px;
+  text-align: right;
+}
+
 .messages {
   flex: 1;
   padding: 0.75rem;
@@ -219,6 +251,19 @@ body.chat-open .bottom-nav {
   overflow-wrap: anywhere;
   font-size: 0.9rem;
   line-height: 1.3;
+}
+
+.message-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-time-marker {
+  align-self: center;
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  margin: 0.35rem 0 0.25rem;
+  padding: 0 0.35rem;
 }
 
 .message.sent {

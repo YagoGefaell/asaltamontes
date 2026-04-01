@@ -1,8 +1,9 @@
 import "./Messages.css";
 import { useEffect, useRef, useState, useContext, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import Loading from "../../shared/components/Loading";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import ConversationsPane from "./components/ConversationsPane";
+import ChatPane from "./components/ChatPane";
 
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
 
@@ -15,7 +16,6 @@ const Messages = () => {
     chats, 
     setChats,
     chatMessages,
-    setChatMessages,
     setActiveChatId,
     upsertConversation,
     ensurePrivateConversation,
@@ -52,6 +52,23 @@ const Messages = () => {
 
   const currentMessages = selectedChat ? (chatMessages[selectedChat.id] || []) : [];
 
+  const formatMessageTime = useCallback((dateLike) => {
+    if (!dateLike) return "";
+
+    const rawValue = String(dateLike).trim();
+    const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(rawValue);
+    const normalizedValue = hasTimezone ? rawValue : `${rawValue}Z`;
+    const date = new Date(normalizedValue);
+    if (Number.isNaN(date.getTime())) return "";
+
+    return date.toLocaleTimeString("es-ES", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: "Europe/Madrid",
+    });
+  }, []);
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "auto", block: "end" });
@@ -66,10 +83,19 @@ const Messages = () => {
     }
   }, [setActiveChatId, loadConversationMessages]);
 
+  const handleOpenUserProfile = useCallback((chat, event = null) => {
+    event?.stopPropagation();
+
+    if (!chat || chat.type !== "INDIVIDUAL" || !chat.name) return;
+
+    navigate(`/users/${encodeURIComponent(chat.name)}`);
+  }, [navigate]);
+
   const handleLeaveChat = useCallback(() => {
     setSelectedChat(null);
     setActiveChatId(null);
-  }, [setActiveChatId]);
+    navigate("/messages", { replace: true, state: {} });
+  }, [navigate, setActiveChatId]);
 
   useEffect(() => {
     const selectedConversation = location.state?.selectedConversation;
@@ -182,9 +208,14 @@ const Messages = () => {
     if (!wasSent) return;
 
     setChats((prevChats) => {
+      const isGroupChat = selectedChat?.type === "GROUP";
+      const senderLabel = isGroupChat ? (currentUser?.username || "usuario") : "Tu";
+      const myPreview = `${senderLabel}: ${content}`;
+      const sentAt = new Date().toISOString();
+
       const updated = prevChats.map((chat) => (
         String(chat.id) === String(conversationId)
-          ? { ...chat, lastMsg: content }
+          ? { ...chat, lastMsg: myPreview, lastMessageAt: sentAt }
           : chat
       ));
 
@@ -195,7 +226,8 @@ const Messages = () => {
         {
           ...activeChat,
           id: conversationId,
-          lastMsg: content,
+          lastMsg: myPreview,
+          lastMessageAt: sentAt,
           unreadCount: 0,
         },
         ...updated,
@@ -208,136 +240,38 @@ const Messages = () => {
   return (
     <div className="messages-page">
       {!selectedChat && (
-        <>
-          <div className="messages-header">
-            <h2 className="messages-title">Mensajes</h2>
-          </div>
-
-          <div className="contacts-list">
-            {loadingChats && <Loading />}
-
-            {!loadingChats && errorChats && <p className="contact-preview">{errorChats}</p>}
-
-            {!loadingChats && !errorChats && chats.length === 0 && (
-              <p className="contact-preview">Aun no tienes conversaciones.</p>
-            )}
-
-            {!loadingChats && !errorChats && chats.map((chat) => (
-              <button
-                key={chat.id}
-                type="button"
-                className="contact-item"
-                onClick={() => handleEnterChat(chat)}
-              >
-                <div className="avatar-wrapper">
-                  <div className="contact-avatar" aria-hidden="true">
-                    {chat.avatarUrl ? (
-                      <img
-                        src={chat.avatarUrl}
-                        alt={chat.name}
-                        className="contact-avatar-image"
-                        onError={() => {
-                          setChats((prevChats) => prevChats.map((existingChat) => (
-                            String(existingChat.id) === String(chat.id)
-                              ? { ...existingChat, avatarUrl: null }
-                              : existingChat
-                          )));
-                        }}
-                      />
-                    ) : (
-                      chat.avatar
-                    )}
-                  </div>
-                </div>
-
-                <div className="contact-info">
-                  <span className="contact-name">{chat.name}</span>
-                  <span className="contact-preview">
-                    {chat.lastMsg}
-                  </span>
-                </div>
-
-                {chat.unreadCount > 0 && <span className="unread-dot" aria-label="Mensajes sin leer" />}
-              </button>
-            ))}
-          </div>
-        </>
+        <ConversationsPane
+          loadingChats={loadingChats}
+          errorChats={errorChats}
+          chats={chats}
+          onEnterChat={handleEnterChat}
+          onAvatarError={(chatId) => {
+            setChats((prevChats) => prevChats.map((existingChat) => (
+              String(existingChat.id) === String(chatId)
+                ? { ...existingChat, avatarUrl: null }
+                : existingChat
+            )));
+          }}
+          formatMessageTime={formatMessageTime}
+        />
       )}
 
       {selectedChat && (
-        <>
-          <div className="messages-header">
-            <button
-              className="back-button"
-              type="button"
-              aria-label="Volver"
-              onClick={handleLeaveChat} // ¡Usamos nuestra nueva función!
-            >
-              ←
-            </button>
-            <div className="chat-title">
-              <div className="chat-avatar" aria-hidden="true">
-                {selectedChat.avatarUrl ? (
-                  <img
-                    src={selectedChat.avatarUrl}
-                    alt={selectedChat.name}
-                    className="chat-avatar-image"
-                    onError={() => {
-                      setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
-                    }}
-                  />
-                ) : (
-                  selectedChat.avatar
-                )}
-              </div>
-              <div className="chat-title-text">
-                <span className="chat-name">{selectedChat.name}</span>
-                <span className="chat-status">En linea</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="messages">
-
-            {currentMessages.length === 0 && (
-              <div className="message received">Empieza la conversacion con @{selectedChat.name}</div>
-            )}
-
-            {currentMessages.map((message) => {
-              const isSent = message.senderUsername === currentUser?.username;
-              return (
-                <div
-                  key={message.id}
-                  className={`message ${isSent ? "sent" : "received"}`}
-                >
-                  {message.content}
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="message-input">
-            <input
-              type="text"
-              placeholder="Escribe un mensaje..."
-              value={draftMessage}
-              onChange={(e) => setDraftMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  handleSendMessage();
-                }
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleSendMessage}
-              disabled={!draftMessage.trim() || !websocketConnected}
-            >
-              Enviar
-            </button>
-          </div>
-        </>
+        <ChatPane
+          selectedChat={selectedChat}
+          currentMessages={currentMessages}
+          currentUsername={currentUser?.username}
+          draftMessage={draftMessage}
+          onDraftChange={setDraftMessage}
+          onSendMessage={handleSendMessage}
+          onLeaveChat={handleLeaveChat}
+          onOpenUserProfile={handleOpenUserProfile}
+          onSelectedAvatarError={() => {
+            setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
+          }}
+          websocketConnected={websocketConnected}
+          messagesEndRef={messagesEndRef}
+        />
       )}
     </div>
   );

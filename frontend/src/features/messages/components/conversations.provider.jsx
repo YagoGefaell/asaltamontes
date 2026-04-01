@@ -9,7 +9,7 @@ import {
 } from "../services/messages.service.js";
 
 export const ConversationsProvider = ({ children }) => {
-  const { websocketClient, websocketConnected, isAuthenticated, sendMessage } = useAuth();
+  const { websocketClient, websocketConnected, isAuthenticated, sendMessage, currentUser } = useAuth();
 
   const [chats, setChats] = useState([]);
   const [chatMessages, setChatMessages] = useState({});
@@ -51,21 +51,63 @@ export const ConversationsProvider = ({ children }) => {
     sendReadReceipt(conversationId, getLastMessageId(messages));
   }, [clearUnreadCount, sendReadReceipt, getLastMessageId]);
 
+  const buildPreviewPrefix = useCallback((chatType, senderId, senderName, senderUsername = null) => {
+    const rawCurrentUserId = currentUser?.id;
+    const currentUserId = Number(rawCurrentUserId);
+    const normalizedSenderId = Number(senderId);
+
+    const isSenderIdValid = Number.isInteger(normalizedSenderId);
+    const isCurrentUserIdValid = Number.isInteger(currentUserId);
+    const senderIsCurrentUserById = isSenderIdValid && isCurrentUserIdValid && normalizedSenderId === currentUserId;
+    const senderIsCurrentUserByUsername = senderUsername && senderUsername === currentUser?.username;
+    const senderIsCurrentUser = senderIsCurrentUserById || senderIsCurrentUserByUsername;
+
+    if (chatType === "INDIVIDUAL") {
+      return senderIsCurrentUser ? "Tu" : null;
+    }
+
+    if (senderName && senderName.trim()) {
+      return senderName.trim();
+    }
+
+    if (senderUsername && senderUsername.trim()) {
+      return senderUsername.trim();
+    }
+
+    return null;
+  }, [currentUser?.id, currentUser?.username]);
+
+  const buildLastMessagePreview = useCallback((conversation, senderUsername = null, chatTypeOverride = null) => {
+    const lastMessageText = (conversation?.lastMessage || conversation?.content || "").trim();
+    if (!lastMessageText) return "Abre la conversacion";
+
+    const chatType = chatTypeOverride || conversation?.type || "INDIVIDUAL";
+
+    const prefix = buildPreviewPrefix(
+      chatType,
+      conversation?.lastMessageSenderId,
+      conversation?.lastMessageSenderName,
+      senderUsername
+    );
+
+    return prefix ? `${prefix}: ${lastMessageText}` : lastMessageText;
+  }, [buildPreviewPrefix]);
+
   const mapConversationToChat = useCallback((conversation) => {
     const username = conversation?.displayName || conversation?.contactUsername || "usuario";
     const firstChar = username.trim().charAt(0).toUpperCase();
-    const lastMessagePreview = (conversation?.lastMessage || "").trim();
 
     return {
       id: conversation?.conversationId || conversation?.id,
+      type: conversation?.type || "INDIVIDUAL",
       name: username,
       avatar: firstChar || "?",
       avatarUrl: conversation?.displayImage || conversation?.avatarUrl || null,
       unreadCount: Number(conversation?.unreadCount || 0),
-      lastMsg: lastMessagePreview || "Abre la conversacion",
+      lastMsg: buildLastMessagePreview(conversation),
       lastMessageAt: conversation?.lastMessageAt || null,
     };
-  }, []);
+  }, [buildLastMessagePreview]);
 
   const upsertConversation = useCallback((conversation) => {
     if (!conversation?.conversationId) return null;
@@ -100,11 +142,12 @@ export const ConversationsProvider = ({ children }) => {
 
     const mappedChat = {
       id: createdConversationId,
+      type: createdConversation?.type || "INDIVIDUAL",
       name: createdConversation?.displayName || createdConversation?.contactUsername || recipientUsername,
       avatar: chat?.avatar || recipientUsername.trim().charAt(0).toUpperCase() || "?",
       avatarUrl: createdConversation?.displayImage || chat?.avatarUrl || null,
       unreadCount: 0,
-      lastMsg: createdConversation?.lastMessage || chat?.lastMsg || "Abre la conversacion",
+      lastMsg: buildLastMessagePreview(createdConversation, null, "INDIVIDUAL"),
       lastMessageAt: createdConversation?.lastMessageAt || null,
     };
 
@@ -125,7 +168,7 @@ export const ConversationsProvider = ({ children }) => {
     });
 
     return mappedChat;
-  }, []);
+  }, [buildLastMessagePreview]);
 
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
@@ -226,15 +269,19 @@ export const ConversationsProvider = ({ children }) => {
       if (!existing) {
         const fallbackUsername = payload?.senderUsername || payload?.receiverUsername || "usuario";
         const firstChar = fallbackUsername.trim().charAt(0).toUpperCase();
+        const fallbackType = "INDIVIDUAL";
+        const messageTimestamp = payload?.sentAt || new Date().toISOString();
 
         return [
           {
             id: conversationId,
+            type: fallbackType,
             name: fallbackUsername,
             avatar: firstChar || "?",
             avatarUrl: null,
             unreadCount: isCurrentlyReading ? 0 : 1,
-            lastMsg: payload.content,
+            lastMsg: buildLastMessagePreview(payload, payload.senderUsername, fallbackType),
+            lastMessageAt: messageTimestamp,
           },
           ...prevChats,
         ];
@@ -246,14 +293,15 @@ export const ConversationsProvider = ({ children }) => {
 
           return {
             ...chat,
-            lastMsg: payload.content,
+            lastMsg: buildLastMessagePreview(payload, payload.senderUsername, chat.type || "INDIVIDUAL"),
+            lastMessageAt: payload?.sentAt || chat.lastMessageAt || null,
             unreadCount: newUnreadCount
           };
         }
         return chat;
       });
     });
-  }, [activeChatId, sendReadReceipt]);
+  }, [activeChatId, sendReadReceipt, buildLastMessagePreview]);
 
   useGlobalMessageListener(
     websocketClient,

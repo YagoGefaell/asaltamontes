@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.message.service;
 
+import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
@@ -70,6 +71,7 @@ public class MessageService {
 
         conversation.setLastMessageAt(savedMessage.getSentAt());
         conversation.setLastMessage(savedMessage.getContent().length() > 30 ? savedMessage.getContent().substring(0, 30).trim() + "..." : savedMessage.getContent());
+        conversation.setLastSender(savedMessage.getSender());
         conversationRepository.save(conversation);
 
         List<ConversationParticipant> participants = participantRepository.findByConversationId(conversationId);
@@ -137,7 +139,7 @@ public class MessageService {
 
     private Conversation createPrivateConversation(UserAccount user1, UserAccount user2) {
         Conversation conv = new Conversation();
-        conv.setGroup(false);
+        conv.setType(ChatType.INDIVIDUAL);
         conv.setCreatedAt(LocalDateTime.now());
         Conversation savedConv = conversationRepository.save(conv);
 

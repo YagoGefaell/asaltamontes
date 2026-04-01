@@ -7,6 +7,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+
 @Entity
 @Data
 @Table(name = "conversations")
@@ -16,8 +18,9 @@ public class Conversation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "is_group", nullable = false)
-    private boolean isGroup;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "chat_type", nullable = false)
+    private ChatType type;
 
     @Column(name = "group_name")
     private String groupName;
@@ -30,6 +33,10 @@ public class Conversation {
 
     @Column(name = "last_message_at")
     private LocalDateTime lastMessageAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "last_sender_id")
+    private UserAccount lastSender;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
