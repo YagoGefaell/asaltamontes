@@ -86,7 +86,7 @@ function Profile({
       navigate("/messages", {
         state: {
           selectedConversation: {
-            contactUsername: profileData.username,
+            username: profileData.username,
             avatarUrl: profileData.profilePictureUrl || null,
           },
         },

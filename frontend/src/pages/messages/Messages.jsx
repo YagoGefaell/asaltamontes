@@ -32,7 +32,6 @@ const Messages = () => {
     }
 
     const username = selectedConversation.displayName
-      || selectedConversation.contactUsername
       || selectedConversation.username
       || selectedConversation.name
       || "usuario";

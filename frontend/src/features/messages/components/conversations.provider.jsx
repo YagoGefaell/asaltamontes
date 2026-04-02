@@ -5,7 +5,8 @@ import { ConversationsContext } from "../hooks/conversations.context";
 import {
   getMyConversationsRequest,
   getConversationMessagesRequest,
-  createOrGetPrivateConversationRequest,
+  getPrivateConversationRequest,
+  createPrivateConversationRequest,
 } from "../services/messages.service.js";
 
 export const ConversationsProvider = ({ children }) => {
@@ -94,7 +95,7 @@ export const ConversationsProvider = ({ children }) => {
   }, [buildPreviewPrefix]);
 
   const mapConversationToChat = useCallback((conversation) => {
-    const username = conversation?.displayName || conversation?.contactUsername || "usuario";
+    const username = conversation?.displayName || conversation?.username || "usuario";
     const firstChar = username.trim().charAt(0).toUpperCase();
 
     return {
@@ -133,7 +134,45 @@ export const ConversationsProvider = ({ children }) => {
       throw new Error("Usuario destino no valido");
     }
 
-    const createdConversation = await createOrGetPrivateConversationRequest(recipientUsername);
+    let existingConversation = null;
+
+    try {
+      existingConversation = await getPrivateConversationRequest(recipientUsername);
+    } catch {
+      // Si falla la búsqueda, intentamos crear para no bloquear el primer mensaje.
+      existingConversation = null;
+    }
+
+    if (existingConversation?.conversationId) {
+      const mappedExistingChat = {
+        ...chat,
+        id: existingConversation.conversationId,
+        type: chat.type || "INDIVIDUAL",
+        unreadCount: chat.unreadCount || 0,
+        lastMsg: chat.lastMsg || "Empieza la conversacion",
+        lastMessageAt: chat.lastMessageAt || existingConversation.lastMessageAt || null,
+      };
+
+      setChats((prevChats) => {
+        const exists = prevChats.some(
+          (existingChat) => String(existingChat.id) === String(mappedExistingChat.id)
+        );
+
+        if (exists) {
+          return prevChats.map((existingChat) => (
+            String(existingChat.id) === String(mappedExistingChat.id)
+              ? { ...existingChat, ...mappedExistingChat }
+              : existingChat
+          ));
+        }
+
+        return [mappedExistingChat, ...prevChats];
+      });
+
+      return mappedExistingChat;
+    }
+
+    const createdConversation = await createPrivateConversationRequest(recipientUsername);
     const createdConversationId = createdConversation?.conversationId;
 
     if (!createdConversationId) {
@@ -143,7 +182,7 @@ export const ConversationsProvider = ({ children }) => {
     const mappedChat = {
       id: createdConversationId,
       type: createdConversation?.type || "INDIVIDUAL",
-      name: createdConversation?.displayName || createdConversation?.contactUsername || recipientUsername,
+      name: createdConversation?.displayName || createdConversation?.username || recipientUsername,
       avatar: chat?.avatar || recipientUsername.trim().charAt(0).toUpperCase() || "?",
       avatarUrl: createdConversation?.displayImage || chat?.avatarUrl || null,
       unreadCount: 0,

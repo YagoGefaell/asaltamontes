@@ -17,7 +17,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class MessageService {
@@ -86,17 +88,49 @@ public class MessageService {
         return savedMessage;
     }
 
-    @Transactional
-    public ChatResponse getOrCreatePrivateConversation(String currentUsername, String recipientUsername) {
+    @Transactional(readOnly = true)
+    public java.util.Optional<ChatResponse> getPrivateConversation(String currentUsername, String recipientUsername) {
         return conversationRepository.findPrivateConversation(currentUsername, recipientUsername)
-            .map(conv -> new ChatResponse(conv.getId(), recipientUsername))
-            .orElseGet(() -> {
-                UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
-                UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
+            .map(conv -> new ChatResponse(conv.getId()));
+    }
 
-                Conversation newConv = createPrivateConversation(me, other);
-                return new ChatResponse(newConv.getId(), recipientUsername);
-            });
+    @Transactional
+    public ChatResponse createPrivateConversation(String currentUsername, String recipientUsername) {
+        UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
+        UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
+
+        Conversation newConv = createPrivateConversation(me, other);
+        return new ChatResponse(newConv.getId());
+    }
+
+    @Transactional
+    public ChatResponse createGroupConversation(String currentUsername, String groupName, String groupImage, List<String> users) {
+        UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
+
+        if (users == null || users.isEmpty()) {
+            throw new RuntimeException("Debes añadir al menos un usuario al grupo");
+        }
+
+        Set<String> normalizedUsernames = new LinkedHashSet<>();
+        for (String username : users) {
+            if (username == null || username.isBlank()) {
+                continue;
+            }
+            if (!username.equalsIgnoreCase(currentUsername)) {
+                normalizedUsernames.add(username.trim());
+            }
+        }
+
+        if (normalizedUsernames.isEmpty()) {
+            throw new RuntimeException("Debes añadir usuarios válidos distintos de tu cuenta");
+        }
+
+        List<UserAccount> members = normalizedUsernames.stream()
+                .map(username -> (UserAccount) userService.loadUserByUsername(username))
+                .toList();
+
+        Conversation newConv = createGroupConversation(creator, members, groupName, groupImage);
+        return new ChatResponse(newConv.getId());
     }
 
     @Transactional
@@ -153,6 +187,40 @@ public class MessageService {
 
         participantRepository.saveAll(List.of(p1, p2));
 
+        return savedConv;
+    }
+
+    private Conversation createGroupConversation(UserAccount creator, List<UserAccount> members, String groupName, String groupImage) {
+        Conversation conv = new Conversation();
+        conv.setType(ChatType.GROUP);
+        conv.setGroupName((groupName == null || groupName.isBlank()) ? "Nuevo grupo" : groupName.trim());
+        conv.setGroupImage((groupImage == null || groupImage.isBlank()) ? null : groupImage.trim());
+        conv.setCreatedAt(LocalDateTime.now());
+        Conversation savedConv = conversationRepository.save(conv);
+
+        Set<Long> addedUsers = new LinkedHashSet<>();
+        addedUsers.add(creator.getId());
+
+        ConversationParticipant creatorParticipant = new ConversationParticipant();
+        creatorParticipant.setConversation(savedConv);
+        creatorParticipant.setUser(creator);
+
+        List<ConversationParticipant> participants = new java.util.ArrayList<>();
+        participants.add(creatorParticipant);
+
+        for (UserAccount member : members) {
+            if (member == null || addedUsers.contains(member.getId())) {
+                continue;
+            }
+
+            ConversationParticipant participant = new ConversationParticipant();
+            participant.setConversation(savedConv);
+            participant.setUser(member);
+            participants.add(participant);
+            addedUsers.add(member.getId());
+        }
+
+        participantRepository.saveAll(participants);
         return savedConv;
     }
 

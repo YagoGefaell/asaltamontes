@@ -9,10 +9,28 @@ export async function getMyConversationsRequest() {
   }
 }
 
-export async function createOrGetPrivateConversationRequest(recipientUsername) {
+export async function getPrivateConversationRequest(recipientUsername) {
   try {
-    const safeUsername = encodeURIComponent(recipientUsername);
-    return await apiClient.post(`/api/conversations/private/${safeUsername}`, {});
+    return await apiClient.request("/api/conversations/private", {
+      method: "GET",
+      body: JSON.stringify({
+        username: recipientUsername,
+      }),
+    });
+  } catch (error) {
+    if (error.status === 404) {
+      return null;
+    }
+
+    throw new Error(error.message || "Error obteniendo conversación privada");
+  }
+}
+
+export async function createPrivateConversationRequest(recipientUsername) {
+  try {
+    return await apiClient.post("/api/conversations/private", {
+      username: recipientUsername,
+    });
   } catch (error) {
     throw new Error(error.message || "Error creando conversación");
   }
