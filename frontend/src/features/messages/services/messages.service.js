@@ -36,6 +36,18 @@ export async function createPrivateConversationRequest(recipientUsername) {
   }
 }
 
+export async function createGroupConversationRequest({ groupName, groupImage = null, users }) {
+  try {
+    return await apiClient.post("/api/conversations/group", {
+      groupName,
+      groupImage,
+      users,
+    });
+  } catch (error) {
+    throw new Error(error.message || "Error creando grupo");
+  }
+}
+
 export async function getConversationMessagesRequest(conversationId) {
   try {
     return await apiClient.get(`/api/conversations/${conversationId}/messages`);

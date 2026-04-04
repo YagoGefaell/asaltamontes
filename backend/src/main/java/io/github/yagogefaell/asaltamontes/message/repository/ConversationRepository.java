@@ -24,28 +24,31 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     Optional<Conversation> findPrivateConversation(@Param("user1") String user1, @Param("user2") String user2);
 
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummary(
+        SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummary(
             c.id,
             CASE 
                 WHEN c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.GROUP THEN c.groupName 
-                ELSE other.user.username 
+                ELSE otherUser.username 
             END,
             CASE 
                 WHEN c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.GROUP THEN c.groupImage 
-                ELSE other.user.profile.profilePictureUrl 
+                ELSE otherProfile.profilePictureUrl 
             END,
             c.type,
             me.unreadCount,
             c.lastMessage,
-            c.lastSender.username,
-            c.lastSender.id,
+            lastSender.username,
+            lastSender.id,
             c.lastMessageAt
         )
         FROM Conversation c
         JOIN c.participants me ON me.user.username = :username
-        LEFT JOIN c.participants other ON other.conversation.id = c.id 
-            AND other.user.username != :username 
+        LEFT JOIN c.lastSender lastSender
+        LEFT JOIN c.participants other ON other.conversation.id = c.id
+            AND other.user.username != :username
             AND c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.INDIVIDUAL
+        LEFT JOIN other.user otherUser
+        LEFT JOIN otherUser.profile otherProfile
         WHERE me.user.username = :username
         ORDER BY c.lastMessageAt DESC NULLS LAST
     """)

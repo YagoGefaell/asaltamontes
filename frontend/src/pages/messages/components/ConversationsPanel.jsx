@@ -7,11 +7,39 @@ const ConversationsPane = ({
   onEnterChat,
   onAvatarError,
   formatMessageTime,
+  onCreateGroup,
+  creatingGroup,
 }) => {
   return (
     <>
       <div className="messages-header">
         <h2 className="messages-title">Mensajes</h2>
+        <div className="messages-header-actions">
+          <button
+            type="button"
+            className="create-group-btn"
+            aria-label="Crear grupo"
+            title="Crear grupo"
+            onClick={onCreateGroup}
+            disabled={creatingGroup}
+          >
+            <svg
+              className="create-group-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 5V19M5 12H19"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="contacts-list">

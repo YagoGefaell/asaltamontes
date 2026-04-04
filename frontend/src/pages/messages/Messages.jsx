@@ -2,8 +2,9 @@ import "./Messages.css";
 import { useEffect, useRef, useState, useContext, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import ConversationsPane from "./components/ConversationsPane";
-import ChatPane from "./components/ChatPane";
+import ConversationsPane from "./components/ConversationsPanel";
+import ChatPane from "./components/ChatPanel";
+import GroupCreatorPanel from "./components/GroupCreatorPanel";
 
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
 
@@ -19,6 +20,7 @@ const Messages = () => {
     setActiveChatId,
     upsertConversation,
     ensurePrivateConversation,
+    createGroupConversation,
     loadConversationMessages,
     loadingChats, 
     errorChats
@@ -46,6 +48,8 @@ const Messages = () => {
     };
   });
   const [draftMessage, setDraftMessage] = useState("");
+  const [creatingGroup, setCreatingGroup] = useState(false);
+  const [isGroupCreatorOpen, setIsGroupCreatorOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -212,38 +216,71 @@ const Messages = () => {
       const myPreview = `${senderLabel}: ${content}`;
       const sentAt = new Date().toISOString();
 
-      const updated = prevChats.map((chat) => (
-        String(chat.id) === String(conversationId)
-          ? { ...chat, lastMsg: myPreview, lastMessageAt: sentAt }
-          : chat
-      ));
+      const existing = prevChats.find(
+        (chat) => String(chat.id) === String(conversationId)
+      );
 
-      const exists = updated.some((chat) => String(chat.id) === String(conversationId));
-      if (exists) return updated;
+      const updatedChat = {
+        ...(existing || activeChat),
+        id: conversationId,
+        lastMsg: myPreview,
+        lastMessageAt: sentAt,
+        unreadCount: 0,
+      };
 
-      return [
-        {
-          ...activeChat,
-          id: conversationId,
-          lastMsg: myPreview,
-          lastMessageAt: sentAt,
-          unreadCount: 0,
-        },
-        ...updated,
-      ];
+      const remainingChats = prevChats.filter(
+        (chat) => String(chat.id) !== String(conversationId)
+      );
+
+      return [updatedChat, ...remainingChats];
     });
 
     setDraftMessage("");
   };
 
+  const closeGroupCreator = useCallback(() => {
+    if (creatingGroup) return;
+    setIsGroupCreatorOpen(false);
+  }, [creatingGroup]);
+
+  const openGroupCreator = useCallback(() => {
+    setIsGroupCreatorOpen(true);
+  }, []);
+
+  const handleCreateGroup = useCallback(async ({ groupName, groupImage, users }) => {
+    if (creatingGroup) return;
+    setCreatingGroup(true);
+
+    try {
+      const createdChat = await createGroupConversation({
+        groupName,
+        groupImage,
+        users,
+      });
+
+      if (createdChat?.id) {
+        setIsGroupCreatorOpen(false);
+        await handleEnterChat(createdChat);
+      }
+    } finally {
+      setCreatingGroup(false);
+    }
+  }, [
+    creatingGroup,
+    createGroupConversation,
+    handleEnterChat,
+  ]);
+
   return (
     <div className="messages-page">
-      {!selectedChat && (
+      {!selectedChat && !isGroupCreatorOpen && (
         <ConversationsPane
           loadingChats={loadingChats}
           errorChats={errorChats}
           chats={chats}
           onEnterChat={handleEnterChat}
+          onCreateGroup={openGroupCreator}
+          creatingGroup={creatingGroup}
           onAvatarError={(chatId) => {
             setChats((prevChats) => prevChats.map((existingChat) => (
               String(existingChat.id) === String(chatId)
@@ -252,6 +289,16 @@ const Messages = () => {
             )));
           }}
           formatMessageTime={formatMessageTime}
+        />
+      )}
+
+      {!selectedChat && isGroupCreatorOpen && (
+        <GroupCreatorPanel
+          isOpen={isGroupCreatorOpen}
+          creatingGroup={creatingGroup}
+          currentUsername={currentUser?.username}
+          onClose={closeGroupCreator}
+          onSubmitGroup={handleCreateGroup}
         />
       )}
 

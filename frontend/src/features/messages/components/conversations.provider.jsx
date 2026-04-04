@@ -7,6 +7,7 @@ import {
   getConversationMessagesRequest,
   getPrivateConversationRequest,
   createPrivateConversationRequest,
+  createGroupConversationRequest,
 } from "../services/messages.service.js";
 
 export const ConversationsProvider = ({ children }) => {
@@ -209,6 +210,55 @@ export const ConversationsProvider = ({ children }) => {
     return mappedChat;
   }, [buildLastMessagePreview]);
 
+  const createGroupConversation = useCallback(async ({ groupName, groupImage = null, users = [] }) => {
+    const normalizedUsers = Array.isArray(users)
+      ? users.map((username) => String(username || "").trim()).filter(Boolean)
+      : [];
+
+    if (normalizedUsers.length === 0) {
+      throw new Error("Debes indicar al menos un usuario para crear el grupo");
+    }
+
+    const createdConversation = await createGroupConversationRequest({
+      groupName,
+      groupImage,
+      users: normalizedUsers,
+    });
+
+    const createdConversationId = createdConversation?.conversationId;
+    if (!createdConversationId) {
+      throw new Error("No se pudo crear el grupo");
+    }
+
+    const conversations = await getMyConversationsRequest();
+    const mappedChats = Array.isArray(conversations)
+      ? conversations.map((conversation) => mapConversationToChat(conversation))
+      : [];
+
+    setChats(mappedChats);
+
+    const createdChat = mappedChats.find(
+      (chat) => String(chat.id) === String(createdConversationId)
+    );
+
+    if (createdChat) {
+      return createdChat;
+    }
+
+    const safeGroupName = (groupName || "Nuevo grupo").trim() || "Nuevo grupo";
+
+    return {
+      id: createdConversationId,
+      type: "GROUP",
+      name: safeGroupName,
+      avatar: safeGroupName.charAt(0).toUpperCase() || "?",
+      avatarUrl: groupImage,
+      unreadCount: 0,
+      lastMsg: "Abre la conversacion",
+      lastMessageAt: null,
+    };
+  }, [mapConversationToChat]);
+
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
 
@@ -326,19 +376,19 @@ export const ConversationsProvider = ({ children }) => {
         ];
       }
 
-      return prevChats.map(chat => {
-        if (String(chat.id) === String(conversationId)) {
-          const newUnreadCount = isCurrentlyReading ? 0 : (chat.unreadCount || 0) + 1;
+      const newUnreadCount = isCurrentlyReading ? 0 : (existing.unreadCount || 0) + 1;
+      const updatedChat = {
+        ...existing,
+        lastMsg: buildLastMessagePreview(payload, payload.senderUsername, existing.type || "INDIVIDUAL"),
+        lastMessageAt: payload?.sentAt || existing.lastMessageAt || null,
+        unreadCount: newUnreadCount,
+      };
 
-          return {
-            ...chat,
-            lastMsg: buildLastMessagePreview(payload, payload.senderUsername, chat.type || "INDIVIDUAL"),
-            lastMessageAt: payload?.sentAt || chat.lastMessageAt || null,
-            unreadCount: newUnreadCount
-          };
-        }
-        return chat;
-      });
+      const remainingChats = prevChats.filter(
+        (chat) => String(chat.id) !== String(conversationId)
+      );
+
+      return [updatedChat, ...remainingChats];
     });
   }, [activeChatId, sendReadReceipt, buildLastMessagePreview]);
 
@@ -361,6 +411,7 @@ export const ConversationsProvider = ({ children }) => {
         errorChats,
         upsertConversation,
         ensurePrivateConversation,
+        createGroupConversation,
         loadConversationMessages,
         activeChatId,
         setActiveChatId,
