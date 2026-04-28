@@ -1,0 +1,26 @@
+.btn-google-custom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0.8rem;
+  background: var(--surface); /* Usa tu color de superficie */
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-color);
+  font-family: 'Inter', sans-serif;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-google-custom:hover {
+  background: var(--hover-color);
+  border-color: var(--primary);
+}
+
+.google-icon {
+  width: 20px;
+  height: 20px;
+}

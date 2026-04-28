@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth.js";
 import LoginForm from "../../features/auth/components/LoginForm.jsx";
+import { GoogleLoginButton } from '../../shared/components/GoogleLoginButton.jsx';
 import "./Login.css";
 
 function Login() {
@@ -29,6 +30,14 @@ function Login() {
       <p className="login-subtitle">Bienvenida de nuevo 💖</p>
 
       <LoginForm onSubmit={handleLogin} errorMessage={errorMessage} />
+
+      <div className="login-divider">
+        <span>o</span>
+      </div>
+
+      <div className="google-login-wrapper">
+        <GoogleLoginButton />
+      </div>
 
       <p className="login-register">
         ¿No tienes cuenta?{" "}

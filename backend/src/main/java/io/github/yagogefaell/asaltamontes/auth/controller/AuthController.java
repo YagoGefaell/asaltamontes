@@ -26,7 +26,6 @@ public class AuthController {
 
     private final AuthService authService;
 
-    // ---------------- LOGIN ----------------
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         TokenPairs tokens = authService.login(request.username(), request.password());
@@ -36,7 +35,6 @@ public class AuthController {
             .body(Map.of("accessToken", tokens.accessToken()));
     }
 
-    // ---------------- LOGOUT ----------------
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         return ResponseEntity.ok()
@@ -44,8 +42,6 @@ public class AuthController {
             .build();
     }
 
-
-    // ---------------- REFRESH TOKEN ----------------
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken) {
         String newAccessToken = authService.refreshAccessToken(refreshToken);
@@ -53,7 +49,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("accessToken", newAccessToken));
     }
 
-    // ---------------- REGISTRO ----------------
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
 
