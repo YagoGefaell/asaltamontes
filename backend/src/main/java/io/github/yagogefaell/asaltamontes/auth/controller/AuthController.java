@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.yagogefaell.asaltamontes.auth.dto.GoogleLoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.LoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
@@ -57,6 +58,16 @@ public class AuthController {
         TokenPairs tokens = authService.generateTokens(user);
 
         return ResponseEntity.status(HttpStatus.CREATED)
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())
+            .body(Map.of("accessToken", tokens.accessToken()));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<?> googleLogin(@RequestBody GoogleLoginRequest body) {
+        String token = body.token();
+        TokenPairs tokens = authService.googleLogin(token);
+
+        return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())
             .body(Map.of("accessToken", tokens.accessToken()));
     }

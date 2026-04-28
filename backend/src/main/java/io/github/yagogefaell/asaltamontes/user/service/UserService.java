@@ -33,7 +33,7 @@ public class UserService implements UserDetailsService {
     private final UserProfileUpdater updater;
     private final UserAssembler assembler;
     private final PasswordEncoder passwordEncoder;
-    // ------------------ REGISTRO ------------------
+
     @Transactional
     public UserAccount registerUserWithProfile(
             String fullName,
@@ -63,7 +63,31 @@ public class UserService implements UserDetailsService {
         return user;
     }
 
-    // ------------------ EDICIÓN DE PERFIL ------------------
+    @Transactional
+    public UserAccount findOrCreateGoogleUser(String email, String fullName, String picture, String givenName) {
+        return userAccountRepository.findByEmailIgnoreCase(email)
+            .orElseGet(() -> {
+                UserAccount user = new UserAccount();
+                user.setEmail(email);
+                user.setUsername(givenName + "_" + System.currentTimeMillis());
+                user.setPasswordHash(null);
+                user.setRole(UserAccountRole.USER);
+                user.setIsVerified(true);
+                
+                user = userAccountRepository.save(user);
+
+                UserProfile profile = new UserProfile();
+                profile.setUser(user);
+                profile.setFullName(fullName);
+                profile.setProfilePictureUrl(picture);
+                profile.setIsPublicProfile(false);
+
+                userProfileRepository.save(profile);
+                
+                return user;
+            });
+    }
+
     @Transactional
     public UserSelfDto editProfile(long id, UserUpdateDto dto) {
 
@@ -80,7 +104,6 @@ public class UserService implements UserDetailsService {
         return assembler.toUserMe(user, profile);
     }
 
-    // ------------------ GET ME ------------------
     @Transactional(readOnly = true)
     public UserSelfDto getMe(long id) {
         UserAccount user = userAccountRepository.findById(id)
@@ -92,7 +115,6 @@ public class UserService implements UserDetailsService {
         return assembler.toUserMe(user, profile);
     }
 
-    // ------------------ DELETE ------------------
     @Transactional
     public void deleteUser(long id) {
         if (!userAccountRepository.existsById(id)) {
@@ -103,7 +125,6 @@ public class UserService implements UserDetailsService {
         userAccountRepository.deleteById(id);
     }
 
-    // ------------------ SEARCH ------------------
     public Page<UserSearchDto> searchUsersByUsername(String query, Long excludeId, Pageable pageable) {
         if (query == null || query.isBlank()) {
             return Page.empty(pageable);
@@ -112,13 +133,11 @@ public class UserService implements UserDetailsService {
         return userAccountRepository.searchUsersByUsername(query, excludeId, pageable);
     }
 
-    // ------------------ LOAD USER ------------------
     public UserAccount loadUserById(long id) {
         return userAccountRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
-    // ------------------ GET USER BY USERNAME ------------------
     public UserProfileDto getUserByUsername(String username, Long requesterId) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UserNotFoundException(username));
