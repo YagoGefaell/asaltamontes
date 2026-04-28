@@ -1,8 +1,11 @@
 import { useNavigate } from "react-router-dom";
-import "./Access.css";
+import { useAuth } from "../../features/auth/hooks/useAuth.js";
+import { GoogleLoginButton } from '../../shared/components/GoogleLoginButton.jsx';
 import logo from "../../assets/logo01.png";
+import "./Access.css";
 
 const Access = () => {
+  const { loginWithGoogle } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -34,6 +37,13 @@ const Access = () => {
         >
           Crear Cuenta
         </button>
+      </div>
+      <div className="login-divider">
+        <span>o</span>
+      </div>
+
+      <div className="google-login-wrapper">
+        <GoogleLoginButton onLoginSuccess={loginWithGoogle} />
       </div>
     </div>
   );

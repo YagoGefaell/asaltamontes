@@ -6,7 +6,7 @@ import { GoogleLoginButton } from '../../shared/components/GoogleLoginButton.jsx
 import "./Login.css";
 
 function Login() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -36,7 +36,7 @@ function Login() {
       </div>
 
       <div className="google-login-wrapper">
-        <GoogleLoginButton />
+        <GoogleLoginButton onLoginSuccess={loginWithGoogle} />
       </div>
 
       <p className="login-register">

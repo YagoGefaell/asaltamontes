@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import RegisterForm from "../../features/auth/components/RegisterForm.jsx";
 import { useAuth } from "../../features/auth/hooks/useAuth.js";
+import { GoogleLoginButton } from '../../shared/components/GoogleLoginButton.jsx';
 import { useState } from "react";
 import "./Register.css";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, loginWithGoogle } = useAuth();
 
   const [fullNameErrorMessage, setFullNameErrorMessage] = useState("");
   const [usernameErrorMessage, setUsernameErrorMessage] = useState("");
@@ -52,6 +53,13 @@ const Register = () => {
 
       <RegisterForm onSubmit={handleRegister} fullNameErrorMessage={fullNameErrorMessage} usernameErrorMessage={usernameErrorMessage} emailErrorMessage={emailErrorMessage} passwordErrorMessage={passwordErrorMessage} confirmPasswordErrorMessage={confirmPasswordErrorMessage} />
 
+      <div className="login-divider">
+        <span>o</span>
+      </div>
+
+      <div className="google-login-wrapper">
+        <GoogleLoginButton onLoginSuccess={loginWithGoogle} />
+      </div>
       <p className="register-login">
         ¿Ya tienes cuenta?{" "}
         <span

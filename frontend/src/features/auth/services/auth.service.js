@@ -31,6 +31,25 @@ export async function loginRequest({ username, password }) {
   }
 }
 
+export async function loginWithGoogleRequest(code) {
+  console.log("Enviando código de autorización a backend:", code)
+  try {
+    const response = await authApiClient.post('/auth/google', { code: code }, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    const accessToken = extractAccessToken(response)
+    if (accessToken) {
+      setAccessToken(accessToken)
+    }
+    return response;
+  } catch (error) {
+    throw new Error("Error al redirigir a Google " + (error.message || "Inténtalo de nuevo"));
+  }
+}
+
 export async function registerRequest({ fullName, username, email, password, confirmPassword }) {
   try {
     const response = await authApiClient.post('/auth/register', { fullName, username, email, password, confirmPassword })

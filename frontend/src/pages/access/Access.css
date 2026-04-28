@@ -85,3 +85,38 @@
   background-color: var(--primary-soft);
   border-color: var(--primary-light);
 }
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.login-divider::before { margin-right: 1rem; }
+.login-divider::after { margin-left: 1rem; }
+
+/* --- GOOGLE BUTTON WRAPPER --- */
+.google-login-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  /* Esto asegura que el botón se vea integrado */
+  margin-bottom: 1rem;
+}
+
+/* Ajuste fino para el botón de Google (usando la clase que inyecta la librería) */
+.google-login-wrapper > div {
+  width: 100% !important;
+  display: flex;
+  justify-content: center;
+}

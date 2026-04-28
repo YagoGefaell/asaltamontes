@@ -9,6 +9,7 @@ import {
   logoutRequest,
   verifySessionRequest,
   refreshTokenRequest,
+  loginWithGoogleRequest
 } from "../services/auth.service.js";
 
 function AuthProvider({ children }) {
@@ -16,7 +17,6 @@ function AuthProvider({ children }) {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  // WebSocket handshake starts as soon as auth is confirmed.
   const { sendMessage, websocketClient, websocketConnected } = useWebSocket(isAuthenticated);
 
   useEffect(() => {
@@ -79,6 +79,17 @@ function AuthProvider({ children }) {
     } catch (err) {
       setIsAuthenticated(false);
       throw err; // Para que el componente que llama pueda mostrar mensaje de error
+    }
+  };
+
+  // ---------------- GOOGLE LOGIN ----------------
+  const loginWithGoogle = async (code) => {
+    try {
+      await loginWithGoogleRequest(code);
+      setIsAuthenticated(true);
+    } catch (err) {
+      setIsAuthenticated(false);
+      throw err;
     }
   };
 
@@ -153,6 +164,7 @@ function AuthProvider({ children }) {
         checkingAuth,
         currentUser,
         login,
+        loginWithGoogle,
         logout,
         register,
         refreshToken,

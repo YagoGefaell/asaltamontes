@@ -4,23 +4,35 @@
   justify-content: center;
   gap: 12px;
   width: 100%;
-  padding: 0.8rem;
-  background: var(--surface); /* Usa tu color de superficie */
+  padding: 0.75rem 1rem;
+  
+  /* Ajuste a tu sistema de diseño */
+  background-color: var(--surface);
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  
+  /* Tipografía */
   color: var(--text-color);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.95rem;
   font-weight: 500;
+  
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .btn-google-custom:hover {
-  background: var(--hover-color);
+  background-color: var(--hover-color);
   border-color: var(--primary);
+  /* Añadimos un pequeño efecto de elevación si usas sombras */
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
-.google-icon {
-  width: 20px;
-  height: 20px;
+.btn-google-custom:active {
+  transform: scale(0.98);
+}
+
+/* Para que el icono no se deforme */
+.btn-google-custom svg {
+  flex-shrink: 0;
 }

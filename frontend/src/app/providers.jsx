@@ -6,9 +6,7 @@ import ScrollToTop from "../shared/components/ScrollToTop.jsx";
 import { ConversationsProvider } from "../features/messages/components/conversations.provider.jsx";
 
 export function Providers({ children }) {
-  const googleClientId = "944293775531-hmr3cakfn29r8gi0q3rr8h2mgpgf0q1n.apps.googleusercontent.com";
-
-  console.log(googleClientId);
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   return (
     <GoogleOAuthProvider clientId={googleClientId}>

@@ -1,15 +1,20 @@
 import { useGoogleLogin } from '@react-oauth/google';
-import './GoogleLoginButton.css'; // Crearemos este archivo
+import { FcGoogle } from 'react-icons/fc';
+import './GoogleLoginButton.css';
 
-export function GoogleLoginButton() {
+export function GoogleLoginButton({ onLoginSuccess }) {
   const login = useGoogleLogin({
-    onSuccess: tokenResponse => console.log(tokenResponse),
+    onSuccess: codeResponse => {
+      console.log("Código de autorización recibido:", codeResponse.code);
+      onLoginSuccess(codeResponse.code); 
+    },
     onError: error => console.log('Login Failed', error),
+    flow: 'auth-code', 
   });
 
   return (
     <button className="btn-google-custom" onClick={() => login()}>
-      <img src="/icons/google.svg" alt="Google" className="google-icon" />
+      <FcGoogle size={20} />
       <span>Continuar con Google</span>
     </button>
   );
