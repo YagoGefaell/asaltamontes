@@ -9,6 +9,7 @@ import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
 import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidTokenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidUsernameOrPasswordException;
+import io.github.yagogefaell.asaltamontes.infrastructure.google.GoogleAuthService;
 import io.github.yagogefaell.asaltamontes.infrastructure.google.GoogleTokenVerifier;
 import io.github.yagogefaell.asaltamontes.infrastructure.security.JwtUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -23,6 +24,7 @@ public class AuthService {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final GoogleTokenVerifier googleTokenVerifier;
+    private final GoogleAuthService googleAuthService;
     private final JwtUtil jwtUtil;
 
     public TokenPairs login(String username, String password) {
@@ -40,8 +42,10 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenPairs googleLogin(String idToken) {
-        var payload = googleTokenVerifier.verify(idToken);
+    public TokenPairs googleLogin(String code) {
+        String tokenId = googleAuthService.exchangeCodeForIdToken(code);
+
+        var payload = googleTokenVerifier.verify(tokenId);
 
         UserAccount user = userService.findOrCreateGoogleUser(
                 payload.getEmail(),

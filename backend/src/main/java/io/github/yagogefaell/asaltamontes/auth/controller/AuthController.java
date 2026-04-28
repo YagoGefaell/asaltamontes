@@ -63,9 +63,9 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<?> googleLogin(@RequestBody GoogleLoginRequest body) {
-        String token = body.token();
-        TokenPairs tokens = authService.googleLogin(token);
+    public ResponseEntity<?> googleLogin(@RequestBody GoogleLoginRequest request) {
+        String code = request.code();
+        TokenPairs tokens = authService.googleLogin(code);
 
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())

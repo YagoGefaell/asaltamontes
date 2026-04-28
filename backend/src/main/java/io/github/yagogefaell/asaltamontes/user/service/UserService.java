@@ -72,7 +72,7 @@ public class UserService implements UserDetailsService {
                 user.setUsername(givenName + "_" + System.currentTimeMillis());
                 user.setPasswordHash(null);
                 user.setRole(UserAccountRole.USER);
-                user.setIsVerified(true);
+                user.setIsVerified(false);
                 
                 user = userAccountRepository.save(user);
 

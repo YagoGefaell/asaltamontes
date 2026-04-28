@@ -9,4 +9,5 @@ import lombok.Data;
 @ConfigurationProperties(prefix = "asaltamontes.google")
 public class GoogleProperties {
     private String clientId;
+    private String clientSecret;
 }
