@@ -9,34 +9,32 @@ const Register = () => {
   const navigate = useNavigate();
   const { register, loginWithGoogle } = useAuth();
 
-  const [fullNameErrorMessage, setFullNameErrorMessage] = useState("");
-  const [usernameErrorMessage, setUsernameErrorMessage] = useState("");
-  const [emailErrorMessage, setEmailErrorMessage] = useState("");
-  const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
-  const [confirmPasswordErrorMessage, setConfirmPasswordErrorMessage] = useState("");
+  // Un solo objeto para todos los errores de campo
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleRegister = async ({ fullName, username, email, password, confirmPassword }) => {
+    // Limpiar errores antes de enviar
+    setFieldErrors({});
     try {
       await register(fullName, username, email, password, confirmPassword);
       navigate("/home");
     } catch (err) {
-      // Check if error has validation errors structure
+      // Si hay errores de validación de campos
       if (err.errors) {
-        setFullNameErrorMessage(err.errors.fullName || "");
-        setUsernameErrorMessage(err.errors.username || "");
-        setEmailErrorMessage(err.errors.email || "");
-        setPasswordErrorMessage(err.errors.password || "");
-        setConfirmPasswordErrorMessage(err.errors.confirmPassword || "");
+        setFieldErrors({
+          fullName: err.errors.fullName || "",
+          username: err.errors.username || "",
+          email: err.errors.email || "",
+          password: err.errors.password || "",
+          confirmPassword: err.errors.confirmPassword || ""
+        });
       } else {
-        // Handle generic error message (e.g., 409 Conflict)
+        // Error genérico
         const errorMsg = err.message || "Error al registrarse";
-        
-        // If it's a duplicate user error, set username error
         if (err.status === 409 || errorMsg.includes("ya existe")) {
-          setUsernameErrorMessage(errorMsg);
+          setFieldErrors(errors => ({ ...errors, username: errorMsg }));
         } else {
-          // Show as a general error on all fields or as an alert
-          setEmailErrorMessage(errorMsg);
+          setFieldErrors(errors => ({ ...errors, email: errorMsg }));
         }
       }
     }
@@ -51,7 +49,14 @@ const Register = () => {
       <h2 className="register-title">Crear Cuenta</h2>
       <p className="register-subtitle">Únete a Asaltamontes Female 💖</p>
 
-      <RegisterForm onSubmit={handleRegister} fullNameErrorMessage={fullNameErrorMessage} usernameErrorMessage={usernameErrorMessage} emailErrorMessage={emailErrorMessage} passwordErrorMessage={passwordErrorMessage} confirmPasswordErrorMessage={confirmPasswordErrorMessage} />
+      <RegisterForm
+        onSubmit={handleRegister}
+        fullNameErrorMessage={fieldErrors.fullName}
+        usernameErrorMessage={fieldErrors.username}
+        emailErrorMessage={fieldErrors.email}
+        passwordErrorMessage={fieldErrors.password}
+        confirmPasswordErrorMessage={fieldErrors.confirmPassword}
+      />
 
       <div className="login-divider">
         <span>o</span>

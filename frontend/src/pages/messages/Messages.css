@@ -17,7 +17,7 @@ body.chat-open .bottom-nav {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.55rem 0.75rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;

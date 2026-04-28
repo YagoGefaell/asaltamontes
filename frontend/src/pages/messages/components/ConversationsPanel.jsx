@@ -48,7 +48,7 @@ const ConversationsPane = ({
         {!loadingChats && errorChats && <p className="contact-preview">{errorChats}</p>}
 
         {!loadingChats && !errorChats && chats.length === 0 && (
-          <p className="contact-preview">Aun no tienes conversaciones.</p>
+          <p className="no-results">Aún no tienes conversaciones.</p>
         )}
 
         {!loadingChats && !errorChats && chats.map((chat) => (

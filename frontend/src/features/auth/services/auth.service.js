@@ -59,14 +59,10 @@ export async function registerRequest({ fullName, username, email, password, con
     }
     return response;
   } catch (error) {
-    // Re-throw the error with all its properties preserved
-    if (error.response && error.response.data) {
-      const err = new Error(error.response.data.message || "Error al registrar el usuario")
-      err.status = error.response.status
-      err.data = error.response.data
-      throw err
+    if (error.errors) {
+      throw error;
     }
-    throw new Error(error.message || "Error al registrar el usuario")
+    throw new Error("Error al registrarse");
   }
 }
 

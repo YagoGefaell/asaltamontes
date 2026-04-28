@@ -42,11 +42,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MultipleFieldConflictException.class)
     public ProblemDetail handleConflict(MultipleFieldConflictException ex,
                                         HttpServletRequest request) {
-
+        String detail = "Errores de validación en uno o más campos";
+        if (ex.getErrors() != null && !ex.getErrors().isEmpty()) {
+            detail = ex.getErrors().values().iterator().next();
+        }
         return buildProblem(
                 HttpStatus.CONFLICT,
                 "Conflict",
-                "Duplicate values detected",
+                detail,
                 request,
                 ex.getErrors()
         );

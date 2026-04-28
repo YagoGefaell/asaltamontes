@@ -7,12 +7,19 @@
 }
 
 .communities-header {
-  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.90rem 0.75rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   border-bottom: 1px solid var(--border-soft);
   background: var(--surface);
   position: sticky;
   top: 0;
   z-index: 10;
+  flex-shrink: 0;
 }
 
 .communities-header h2 {
