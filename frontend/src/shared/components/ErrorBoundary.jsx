@@ -10,8 +10,7 @@ class ErrorBoundary extends Component {
     this.state = { hasError: false, error: null, errorInfo: null }
   }
 
-  static getDerivedStateFromError(error) {
-    // Update state so the next render will show the fallback UI
+  static getDerivedStateFromError() {
     return { hasError: true }
   }
 
@@ -87,9 +86,9 @@ class ErrorBoundary extends Component {
               </button>
             </div>
 
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {this.props.showErrorDetails && this.state.error && (
               <details className="error-boundary__details">
-                <summary>Detalles del error (solo en desarrollo)</summary>
+                <summary>Detalles del error</summary>
                 <pre className="error-boundary__stack">
                   {this.state.error.toString()}
                   {this.state.errorInfo.componentStack}

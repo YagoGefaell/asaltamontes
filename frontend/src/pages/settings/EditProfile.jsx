@@ -1,5 +1,5 @@
 import "./EditProfile.css";
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Input from "../../shared/forms/Input.jsx";
 import Button from "../../shared/forms/Button.jsx";
@@ -11,14 +11,7 @@ export default function EditProfile() {
   const { userProfile, loading, updateUserProfile } = useUserProfile();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    fullName: "",
-    username: "",
-    bio: "",
-    city: "",
-    profilePictureUrl: "",
-    isPublicProfile: false,
-  });
+  const [form, setForm] = useState(null);
 
   const [fullNameError, setFullNameError] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -26,20 +19,29 @@ export default function EditProfile() {
   const [cityError, setCityError] = useState("");
   const [profilePictureError, setProfilePictureError] = useState("");
 
-  useEffect(() => {
+  const initialForm = useMemo(() => {
     if (!loading && userProfile) {
-      setForm({
+      return {
         fullName: userProfile.fullName || "",
         username: userProfile.username || "",
         bio: userProfile.bio || "",
         city: userProfile.city || "",
         profilePictureUrl: userProfile.profilePictureUrl || "",
         isPublicProfile: userProfile.isPublicProfile || false,
-      });
+      };
     }
-  }, [userProfile]);
+    return null;
+  }, [userProfile, loading]);
 
-  if (loading || !userProfile) return null;
+  // Sync form state with userProfile only on first load
+  useMemo(() => {
+    if (initialForm && !form) {
+      setForm(initialForm);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialForm]);
+
+  if (loading || !userProfile || !form) return null;
 
   // Capitalizar nombre
   const capitalizeWords = (text = "") =>
@@ -88,7 +90,7 @@ export default function EditProfile() {
 
       try {
         parsed = JSON.parse(err.message);
-      } catch (e) {
+      } catch {
         console.error("Respuesta no JSON:", err.message);
       }
 
