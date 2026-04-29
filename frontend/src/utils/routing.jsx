@@ -25,9 +25,10 @@ export const lazyLoad = (importFunc, fallback = <Loading text="Cargando página.
  * Route configuration utilities
  */
 export const createProtectedRoute = (element, guards = []) => {
-  return guards.reduce((wrappedElement, Guard) => (
-    <Guard>{wrappedElement}</Guard>
-  ), element)
+  return guards.reduce((wrappedElement, Guard) => {
+    const GuardComponent = Guard;
+    return <GuardComponent>{wrappedElement}</GuardComponent>;
+  }, element);
 }
 
 /**

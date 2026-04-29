@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import UserCard from "../../shared/ui/UserCard";
@@ -11,8 +11,7 @@ function FollowListPage({
   title, 
   fetchFunction, 
   emptyMessage, 
-  searchPlaceholder,
-  resultsCountMessage 
+  searchPlaceholder
 }) {
   const navigate = useNavigate();
   const { incrementFollowing, decrementFollowing } = useAuth();
@@ -23,22 +22,22 @@ function FollowListPage({
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [totalElements, setTotalElements] = useState(0);
+  // totalElements and setTotalElements removed as they are unused
   const [followLoadingMap, setFollowLoadingMap] = useState({});
   const [followErrorMsg, setFollowErrorMsg] = useState(null);
 
-  const fetchUsers = async (page = 0, reset = false) => {
+  const fetchUsers = React.useCallback(async (page = 0, reset = false) => {
     if (page === 0) {
       setLoading(true);
     } else {
       setLoadingMore(true);
     }
     setError(null);
-    
+
     try {
       const pageData = await fetchFunction(page, 20);
       let newUsers = pageData.content || [];
-      
+
       // Backend should provide isFollowing, but ensure it's set for "following" list as fallback
       if (type === 'following') {
         newUsers = newUsers.map(user => ({
@@ -46,15 +45,14 @@ function FollowListPage({
           isFollowing: user.isFollowing !== undefined ? user.isFollowing : true
         }));
       }
-      
+
       if (reset || page === 0) {
         setUsers(newUsers);
       } else {
         setUsers(prev => [...prev, ...newUsers]);
       }
-      
+
       setHasMore(!pageData.last);
-      setTotalElements(pageData.totalElements || 0);
       setCurrentPage(page);
     } catch (err) {
       console.error(`Error fetching ${type}:`, err);
@@ -63,11 +61,11 @@ function FollowListPage({
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, [fetchFunction, type]);
 
   useEffect(() => {
     fetchUsers(0, true);
-  }, []);
+  }, [fetchUsers]);
 
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
@@ -90,7 +88,6 @@ function FollowListPage({
         // Remove from list if in "following" page
         if (type === 'following') {
           setUsers(prev => prev.filter(u => u.username !== username));
-          setTotalElements(prev => Math.max(0, prev - 1));
         } else {
           // Update isFollowing status for followers page
           setUsers(prev => prev.map(u => 

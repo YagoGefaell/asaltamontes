@@ -100,7 +100,7 @@ class ApiClient {
         this._handleLogout()
         return false
       }
-    } catch (error) {
+    } catch {
       this._handleLogout()
       return false
     }
@@ -170,7 +170,7 @@ class ApiClient {
       if (errorData.errors) {
         errors = errorData.errors
       }
-    } catch (parseError) {
+    } catch {
       // JSON parsing failed, use a generic message based on status
       if (response.status >= 500) {
         errorMessage = 'Error del servidor. Por favor, inténtalo más tarde.'
