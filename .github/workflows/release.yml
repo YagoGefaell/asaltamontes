@@ -26,8 +26,9 @@ jobs:
           git-message: 'chore(release): {version}'
           preset: 'conventionalcommits'
           tag-prefix: 'v'
+          output-file: 'CHANGELOG.md'
 
       - name: Trigger Deploy
         if: steps.tag_action.outputs.skipped == 'false'
         run: |
-          echo "New version created: ${{ steps.tag_action.outputs.version }}"
+          echo "Nueva versión en Asaltamontes: ${{ steps.tag_action.outputs.version }}"
