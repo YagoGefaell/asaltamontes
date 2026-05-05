@@ -9,22 +9,25 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      new_version: ${{ steps.tag_action.outputs.version }}
+      skipped: ${{ steps.tag_action.outputs.skipped }}
     steps:
-      - name: Checkout del código
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Generar Tag Automático
-        id: tag_version
-        uses: mathieudutour/github-tag-action@v6.2
+      - name: Create Tag and Changelog
+        id: tag_action
+        uses: alex-page/conventional-changelog-action@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          default_bump: patch
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          git-message: 'chore(release): {version}'
+          preset: 'conventionalcommits'
+          tag-prefix: 'v'
 
-      - name: Crear Release Oficial en GitHub
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ steps.tag_version.outputs.new_tag }}
-          name: Asaltamontes ${{ steps.tag_version.outputs.new_tag }}
-          body: ${{ steps.tag_version.outputs.changelog }}
+      - name: Trigger Deploy
+        if: steps.tag_action.outputs.skipped == 'false'
+        run: |
+          echo "Nueva versión lista para Asaltamontes: ${{ steps.tag_action.outputs.version }}"
