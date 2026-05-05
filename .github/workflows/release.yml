@@ -9,8 +9,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      new_version: ${{ steps.tag_action.outputs.version }}
+      skipped: ${{ steps.tag_action.outputs.skipped }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -21,7 +25,9 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           git-message: 'chore(release): {version}'
           preset: 'conventionalcommits'
+          tag-prefix: 'v'
 
       - name: Trigger Deploy
         if: steps.tag_action.outputs.skipped == 'false'
-        run: echo "Nueva versión creada: ${{ steps.tag_action.outputs.version }}"
+        run: |
+          echo "New version created: ${{ steps.tag_action.outputs.version }}"
