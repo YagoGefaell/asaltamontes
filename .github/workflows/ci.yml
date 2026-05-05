@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: CI/CD Asaltamontes
 
 on:
   pull_request:
