@@ -1,132 +1,84 @@
-# Asaltamontes Backend - REST API & Real-Time Messaging
 
-Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Spring Boot 3.5**, and **PostgreSQL**, this API serves as the foundational architecture for user authentication, social networking, and high-performance real-time messaging.
+
+# Asaltamontes Frontend
+
+SPA frontend for the **Asaltamontes** platform, built with **React 19** and **Vite**. Provides the user interface and interaction logic for the community.
 
 ## Table of Contents
 
-- [Asaltamontes Backend - REST API \& Real-Time Messaging](#asaltamontes-backend---rest-api--real-time-messaging)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Core Features](#core-features)
-  - [Architecture \& Messaging Flow](#architecture--messaging-flow)
-    - [1. Security Strategy](#1-security-strategy)
-    - [2. Messaging Engine](#2-messaging-engine)
-  - [Tech Stack](#tech-stack)
-  - [Project Structure](#project-structure)
-  - [Installation \& Running](#installation--running)
-    - [1. Environment Configuration](#1-environment-configuration)
-    - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
-    - [3. Local Development](#3-local-development)
-  - [API \& WebSocket Endpoints](#api--websocket-endpoints)
-    - [REST API](#rest-api)
-    - [WebSocket (STOMP)](#websocket-stomp)
-  - [Roadmap](#roadmap)
+- [Description](#description)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Installation & Usage](#installation--usage)
+- [Environment Variables](#environment-variables)
+- [Docker Deployment](#docker-deployment)
+- [Additional Documentation](#additional-documentation)
 
-## Overview
+## Description
 
-Asaltamontes provides a secure and scalable foundation for a female-focused trail running community. It handles complex user relationships and real-time communication with a focus on data integrity and stateless security.
-
-## Core Features
-
-- **Stateless Authentication:** Dual-token strategy (JWT Access Token + HttpOnly Refresh Cookie).
-- **Social Graph:** Robust follow/unfollow system and user profile management.
-- **Scalable Messaging:** 1-to-1 and group-ready chat architecture using a 3-table schema.
-- **Real-Time Communication:** Bi-directional messaging via WebSockets (STOMP).
-- **Validation & Security:** Centralized exception handling and strict input validation.
-
-## Architecture & Messaging Flow
-
-### 1. Security Strategy
-
-- **Access Token:** Short-lived, passed via `Authorization: Bearer` header.
-- **Refresh Token:** Long-lived, delivered via `HttpOnly`, `Secure`, `SameSite=Strict` cookie for silent renewal.
-
-### 2. Messaging Engine
-
-The system uses a **Conversation-Participant-Message** pattern. This ensures that:
-
-- Fetching the "Inbox" (list of chats) is an $O(1)$ operation relative to the total number of messages.
-- Support for group chats is native to the database schema.
-- Unread message counters are tracked per participant for maximum performance.
+SPA frontend for the Asaltamontes Female community. Enables registration, login, profile management, real-time messaging, and exploration of communities and events.
 
 ## Tech Stack
 
-- **Core:** Java 21 (LTS), Spring Boot 3.5.x
-- **Security:** Spring Security, JJWT (JSON Web Tokens)
-- **Messaging:** Spring WebSocket, STOMP Protocol
-- **Persistence:** Spring Data JPA, Hibernate 6, PostgreSQL 15
-- **Tooling:** Lombok, Maven, Docker & Docker Compose
-- **Environment:** Spring Dotenv for secure variable management
+- **React 19**
+- **Vite**
+- **React Router**
+- **CSS** (custom styles and optional Tailwind)
+- **Docker** (for deployment)
 
 ## Project Structure
 
-```text
-backend/
-├── src/main/java/.../asaltamontes/
-│   ├── auth/                  # JWT logic, Login/Register controllers
-│   ├── user/                  # Social Graph and Profile management
-│   ├── message/               # Messaging Domain
-│   │   ├── domain/            # Entities: Conversation, Participant, Message
-│   │   ├── dto/               # Immutable Java Records (PrivateMessage, ChatSummary)
-│   │   ├── repository/        # Optimized JPQL for chat threading
-│   │   └── controller/        # WebSocket handlers (@MessageMapping)
-│   ├── infrastructure/        # WebSocketConfig, Security Filters, Global CORS
-│   └── common/                # Global Exception Handlers & Constants
-├── Dockerfile                 # Optimized multi-stage build
-└── .env.example               # Environment template
+```
+src/
+  app/           # Routing, providers, and guards
+  features/      # Functional modules (auth, users, messages, etc.)
+  hooks/         # Reusable custom hooks
+  lib/           # API client and utilities
+  pages/         # Main views
+  shared/        # Shared components
+  styles/        # Global styles
+  utils/         # Helpers and validation
 ```
 
-## Installation & Running
+## Installation & Usage
 
-### 1. Environment Configuration
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
+3. Open [http://localhost:5173](http://localhost:5173)
 
-Create a `.env` file in the root directory:
+### Useful Scripts
 
-```env
-DATABASE_URL=jdbc:postgresql://db:5432/asaltamontes
-DATABASE_USERNAME=postgres
-DATABASE_PASSWORD=your_secure_password
-JWT_SECRET=your_minimum_32_characters_secret_key
-JWT_EXPIRATION_MS=900000
-JWT_REFRESH_EXPIRATION_MS=604800000
+- `npm run build`: Build the app for production in `/dist`.
+- `npm run preview`: Serve the production build locally.
+
+## Environment Variables
+
+Configure the backend API URL using the `VITE_API_URL` variable in a `.env` file at the root of `/frontend`:
+
+```
+VITE_API_URL=http://localhost:8080
 ```
 
-### 2. Running with Docker (Recommended)
+## Docker Deployment
+
+You can build and run the frontend in a container:
 
 ```bash
-docker compose up --build
+docker build -t asaltamontes-frontend .
+docker run -p 5173:80 --env VITE_API_URL=http://backend:8080 asaltamontes-frontend
 ```
+Or use `docker-compose` from the project root to launch the entire stack.
 
-### 3. Local Development
+## Additional Documentation
 
-```bash
-./mvnw spring-boot:run
-```
+- [Backend OpenAPI contract](../docs/api-contract-v1.json)
+- [Project main README](../README.md)
 
-## API & WebSocket Endpoints
-
-### REST API
-
-| Method | Endpoint                 | Description                      | Auth   |
-| ------ | ------------------------ | -------------------------------- | ------ |
-| POST   | `/api/auth/login`        | Authentication & Cookie issuance | Public |
-| GET    | `/api/users/{id}`        | User profile data                | JWT    |
-| POST   | `/api/users/{id}/follow` | Follow/Unfollow toggle           | JWT    |
-| GET    | `/api/messages/chats`    | Fetch active conversations       | JWT    |
-
-### WebSocket (STOMP)
-
-| Type                | Destination            | Description                            |
-| ------------------- | ---------------------- | -------------------------------------- |
-| **App Destination** | `/app/chat.private`    | Send a 1-to-1 message                  |
-| **User Queue**      | `/user/queue/messages` | Subscribe to incoming private messages |
-| **Broker**          | `/topic/**`            | Public/Group announcements             |
-
-## Roadmap
-
-- [ ] **Push Notifications:** Firebase Cloud Messaging for offline alerts.
-- [ ] **Media Support:** Image and GPX file sharing within chats.
-- [ ] **Events Module:** Core domain for "Quedadas" (Trail running meetups).
-- [ ] **Database Migrations:** Integrating Flyway for version-controlled schemas.
-
-*Last Updated:* March 2026
+---
+*Last updated: May 2026*
