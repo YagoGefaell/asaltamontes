@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Asaltamontes API",
-    "version": "1.0.0",
+    "version": "0.6.0",
     "description": "API contract between frontend and backend for data exchange"
   },
   "servers": [
@@ -22,13 +22,12 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["fullName", "username", "email", "password", "confirmPassword"],
+                "required": ["username", "email", "password"],
                 "properties": {
-                  "fullName": { "type": "string", "example": "María Runner" },
                   "username": { "type": "string", "example": "runner123" },
-                  "email": { "type": "string", "format": "email", "example": "runner@example.com" },
+                  "email": { "type": "string", "example": "runner@example.com" },
                   "password": { "type": "string", "example": "SuperSecret123" },
-                  "confirmPassword": { "type": "string", "example": "SuperSecret123" }
+                  "fullName": { "type": "string", "example": "María Runner" }
                 }
               }
             }
@@ -36,7 +35,53 @@
         },
         "responses": {
           "201": {
-            "description": "User successfully registered",
+            "description": "User registered successfully"
+          },
+          "400": {
+            "description": "Invalid data or user/email already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errors": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "field": { "type": "string", "example": "email" },
+                          "message": { "type": "string", "example": "Email already in use" }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+    "/auth/google": {
+      "post": {
+        "summary": "Google OAuth2 login",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": { "type": "string", "example": "4/0AX4XfWh..." }
+                },
+                "required": ["code"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Google login",
             "headers": {
               "Set-Cookie": {
                 "schema": { "type": "string" },
@@ -54,27 +99,72 @@
               }
             }
           },
-          "400": {
-            "description": "Validation errors",
+          "401": {
+            "description": "Invalid Google code"
+          }
+        }
+      }
+    },
+    "/api/conversations/private": {
+      "get": {
+        "summary": "Get private conversation by username",
+        "tags": ["Messages"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "runner123" }
+                },
+                "required": ["username"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Private conversation found",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": { "type": "integer", "example": 400 },
-                    "error": { "type": "string", "example": "Bad Request" },
-                    "errors": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "field": { "type": "string", "example": "email" },
-                          "message": { "type": "string", "example": "Email already in use" }
-                        }
-                      }
-                    }
+                "schema": { "$ref": "#/components/schemas/ChatResponse" }
+              }
+            }
+          },
+          "404": { "description": "Conversation not found" }
+        }
+      }
+    },
+    "/api/conversations/group": {
+      "post": {
+        "summary": "Create group conversation",
+        "tags": ["Messages"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "groupName": { "type": "string", "example": "Trail Runners" },
+                  "groupImage": { "type": "string", "example": "https://example.com/group.jpg" },
+                  "users": {
+                    "type": "array",
+                    "items": { "type": "string", "example": "runner123" }
                   }
-                }
+                },
+                "required": ["groupName", "users"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Group conversation created",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ChatResponse" }
               }
             }
           }
@@ -718,4 +808,5 @@
       }
     }
   }
+}
 }

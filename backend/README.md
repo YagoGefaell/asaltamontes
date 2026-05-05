@@ -1,30 +1,27 @@
+
 # Asaltamontes Backend - REST API & Real-Time Messaging
 
-Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Spring Boot 3.5**, and **PostgreSQL**, this API serves as the foundational architecture for user authentication, social networking, and high-performance real-time messaging.
+Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Spring Boot 3.5**, and **PostgreSQL**, this API provides the foundation for user authentication, social networking, and high-performance real-time messaging.
 
 ## Table of Contents
 
-- [Asaltamontes Backend - REST API \& Real-Time Messaging](#asaltamontes-backend---rest-api--real-time-messaging)
-  - [Table of Contents](#table-of-contents)
-  - [Overview](#overview)
-  - [Core Features](#core-features)
-  - [Architecture \& Messaging Flow](#architecture--messaging-flow)
-    - [1. Security Strategy](#1-security-strategy)
-    - [2. Messaging Engine](#2-messaging-engine)
-  - [Tech Stack](#tech-stack)
-  - [Project Structure](#project-structure)
-  - [Installation \& Running](#installation--running)
-    - [1. Environment Configuration](#1-environment-configuration)
-    - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
-    - [3. Local Development](#3-local-development)
-  - [API \& WebSocket Endpoints](#api--websocket-endpoints)
-    - [REST API](#rest-api)
-    - [WebSocket (STOMP)](#websocket-stomp)
-  - [Roadmap](#roadmap)
+- [About](#about)
+- [Core Features](#core-features)
+- [Architecture & Messaging Flow](#architecture--messaging-flow)
+  - [1. Security Strategy](#1-security-strategy)
+  - [2. Messaging Engine](#2-messaging-engine)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Installation & Running](#installation--running)
+  - [1. Environment Configuration](#1-environment-configuration)
+  - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
+  - [3. Local Development](#3-local-development)
+- [API & WebSocket](#api--websocket)
+- [Roadmap](#roadmap)
 
-## Overview
+## About
 
-Asaltamontes provides a secure and scalable foundation for a female-focused trail running community. It handles complex user relationships and real-time communication with a focus on data integrity and stateless security.
+Asaltamontes provides a secure and scalable foundation for a female-focused trail running community. It manages complex user relationships and real-time communication with a focus on data integrity and stateless security.
 
 ## Core Features
 
@@ -43,7 +40,7 @@ Asaltamontes provides a secure and scalable foundation for a female-focused trai
 
 ### 2. Messaging Engine
 
-The system uses a **Conversation-Participant-Message** pattern. This ensures that:
+The system uses a **Conversation-Participant-Message** pattern. This ensures:
 
 - Fetching the "Inbox" (list of chats) is an $O(1)$ operation relative to the total number of messages.
 - Support for group chats is native to the database schema.
@@ -58,6 +55,7 @@ The system uses a **Conversation-Participant-Message** pattern. This ensures tha
 - **Tooling:** Lombok, Maven, Docker & Docker Compose
 - **Environment:** Spring Dotenv for secure variable management
 
+
 ## Project Structure
 
 ```text
@@ -65,7 +63,7 @@ backend/
 ├── src/main/java/.../asaltamontes/
 │   ├── auth/                  # JWT logic, Login/Register controllers
 │   ├── user/                  # Social Graph and Profile management
-│   ├── message/               # Messaging Domain
+│   ├── message/               # Messaging domain
 │   │   ├── domain/            # Entities: Conversation, Participant, Message
 │   │   ├── dto/               # Immutable Java Records (PrivateMessage, ChatSummary)
 │   │   ├── repository/        # Optimized JPQL for chat threading
@@ -75,6 +73,7 @@ backend/
 ├── Dockerfile                 # Optimized multi-stage build
 └── .env.example               # Environment template
 ```
+
 
 ## Installation & Running
 
@@ -103,30 +102,31 @@ docker compose up --build
 ./mvnw spring-boot:run
 ```
 
-## API & WebSocket Endpoints
 
-### REST API
+## API & WebSocket
 
-| Method | Endpoint                 | Description                      | Auth   |
-| ------ | ------------------------ | -------------------------------- | ------ |
-| POST   | `/api/auth/login`        | Authentication & Cookie issuance | Public |
-| GET    | `/api/users/{id}`        | User profile data                | JWT    |
-| POST   | `/api/users/{id}/follow` | Follow/Unfollow toggle           | JWT    |
-| GET    | `/api/messages/chats`    | Fetch active conversations       | JWT    |
+The backend exposes REST endpoints and WebSocket channels for authentication, user management, and real-time messaging.
+
+- See the [OpenAPI contract](../docs/api-contract-v1.json) for the full specification of endpoints, parameters, and responses.
+
+### Main Example Endpoints
+
+- `POST /api/auth/login` — Login and token issuance
+- `GET /api/users/{username}` — Public user profile
+- `POST /api/users/follow/{username}` — Follow user
+- `GET /api/messages/chats` — List active conversations
 
 ### WebSocket (STOMP)
 
-| Type                | Destination            | Description                            |
-| ------------------- | ---------------------- | -------------------------------------- |
-| **App Destination** | `/app/chat.private`    | Send a 1-to-1 message                  |
-| **User Queue**      | `/user/queue/messages` | Subscribe to incoming private messages |
-| **Broker**          | `/topic/**`            | Public/Group announcements             |
+- `/app/chat.private` — Send private message
+- `/user/queue/messages` — Receive private messages
+- `/topic/**` — Public/group announcements
 
 ## Roadmap
 
 - [ ] **Push Notifications:** Firebase Cloud Messaging for offline alerts.
-- [ ] **Media Support:** Image and GPX file sharing within chats.
-- [ ] **Events Module:** Core domain for "Quedadas" (Trail running meetups).
-- [ ] **Database Migrations:** Integrating Flyway for version-controlled schemas.
+- [ ] **Media Support:** Image and GPX file sharing in chats.
+- [ ] **Events Module:** "Meetups" module (trail running events).
 
-*Last Updated:* March 2026
+---
+*Last updated: May 2026*

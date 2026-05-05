@@ -63,10 +63,7 @@ The project is in an early stage. Core foundational features are implemented, wh
 
 The project is fully containerized, allowing for a seamless "one-command" setup. By using **Docker Compose**, we ensure that the database, backend, and frontend environments are identical for every developer, eliminating configuration drift.
 
-### Deployment Roadmap
 
-1. **Orchestration:** Future implementation of **Kubernetes (K8s)** for high availability, auto-scaling during high-traffic community events, and streamlined deployments.
-2. **CI/CD:** Automated pipelines for container image deployment.
 
 ## Quick Start
 
@@ -122,13 +119,15 @@ asaltamontes/
 └── README.md               # Project overview (You are here)
 ```
 
+
+
 ## Documentation
 
-For deep dives into specific areas of the application, please refer to our dedicated documentation files:
+For technical details and architecture of each part:
 
-- **[Backend Setup & API Specs](./backend/README.md)**
-- **[Frontend Architecture & UI](./frontend/README.md)**
-- **API Contract:** Check the `/docs` folder for the OpenAPI specifications.
+- **[Backend: installation & API](./backend/README.md)**
+- **[Frontend: architecture & usage](./frontend/README.md)**
+- **OpenAPI contract:** [docs/api-contract-v1.json](./docs/api-contract-v1.json).
 
 ## Contributing
 
@@ -140,4 +139,6 @@ We welcome contributions as we build this platform.
 4. Push to the branch (`git push origin feature/FeatureName`).
 5. Open a Pull Request.
 
-_Last Updated:_ March 2026
+
+---
+*Last updated: May 2026*
