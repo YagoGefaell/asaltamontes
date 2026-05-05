@@ -1,0 +1,27 @@
+name: Release & Versioning
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  versioning:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Tag and Changelog
+        id: tag_action
+        uses: Tripping-on-the-Moon/conventional-changelog-action@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          git-message: 'chore(release): {version}'
+          preset: 'conventionalcommits'
+
+      - name: Trigger Deploy
+        if: steps.tag_action.outputs.skipped == 'false'
+        run: echo "Nueva versión creada: ${{ steps.tag_action.outputs.version }}"
