@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Service
@@ -95,7 +96,13 @@ public class MessageService {
     }
 
     @Transactional
-    public ChatResponse createPrivateConversation(String currentUsername, String recipientUsername) {
+    public ChatResponse createOrGetPrivateConversation(String currentUsername, String recipientUsername) {
+        Optional<ChatResponse> existingChat = getPrivateConversation(currentUsername, recipientUsername);
+
+        if (existingChat.isPresent()) {
+            return existingChat.get();
+        }
+
         UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
         UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
 

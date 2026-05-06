@@ -11,11 +11,8 @@ export async function getMyConversationsRequest() {
 
 export async function getPrivateConversationRequest(recipientUsername) {
   try {
-    return await apiClient.request("/api/conversations/private", {
+    return await apiClient.request(`/api/conversations/private/${recipientUsername}`, {
       method: "GET",
-      body: JSON.stringify({
-        username: recipientUsername,
-      }),
     });
   } catch (error) {
     if (error.status === 404) {

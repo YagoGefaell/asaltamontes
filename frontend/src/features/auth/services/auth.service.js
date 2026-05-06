@@ -32,7 +32,6 @@ export async function loginRequest({ username, password }) {
 }
 
 export async function loginWithGoogleRequest(code) {
-  console.log("Enviando código de autorización a backend:", code)
   try {
     const response = await authApiClient.post('/auth/google', { code: code }, {
       headers: {

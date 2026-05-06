@@ -31,25 +31,25 @@ public class ConversationController {
         this.messageService = messageService;
     }
 
-    @GetMapping("/private")
+    @GetMapping("/private/{recipientUsername}")
     public ResponseEntity<ChatResponse> getPrivateChat(
             @AuthenticationPrincipal UserDetails currentUser,
-            @RequestBody PrivateRequest request) {
+            @PathVariable String recipientUsername) {
 
         return messageService.getPrivateConversation(
                 currentUser.getUsername(), 
-                request.username()
+                recipientUsername
         )
         .map(ResponseEntity::ok)
         .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/private")
-    public ResponseEntity<ChatResponse> createPrivateChat(
+    public ResponseEntity<ChatResponse> createOrGetPrivateChat(
             @AuthenticationPrincipal UserDetails currentUser,
             @RequestBody PrivateRequest request) {
 
-        ChatResponse response = messageService.createPrivateConversation(
+        ChatResponse response = messageService.createOrGetPrivateConversation(
                 currentUser.getUsername(),
                 request.username()
         );
