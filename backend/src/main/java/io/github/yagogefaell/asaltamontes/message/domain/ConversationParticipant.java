@@ -2,7 +2,6 @@ package io.github.yagogefaell.asaltamontes.message.domain;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

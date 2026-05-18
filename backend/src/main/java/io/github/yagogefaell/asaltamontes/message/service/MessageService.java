@@ -4,8 +4,8 @@ import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
-import io.github.yagogefaell.asaltamontes.message.dto.ChatResponse;
-import io.github.yagogefaell.asaltamontes.message.dto.ChatSummary;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
@@ -90,14 +90,14 @@ public class MessageService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.Optional<ChatResponse> getPrivateConversation(String currentUsername, String recipientUsername) {
+    public java.util.Optional<ChatResponseDto> getPrivateConversation(String currentUsername, String recipientUsername) {
         return conversationRepository.findPrivateConversation(currentUsername, recipientUsername)
-            .map(conv -> new ChatResponse(conv.getId()));
+            .map(conv -> new ChatResponseDto(conv.getId()));
     }
 
     @Transactional
-    public ChatResponse createOrGetPrivateConversation(String currentUsername, String recipientUsername) {
-        Optional<ChatResponse> existingChat = getPrivateConversation(currentUsername, recipientUsername);
+    public ChatResponseDto createOrGetPrivateConversation(String currentUsername, String recipientUsername) {
+        Optional<ChatResponseDto> existingChat = getPrivateConversation(currentUsername, recipientUsername);
 
         if (existingChat.isPresent()) {
             return existingChat.get();
@@ -107,11 +107,11 @@ public class MessageService {
         UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
 
         Conversation newConv = createPrivateConversation(me, other);
-        return new ChatResponse(newConv.getId());
+        return new ChatResponseDto(newConv.getId());
     }
 
     @Transactional
-    public ChatResponse createGroupConversation(String currentUsername, String groupName, String groupImage, List<String> users) {
+    public ChatResponseDto createGroupConversation(String currentUsername, String groupName, String groupImage, List<String> users) {
         UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
 
         if (users == null || users.isEmpty()) {
@@ -137,7 +137,7 @@ public class MessageService {
                 .toList();
 
         Conversation newConv = createGroupConversation(creator, members, groupName, groupImage);
-        return new ChatResponse(newConv.getId());
+        return new ChatResponseDto(newConv.getId());
     }
 
     @Transactional
@@ -231,7 +231,7 @@ public class MessageService {
         return savedConv;
     }
 
-    public List<ChatSummary> getUserConversations(String username) {
+    public List<ChatSummaryDto> getUserConversations(String username) {
         return conversationRepository.findActiveChatsForUser(username);
     }
 }

@@ -36,11 +36,21 @@ import lombok.Setter;
 )
 public class CommunityMember {
 
+    public CommunityMember(Community community, UserAccount userAccount, MemberStatus status) {
+        this.community = community;
+        this.userAccount = userAccount;
+        this.status = status;
+    }
+
     public CommunityMember(Community community, UserAccount userAccount, CommunityRole role) {
         this.community = community;
         this.userAccount = userAccount;
         this.role = role;
-        this.status = MemberStatus.ACTIVE;
+    }
+
+    public CommunityMember(Community community, UserAccount userAccount) {
+        this.community = community;
+        this.userAccount = userAccount;
     }
 
     @Id

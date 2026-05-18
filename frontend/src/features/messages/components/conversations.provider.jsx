@@ -262,24 +262,30 @@ export const ConversationsProvider = ({ children }) => {
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
 
-    const alreadyLoaded = chatMessages[conversationId];
-    if (alreadyLoaded) {
-      markConversationAsRead(conversationId, alreadyLoaded);
-      return;
-    }
+    const localMessages = chatMessages[conversationId] || [];
 
     try {
-      const messages = await getConversationMessagesRequest(conversationId);
-      const normalizedMessages = Array.isArray(messages) ? messages : [];
+      const serverMessages = await getConversationMessagesRequest(conversationId);
+      const normalizedServerMessages = Array.isArray(serverMessages) ? serverMessages : [];
+
+      const combinedMessages = [...normalizedServerMessages];
+      const serverMessageIds = new Set(normalizedServerMessages.map(m => m.id));
+
+      localMessages.forEach(localMsg => {
+        if (!serverMessageIds.has(localMsg.id)) {
+          combinedMessages.push(localMsg);
+        }
+      });
+
+      combinedMessages.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
 
       setChatMessages((prev) => ({
         ...prev,
-        [conversationId]: normalizedMessages,
+        [conversationId]: combinedMessages,
       }));
-      markConversationAsRead(conversationId, normalizedMessages);
+      markConversationAsRead(conversationId, combinedMessages);
     } catch {
-      // No bloqueamos la UI del chat si falla la carga inicial del historial.
-      markConversationAsRead(conversationId);
+      markConversationAsRead(conversationId, localMessages);
     }
   }, [chatMessages, markConversationAsRead]);
 

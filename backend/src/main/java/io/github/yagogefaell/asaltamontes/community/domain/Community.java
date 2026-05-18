@@ -28,6 +28,13 @@ import lombok.Setter;
 @Table(name = "communities")
 public class Community {
 
+    public Community(String name, String description, String imageUrl, UserAccount createdBy) {
+        this.name = name;
+        this.description = description;
+        this.imageUrl = imageUrl;
+        this.createdBy = createdBy;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -37,6 +44,9 @@ public class Community {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)

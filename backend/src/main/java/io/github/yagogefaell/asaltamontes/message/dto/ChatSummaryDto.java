@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 
-public record ChatSummary(
+public record ChatSummaryDto(
     Long conversationId,
     String displayName,
     String displayImage,

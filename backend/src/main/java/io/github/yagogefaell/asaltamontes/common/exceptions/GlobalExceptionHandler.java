@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.lang.NonNull;
@@ -73,6 +74,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest req) {
         return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred", req, null);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex, 
+                                                    HttpServletRequest request) {
+        return buildProblem(HttpStatus.CONFLICT, "Data Integrity Violation", "Data integrity violation occurred", request, null);
     }
 
     private ProblemDetail buildProblem(@NonNull HttpStatus status, String title, String detail, HttpServletRequest req, Map<String, ?> errors) {
