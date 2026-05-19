@@ -7,8 +7,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
-import io.github.yagogefaell.asaltamontes.community.dto.CommunityDto;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityRepository;
@@ -27,18 +29,8 @@ public class CommunityService {
     
     @Transactional
     public Community create(CreateCommunityDto request, UserAccount currentUser) {
-        if (request.name() == null || request.name().isBlank()) {
-            throw new IllegalArgumentException("Community name cannot be empty");
-        }
-        else if (request.name().length() > 100) {
-            throw new IllegalArgumentException("Community name cannot be longer than 100 characters");
-        }
-        else if (communityRepository.existsByName(request.name())) {
+        if (communityRepository.existsByName(request.name())) {
             throw new IllegalArgumentException("Community with that name already exists");
-        }
-
-        if (request.description() != null && request.description().length() > 500) {
-            throw new IllegalArgumentException("Community description cannot be longer than 500 characters");
         }
 
         Community community = new Community(
@@ -48,20 +40,24 @@ public class CommunityService {
             currentUser
         );
 
-        communityRepository.save(community);
+        community = communityRepository.save(community);
+
+        CommunityMember communityMember = new CommunityMember(community, currentUser, CommunityRole.MEMBER);
+        communityMemberRepository.save(communityMember);
+        
         return community;
     }
 
-    public Page<CommunityDto> getMyCommunities(Long currentUserId, Pageable pageable) {
-        return communityMemberRepository.findCommunitiesByUserId(currentUserId, pageable);
+    public Page<CommunitySearchDto> getMyCommunities(UserAccount currentUser, Pageable pageable) {
+        return communityMemberRepository.findCommunitiesByUserId(currentUser.getId(), pageable);
     }
 
-    public Page<CommunityDto> getAllCommunities(Pageable pageable) {
-        return communityRepository.findAllCommunities(pageable);
+    public Page<CommunitySearchDto> getAllCommunities(UserAccount currentUser, Pageable pageable) {
+        return communityRepository.findAllCommunities(currentUser.getId(), pageable);
     }
 
-    public CommunityDto getCommunityById(Long communityId) {
-        return communityRepository.findCommunityById(communityId)
+    public CommunityDetailsDto getCommunityByName(String communityName, UserAccount currentUser) {
+        return communityRepository.findCommunityByName(communityName, currentUser.getId())
             .orElseThrow(() -> new IllegalArgumentException("Community not found"));
     }
 

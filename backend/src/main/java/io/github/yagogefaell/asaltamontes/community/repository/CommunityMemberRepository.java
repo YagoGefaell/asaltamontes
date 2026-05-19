@@ -8,23 +8,21 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
-import io.github.yagogefaell.asaltamontes.community.dto.CommunityDto;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, Long> {
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDto(
-            c.id, 
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
             c.name, 
-            c.description, 
-            c.imageUrl, 
-            creator.username 
+            c.imageUrl,
+            CASE WHEN m.id IS NOT NULL THEN true ELSE false END
         )
         FROM CommunityMember m 
         JOIN m.community c 
         LEFT JOIN c.createdBy creator
         WHERE m.userAccount.id = :userId
     """)
-    Page<CommunityDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);
+    Page<CommunitySearchDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);
     @Modifying
     @Query("""
         DELETE FROM CommunityMember cm 

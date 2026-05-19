@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../forms/Button";
+import { formatters } from "../../utils/helpers";
 import "./UserCard.css";
 
 const UserCard = ({ 
@@ -19,8 +20,8 @@ const UserCard = ({
   const [pressed, setPressed] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const navigate = useNavigate();
+  const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
   const initial = (username || "?").trim().charAt(0).toUpperCase() || "?";
-  const shouldShowImage = Boolean(profilePictureUrl) && !avatarLoadError;
 
   const handleCardClick = (e) => {
     // Don't navigate if clicking on a button or inside button container
@@ -33,7 +34,6 @@ const UserCard = ({
   };
 
   const handlePressStart = (e) => {
-    // Don't activate press effect on button area
     if (e.target.closest('button') || e.target.closest('.user-card-action')) {
       return;
     }
@@ -66,9 +66,9 @@ const UserCard = ({
       onMouseUp={handlePressEnd}
       onMouseLeave={handlePressEnd}
     >
-      {shouldShowImage ? (
+      {!avatarLoadError ? (
         <img
-          src={profilePictureUrl}
+          src={avatarUrl}
           alt={username}
           className="user-avatar"
           onError={() => setAvatarLoadError(true)}

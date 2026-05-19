@@ -5,13 +5,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import io.github.yagogefaell.asaltamontes.community.domain.Community;
-import io.github.yagogefaell.asaltamontes.community.dto.CommunityDto;
+import jakarta.validation.Valid;
+
+import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -27,34 +28,34 @@ public class CommunityController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Community> createCommunity(
+    public ResponseEntity<?> createCommunity(
             @AuthenticationPrincipal UserAccount currentUser,
-            @RequestBody CreateCommunityDto request) {
+            @Valid @RequestBody CreateCommunityDto request) {
 
-        Community community = communityService.create(request, currentUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(community);
+        communityService.create(request, currentUser);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping
-    public ResponseEntity<Page<CommunityDto>> getAllCommunities(
+    public ResponseEntity<Page<CommunitySearchDto>> getAllCommunities(
+            @AuthenticationPrincipal UserAccount currentUser,
             @PageableDefault(size = 20, sort = "name") Pageable pageable
         ) {
-        Page<CommunityDto> communities = communityService.getAllCommunities(pageable);
+        Page<CommunitySearchDto> communities = communityService.getAllCommunities(currentUser, pageable);
         return ResponseEntity.ok(communities);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Page<CommunityDto>> getMyCommunities(
+    public ResponseEntity<Page<CommunitySearchDto>> getMyCommunities(
             @AuthenticationPrincipal UserAccount currentUser,
             @PageableDefault(size = 20, sort = "name") Pageable pageable) {
-        Page<CommunityDto> communities = communityService.getMyCommunities(currentUser.getId(), pageable);
+        Page<CommunitySearchDto> communities = communityService.getMyCommunities(currentUser, pageable);
         return ResponseEntity.ok(communities);
     }
 
-    @GetMapping("/{communityId}")
-    public ResponseEntity<CommunityDto> getCommunity(@PathVariable Long communityId) {
-        CommunityDto community = communityService.getCommunityById(communityId);
+    @GetMapping("/{communityName}")
+    public ResponseEntity<CommunityDetailsDto> getCommunity(@PathVariable String communityName, @AuthenticationPrincipal UserAccount currentUser) {
+        CommunityDetailsDto community = communityService.getCommunityByName(communityName, currentUser);
         return ResponseEntity.ok(community);
     }
 

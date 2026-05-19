@@ -6,6 +6,7 @@ import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 import { useFollow } from "../../features/users/hooks/useFollow";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
+import { formatters } from "../../utils/helpers";
 
 function Profile({ 
   userData = null, 
@@ -169,8 +170,9 @@ function Profile({
     EXPERT: "Experto"
   };
 
+  const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
   const avatarInitial = username.trim().charAt(0).toUpperCase() || "?";
-  const shouldShowProfileImage = Boolean(profilePictureUrl) && !avatarLoadError;
+  const shouldShowProfileImage = !avatarLoadError;
 
   return (
     <div className="profile-page">
@@ -219,9 +221,9 @@ function Profile({
       </div>
 
       <div className="profile-avatar-container">
-        {shouldShowProfileImage ? (
+        {!avatarLoadError ? (
           <img
-            src={profilePictureUrl}
+            src={avatarUrl}
             alt={`${username}'s avatar`}
             className="profile-avatar"
             onError={() => setAvatarLoadError(true)}

@@ -7,8 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
-import io.github.yagogefaell.asaltamontes.community.dto.CommunityDto;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 
 import java.util.Optional;
 
@@ -30,16 +31,29 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     """)
     Page<CommunityMemberDto> findMembersExcept(@Param("communityId") Long communityId, @Param("currentUserId") Long currentUserId, Pageable pageable);
     @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDto(
-            c.id, 
-            c.name, 
-            c.description, 
-            c.imageUrl, 
-            c.createdBy.username
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
+            c.name,
+            c.imageUrl,
+            CASE WHEN m.id IS NOT NULL THEN true ELSE false END
         ) 
         FROM Community c
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :user
     """)
-    Page<CommunityDto> findAllCommunities(Pageable pageable);
+    Page<CommunitySearchDto> findAllCommunities(@Param("user") Long user, Pageable pageable);
+
     boolean existsByName(String name);
-    Optional<CommunityDto> findCommunityById(Long id);
+
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto(
+            c.name,
+            c.description,
+            c.imageUrl,
+            CASE WHEN c.createdBy.id = :userId THEN true ELSE false END,
+            CASE WHEN m.id IS NOT NULL THEN true ELSE false END
+        ) 
+        FROM Community c
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId
+        WHERE c.name = :name
+    """)
+    Optional<CommunityDetailsDto> findCommunityByName(@Param("name") String name, @Param("userId") Long userId);
 }

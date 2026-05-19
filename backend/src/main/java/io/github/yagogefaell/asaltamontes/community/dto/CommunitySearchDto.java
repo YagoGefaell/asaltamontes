@@ -1,9 +1,8 @@
 package io.github.yagogefaell.asaltamontes.community.dto;
 
-public record CommunityDto(
-    Long id,
+public record CommunitySearchDto(
     String name,
-    String description,
     String imageUrl,
-    String createdByUsername
+    boolean isMember
+    // Long memberCount
 ) {}
