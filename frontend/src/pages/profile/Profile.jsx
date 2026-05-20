@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
-import { useFollow } from "../../features/users/hooks/useFollow";
+import FollowUserButton from "../../shared/components/FollowUserButton";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
 import { formatters } from "../../utils/helpers";
@@ -18,20 +18,7 @@ function Profile({
   const { currentUser, setCurrentUser } = useAuth();
   const { userProfile, loading: contextLoading } = useUserProfile();
   const navigate = useNavigate();
-  
-  // Follow functionality
-  const {
-    loading: followLoading,
-    error: followError,
-    followersCount: hookFollowersCount,
-    followingCount: hookFollowingCount,
-    isFollowing,
-    toggleFollow,
-    resetError,
-    initializeFollowState
-  } = useFollow();
   const [openChatLoading, setOpenChatLoading] = useState(false);
-  const [openChatError, setOpenChatError] = useState(null);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   // Use props data if provided, otherwise use context data
@@ -49,39 +36,10 @@ function Profile({
     }
   }, [isOwnProfile, profileData, currentUser, setCurrentUser]);
 
-  // Initialize follow data when profileData changes
-  useEffect(() => {
-    if (profileData) {
-      initializeFollowState(profileData);
-    }
-  }, [profileData, initializeFollowState]);
-
-  const handleFollowToggle = async () => {
-    if (!profileData?.username) return;
-    
-    const success = await toggleFollow(profileData.username);
-    if (success) {
-      resetError();
-    }
-  };
-
-  const handleShowFollowers = () => {
-    if (isOwnProfile) {
-      navigate("/me/followers");
-    }
-  };
-
-  const handleShowFollowing = () => {
-    if (isOwnProfile) {
-      navigate("/me/following");
-    }
-  };
-
   const handleOpenChat = async () => {
     if (!profileData?.username) return;
 
     setOpenChatLoading(true);
-    setOpenChatError(null);
 
     try {
       navigate("/messages", {
@@ -92,8 +50,6 @@ function Profile({
           },
         },
       });
-    } catch {
-      setOpenChatError("Error abriendo conversación");
     } finally {
       setOpenChatLoading(false);
     }
@@ -148,20 +104,17 @@ function Profile({
     profilePictureUrl,
     runningLevel = "BEGINNER",
     isVerified = false,
-    isPublicProfile = true,
     followersCount = 0,
     followingCount = 0,
   } = profileData;
 
-  // For own profile, use the data from currentUser (updated in real-time)
-  // For other profiles, use hook data that updates when following/unfollowing
   const displayFollowersCount = isOwnProfile && currentUser 
     ? currentUser.followersCount 
-    : (isOwnProfile ? followersCount : hookFollowersCount);
+    : (followersCount || 0);
   
   const displayFollowingCount = isOwnProfile && currentUser 
     ? currentUser.followingCount 
-    : (isOwnProfile ? followingCount : hookFollowingCount);
+    : (followingCount || 0);
 
   const levelLabels = {
     BEGINNER: "Principiante",
@@ -171,9 +124,7 @@ function Profile({
   };
 
   const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
-  const avatarInitial = formatters.getInitial(username, username);
-  const shouldShowProfileImage = !avatarLoadError;
-
+  const avatarInitial = formatters.getInitial(fullName, username);
   return (
     <div className="profile-page">
       {/* Barra superior con icono de ajustes o botón volver */}
@@ -262,17 +213,11 @@ function Profile({
         </div>
 
         <div className="profile-stats">
-          <div 
-            className={`stat ${isOwnProfile ? 'clickable' : ''}`}
-            onClick={isOwnProfile ? handleShowFollowers : undefined}
-          >
+          <div className="stat">
             <span className="count">{displayFollowersCount}</span>
             <span className="label">Seguidores</span>
           </div>
-          <div 
-            className={`stat ${isOwnProfile ? 'clickable' : ''}`}
-            onClick={isOwnProfile ? handleShowFollowing : undefined}
-          >
+          <div className="stat">
             <span className="count">{displayFollowingCount}</span>
             <span className="label">Siguiendo</span>
           </div>
@@ -280,14 +225,10 @@ function Profile({
 
         {!isOwnProfile && (
           <div className="profile-actions">
-            <Button 
-              variant={isFollowing ? "outline" : "primary"}
-              onClick={handleFollowToggle}
-              loading={followLoading}
-              disabled={followLoading}
-            >
-              {followLoading ? 'Cargando...' : (isFollowing ? 'Dejar de seguir' : 'Seguir')}
-            </Button>
+            <FollowUserButton
+              userId={profileData.username}
+              initialIsFollowing={profileData.isFollowing || false}
+            />
             <Button
               variant="primary"
               onClick={handleOpenChat}
@@ -296,22 +237,6 @@ function Profile({
             >
               {openChatLoading ? "Cargando..." : "Abrir chat"}
             </Button>
-            {followError && (
-              <div className="follow-error">
-                <p>{followError}</p>
-              </div>
-            )}
-            {openChatError && (
-              <div className="follow-error">
-                <p>{openChatError}</p>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {!isOwnProfile && !isPublicProfile && (
-          <div className="private-profile-notice">
-            <p>Este perfil es privado</p>
           </div>
         )}
 

@@ -1,70 +1,25 @@
-import "./CommunityProfile.css";
+import "./CommunityProfileDetail.css";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Button from "../../shared/forms/Button";
+import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import Loading from "../../shared/components/Loading";
 import FormError from "../../shared/forms/FormError";
 import { formatters } from "../../utils/helpers";
-import { joinCommunityRequest, leaveCommunityRequest } from "../../features/communities/services/communities.service";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 
 function CommunityProfile() {
   const { communityName } = useParams();
   const navigate = useNavigate();
-  const { community, loading, error, refetch } = useCommunityDetail(communityName);
+  const { community, loading, error } = useCommunityDetail(communityName); // Eliminamos refetch de aquí ya que no lo usaremos
   
-  const [joinLoading, setJoinLoading] = useState(false);
-  const [joinError, setJoinError] = useState(null);
-  const [isUserMember, setIsUserMember] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
 
   useEffect(() => {
     if (!communityName) {
       navigate("/communities");
-      return;
     }
   }, [communityName, navigate]);
-
-  useEffect(() => {
-    setIsUserMember(community?.isMember || false);
-  }, [community?.isMember]);
-
-  const handleJoinCommunity = async () => {
-    if (!community?.id) return;
-    
-    setJoinLoading(true);
-    setJoinError(null);
-
-    try {
-      await joinCommunityRequest(community.id);
-      setIsUserMember(true);
-      if (refetch) refetch();
-    } catch (err) {
-      setJoinError(err.message || "Error al unirse a la comunidad");
-      console.error("Error joining community:", err);
-    } finally {
-      setJoinLoading(false);
-    }
-  };
-
-  const handleLeaveCommunity = async () => {
-    if (!community?.id) return;
-    
-    setJoinLoading(true);
-    setJoinError(null);
-
-    try {
-      await leaveCommunityRequest(community.id);
-      setIsUserMember(false);
-      if (refetch) refetch();
-    } catch (err) {
-      setJoinError(err.message || "Error al salir de la comunidad");
-      console.error("Error leaving community:", err);
-    } finally {
-      setJoinLoading(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -96,16 +51,14 @@ function CommunityProfile() {
             </svg>
           </button>
         </div>
-        {(error || !community) && (
-          <FormError message={error || "Comunidad no encontrada"} />
-        )}
+        <FormError message={error || "Comunidad no encontrada"} />
       </div>
     );
   }
 
   return (
     <div className="community-profile-page">
-      {/* Header similar al perfil de usuario */}
+      {/* Header */}
       <div className="profile-header other-profile">
         <button
           className="back-btn"
@@ -151,37 +104,24 @@ function CommunityProfile() {
         )}
 
         <div className="profile-stats">
-          <div className="stat clickable">
+          <div className="stat">
             <strong>{community.membersCount || 0}</strong>
             <span className="label">Miembros</span>
           </div>
         </div>
 
-        {/* Join/Leave Actions */}
         <div className="profile-actions">
-          {!isUserMember ? (
-            <Button 
-              onClick={handleJoinCommunity}
-              disabled={joinLoading}
-            >
-              {joinLoading ? "Uniéndose..." : "Unirse"}
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleLeaveCommunity}
-              disabled={joinLoading}
-              variant="secondary"
-            >
-              {joinLoading ? "Saliendo..." : "Salir"}
-            </Button>
-          )}
+          <CommunityJoinButton
+            communityId={community.id}
+            initialIsMember={community.isMember || false}
+            joinLabel="Unirse"
+            memberLabel="Miembro"
+            /* Quitamos la prop onToggle para evitar que se disparen llamadas 
+               asíncronas paralelas que pisen el estado del botón */
+          />
         </div>
-
-        {/* Error Message */}
-        {joinError && <FormError message={joinError} />}
       </div>
 
-      {/* Members Section */}
       {community.members && community.members.length > 0 && (
         <div className="members-section">
           <h3 className="members-title">Miembros ({community.members.length})</h3>
@@ -201,15 +141,12 @@ function CommunityProfile() {
                         onError={() => setMemberAvatarErrors(prev => ({ ...prev, [member.id]: true }))}
                       />
                     ) : (
-                      <div className="member-avatar-placeholder">
+                      <div className="member-avatar-placeholder" aria-hidden="true">
                         {formatters.getInitial(member.username, member.username)}
                       </div>
                     )}
                   </div>
-                  <div className="member-info">
-                    <p className="member-username">{member.username}</p>
-                    <p className="member-role">{member.role}</p>
-                  </div>
+                  <p className="member-username">@{member.username}</p>
                 </div>
               );
             })}

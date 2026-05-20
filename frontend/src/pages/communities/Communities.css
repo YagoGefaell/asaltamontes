@@ -1,4 +1,6 @@
-/* MOBILE-FIRST DESIGN */
+/* ==========================================================================
+   MOBILE-FIRST DESIGN & LAYOUT
+   ========================================================================== */
 
 .communities-page {
   background: var(--background);
@@ -35,6 +37,9 @@
   align-items: center;
 }
 
+/* ==========================================================================
+   BOTÓN CREAR COMUNIDAD
+   ========================================================================== */
 .create-community-btn {
   width: 36px;
   height: 36px;
@@ -58,27 +63,14 @@
   cursor: not-allowed;
 }
 
-@media (min-width: 600px) {
-  .create-community-btn:hover {
-    background: var(--hover-color);
-  }
-}
-
 .create-community-icon {
   width: 18px;
   height: 18px;
 }
 
-@media (min-width: 600px) {
-  .communities-header {
-    padding: 1rem;
-  }
-
-  .communities-header h2 {
-    font-size: 1.5rem;
-  }
-}
-
+/* ==========================================================================
+   GRID DE COMUNIDADES
+   ========================================================================== */
 .communities-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -88,23 +80,9 @@
   margin: 0 auto;
 }
 
-@media (min-width: 600px) {
-  .communities-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-}
-
-@media (min-width: 1024px) {
-  .communities-grid {
-    max-width: 900px;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
-}
-
+/* ==========================================================================
+   TARJETA DE COMUNIDAD (ESTILOS BASE)
+   ========================================================================== */
 .community-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -119,12 +97,7 @@
   align-items: center;
 }
 
-.community-card:active {
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px var(--shadow-color);
-}
-
-/* Community Card Avatar */
+/* Avatar & Contenido interno */
 .community-card-avatar {
   width: 80px;
   height: 80px;
@@ -156,32 +129,6 @@
   justify-content: center;
 }
 
-@media (min-width: 600px) {
-  .community-card {
-    border-radius: 12px;
-    padding: 1.5rem;
-  }
-
-  .community-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px var(--shadow-color);
-  }
-
-  .community-card:active {
-    border-color: var(--primary);
-  }
-
-  .community-card-avatar {
-    width: 100px;
-    height: 100px;
-    margin-bottom: 1rem;
-  }
-
-  .community-avatar-fallback {
-    font-size: 2.5rem;
-  }
-}
-
 .community-card h3 {
   margin: 0.5rem 0;
   font-size: 0.95rem;
@@ -190,24 +137,11 @@
   word-break: break-word;
 }
 
-@media (min-width: 600px) {
-  .community-card h3 {
-    font-size: 1rem;
-  }
-}
-
 .community-members {
   display: block;
   font-size: 0.75rem;
   color: var(--text-soft);
   margin-bottom: 0.75rem;
-}
-
-@media (min-width: 600px) {
-  .community-members {
-    font-size: 0.8rem;
-    margin-bottom: 1rem;
-  }
 }
 
 .community-card-actions {
@@ -220,18 +154,90 @@
   width: 100%;
 }
 
-/* ACCESSIBILITY */
-@media (prefers-reduced-motion: reduce) {
-  .community-card {
-    transition: none;
+/* ==========================================================================
+   CONTROL DE INTERACCIONES DE LA TARJETA (FILTRADO INTELIGENTE)
+   ========================================================================== */
+
+/* Se activa el click en la card SOLO si no se está pulsando el botón interno */
+.community-card:active:not(:has(.community-card-actions:active)) {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+/* Si se presiona el botón, congelamos los estilos de la card de forma agresiva */
+.community-card:has(.community-card-actions:active) {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--border-soft) !important;
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES (>= 600px)
+   ========================================================================== */
+@media (min-width: 600px) {
+  .communities-header {
+    padding: 1rem;
   }
 
-  .community-card:active {
-    transform: none;
+  .communities-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .create-community-btn:hover {
+    background: var(--hover-color);
+  }
+
+  .communities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 600px;
+  }
+
+  /* Hover condicional en escritorio */
+  .community-card:hover:not(:has(.community-card-actions:hover)) {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+
+  .community-card {
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .community-card-avatar {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .community-avatar-fallback {
+    font-size: 2.5rem;
+  }
+
+  .community-card h3 {
+    font-size: 1rem;
+  }
+
+  .community-members {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
   }
 }
 
-/* STATES */
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES (>= 1024px)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .communities-grid {
+    max-width: 900px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+/* ==========================================================================
+   ESTADOS GLOBALES DE LA PÁGINA
+   ========================================================================== */
 .communities-loading {
   display: flex;
   justify-content: center;
@@ -258,7 +264,21 @@
   font-size: 0.95rem;
 }
 
-/* COMMUNITY CREATOR */
+/* ==========================================================================
+   ACCESIBILIDAD Y RENDIMIENTO
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .community-card {
+    transition: none;
+  }
+  .community-card:active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   PANEL: CREADOR DE COMUNIDADES
+   ========================================================================== */
 .community-creator-page {
   display: flex;
   flex-direction: column;
@@ -267,13 +287,6 @@
   overflow-y: auto;
   box-sizing: border-box;
   background: var(--background);
-}
-
-.community-creator-page .communities-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text-color);
 }
 
 .community-creator-form {

@@ -6,7 +6,33 @@ export function useCommunityDetail(communityName) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const fetchCommunityDetail = useCallback(async () => {
+  useEffect(() => {
+    if (!communityName) {
+      setError('Nombre de comunidad inválido')
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    const fetchCommunityDetail = async () => {
+      try {
+        const communityData = await getCommunityByNameRequest(communityName)
+        setCommunity(communityData)
+        setError(null)
+      } catch (err) {
+        setError(err.message || 'Error cargando comunidad')
+        setCommunity(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCommunityDetail()
+  }, [communityName])
+
+  const refetch = useCallback(async () => {
     if (!communityName) {
       setError('Nombre de comunidad inválido')
       setLoading(false)
@@ -19,6 +45,7 @@ export function useCommunityDetail(communityName) {
     try {
       const communityData = await getCommunityByNameRequest(communityName)
       setCommunity(communityData)
+      setError(null)
     } catch (err) {
       setError(err.message || 'Error cargando comunidad')
       setCommunity(null)
@@ -26,14 +53,6 @@ export function useCommunityDetail(communityName) {
       setLoading(false)
     }
   }, [communityName])
-
-  useEffect(() => {
-    fetchCommunityDetail()
-  }, [fetchCommunityDetail])
-
-  const refetch = useCallback(() => {
-    fetchCommunityDetail()
-  }, [fetchCommunityDetail])
 
   return { community, loading, error, refetch }
 }

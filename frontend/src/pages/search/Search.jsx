@@ -3,19 +3,14 @@ import UserCard from "../../shared/ui/UserCard";
 import Loading from "../../shared/components/Loading";
 import "./Search.css";
 import { getAllUsersRequest } from "../../features/users/services/users.service";
-import {
-  followUserRequest,
-  unfollowUserRequest,
-} from "../../features/users/services/users.service.js";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 const Search = () => {
-  const { currentUser, incrementFollowing, decrementFollowing } = useAuth();
+  const { currentUser } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [followLoadingMap, setFollowLoadingMap] = useState({});
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -84,35 +79,6 @@ const Search = () => {
     }
   };
 
-  const handleFollowToggle = async (username) => {
-    setFollowLoadingMap((prev) => ({ ...prev, [username]: true }));
-
-    try {
-      const user = users.find((item) => item.username === username);
-      const currentlyFollowing = Boolean(user?.isFollowing);
-
-      if (currentlyFollowing) {
-        await unfollowUserRequest(username);
-        decrementFollowing();
-      } else {
-        await followUserRequest(username);
-        incrementFollowing();
-      }
-
-      setUsers((prev) =>
-        prev.map((item) =>
-          item.username === username
-            ? { ...item, isFollowing: !currentlyFollowing }
-            : item
-        )
-      );
-    } catch (err) {
-      setError(err.message || "Error actualizando seguimiento");
-    } finally {
-      setFollowLoadingMap((prev) => ({ ...prev, [username]: false }));
-    }
-  };
-
   return (
     <div className="search-page">
       <div className="search-input-container">
@@ -145,8 +111,6 @@ const Search = () => {
                     profilePictureUrl={user.profilePictureUrl}
                     showFollowButton={currentUser?.username !== user.username}
                     isFollowing={Boolean(user.isFollowing)}
-                    onFollowToggle={handleFollowToggle}
-                    followLoading={Boolean(followLoadingMap[user.username])}
                   />
                 ))}
 

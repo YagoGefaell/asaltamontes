@@ -1,6 +1,7 @@
 // UserCard.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import FollowUserButton from "../components/FollowUserButton";
 import Button from "../forms/Button";
 import { formatters } from "../../utils/helpers";
 import "./UserCard.css";
@@ -12,7 +13,6 @@ const UserCard = ({
   showFollowButton = false,
   isFollowing = false,
   onFollowToggle = null,
-  followLoading = false,
   showChatButton = false,
   onChatClick = null,
   chatLoading = false,
@@ -42,13 +42,6 @@ const UserCard = ({
 
   const handlePressEnd = () => {
     setPressed(false);
-  };
-
-  const handleFollowClick = (e) => {
-    e.stopPropagation();
-    if (onFollowToggle && !followLoading) {
-      onFollowToggle(username);
-    }
   };
 
   const handleChatClick = (e) => {
@@ -84,14 +77,13 @@ const UserCard = ({
       </div>
       {showFollowButton && (
         <div className="user-card-action">
-          <Button
-            variant={isFollowing ? "outline" : "primary"}
-            size="small"
-            onClick={handleFollowClick}
-            disabled={followLoading}
-          >
-            {followLoading ? '...' : (isFollowing ? 'Siguiendo' : 'Seguir')}
-          </Button>
+          <FollowUserButton
+            userId={username}
+            initialIsFollowing={isFollowing}
+            onToggle={onFollowToggle}
+            followLabel="Seguir"
+            unfollowLabel="Siguiendo"
+          />
         </div>
       )}
       {!showFollowButton && showChatButton && (

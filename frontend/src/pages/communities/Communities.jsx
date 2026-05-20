@@ -1,8 +1,9 @@
 import "./Communities.css";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
-import { createCommunityRequest, joinCommunityRequest, leaveCommunityRequest } from "../../features/communities/services/communities.service.js";
+import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
+import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import { formatters } from "../../utils/helpers.js";
 import Loading from "../../shared/components/Loading";
 import Button from "../../shared/forms/Button";
@@ -14,19 +15,6 @@ const Communities = () => {
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
-  const [joinLoadingMap, setJoinLoadingMap] = useState({});
-  const [membershipMap, setMembershipMap] = useState({});
-
-  // Initialize membership map from communities data
-  useEffect(() => {
-    if (communities.length > 0) {
-      const map = {};
-      communities.forEach(c => {
-        map[c.id] = c.isMember;
-      });
-      setMembershipMap(map);
-    }
-  }, [communities]);
 
   const openCreator = useCallback(() => {
     setIsCreatorOpen(true);
@@ -51,47 +39,6 @@ const Communities = () => {
       }
     },
     [creatingCommunity, refetch]
-  );
-
-  const handleJoinCommunity = useCallback(
-    async (e, communityId) => {
-      e.stopPropagation();
-      
-      setJoinLoadingMap(prev => ({ ...prev, [communityId]: true }));
-      
-      try {
-        await joinCommunityRequest(communityId);
-        setMembershipMap(prev => ({ ...prev, [communityId]: true }));
-      } catch (err) {
-        console.error("Error joining community:", err);
-      }
-    },
-    []
-  );
-
-      } finally {
-        setJoinLoadingMap(prev => ({ ...prev, [communityId]: false }));
-      }
-    },
-    []
-  );
-
-  const handleLeaveCommunity = useCallback(
-    async (e, communityId) => {
-      e.stopPropagation();
-      
-      setJoinLoadingMap(prev => ({ ...prev, [communityId]: true }));
-      
-      try {
-        await leaveCommunityRequest(communityId);
-        setMembershipMap(prev => ({ ...prev, [communityId]: false }));
-      } catch (err) {
-        console.error("Error leaving community:", err);
-      } finally {
-        setJoinLoadingMap(prev => ({ ...prev, [communityId]: false }));
-      }
-    },
-    []
   );
 
   if (isCreatorOpen) {
@@ -150,9 +97,6 @@ const Communities = () => {
           <>
             {communities.length > 0 ? (
               communities.map((community) => {
-                const isMember = membershipMap[community.id] ?? community.isMember;
-                const isLoading = joinLoadingMap[community.id];
-                
                 return (
                   <div 
                     key={community.id} 
@@ -183,25 +127,13 @@ const Communities = () => {
                     <h3>{community.name}</h3>
                     <span className="community-members">Miembros</span>
                     
-                    <div className="community-card-actions">
-                      {!isMember ? (
-                        <Button 
-                          onClick={(e) => handleJoinCommunity(e, community.id)}
-                          disabled={isLoading}
-                          size="small"
-                        >
-                          {isLoading ? "Uniéndose..." : "Unirse"}
-                        </Button>
-                      ) : (
-                        <Button 
-                          onClick={(e) => handleLeaveCommunity(e, community.id)}
-                          disabled={isLoading}
-                          variant="secondary"
-                          size="small"
-                        >
-                          {isLoading ? "Saliendo..." : "Salir"}
-                        </Button>
-                      )}
+                    <div className="community-card-actions" onClick={(e) => e.stopPropagation()}>
+                      <CommunityJoinButton
+                        communityId={community.id}
+                        initialIsMember={community.isMember}
+                        joinLabel="Unirse"
+                        memberLabel="Miembro"
+                      />
                     </div>
                   </div>
                 );

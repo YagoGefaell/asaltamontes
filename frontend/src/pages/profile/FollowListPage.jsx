@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import UserCard from "../../shared/ui/UserCard";
 import Loading from "../../shared/components/Loading";
-import { followUserRequest, unfollowUserRequest } from "../../features/users/services/users.service";
 import "./FollowersFollowing.css";
 
 function FollowListPage({ 
@@ -14,7 +13,7 @@ function FollowListPage({
   searchPlaceholder
 }) {
   const navigate = useNavigate();
-  const { incrementFollowing, decrementFollowing } = useAuth();
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -22,9 +21,6 @@ function FollowListPage({
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  // totalElements and setTotalElements removed as they are unused
-  const [followLoadingMap, setFollowLoadingMap] = useState({});
-  const [followErrorMsg, setFollowErrorMsg] = useState(null);
 
   const fetchUsers = React.useCallback(async (page = 0, reset = false) => {
     if (page === 0) {
@@ -70,46 +66,6 @@ function FollowListPage({
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
       fetchUsers(currentPage + 1);
-    }
-  };
-
-  const handleFollowToggle = async (username) => {
-    const user = users.find(u => u.username === username);
-    if (!user) return;
-
-    setFollowLoadingMap(prev => ({ ...prev, [username]: true }));
-    setFollowErrorMsg(null);
-
-    try {
-      if (user.isFollowing) {
-        await unfollowUserRequest(username);
-        // Update global following count
-        decrementFollowing();
-        // Remove from list if in "following" page
-        if (type === 'following') {
-          setUsers(prev => prev.filter(u => u.username !== username));
-        } else {
-          // Update isFollowing status for followers page
-          setUsers(prev => prev.map(u => 
-            u.username === username ? { ...u, isFollowing: false } : u
-          ));
-        }
-      } else {
-        await followUserRequest(username);
-        // Update global following count
-        incrementFollowing();
-        setUsers(prev => prev.map(u => 
-          u.username === username ? { ...u, isFollowing: true } : u
-        ));
-      }
-    } catch (err) {
-      console.error('Error toggling follow:', err);
-      const errorMessage = err.message || 'Error al realizar la acción';
-      setFollowErrorMsg(errorMessage);
-      // Hide error after 3 seconds
-      setTimeout(() => setFollowErrorMsg(null), 3000);
-    } finally {
-      setFollowLoadingMap(prev => ({ ...prev, [username]: false }));
     }
   };
 
@@ -179,8 +135,6 @@ function FollowListPage({
                     profilePictureUrl={user.profilePictureUrl}
                     showFollowButton={true}
                     isFollowing={user.isFollowing ?? (type === 'following')}
-                    onFollowToggle={handleFollowToggle}
-                    followLoading={followLoadingMap[user.username] || false}
                   />
                 ))}
                 
