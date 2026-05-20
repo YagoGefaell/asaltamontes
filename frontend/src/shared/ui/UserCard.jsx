@@ -21,7 +21,7 @@ const UserCard = ({
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const navigate = useNavigate();
   const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
-  const initial = (username || "?").trim().charAt(0).toUpperCase() || "?";
+  const initial = formatters.getInitial(fullName, username);
 
   const handleCardClick = (e) => {
     // Don't navigate if clicking on a button or inside button container

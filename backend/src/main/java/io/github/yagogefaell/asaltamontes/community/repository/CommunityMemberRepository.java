@@ -13,6 +13,7 @@ import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, Long> {
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
+            c.id,
             c.name, 
             c.imageUrl,
             CASE WHEN m.id IS NOT NULL THEN true ELSE false END

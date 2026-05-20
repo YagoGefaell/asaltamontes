@@ -32,6 +32,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     Page<CommunityMemberDto> findMembersExcept(@Param("communityId") Long communityId, @Param("currentUserId") Long currentUserId, Pageable pageable);
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
+            c.id,
             c.name,
             c.imageUrl,
             CASE WHEN m.id IS NOT NULL THEN true ELSE false END
@@ -45,6 +46,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto(
+            c.id,
             c.name,
             c.description,
             c.imageUrl,

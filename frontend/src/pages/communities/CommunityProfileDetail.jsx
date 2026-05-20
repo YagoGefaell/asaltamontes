@@ -1,25 +1,34 @@
 import "./CommunityProfile.css";
-import { useState } from "react";
-import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
 import FormError from "../../shared/forms/FormError";
 import { formatters } from "../../utils/helpers";
 import { joinCommunityRequest, leaveCommunityRequest } from "../../features/communities/services/communities.service";
+import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 
-function CommunityProfileDetail({ 
-  community = null, 
-  loading = false, 
-  error = null,
-  isMember = false,
-  onBack = null,
-  onRefetch = null
-}) {
+function CommunityProfile() {
+  const { communityName } = useParams();
+  const navigate = useNavigate();
+  const { community, loading, error, refetch } = useCommunityDetail(communityName);
+  
   const [joinLoading, setJoinLoading] = useState(false);
   const [joinError, setJoinError] = useState(null);
-  const [isUserMember, setIsUserMember] = useState(isMember);
+  const [isUserMember, setIsUserMember] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
+
+  useEffect(() => {
+    if (!communityName) {
+      navigate("/communities");
+      return;
+    }
+  }, [communityName, navigate]);
+
+  useEffect(() => {
+    setIsUserMember(community?.isMember || false);
+  }, [community?.isMember]);
 
   const handleJoinCommunity = async () => {
     if (!community?.id) return;
@@ -30,7 +39,7 @@ function CommunityProfileDetail({
     try {
       await joinCommunityRequest(community.id);
       setIsUserMember(true);
-      if (onRefetch) onRefetch();
+      if (refetch) refetch();
     } catch (err) {
       setJoinError(err.message || "Error al unirse a la comunidad");
       console.error("Error joining community:", err);
@@ -48,7 +57,7 @@ function CommunityProfileDetail({
     try {
       await leaveCommunityRequest(community.id);
       setIsUserMember(false);
-      if (onRefetch) onRefetch();
+      if (refetch) refetch();
     } catch (err) {
       setJoinError(err.message || "Error al salir de la comunidad");
       console.error("Error leaving community:", err);
@@ -69,41 +78,9 @@ function CommunityProfileDetail({
     return (
       <div className="community-profile-page">
         <div className="profile-header other-profile">
-          {onBack && (
-            <button
-              className="back-btn"
-              onClick={onBack}
-              aria-label="Volver atrás"
-            >
-              <svg
-                className="back-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-          )}
-        </div>
-        {(error || !community) && (
-          <FormError message={error || "Comunidad no encontrada"} />
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div className="community-profile-page">
-      {/* Header similar al perfil de usuario */}
-      <div className="profile-header other-profile">
-        {onBack && (
           <button
             className="back-btn"
-            onClick={onBack}
+            onClick={() => navigate(-1)}
             aria-label="Volver atrás"
           >
             <svg
@@ -118,21 +95,49 @@ function CommunityProfileDetail({
               <polyline points="15 18 9 12 15 6" />
             </svg>
           </button>
+        </div>
+        {(error || !community) && (
+          <FormError message={error || "Comunidad no encontrada"} />
         )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="community-profile-page">
+      {/* Header similar al perfil de usuario */}
+      <div className="profile-header other-profile">
+        <button
+          className="back-btn"
+          onClick={() => navigate(-1)}
+          aria-label="Volver atrás"
+        >
+          <svg
+            className="back-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="15 18 9 12 15 6" />
+          </svg>
+        </button>
       </div>
 
       {/* Community Avatar */}
       <div className="profile-avatar-container">
-        {!avatarLoadError && community.imageUrl ? (
+        {!avatarLoadError ? (
           <img
-            src={community.imageUrl}
+            src={formatters.avatar(community.imageUrl, community.name, community.name)}
             alt={community.name}
             className="profile-avatar"
             onError={() => setAvatarLoadError(true)}
           />
         ) : (
           <div className="profile-avatar profile-avatar-fallback" aria-hidden="true">
-            {community.name?.charAt(0)?.toUpperCase()}
+            {formatters.getInitial(community.name, community.name)}
           </div>
         )}
       </div>
@@ -197,7 +202,7 @@ function CommunityProfileDetail({
                       />
                     ) : (
                       <div className="member-avatar-placeholder">
-                        {member.username?.charAt(0)?.toUpperCase()}
+                        {formatters.getInitial(member.username, member.username)}
                       </div>
                     )}
                   </div>
@@ -215,4 +220,4 @@ function CommunityProfileDetail({
   );
 }
 
-export default CommunityProfileDetail;
+export default CommunityProfile;

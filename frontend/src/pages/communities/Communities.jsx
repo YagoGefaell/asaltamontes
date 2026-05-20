@@ -1,10 +1,11 @@
 import "./Communities.css";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
-import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
+import { createCommunityRequest, joinCommunityRequest, leaveCommunityRequest } from "../../features/communities/services/communities.service.js";
 import { formatters } from "../../utils/helpers.js";
 import Loading from "../../shared/components/Loading";
+import Button from "../../shared/forms/Button";
 import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 
 const Communities = () => {
@@ -13,6 +14,19 @@ const Communities = () => {
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
+  const [joinLoadingMap, setJoinLoadingMap] = useState({});
+  const [membershipMap, setMembershipMap] = useState({});
+
+  // Initialize membership map from communities data
+  useEffect(() => {
+    if (communities.length > 0) {
+      const map = {};
+      communities.forEach(c => {
+        map[c.id] = c.isMember;
+      });
+      setMembershipMap(map);
+    }
+  }, [communities]);
 
   const openCreator = useCallback(() => {
     setIsCreatorOpen(true);
@@ -37,6 +51,47 @@ const Communities = () => {
       }
     },
     [creatingCommunity, refetch]
+  );
+
+  const handleJoinCommunity = useCallback(
+    async (e, communityId) => {
+      e.stopPropagation();
+      
+      setJoinLoadingMap(prev => ({ ...prev, [communityId]: true }));
+      
+      try {
+        await joinCommunityRequest(communityId);
+        setMembershipMap(prev => ({ ...prev, [communityId]: true }));
+      } catch (err) {
+        console.error("Error joining community:", err);
+      }
+    },
+    []
+  );
+
+      } finally {
+        setJoinLoadingMap(prev => ({ ...prev, [communityId]: false }));
+      }
+    },
+    []
+  );
+
+  const handleLeaveCommunity = useCallback(
+    async (e, communityId) => {
+      e.stopPropagation();
+      
+      setJoinLoadingMap(prev => ({ ...prev, [communityId]: true }));
+      
+      try {
+        await leaveCommunityRequest(communityId);
+        setMembershipMap(prev => ({ ...prev, [communityId]: false }));
+      } catch (err) {
+        console.error("Error leaving community:", err);
+      } finally {
+        setJoinLoadingMap(prev => ({ ...prev, [communityId]: false }));
+      }
+    },
+    []
   );
 
   if (isCreatorOpen) {
@@ -94,37 +149,63 @@ const Communities = () => {
         {!loading && !error && (
           <>
             {communities.length > 0 ? (
-              communities.map((community) => (
-                <div 
-                  key={community.id} 
-                  className="community-card"
-                  onClick={() => navigate(`/communities/${community.name}`)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      navigate(`/communities/${community.name}`);
-                    }
-                  }}
-                >
-                  <div className="community-card-avatar">
-                    {!imageErrors[community.name] ? (
-                      <img 
-                        src={formatters.avatar(community.imageUrl, community.name, community.name)}
-                        alt={community.name}
-                        className="community-avatar-image"
-                        onError={() => setImageErrors(prev => ({ ...prev, [community.name]: true }))}
-                      />
-                    ) : (
-                      <div className="community-avatar-fallback" aria-hidden="true">
-                        {community.name?.charAt(0)?.toUpperCase()}
-                      </div>
-                    )}
+              communities.map((community) => {
+                const isMember = membershipMap[community.id] ?? community.isMember;
+                const isLoading = joinLoadingMap[community.id];
+                
+                return (
+                  <div 
+                    key={community.id} 
+                    className="community-card"
+                    onClick={() => navigate(`/communities/${community.name}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        navigate(`/communities/${community.name}`);
+                      }
+                    }}
+                  >
+                    <div className="community-card-avatar">
+                      {!imageErrors[community.name] ? (
+                        <img 
+                          src={formatters.avatar(community.imageUrl, community.name, community.name)}
+                          alt={community.name}
+                          className="community-avatar-image"
+                          onError={() => setImageErrors(prev => ({ ...prev, [community.name]: true }))}
+                        />
+                      ) : (
+                        <div className="community-avatar-fallback" aria-hidden="true">
+                          {formatters.getInitial(community.name, community.name)}
+                        </div>
+                      )}
+                    </div>
+                    <h3>{community.name}</h3>
+                    <span className="community-members">Miembros</span>
+                    
+                    <div className="community-card-actions">
+                      {!isMember ? (
+                        <Button 
+                          onClick={(e) => handleJoinCommunity(e, community.id)}
+                          disabled={isLoading}
+                          size="small"
+                        >
+                          {isLoading ? "Uniéndose..." : "Unirse"}
+                        </Button>
+                      ) : (
+                        <Button 
+                          onClick={(e) => handleLeaveCommunity(e, community.id)}
+                          disabled={isLoading}
+                          variant="secondary"
+                          size="small"
+                        >
+                          {isLoading ? "Saliendo..." : "Salir"}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <h3>{community.name}</h3>
-                  <span className="community-members">Miembros</span>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="no-results">No hay comunidades disponibles</p>
             )}

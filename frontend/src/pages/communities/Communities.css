@@ -210,6 +210,16 @@
   }
 }
 
+.community-card-actions {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.community-card-actions button {
+  width: 100%;
+}
+
 /* ACCESSIBILITY */
 @media (prefers-reduced-motion: reduce) {
   .community-card {

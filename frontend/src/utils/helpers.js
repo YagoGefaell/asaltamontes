@@ -21,7 +21,13 @@ export const formatters = {
     if (profilePictureUrl) return profilePictureUrl;
     
     const name = fullName || username || 'Usuario';
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=178B9F&color=fff&size=200&bold=true`;
+    const initial = name.trim().charAt(0).toUpperCase() || '?';
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(initial)}&background=178B9F&color=fff&size=200&bold=true`;
+  },
+
+  getInitial: (fullName, username) => {
+    const name = fullName || username || 'Usuario';
+    return name.trim().charAt(0).toUpperCase() || '?';
   },
 }
 

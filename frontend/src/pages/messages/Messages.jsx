@@ -2,6 +2,7 @@ import "./Messages.css";
 import { useEffect, useRef, useState, useContext, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { formatters } from "../../utils/helpers";
 import ConversationsPane from "./components/ConversationsPanel";
 import ChatPane from "./components/ChatPanel";
 import GroupCreatorPanel from "./components/GroupCreatorPanel";
@@ -42,7 +43,7 @@ const Messages = () => {
       id: null,
       name: username,
       avatar: username.trim().charAt(0).toUpperCase() || "?",
-      avatarUrl: selectedConversation.displayImage || selectedConversation.avatarUrl || null,
+      avatarUrl: formatters.avatar(selectedConversation.displayImage || selectedConversation.avatarUrl, username, username),
       unreadCount: 0,
       lastMsg: selectedConversation.lastMessage || "Empieza la conversacion",
     };

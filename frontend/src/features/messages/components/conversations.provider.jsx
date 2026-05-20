@@ -262,30 +262,24 @@ export const ConversationsProvider = ({ children }) => {
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
 
-    const localMessages = chatMessages[conversationId] || [];
+    const alreadyLoaded = chatMessages[conversationId];
+    if (alreadyLoaded) {
+      markConversationAsRead(conversationId, alreadyLoaded);
+      return;
+    }
 
     try {
-      const serverMessages = await getConversationMessagesRequest(conversationId);
-      const normalizedServerMessages = Array.isArray(serverMessages) ? serverMessages : [];
-
-      const combinedMessages = [...normalizedServerMessages];
-      const serverMessageIds = new Set(normalizedServerMessages.map(m => m.id));
-
-      localMessages.forEach(localMsg => {
-        if (!serverMessageIds.has(localMsg.id)) {
-          combinedMessages.push(localMsg);
-        }
-      });
-
-      combinedMessages.sort((a, b) => new Date(a.sentAt) - new Date(b.sentAt));
+      const messages = await getConversationMessagesRequest(conversationId);
+      const normalizedMessages = Array.isArray(messages) ? messages : [];
 
       setChatMessages((prev) => ({
         ...prev,
-        [conversationId]: combinedMessages,
+        [conversationId]: normalizedMessages,
       }));
-      markConversationAsRead(conversationId, combinedMessages);
+      markConversationAsRead(conversationId, normalizedMessages);
     } catch {
-      markConversationAsRead(conversationId, localMessages);
+      // No bloqueamos la UI del chat si falla la carga inicial del historial.
+      markConversationAsRead(conversationId);
     }
   }, [chatMessages, markConversationAsRead]);
 

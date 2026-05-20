@@ -171,7 +171,7 @@ function Profile({
   };
 
   const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
-  const avatarInitial = username.trim().charAt(0).toUpperCase() || "?";
+  const avatarInitial = formatters.getInitial(username, username);
   const shouldShowProfileImage = !avatarLoadError;
 
   return (
