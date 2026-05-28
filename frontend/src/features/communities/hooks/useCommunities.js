@@ -27,6 +27,7 @@ export function useCommunities() {
 
   return {
     communities,
+    setCommunities,
     loading,
     error,
     refetch: fetchCommunities,

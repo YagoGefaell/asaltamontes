@@ -7,5 +7,5 @@ public record CommunityMemberDto(
     String fullName,
     String profilePictureUrl,
     CommunityRole role,
-    boolean isFollowing
+    Boolean isFollowing
 ) {}

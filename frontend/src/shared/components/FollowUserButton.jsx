@@ -1,11 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useOptimisticToggle } from '../../hooks/useOptimisticToggle'
+import { useAuth } from '../../features/auth/hooks/useAuth'
 import { followUserRequest, unfollowUserRequest } from '../../features/users/services/users.service'
 import './FollowUserButton.css'
 
-/**
- * Botón para seguir/dejar de seguir a un usuario con debounce silencioso
- */
 function FollowUserButton({ 
   userId, 
   initialIsFollowing = false, 
@@ -13,15 +11,18 @@ function FollowUserButton({
   onToggle = null,
   followLabel = "Seguir",
   unfollowLabel = "Siguiendo"
-  // 1. ELIMINADO: Ya no necesitamos 'loadingLabel'
 }) {
+  const { incrementFollowing, decrementFollowing } = useAuth()
+  
   const { state, isLoading, error, toggle } = useOptimisticToggle(
     initialIsFollowing,
     async (isFollowing) => {
       if (isFollowing) {
         await followUserRequest(userId)
+        incrementFollowing()
       } else {
         await unfollowUserRequest(userId)
+        decrementFollowing()
       }
     },
     delayBeforeRequest
@@ -59,8 +60,6 @@ function FollowUserButton({
       <button
         className={buttonClass}
         onClick={handleClick}
-        /* 4. MODIFICADO: Quitamos 'disabled={isLoading}' para dar libertad total de click 
-           y permitir la cancelación instantánea si el usuario se arrepiente */
         aria-label={`${state ? 'Dejar de seguir a' : 'Seguir a'} ${userId}`}
       >
         {buttonText}

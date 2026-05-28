@@ -54,5 +54,5 @@ export function useCommunityDetail(communityName) {
     }
   }, [communityName])
 
-  return { community, loading, error, refetch }
+  return { community, setCommunity, loading, error, refetch }
 }

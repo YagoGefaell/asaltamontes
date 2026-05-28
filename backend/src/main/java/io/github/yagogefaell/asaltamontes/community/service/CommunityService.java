@@ -42,7 +42,7 @@ public class CommunityService {
 
         community = communityRepository.save(community);
 
-        CommunityMember communityMember = new CommunityMember(community, currentUser, CommunityRole.MEMBER);
+        CommunityMember communityMember = new CommunityMember(community, currentUser, CommunityRole.OWNER);
         communityMemberRepository.save(communityMember);
         
         return community;

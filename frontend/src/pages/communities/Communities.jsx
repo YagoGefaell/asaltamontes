@@ -11,7 +11,7 @@ import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 
 const Communities = () => {
   const navigate = useNavigate();
-  const { communities, loading, error, refetch } = useCommunities();
+  const { communities, setCommunities, loading, error, refetch } = useCommunities();
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
@@ -24,6 +24,16 @@ const Communities = () => {
     if (creatingCommunity) return;
     setIsCreatorOpen(false);
   }, [creatingCommunity]);
+
+  const handleToggleCommunity = useCallback((communityId, newRole) => {
+    setCommunities((prev) =>
+      prev.map((c) => (c.id === communityId ? { ...c, role: newRole } : c))
+    );
+  }, [setCommunities]);
+
+  const handleToggleCommunityForButton = useCallback((communityId) => {
+    return (newRole) => handleToggleCommunity(communityId, newRole);
+  }, [handleToggleCommunity]);
 
   const handleCreateCommunity = useCallback(
     async (communityData) => {
@@ -132,9 +142,10 @@ const Communities = () => {
                     <div className="community-card-actions" onClick={(e) => e.stopPropagation()}>
                       <CommunityJoinButton
                         communityId={community.id}
-                        initialIsMember={community.isMember}
+                        role={community.role}
                         joinLabel="Unirse"
                         memberLabel="Miembro"
+                        onToggle={handleToggleCommunityForButton(community.id)}
                       />
                     </div>
                   </div>

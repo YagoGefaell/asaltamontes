@@ -16,12 +16,11 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             c.id,
             c.name, 
             c.imageUrl,
-            CASE WHEN m.id IS NOT NULL THEN true ELSE false END,
+            m.role,
             c.memberCount
         )
         FROM CommunityMember m 
-        JOIN m.community c 
-        LEFT JOIN c.createdBy creator
+        JOIN m.community c
         WHERE m.userAccount.id = :userId
     """)
     Page<CommunitySearchDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);

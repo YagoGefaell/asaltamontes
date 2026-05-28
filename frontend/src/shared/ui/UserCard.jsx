@@ -24,7 +24,6 @@ const UserCard = ({
   const initial = formatters.getInitial(fullName, username);
 
   const handleCardClick = (e) => {
-    // Don't navigate if clicking on a button or inside button container
     const target = e.target;
     if (target.closest('button') || target.closest('.user-card-action')) {
       return;

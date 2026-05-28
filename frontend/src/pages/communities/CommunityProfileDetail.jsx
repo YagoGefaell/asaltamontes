@@ -10,7 +10,7 @@ import { useCommunityDetail } from "../../features/communities/hooks/useCommunit
 function CommunityProfile() {
   const { communityName } = useParams();
   const navigate = useNavigate();
-  const { community, loading, error } = useCommunityDetail(communityName); // Eliminamos refetch de aquí ya que no lo usaremos
+  const { community, setCommunity, loading, error } = useCommunityDetail(communityName);
   
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
@@ -20,6 +20,10 @@ function CommunityProfile() {
       navigate("/communities");
     }
   }, [communityName, navigate]);
+
+  const handleToggleCommunity = (newRole) => {
+    setCommunity((prev) => ({ ...prev, role: newRole }));
+  };
 
   if (loading) {
     return (
@@ -79,7 +83,6 @@ function CommunityProfile() {
         </button>
       </div>
 
-      {/* Community Avatar */}
       <div className="profile-avatar-container">
         {!avatarLoadError ? (
           <img
@@ -95,7 +98,6 @@ function CommunityProfile() {
         )}
       </div>
 
-      {/* Community Info */}
       <div className="profile-main">
         <h2 className="username">{community.name}</h2>
         
@@ -113,11 +115,10 @@ function CommunityProfile() {
         <div className="profile-actions">
           <CommunityJoinButton
             communityId={community.id}
-            initialIsMember={community.isMember || false}
+            role={community.role}
             joinLabel="Unirse"
             memberLabel="Miembro"
-            /* Quitamos la prop onToggle para evitar que se disparen llamadas 
-               asíncronas paralelas que pisen el estado del botón */
+            onToggle={handleToggleCommunity}
           />
         </div>
       </div>

@@ -38,7 +38,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             c.id,
             c.name,
             c.imageUrl,
-            CASE WHEN m.id IS NOT NULL THEN true ELSE false END,
+            m.role,
             c.memberCount
         ) 
         FROM Community c
@@ -54,8 +54,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             c.name,
             c.description,
             c.imageUrl,
-            CASE WHEN c.createdBy.id = :userId THEN true ELSE false END,
-            CASE WHEN m.id IS NOT NULL THEN true ELSE false END,
+            m.role,
             c.memberCount
         ) 
         FROM Community c

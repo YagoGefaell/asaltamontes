@@ -1,69 +1,82 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useOptimisticToggle } from '../../hooks/useOptimisticToggle'
 import { joinCommunityRequest, leaveCommunityRequest } from '../../features/communities/services/communities.service'
 import './CommunityJoinButton.css'
 
-/**
- * Botón para unirse/salir de una comunidad con debounce silencioso
- */
 function CommunityJoinButton({ 
   communityId, 
-  initialIsMember = false, 
   delayBeforeRequest = 500,
   onToggle = null,
   joinLabel = "Unirse",
-  memberLabel = "Miembro"
-  // 1. ELIMINADO: Ya no necesitamos 'loadingLabel' porque el botón es 100% interactivo e instantáneo
+  memberLabel = "Miembro",
+  role = null,
+  ownerLabel = "Propietario"
 }) {
-  const { state, isLoading, error, toggle } = useOptimisticToggle(
-    initialIsMember,
-    async (isMember) => {
-      if (isMember) {
-        await joinCommunityRequest(communityId)
-      } else {
-        await leaveCommunityRequest(communityId)
-      }
-    },
-    delayBeforeRequest
-  )
-
-  const previousStateRef = useRef(state)
+  // Determinar si es miembro/owner basado en el role prop actual
+  const isMember = role !== null
+  const isOwner = role === 'OWNER'
+  
+  // Ref para ignorar cambios en initialState que ocurren después de una acción
+  const lastActionTimeRef = useRef(0)
+  
   const onToggleRef = useRef(onToggle)
 
   useEffect(() => {
     onToggleRef.current = onToggle
   }, [onToggle])
 
-  useEffect(() => {
-    if (!isLoading && state !== previousStateRef.current) {
-      previousStateRef.current = state
-      if (onToggleRef.current) {
-        onToggleRef.current(state)
-      }
+  const handleSave = useCallback(async (newIsMember) => {
+    if (newIsMember) {
+      await joinCommunityRequest(communityId)
+    } else {
+      await leaveCommunityRequest(communityId)
     }
-  }, [state, isLoading])
+
+    lastActionTimeRef.current = Date.now()
+
+    if (onToggleRef.current) {
+      const newRole = newIsMember ? 'MEMBER' : null
+      onToggleRef.current(newRole)
+    }
+  }, [communityId])
+
+  const { state, error, toggle } = useOptimisticToggle(
+    isMember,
+    handleSave,
+    delayBeforeRequest
+  )
 
   const handleClick = (e) => {
     e.currentTarget.blur()
     toggle()
   }
+  
+  let buttonText
+  let buttonClass = 'community-join-button'
+  
+  if (role === 'OWNER') {
+    buttonText = ownerLabel
+    buttonClass += ' owner'
+  } else if (role === 'MODERATOR') {
+    buttonText = 'Moderador'
+    buttonClass += ' moderator'
+  } else if (state === true) {
+    buttonText = memberLabel
+    buttonClass += ' member'
+  } else {
+    buttonText = joinLabel
+    buttonClass += ' not-member'
+  }
 
-  // 2. MODIFICADO: El texto cambia INSTANTÁNEAMENTE según el estado optimista.
-  // Ya no hay esperas ni textos intermedios de carga.
-  const buttonText = state ? memberLabel : joinLabel
-
-  // 3. MODIFICADO: Eliminamos la clase '${isLoading ? 'loading' : ''}' para que no renderice el spinner de CSS
-  const buttonClass = `community-join-button ${state ? 'member' : 'not-member'}`
+  const isDisabled = isOwner
 
   return (
     <div className="community-join-button-container">
       <button
         className={buttonClass}
         onClick={handleClick}
-        /* 4. MODIFICADO: QUITAMOS disabled={isLoading}. 
-           Esto permite que si el usuario se confunde, pueda volver a hacer click inmediatamente 
-           para cancelar la petición antes de que expire el delay. */
-        aria-label={`${state ? 'Salir de' : 'Unirse a'} la comunidad`}
+        disabled={isDisabled}
+        aria-label={isOwner ? 'Eres propietario de esta comunidad' : `${isMember ? 'Salir de' : 'Unirse a'} la comunidad`}
       >
         {buttonText}
       </button>
