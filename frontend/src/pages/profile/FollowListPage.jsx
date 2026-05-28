@@ -106,12 +106,6 @@ function FollowListPage({
         />
       </div>
 
-      {followErrorMsg && (
-        <div className="follow-error-banner">
-          {followErrorMsg}
-        </div>
-      )}
-
       <div className={`${type}-results`}>
         {loading && (
           <div className={`${type}-loading`}>

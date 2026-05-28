@@ -48,6 +48,9 @@ public class Community {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "member_count", nullable = false)
+    private Long memberCount = 1L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private UserAccount createdBy;

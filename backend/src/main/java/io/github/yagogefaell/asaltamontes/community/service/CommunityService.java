@@ -65,21 +65,27 @@ public class CommunityService {
         return communityRepository.findMembersExcept(communityId, userId, pageable);
     }
 
+    public boolean isOwner(Long communityId, UserAccount currentUser) {
+        return communityRepository.isOwner(communityId, currentUser.getId());
+    }
+
     @Transactional
     public void joinCommunity(Long communityId, UserAccount currentUser) {
         Community communityRef = communityRepository.getReferenceById(communityId);
 
         CommunityMember communityMember = new CommunityMember(communityRef, currentUser);
         communityMemberRepository.saveAndFlush(communityMember);
+        communityRepository.incrementMemberCount(communityId);
     }
 
     @Transactional
-    public void leaveCommunity(Long communityId, Long currentUserId) {
-        long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUserId);
+    public void leaveCommunity(Long communityId, UserAccount currentUser) {
+        long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {
             throw new IllegalArgumentException("User is not a member of this community");
         }
+        communityRepository.decrementMemberCount(communityId);
     }
 }
 

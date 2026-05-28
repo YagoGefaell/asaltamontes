@@ -71,7 +71,10 @@ public class CommunityController {
     public ResponseEntity<Void> leaveCommunity(
             @PathVariable Long communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
-        communityService.leaveCommunity(communityId, currentUser.getId());
+        if (communityService.isOwner(communityId, currentUser)) {
+            throw new IllegalArgumentException("Owner cannot leave the community");
+        }
+        communityService.leaveCommunity(communityId, currentUser);
         return ResponseEntity.noContent().build();
     }
 

@@ -125,7 +125,9 @@ const Communities = () => {
                       )}
                     </div>
                     <h3>{community.name}</h3>
-                    <span className="community-members">Miembros</span>
+                    <span className="community-members">
+                      {community.memberCount} {community.memberCount === 1 ? 'miembro' : 'miembros'}
+                    </span>
                     
                     <div className="community-card-actions" onClick={(e) => e.stopPropagation()}>
                       <CommunityJoinButton

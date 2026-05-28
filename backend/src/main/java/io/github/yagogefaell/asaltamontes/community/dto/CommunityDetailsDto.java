@@ -6,7 +6,7 @@ public record CommunityDetailsDto(
     String description,
     String imageUrl,
     boolean isOwner,
-    boolean isMember
-    // Long memberCount
+    boolean isMember,
+    Long memberCount
     // CommunityRole role
 ) {}

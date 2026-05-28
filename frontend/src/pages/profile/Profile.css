@@ -227,6 +227,25 @@
   transform: scale(0.98);
 }
 
+.stat-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  color: inherit;
+  font-family: inherit;
+}
+
+.stat-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.stat-btn:active {
+  transform: scale(0.98);
+}
+
 /* ==========================================================================
    6. NUEVO BLINDAJE DE ACCIONES (ESTILO FOLLOW-USER-BUTTON CON GRID SIMÉTRICO)
    ========================================================================== */

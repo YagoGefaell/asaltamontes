@@ -4,6 +4,6 @@ public record CommunitySearchDto(
     Long id,
     String name,
     String imageUrl,
-    boolean isMember
-    // Long memberCount
+    Boolean isMember,
+    Long memberCount
 ) {}

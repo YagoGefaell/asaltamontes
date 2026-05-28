@@ -105,7 +105,7 @@ function CommunityProfile() {
 
         <div className="profile-stats">
           <div className="stat">
-            <strong>{community.membersCount || 0}</strong>
+            <strong>{community.memberCount || 0}</strong>
             <span className="label">Miembros</span>
           </div>
         </div>

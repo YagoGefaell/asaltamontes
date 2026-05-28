@@ -213,14 +213,22 @@ function Profile({
         </div>
 
         <div className="profile-stats">
-          <div className="stat">
+          <button
+            className="stat stat-btn"
+            onClick={() => navigate("/me/followers")}
+            aria-label="Ver seguidores"
+          >
             <span className="count">{displayFollowersCount}</span>
             <span className="label">Seguidores</span>
-          </div>
-          <div className="stat">
+          </button>
+          <button
+            className="stat stat-btn"
+            onClick={() => navigate("/me/following")}
+            aria-label="Ver usuarios que sigo"
+          >
             <span className="count">{displayFollowingCount}</span>
             <span className="label">Siguiendo</span>
-          </div>
+          </button>
         </div>
 
         {!isOwnProfile && (

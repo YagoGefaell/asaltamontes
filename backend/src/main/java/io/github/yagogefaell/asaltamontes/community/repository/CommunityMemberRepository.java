@@ -16,7 +16,8 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
             c.id,
             c.name, 
             c.imageUrl,
-            CASE WHEN m.id IS NOT NULL THEN true ELSE false END
+            CASE WHEN m.id IS NOT NULL THEN true ELSE false END,
+            c.memberCount
         )
         FROM CommunityMember m 
         JOIN m.community c 
