@@ -87,5 +87,13 @@ public class CommunityService {
         }
         communityRepository.decrementMemberCount(communityId);
     }
-}
 
+    @Transactional
+    public void deleteCommunity(Long communityId, UserAccount currentUser) {
+        if (!isOwner(communityId, currentUser)) {
+            throw new IllegalArgumentException("Only the owner can delete the community");
+        }
+        communityMemberRepository.deleteAllByCommunityId(communityId);
+        communityRepository.deleteById(communityId);
+    }
+}

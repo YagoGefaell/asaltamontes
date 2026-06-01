@@ -86,4 +86,12 @@ public class CommunityController {
         Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser.getId(), pageable);
         return ResponseEntity.ok(members);
     }
+
+    @DeleteMapping("/{communityId}")
+    public ResponseEntity<Void> deleteCommunity(
+            @PathVariable Long communityId,
+            @AuthenticationPrincipal UserAccount currentUser) {
+        communityService.deleteCommunity(communityId, currentUser);
+        return ResponseEntity.noContent().build();
+    }
 }

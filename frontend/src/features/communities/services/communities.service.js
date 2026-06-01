@@ -46,3 +46,12 @@ export async function leaveCommunityRequest(communityId) {
     throw new Error(error.message || "Error al salir de la comunidad")
   }
 }
+
+// -------- DELETE COMMUNITY --------
+export async function deleteCommunityRequest(communityId) {
+  try {
+    return await apiClient.delete(`/api/communities/${communityId}`)
+  } catch (error) {
+    throw new Error(error.message || "Error al borrar la comunidad")
+  }
+}

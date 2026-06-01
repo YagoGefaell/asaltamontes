@@ -17,9 +17,11 @@ import Messages from "../pages/messages/Messages.jsx";
 import Notifications from "../pages/notifications/Notifications.jsx";
 import Communities from "../pages/communities/Communities.jsx";
 import CommunityProfileDetail from "../pages/communities/CommunityProfileDetail.jsx";
+import CommunitySettingsMenu from "../pages/communities/CommunitySettingsMenu.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
+import CommunitySettingsPage from "../shared/layouts/CommunitySettingsPage.jsx";
 
 export function AppRouter() {
   return (
@@ -72,6 +74,15 @@ export function AppRouter() {
             <SettingsPage title="Ajustes" backTo="/settings">
               <EditProfile />
             </SettingsPage>
+          }
+        />
+
+        <Route
+          path="/communities/:communityName/settings"
+          element={
+            <CommunitySettingsPage>
+              <CommunitySettingsMenu />
+            </CommunitySettingsPage>
           }
         />
       </Route>

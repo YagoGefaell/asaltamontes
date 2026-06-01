@@ -31,4 +31,11 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
           AND cm.userAccount.id = :userId
     """)
     int removeMember(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
+    @Modifying
+    @Query("""
+        DELETE FROM CommunityMember cm 
+        WHERE cm.community.id = :communityId
+    """)
+    void deleteAllByCommunityId(@Param("communityId") Long communityId);
 }

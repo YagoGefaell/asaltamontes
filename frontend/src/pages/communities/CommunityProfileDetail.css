@@ -17,6 +17,7 @@
   padding: 0 1rem;
   box-sizing: border-box;
   min-height: 60px;
+  position: relative;
 }
 
 .profile-header.other-profile {
@@ -36,6 +37,27 @@
 }
 
 .back-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.settings-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.settings-icon {
   width: 24px;
   height: 24px;
 }
