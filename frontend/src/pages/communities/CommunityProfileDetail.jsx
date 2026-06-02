@@ -27,7 +27,12 @@ function CommunityProfile() {
   }, [communityName, navigate]);
 
   const handleToggleCommunity = (newRole) => {
-    setCommunity((prev) => ({ ...prev, role: newRole }));
+    setCommunity((prev) => {
+      const wasJoined = !!prev.role;
+      const isJoining = !!newRole;
+      const delta = isJoining && !wasJoined ? 1 : !isJoining && wasJoined ? -1 : 0;
+      return { ...prev, role: newRole, memberCount: prev.memberCount + delta };
+    });
   };
 
   if (loading) {

@@ -65,7 +65,7 @@ const ConversationsPane = ({
             >
               <div className="avatar-wrapper">
                 <div className="contact-avatar" aria-hidden="true">
-                  {!onAvatarError ? (
+                  {chat.avatarUrl ? (
                     <img
                       src={avatarUrl}
                       alt={chat.name}

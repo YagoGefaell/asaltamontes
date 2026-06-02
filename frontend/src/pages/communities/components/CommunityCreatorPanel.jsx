@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 const CommunityCreatorPanel = ({
   isOpen,
@@ -11,21 +11,16 @@ const CommunityCreatorPanel = ({
   const [communityImageUrl, setCommunityImageUrl] = useState("");
   const [createCommunityError, setCreateCommunityError] = useState(null);
 
-  const resetState = useCallback(() => {
+  const resetState = () => {
     setCommunityName("");
     setCommunityDescription("");
     setCommunityImageUrl("");
     setCreateCommunityError(null);
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      resetState();
-    }
-  }, [isOpen, resetState]);
+  };
 
   const handleClose = useCallback(() => {
     if (creatingCommunity) return;
+    resetState();
     onClose();
   }, [creatingCommunity, onClose]);
 
@@ -48,6 +43,7 @@ const CommunityCreatorPanel = ({
           description: communityDescription.trim() || null,
           imageUrl: communityImageUrl.trim() || null,
         });
+        resetState();
         onClose();
       } catch (error) {
         setCreateCommunityError(error?.message || "No se pudo crear la comunidad");

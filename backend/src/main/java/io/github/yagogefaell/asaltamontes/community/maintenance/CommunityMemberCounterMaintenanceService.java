@@ -21,6 +21,7 @@ public class CommunityMemberCounterMaintenanceService {
         this.communityRepository = communityRepository;
     }
 
+    @Transactional
     @Scheduled(cron = "0 0 3 * * *")
     public void recountCountersInBatches() {
         Pageable pageable = PageRequest.of(0, BATCH_SIZE);
@@ -35,7 +36,6 @@ public class CommunityMemberCounterMaintenanceService {
         } while (slice.hasNext());
     }
 
-    @Transactional
     private void recountBatch(List<Long> ids) {
         communityRepository.recalculateMemberCountByIds(ids);
     }

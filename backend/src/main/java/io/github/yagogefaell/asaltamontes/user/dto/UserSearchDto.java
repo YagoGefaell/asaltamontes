@@ -4,5 +4,5 @@ public record UserSearchDto (
     String username,
     String fullName,
     String profilePictureUrl,
-    boolean isFollowing
+    Boolean isFollowing
 ) {}

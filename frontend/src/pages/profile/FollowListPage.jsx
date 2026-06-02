@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../features/auth/hooks/useAuth";
 import UserCard from "../../shared/ui/UserCard";
 import Loading from "../../shared/components/Loading";
 import "./FollowersFollowing.css";
@@ -10,10 +9,10 @@ function FollowListPage({
   title, 
   fetchFunction, 
   emptyMessage, 
-  searchPlaceholder
+  searchPlaceholder,
+  username = null
 }) {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -31,10 +30,16 @@ function FollowListPage({
     setError(null);
 
     try {
-      const pageData = await fetchFunction(page, 20);
+      let pageData;
+
+      if (username) {
+        pageData = await fetchFunction(username, page, 20);
+      } else {
+        pageData = await fetchFunction(null, page, 20);
+      }
+
       let newUsers = pageData.content || [];
 
-      // Backend should provide isFollowing, but ensure it's set for "following" list as fallback
       if (type === 'following') {
         newUsers = newUsers.map(user => ({
           ...user,
@@ -127,8 +132,8 @@ function FollowListPage({
                     fullName={user.fullName}
                     username={user.username}
                     profilePictureUrl={user.profilePictureUrl}
-                    showFollowButton={true}
-                    isFollowing={user.isFollowing ?? (type === 'following')}
+                    showFollowButton={user.isFollowing ? true : false}
+                    isFollowing={user.isFollowing}
                   />
                 ))}
                 

@@ -13,7 +13,7 @@ function Profile({
   isOwnProfile = true, 
   loading = false, 
   error = null, 
-  onBack = null 
+  onBack = null
 }) {
   const { currentUser, setCurrentUser } = useAuth();
   const { userProfile, loading: contextLoading } = useUserProfile();
@@ -215,7 +215,7 @@ function Profile({
         <div className="profile-stats">
           <button
             className="stat stat-btn"
-            onClick={() => navigate("/me/followers")}
+            onClick={() => isOwnProfile ? navigate("/me/followers") : navigate("/users/" + username + "/followers")}
             aria-label="Ver seguidores"
           >
             <span className="count">{displayFollowersCount}</span>
@@ -223,7 +223,7 @@ function Profile({
           </button>
           <button
             className="stat stat-btn"
-            onClick={() => navigate("/me/following")}
+            onClick={() => isOwnProfile ? navigate("/me/following") : navigate("/users/" + username + "/following")}
             aria-label="Ver usuarios que sigo"
           >
             <span className="count">{displayFollowingCount}</span>

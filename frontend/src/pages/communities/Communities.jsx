@@ -27,7 +27,13 @@ const Communities = () => {
 
   const handleToggleCommunity = useCallback((communityId, newRole) => {
     setCommunities((prev) =>
-      prev.map((c) => (c.id === communityId ? { ...c, role: newRole } : c))
+      prev.map((c) => {
+        if (c.id !== communityId) return c;
+        const wasJoined = !!c.role;
+        const isJoining = !!newRole;
+        const delta = isJoining && !wasJoined ? 1 : !isJoining && wasJoined ? -1 : 0;
+        return { ...c, role: newRole, memberCount: c.memberCount + delta };
+      })
     );
   }, [setCommunities]);
 

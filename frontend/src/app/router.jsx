@@ -58,6 +58,9 @@ export function AppRouter() {
         <Route path="/me/followers" element={<Followers />} />
         <Route path="/me/following" element={<Following />} />
 
+        <Route path="/users/:username/followers" element={<Followers />} />
+        <Route path="/users/:username/following" element={<Following />} />
+
         {/* ---- Rutas de Settings ---- */}
         <Route
           path="/settings"

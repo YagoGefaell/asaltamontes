@@ -79,59 +79,27 @@ export async function unfollowUserRequest(username) {
 }
 
 // ---------------- GET FOLLOWERS / FOLLOWING ----------------
-export async function getFollowingRequest(page = 0, size = 20) {
+export async function getFollowingRequest(username = null, page = 0, size = 20) {
   try {
-    // Try with pagination first
-    try {
+    if (!username) {
       const following = await apiClient.get(`/api/users/following?page=${page}&size=${size}`)
-      return following // Return the full Page object
-    } catch (paginationError) {
-      // If pagination fails, try without pagination (fallback)
-      if (page === 0) {
-        console.warn('Pagination not supported for following endpoint, using fallback')
-        const following = await apiClient.get('/api/users/following')
-        // Convert to Page-like structure for consistency
-        const users = Array.isArray(following) ? following : (following.content || [])
-        return {
-          content: users,
-          totalElements: users.length,
-          totalPages: 1,
-          last: true,
-          first: true,
-          numberOfElements: users.length
-        }
-      }
-      throw paginationError
+      return following
     }
+    const following = await apiClient.get(`/api/users/following/${username}?page=${page}&size=${size}`)
+    return following
   } catch (error) {
     throw new Error(error.message || "Error obteniendo lista de seguidos")
   }
 }
 
-export async function getFollowersRequest(page = 0, size = 20) {
+export async function getFollowersRequest(username = null, page = 0, size = 20) {
   try {
-    // Try with pagination first
-    try {
+    if (!username) {
       const followers = await apiClient.get(`/api/users/followers?page=${page}&size=${size}`)
-      return followers // Return the full Page object
-    } catch (paginationError) {
-      // If pagination fails, try without pagination (fallback)
-      if (page === 0) {
-        console.warn('Pagination not supported for followers endpoint, using fallback')
-        const followers = await apiClient.get('/api/users/followers')
-        // Convert to Page-like structure for consistency
-        const users = Array.isArray(followers) ? followers : (followers.content || [])
-        return {
-          content: users,
-          totalElements: users.length,
-          totalPages: 1,
-          last: true,
-          first: true,
-          numberOfElements: users.length
-        }
-      }
-      throw paginationError
+      return followers
     }
+    const followers = await apiClient.get(`/api/users/followers/${username}?page=${page}&size=${size}`)
+    return followers
   } catch (error) {
     throw new Error(error.message || "Error obteniendo lista de seguidores")
   }

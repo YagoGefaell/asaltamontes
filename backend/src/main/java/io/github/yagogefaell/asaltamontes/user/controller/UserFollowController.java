@@ -46,17 +46,35 @@ public class UserFollowController {
     @GetMapping("/following")
     public Page<UserSearchDto> getFollowing(
             @AuthenticationPrincipal UserAccount currentUser,
-            @PageableDefault(size = 20, sort = "following.username") Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return followService.getUsersFollowedBy(currentUser.getId(), pageable);
+        return followService.getUsersFollowedBy(currentUser.getUsername(), currentUser.getId(), pageable);
+    }
+
+    @GetMapping("/following/{username}")
+    public Page<UserSearchDto> getFollowingByUsername(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable String username,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return followService.getUsersFollowedBy(username, currentUser.getId(), pageable);
     }
 
     @GetMapping("/followers")
     public Page<UserSearchDto> getFollowers(
             @AuthenticationPrincipal UserAccount currentUser,
-            @PageableDefault(size = 20, sort = "follower.username") Pageable pageable
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        return followService.getUsersFollowing(currentUser.getId(), pageable);
+        return followService.getUsersFollowing(currentUser.getUsername(), currentUser.getId(), pageable);
+    }
+
+    @GetMapping("/followers/{username}")
+    public Page<UserSearchDto> getFollowersByUsername(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable String username,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return followService.getUsersFollowing(username, currentUser.getId(), pageable);
     }
 }
 

@@ -2,11 +2,23 @@ import "./CommunitySettingsMenu.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { deleteCommunityRequest } from "../../features/communities/services/communities.service";
+import { useEffect } from "react";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 
 export default function CommunitySettingsMenu() {
   const { communityName } = useParams();
   const navigate = useNavigate();
-  const { community } = useCommunityDetail(communityName);
+  const { community, loading } = useCommunityDetail(communityName);
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    if (!loading && community && currentUser) {
+      const isOwner = community.role === 'OWNER';
+      if (!isOwner) {
+        navigate(`/communities/${communityName}`);
+      }
+    }
+  }, [loading, community, currentUser, navigate, communityName]);
 
   const handleDeleteCommunity = async () => {
     if (window.confirm("¿Estás segura de que quieres borrar la comunidad? Esta acción es irreversible.")) {

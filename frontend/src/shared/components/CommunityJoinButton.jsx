@@ -12,11 +12,9 @@ function CommunityJoinButton({
   role = null,
   ownerLabel = "Propietario"
 }) {
-  // Determinar si es miembro/owner basado en el role prop actual
   const isMember = role !== null
   const isOwner = role === 'OWNER'
-  
-  // Ref para ignorar cambios en initialState que ocurren después de una acción
+
   const lastActionTimeRef = useRef(0)
   
   const onToggleRef = useRef(onToggle)
@@ -33,17 +31,17 @@ function CommunityJoinButton({
     }
 
     lastActionTimeRef.current = Date.now()
-
-    if (onToggleRef.current) {
-      const newRole = newIsMember ? 'MEMBER' : null
-      onToggleRef.current(newRole)
-    }
   }, [communityId])
 
   const { state, error, toggle } = useOptimisticToggle(
     isMember,
     handleSave,
-    delayBeforeRequest
+    delayBeforeRequest,
+    (newIsMember) => {
+      if (onToggleRef.current) {
+        onToggleRef.current(newIsMember ? 'MEMBER' : null)
+      }
+    }
   )
 
   const handleClick = (e) => {
