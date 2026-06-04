@@ -3,7 +3,7 @@ package io.github.yagogefaell.asaltamontes.user.controller;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,37 +30,37 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping("/me")
-    public UserSelfDto getMe(Authentication authentication) {
-        return userService.getMe(((UserAccount) authentication.getPrincipal()).getId());
+    public UserSelfDto getMe(@AuthenticationPrincipal UserAccount currentUser) {
+        return userService.getMe(currentUser.getId());
     }
 
     @PatchMapping("/me")
     public UserSelfDto editMe(
-            Authentication authentication,
+            @AuthenticationPrincipal UserAccount currentUser,
             @Valid @RequestBody UserUpdateDto dto
     ) {
-        return userService.editProfile(((UserAccount) authentication.getPrincipal()).getId(), dto);
+        return userService.editProfile(currentUser.getId(), dto);
     }
 
     @GetMapping("/search")
     public Page<UserSearchDto> getUsers(
-            Authentication authentication,
+            @AuthenticationPrincipal UserAccount currentUser,
             @RequestParam(required = false) String query,
             @PageableDefault(size = 20, sort = "username") Pageable pageable
     ) {
-        Long userId = ((UserAccount) authentication.getPrincipal()).getId();
-
         if (query == null || query.isBlank()) {
-            return userService.getAllUsers(userId, pageable);
+            return userService.getAllUsers(currentUser.getId(), pageable);
         }
 
-        return userService.searchUsersByUsername(query, userId, pageable);
+        return userService.searchUsersByUsername(query, currentUser.getId(), pageable);
     }
 
     @GetMapping("{username}")
-    public UserProfileDto getUserByUsername(Authentication authentication, @PathVariable String username) {
-        Long requesterId = ((UserAccount) authentication.getPrincipal()).getId();
-        return userService.getUserByUsername(username, requesterId);
+    public UserProfileDto getUserByUsername(
+        @AuthenticationPrincipal UserAccount currentUser,
+        @PathVariable String username
+    ) {
+        return userService.getUserByUsername(username, currentUser.getId());
     }
 }
 

@@ -4,7 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,40 +27,54 @@ public class UserFollowController {
 
     @PostMapping("/follow/{username}")
     public ResponseEntity<Void> followUser(
-            Authentication authentication,
+            @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable String username
     ) {
-        UserAccount user = (UserAccount) authentication.getPrincipal();
-        followService.followUser(user.getId(), username);
+        followService.followUser(currentUser.getId(), username);
         return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("/follow/{username}")
     public ResponseEntity<Void> unfollowUser(
-            Authentication authentication,
+            @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable String username
     ) {
-        UserAccount user = (UserAccount) authentication.getPrincipal();
-        followService.unfollowUser(user.getId(), username);
+        followService.unfollowUser(currentUser.getId(), username);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/following")
     public Page<UserSearchDto> getFollowing(
-            Authentication authentication,
-            @PageableDefault(size = 20, sort = "following.username") Pageable pageable
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        Long followerId = ((UserAccount) authentication.getPrincipal()).getId();
-        return followService.getUsersFollowedBy(followerId, pageable);
+        return followService.getUsersFollowedBy(currentUser.getUsername(), currentUser.getId(), pageable);
+    }
+
+    @GetMapping("/following/{username}")
+    public Page<UserSearchDto> getFollowingByUsername(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable String username,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return followService.getUsersFollowedBy(username, currentUser.getId(), pageable);
     }
 
     @GetMapping("/followers")
     public Page<UserSearchDto> getFollowers(
-            Authentication authentication,
-            @PageableDefault(size = 20, sort = "follower.username") Pageable pageable
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        Long followingId = ((UserAccount) authentication.getPrincipal()).getId();
-        return followService.getUsersFollowing(followingId, pageable);
+        return followService.getUsersFollowing(currentUser.getUsername(), currentUser.getId(), pageable);
+    }
+
+    @GetMapping("/followers/{username}")
+    public Page<UserSearchDto> getFollowersByUsername(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable String username,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return followService.getUsersFollowing(username, currentUser.getId(), pageable);
     }
 }
 

@@ -1,6 +1,6 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
-public record SendMessageCommand(
+public record SendMessageCommandDto(
     Long conversationId,
     String content
 ) {}

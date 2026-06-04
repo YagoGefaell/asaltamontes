@@ -1,4 +1,5 @@
 import Loading from "../../../shared/components/Loading";
+import { formatters } from "../../../utils/helpers";
 
 const ConversationsPane = ({
   loadingChats,
@@ -51,40 +52,45 @@ const ConversationsPane = ({
           <p className="no-results">Aún no tienes conversaciones.</p>
         )}
 
-        {!loadingChats && !errorChats && chats.map((chat) => (
-          <button
-            key={chat.id}
-            type="button"
-            className="contact-item"
-            onClick={() => onEnterChat(chat)}
-          >
-            <div className="avatar-wrapper">
-              <div className="contact-avatar" aria-hidden="true">
-                {chat.avatarUrl ? (
-                  <img
-                    src={chat.avatarUrl}
-                    alt={chat.name}
-                    className="contact-avatar-image"
-                    onError={() => onAvatarError(chat.id)}
-                  />
-                ) : (
-                  chat.avatar
-                )}
+        {!loadingChats && !errorChats && chats.map((chat) => {
+          const avatarUrl = formatters.avatar(chat.avatarUrl, chat.name, chat.name);
+          const initial = formatters.getInitial(chat.name, chat.name);
+          
+          return (
+            <button
+              key={chat.id}
+              type="button"
+              className="contact-item"
+              onClick={() => onEnterChat(chat)}
+            >
+              <div className="avatar-wrapper">
+                <div className="contact-avatar" aria-hidden="true">
+                  {chat.avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={chat.name}
+                      className="contact-avatar-image"
+                      onError={() => onAvatarError(chat.id)}
+                    />
+                  ) : (
+                    initial
+                  )}
+                </div>
               </div>
-            </div>
 
-            <div className="contact-info">
-              <span className="contact-name">{chat.name}</span>
-              <span className="contact-preview">{chat.lastMsg}</span>
-            </div>
+              <div className="contact-info">
+                <span className="contact-name">{chat.name}</span>
+                <span className="contact-preview">{chat.lastMsg}</span>
+              </div>
 
-            {chat.lastMessageAt && (
-              <span className="contact-time">{formatMessageTime(chat.lastMessageAt)}</span>
-            )}
+              {chat.lastMessageAt && (
+                <span className="contact-time">{formatMessageTime(chat.lastMessageAt)}</span>
+              )}
 
-            {chat.unreadCount > 0 && <span className="unread-dot" aria-label="Mensajes sin leer" />}
-          </button>
-        ))}
+              {chat.unreadCount > 0 && <span className="unread-dot" aria-label="Mensajes sin leer" />}
+            </button>
+          );
+        })}
       </div>
     </>
   );

@@ -68,12 +68,12 @@ public class FollowService {
     }
 
     @Transactional(readOnly = true)
-    public Page<UserSearchDto> getUsersFollowedBy(Long followerId, Pageable pageable) {
-        return userFollowRepository.findFollowingByFollowerId(followerId, pageable);
+    public Page<UserSearchDto> getUsersFollowedBy(String username, Long currentUserId, Pageable pageable) {
+        return userFollowRepository.findFollowingByUsername(username, currentUserId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public Page<UserSearchDto> getUsersFollowing(Long followingId, Pageable pageable) {
-        return userFollowRepository.findFollowersByFollowingId(followingId, pageable);
+    public Page<UserSearchDto> getUsersFollowing(String username, Long currentUserId, Pageable pageable) {
+        return userFollowRepository.findFollowersByUsername(username, currentUserId, pageable);
     }
 }

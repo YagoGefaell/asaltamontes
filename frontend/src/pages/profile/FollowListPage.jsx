@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../features/auth/hooks/useAuth";
 import UserCard from "../../shared/ui/UserCard";
 import Loading from "../../shared/components/Loading";
-import { followUserRequest, unfollowUserRequest } from "../../features/users/services/users.service";
 import "./FollowersFollowing.css";
 
 function FollowListPage({ 
@@ -11,10 +9,10 @@ function FollowListPage({
   title, 
   fetchFunction, 
   emptyMessage, 
-  searchPlaceholder
+  searchPlaceholder,
+  username = null
 }) {
   const navigate = useNavigate();
-  const { incrementFollowing, decrementFollowing } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -22,9 +20,6 @@ function FollowListPage({
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  // totalElements and setTotalElements removed as they are unused
-  const [followLoadingMap, setFollowLoadingMap] = useState({});
-  const [followErrorMsg, setFollowErrorMsg] = useState(null);
 
   const fetchUsers = React.useCallback(async (page = 0, reset = false) => {
     if (page === 0) {
@@ -35,10 +30,16 @@ function FollowListPage({
     setError(null);
 
     try {
-      const pageData = await fetchFunction(page, 20);
+      let pageData;
+
+      if (username) {
+        pageData = await fetchFunction(username, page, 20);
+      } else {
+        pageData = await fetchFunction(null, page, 20);
+      }
+
       let newUsers = pageData.content || [];
 
-      // Backend should provide isFollowing, but ensure it's set for "following" list as fallback
       if (type === 'following') {
         newUsers = newUsers.map(user => ({
           ...user,
@@ -70,46 +71,6 @@ function FollowListPage({
   const handleLoadMore = () => {
     if (!loadingMore && hasMore) {
       fetchUsers(currentPage + 1);
-    }
-  };
-
-  const handleFollowToggle = async (username) => {
-    const user = users.find(u => u.username === username);
-    if (!user) return;
-
-    setFollowLoadingMap(prev => ({ ...prev, [username]: true }));
-    setFollowErrorMsg(null);
-
-    try {
-      if (user.isFollowing) {
-        await unfollowUserRequest(username);
-        // Update global following count
-        decrementFollowing();
-        // Remove from list if in "following" page
-        if (type === 'following') {
-          setUsers(prev => prev.filter(u => u.username !== username));
-        } else {
-          // Update isFollowing status for followers page
-          setUsers(prev => prev.map(u => 
-            u.username === username ? { ...u, isFollowing: false } : u
-          ));
-        }
-      } else {
-        await followUserRequest(username);
-        // Update global following count
-        incrementFollowing();
-        setUsers(prev => prev.map(u => 
-          u.username === username ? { ...u, isFollowing: true } : u
-        ));
-      }
-    } catch (err) {
-      console.error('Error toggling follow:', err);
-      const errorMessage = err.message || 'Error al realizar la acción';
-      setFollowErrorMsg(errorMessage);
-      // Hide error after 3 seconds
-      setTimeout(() => setFollowErrorMsg(null), 3000);
-    } finally {
-      setFollowLoadingMap(prev => ({ ...prev, [username]: false }));
     }
   };
 
@@ -150,12 +111,6 @@ function FollowListPage({
         />
       </div>
 
-      {followErrorMsg && (
-        <div className="follow-error-banner">
-          {followErrorMsg}
-        </div>
-      )}
-
       <div className={`${type}-results`}>
         {loading && (
           <div className={`${type}-loading`}>
@@ -177,10 +132,8 @@ function FollowListPage({
                     fullName={user.fullName}
                     username={user.username}
                     profilePictureUrl={user.profilePictureUrl}
-                    showFollowButton={true}
-                    isFollowing={user.isFollowing ?? (type === 'following')}
-                    onFollowToggle={handleFollowToggle}
-                    followLoading={followLoadingMap[user.username] || false}
+                    showFollowButton={user.isFollowing ? true : false}
+                    isFollowing={user.isFollowing}
                   />
                 ))}
                 

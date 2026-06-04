@@ -81,7 +81,6 @@
   color: var(--text-muted, #6c757d);
 }
 
-/* Results containers */
 .followers-results,
 .following-results {
   flex: 1;
@@ -193,11 +192,6 @@
   }
   
   .search-input-container {
-    padding: 0.75rem;
-  }
-  
-  .followers-results,
-  .following-results {
     padding: 0.75rem;
   }
   

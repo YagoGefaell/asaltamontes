@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getUserByUsername } from "../../features/users/services/users.service";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import Profile from "./Profile";
 
 function UserProfile() {
   const { username } = useParams();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,6 +14,10 @@ function UserProfile() {
 
   useEffect(() => {
     const fetchUserProfile = async () => {
+      if (currentUser && currentUser.username === username) {
+        navigate("/me");
+        return;
+      }
       if (!username) {
         navigate("/search");
         return;
@@ -32,7 +38,7 @@ function UserProfile() {
     };
 
     fetchUserProfile();
-  }, [username, navigate]);
+  }, [username, navigate, currentUser]);
 
   return (
     <Profile

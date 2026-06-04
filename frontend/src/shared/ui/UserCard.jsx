@@ -1,7 +1,9 @@
 // UserCard.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import FollowUserButton from "../components/FollowUserButton";
 import Button from "../forms/Button";
+import { formatters } from "../../utils/helpers";
 import "./UserCard.css";
 
 const UserCard = ({ 
@@ -11,19 +13,17 @@ const UserCard = ({
   showFollowButton = false,
   isFollowing = false,
   onFollowToggle = null,
-  followLoading = false,
   showChatButton = false,
   onChatClick = null,
-  chatLoading = false,
+  chatLoading = false
 }) => {
   const [pressed, setPressed] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const navigate = useNavigate();
-  const initial = (username || "?").trim().charAt(0).toUpperCase() || "?";
-  const shouldShowImage = Boolean(profilePictureUrl) && !avatarLoadError;
+  const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
+  const initial = formatters.getInitial(fullName, username);
 
   const handleCardClick = (e) => {
-    // Don't navigate if clicking on a button or inside button container
     const target = e.target;
     if (target.closest('button') || target.closest('.user-card-action')) {
       return;
@@ -33,7 +33,6 @@ const UserCard = ({
   };
 
   const handlePressStart = (e) => {
-    // Don't activate press effect on button area
     if (e.target.closest('button') || e.target.closest('.user-card-action')) {
       return;
     }
@@ -42,13 +41,6 @@ const UserCard = ({
 
   const handlePressEnd = () => {
     setPressed(false);
-  };
-
-  const handleFollowClick = (e) => {
-    e.stopPropagation();
-    if (onFollowToggle && !followLoading) {
-      onFollowToggle(username);
-    }
   };
 
   const handleChatClick = (e) => {
@@ -66,9 +58,9 @@ const UserCard = ({
       onMouseUp={handlePressEnd}
       onMouseLeave={handlePressEnd}
     >
-      {shouldShowImage ? (
+      {!avatarLoadError ? (
         <img
-          src={profilePictureUrl}
+          src={avatarUrl}
           alt={username}
           className="user-avatar"
           onError={() => setAvatarLoadError(true)}
@@ -84,14 +76,13 @@ const UserCard = ({
       </div>
       {showFollowButton && (
         <div className="user-card-action">
-          <Button
-            variant={isFollowing ? "outline" : "primary"}
-            size="small"
-            onClick={handleFollowClick}
-            disabled={followLoading}
-          >
-            {followLoading ? '...' : (isFollowing ? 'Siguiendo' : 'Seguir')}
-          </Button>
+          <FollowUserButton
+            userId={username}
+            initialIsFollowing={isFollowing}
+            onToggle={onFollowToggle}
+            followLabel="Seguir"
+            unfollowLabel="Siguiendo"
+          />
         </div>
       )}
       {!showFollowButton && showChatButton && (

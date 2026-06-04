@@ -2,13 +2,25 @@ package io.github.yagogefaell.asaltamontes.message.domain;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Data
-@Table(name = "conversation_participants")
+@NoArgsConstructor
+@Getter
+@Setter
+@Table(
+    name = "conversation_participants",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_conversation_user", 
+            columnNames = {"conversation_id", "user_id"}
+        )
+    }
+)
 public class ConversationParticipant {
 
     @Id

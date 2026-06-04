@@ -1,5 +1,5 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
-public record ChatResponse(
+public record ChatResponseDto(
     Long conversationId
 ) {}

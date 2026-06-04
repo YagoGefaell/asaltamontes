@@ -1,5 +1,5 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
-public record PrivateRequest(
+public record PrivateRequestDto(
     String username
 ) {}

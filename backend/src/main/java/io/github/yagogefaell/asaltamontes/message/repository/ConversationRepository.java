@@ -1,7 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.repository;
 
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
-import io.github.yagogefaell.asaltamontes.message.dto.ChatSummary;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -24,7 +24,7 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     Optional<Conversation> findPrivateConversation(@Param("user1") String user1, @Param("user2") String user2);
 
     @Query("""
-        SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummary(
+        SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
             c.id,
             CASE 
                 WHEN c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.GROUP THEN c.groupName 
@@ -52,5 +52,5 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         WHERE me.user.username = :username
         ORDER BY c.lastMessageAt DESC NULLS LAST
     """)
-    List<ChatSummary> findActiveChatsForUser(@Param("username") String username);
+    List<ChatSummaryDto> findActiveChatsForUser(@Param("username") String username);
 }

@@ -16,9 +16,12 @@ import Search from "../pages/search/Search.jsx";
 import Messages from "../pages/messages/Messages.jsx";
 import Notifications from "../pages/notifications/Notifications.jsx";
 import Communities from "../pages/communities/Communities.jsx";
+import CommunityProfileDetail from "../pages/communities/CommunityProfileDetail.jsx";
+import CommunitySettingsMenu from "../pages/communities/CommunitySettingsMenu.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
+import CommunitySettingsPage from "../shared/layouts/CommunitySettingsPage.jsx";
 
 export function AppRouter() {
   return (
@@ -48,11 +51,15 @@ export function AppRouter() {
           <Route path="messages" element={<Messages />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="communities" element={<Communities />} />
+          <Route path="communities/:communityName" element={<CommunityProfileDetail />} />
         </Route>
 
         {/* ---- Rutas de Followers/Following (sin navbar) ---- */}
         <Route path="/me/followers" element={<Followers />} />
         <Route path="/me/following" element={<Following />} />
+
+        <Route path="/users/:username/followers" element={<Followers />} />
+        <Route path="/users/:username/following" element={<Following />} />
 
         {/* ---- Rutas de Settings ---- */}
         <Route
@@ -70,6 +77,15 @@ export function AppRouter() {
             <SettingsPage title="Ajustes" backTo="/settings">
               <EditProfile />
             </SettingsPage>
+          }
+        />
+
+        <Route
+          path="/communities/:communityName/settings"
+          element={
+            <CommunitySettingsPage>
+              <CommunitySettingsMenu />
+            </CommunitySettingsPage>
           }
         />
       </Route>

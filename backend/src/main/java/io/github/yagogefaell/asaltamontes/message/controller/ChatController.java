@@ -1,7 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.controller;
 
-import io.github.yagogefaell.asaltamontes.message.dto.ChatReadEvent;
-import io.github.yagogefaell.asaltamontes.message.dto.SendMessageCommand;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatReadEventDto;
+import io.github.yagogefaell.asaltamontes.message.dto.SendMessageCommandDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 
 import java.security.Principal;
@@ -20,7 +20,7 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.send")
-    public void processMessage(@Payload SendMessageCommand command, Principal principal) {
+    public void processMessage(@Payload SendMessageCommandDto command, Principal principal) {
         messageService.processIncomingMessage(
                 command.conversationId(),
                 principal.getName(),
@@ -29,7 +29,7 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.read")
-    public void processReadReceipt(@Payload ChatReadEvent message, Principal principal) {
+    public void processReadReceipt(@Payload ChatReadEventDto message, Principal principal) {
         messageService.markConversationAsRead(message.conversationId(), principal.getName());
     }
 }

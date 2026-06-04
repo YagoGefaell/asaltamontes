@@ -5,7 +5,6 @@ import './GoogleLoginButton.css';
 export function GoogleLoginButton({ onLoginSuccess }) {
   const login = useGoogleLogin({
     onSuccess: codeResponse => {
-      console.log("Código de autorización recibido:", codeResponse.code);
       onLoginSuccess(codeResponse.code); 
     },
     onError: error => console.log('Login Failed', error),

@@ -30,34 +30,38 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
             u.username,
             u.profile.fullName,
             u.profile.profilePictureUrl,
-            CASE WHEN EXISTS (
+            CASE 
+            WHEN u.id = :currentUserId THEN null
+            WHEN EXISTS (
                 SELECT 1 FROM UserFollow f2
-                WHERE f2.follower.id = :followerId
+                WHERE f2.follower.id = :currentUserId
                 AND f2.following.id = u.id
             ) THEN true ELSE false END
         )
         FROM UserFollow f
         JOIN f.following u
-        WHERE f.follower.id = :followerId
+        WHERE f.follower.username = :username
         ORDER BY u.username ASC
     """)
-    Page<UserSearchDto> findFollowingByFollowerId(Long followerId, Pageable pageable);
+    Page<UserSearchDto> findFollowingByUsername(String username, Long currentUserId, Pageable pageable);
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
             u.username,
             u.profile.fullName,
             u.profile.profilePictureUrl,
-            CASE WHEN EXISTS (
+            CASE 
+            WHEN u.id = :currentUserId THEN null
+            WHEN EXISTS (
                 SELECT 1 FROM UserFollow f2
-                WHERE f2.follower.id = :followingId
+                WHERE f2.follower.id = :currentUserId
                 AND f2.following.id = u.id
             ) THEN true ELSE false END
         )
         FROM UserFollow f
         JOIN f.follower u
-        WHERE f.following.id = :followingId
+        WHERE f.following.username = :username
         ORDER BY u.username ASC
     """)
-    Page<UserSearchDto> findFollowersByFollowingId(Long followingId, Pageable pageable);
+    Page<UserSearchDto> findFollowersByUsername(String username, Long currentUserId, Pageable pageable);
 }

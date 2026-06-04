@@ -1,4 +1,6 @@
-/* MOBILE-FIRST DESIGN */
+/* ==========================================================================
+   MOBILE-FIRST DESIGN & LAYOUT
+   ========================================================================== */
 
 .communities-page {
   background: var(--background);
@@ -10,7 +12,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.90rem 0.75rem;
+  padding: 0.55rem 0.75rem;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -29,16 +31,46 @@
   color: var(--text-color);
 }
 
-@media (min-width: 600px) {
-  .communities-header {
-    padding: 1rem;
-  }
-
-  .communities-header h2 {
-    font-size: 1.5rem;
-  }
+.communities-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
 }
 
+/* ==========================================================================
+   BOTÓN CREAR COMUNIDAD
+   ========================================================================== */
+.create-community-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--text-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.create-community-btn:active {
+  transform: scale(0.98);
+}
+
+.create-community-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-community-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ==========================================================================
+   GRID DE COMUNIDADES
+   ========================================================================== */
 .communities-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -48,23 +80,9 @@
   margin: 0 auto;
 }
 
-@media (min-width: 600px) {
-  .communities-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-}
-
-@media (min-width: 1024px) {
-  .communities-grid {
-    max-width: 900px;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
-}
-
+/* ==========================================================================
+   TARJETA DE COMUNIDAD (ESTILOS BASE)
+   ========================================================================== */
 .community-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
@@ -74,39 +92,41 @@
   transition: all 0.2s;
   cursor: pointer;
   touch-action: manipulation;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.community-card:active {
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px var(--shadow-color);
+/* Avatar & Contenido interno */
+.community-card-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+  background: var(--border-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-@media (min-width: 600px) {
-  .community-card {
-    border-radius: 12px;
-    padding: 1.5rem;
-  }
-
-  .community-card:hover {
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px var(--shadow-color);
-  }
-
-  .community-card:active {
-    border-color: var(--primary);
-  }
+.community-avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.community-icon {
+.community-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  background: var(--primary);
+  color: white;
   font-size: 2rem;
-  margin-bottom: 0.5rem;
-  display: block;
-}
-
-@media (min-width: 600px) {
-  .community-icon {
-    font-size: 2.5rem;
-  }
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .community-card h3 {
@@ -117,12 +137,6 @@
   word-break: break-word;
 }
 
-@media (min-width: 600px) {
-  .community-card h3 {
-    font-size: 1rem;
-  }
-}
-
 .community-members {
   display: block;
   font-size: 0.75rem;
@@ -130,57 +144,255 @@
   margin-bottom: 0.75rem;
 }
 
+.community-card-actions {
+  width: 100%;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.community-card-actions button {
+  width: 100%;
+}
+
+/* ==========================================================================
+   CONTROL DE INTERACCIONES DE LA TARJETA (FILTRADO INTELIGENTE)
+   ========================================================================== */
+
+/* Se activa el click en la card SOLO si no se está pulsando el botón interno */
+.community-card:active:not(:has(.community-card-actions:active)) {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px var(--shadow-color);
+}
+
+/* Si se presiona el botón, congelamos los estilos de la card de forma agresiva */
+.community-card:has(.community-card-actions:active) {
+  transform: none !important;
+  box-shadow: none !important;
+  border-color: var(--border-soft) !important;
+}
+
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES (>= 600px)
+   ========================================================================== */
 @media (min-width: 600px) {
+  .communities-header {
+    padding: 1rem;
+  }
+
+  .communities-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .create-community-btn:hover {
+    background: var(--hover-color);
+  }
+
+  .communities-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 600px;
+  }
+
+  /* Hover condicional en escritorio */
+  .community-card:hover:not(:has(.community-card-actions:hover)) {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px var(--shadow-color);
+  }
+
+  .community-card {
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+
+  .community-card-avatar {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1rem;
+  }
+
+  .community-avatar-fallback {
+    font-size: 2.5rem;
+  }
+
+  .community-card h3 {
+    font-size: 1rem;
+  }
+
   .community-members {
     font-size: 0.8rem;
     margin-bottom: 1rem;
   }
 }
 
-.btn-join {
+/* ==========================================================================
+   RESPONSIVE MEDIA QUERIES (>= 1024px)
+   ========================================================================== */
+@media (min-width: 1024px) {
+  .communities-grid {
+    max-width: 900px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
+/* ==========================================================================
+   ESTADOS GLOBALES DE LA PÁGINA
+   ========================================================================== */
+.communities-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1rem;
+  grid-column: 1 / -1;
+}
+
+.communities-error {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--error-color, #e74c3c);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  margin-top: 2rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+/* ==========================================================================
+   ACCESIBILIDAD Y RENDIMIENTO
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .community-card {
+    transition: none;
+  }
+  .community-card:active {
+    transform: none;
+  }
+}
+
+/* ==========================================================================
+   PANEL: CREADOR DE COMUNIDADES
+   ========================================================================== */
+.community-creator-page {
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  padding: 8px 12px;
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: transform 0.2s;
-  touch-action: manipulation;
-  -webkit-appearance: none;
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: var(--background);
+}
+
+.community-creator-form {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  background: var(--background);
+}
+
+.community-creator-label {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.community-creator-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+  color: var(--text-color);
+  font-size: 0.95rem;
+  padding: 0.65rem 0.75rem;
   font-family: inherit;
 }
 
-.btn-join:active {
-  transform: scale(0.95);
+.community-creator-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.community-creator-textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.community-creator-error {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #dc2626;
+}
+
+.community-creator-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.community-creator-btn-cancel,
+.community-creator-btn-submit {
+  flex: 1;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.community-creator-btn-cancel {
+  background: var(--surface);
+  color: var(--text-color);
+  border-color: var(--border-soft);
+}
+
+.community-creator-btn-cancel:active {
+  transform: scale(0.98);
+}
+
+.community-creator-btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.community-creator-btn-submit {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  border: none;
+}
+
+.community-creator-btn-submit:active {
+  transform: scale(0.98);
+}
+
+.community-creator-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (min-width: 600px) {
-  .btn-join {
-    padding: 10px 16px;
-    font-size: 0.9rem;
+  .community-creator-form {
+    padding: 1rem;
   }
 
-  .btn-join:hover {
+  .community-creator-btn-cancel:hover,
+  .community-creator-btn-submit:hover {
     transform: translateY(-2px);
   }
 
-  .btn-join:active {
+  .community-creator-btn-cancel:active,
+  .community-creator-btn-submit:active {
     transform: scale(0.98);
-  }
-}
-
-/* ACCESSIBILITY */
-@media (prefers-reduced-motion: reduce) {
-  .community-card,
-  .btn-join {
-    transition: none;
-  }
-
-  .community-card:active,
-  .btn-join:active {
-    transform: none;
   }
 }

@@ -12,7 +12,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.Index;
@@ -20,7 +19,6 @@ import jakarta.persistence.Index;
 @Entity
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Table(
     name = "user_follow",
     uniqueConstraints = @UniqueConstraint(

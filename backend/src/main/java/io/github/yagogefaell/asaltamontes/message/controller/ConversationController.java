@@ -3,10 +3,10 @@ package io.github.yagogefaell.asaltamontes.message.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.github.yagogefaell.asaltamontes.message.dto.ChatResponse;
-import io.github.yagogefaell.asaltamontes.message.dto.ChatSummary;
-import io.github.yagogefaell.asaltamontes.message.dto.CreateGroup;
-import io.github.yagogefaell.asaltamontes.message.dto.PrivateRequest;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
+import io.github.yagogefaell.asaltamontes.message.dto.CreateGroupDto;
+import io.github.yagogefaell.asaltamontes.message.dto.PrivateRequestDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 
@@ -31,25 +31,25 @@ public class ConversationController {
         this.messageService = messageService;
     }
 
-    @GetMapping("/private")
-    public ResponseEntity<ChatResponse> getPrivateChat(
+    @GetMapping("/private/{recipientUsername}")
+    public ResponseEntity<ChatResponseDto> getPrivateChat(
             @AuthenticationPrincipal UserDetails currentUser,
-            @RequestBody PrivateRequest request) {
+            @PathVariable String recipientUsername) {
 
         return messageService.getPrivateConversation(
                 currentUser.getUsername(), 
-                request.username()
+                recipientUsername
         )
         .map(ResponseEntity::ok)
         .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping("/private")
-    public ResponseEntity<ChatResponse> createPrivateChat(
+    public ResponseEntity<ChatResponseDto> createOrGetPrivateChat(
             @AuthenticationPrincipal UserDetails currentUser,
-            @RequestBody PrivateRequest request) {
+            @RequestBody PrivateRequestDto request) {
 
-        ChatResponse response = messageService.createPrivateConversation(
+        ChatResponseDto response = messageService.createOrGetPrivateConversation(
                 currentUser.getUsername(),
                 request.username()
         );
@@ -57,11 +57,11 @@ public class ConversationController {
     }
 
     @PostMapping("/group")
-    public ResponseEntity<ChatResponse> createGroupChat(
+    public ResponseEntity<ChatResponseDto> createGroupChat(
         @AuthenticationPrincipal UserDetails currentUser, 
-        @RequestBody CreateGroup request
+        @RequestBody CreateGroupDto request
     ) {
-        ChatResponse response = messageService.createGroupConversation(
+        ChatResponseDto response = messageService.createGroupConversation(
             currentUser.getUsername(),
             request.groupName(),
             request.groupImage(),
@@ -72,10 +72,10 @@ public class ConversationController {
     
 
     @GetMapping
-    public ResponseEntity<List<ChatSummary>> getMyConversations(
+    public ResponseEntity<List<ChatSummaryDto>> getMyConversations(
             @AuthenticationPrincipal UserDetails currentUser) {
         
-        List<ChatSummary> summaries = messageService.getUserConversations(currentUser.getUsername());
+        List<ChatSummaryDto> summaries = messageService.getUserConversations(currentUser.getUsername());
         return ResponseEntity.ok(summaries);
     }
 

@@ -15,7 +15,7 @@
   font-weight: 700;
   margin-bottom: 0.8rem;
   color: var(--text-color);
-  opacity: 0.8; /* más suave, estilo Duolingo */
+  opacity: 0.8;
 }
 
 /* Lista */
