@@ -19,9 +19,17 @@ public class CorsConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        List<String> allowedOrigins = corsProperties.getAllowedOrigins();
+        if (allowedOrigins.contains("*")) {
+            throw new IllegalStateException(
+                "CORS_ALLOWED_ORIGINS must not contain '*': wildcard origins are incompatible " +
+                "with allowCredentials(true). List explicit origins instead."
+            );
+        }
+
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOrigins(corsProperties.getAllowedOrigins());
+        configuration.setAllowedOrigins(allowedOrigins);
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

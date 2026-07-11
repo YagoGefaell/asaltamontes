@@ -12,7 +12,7 @@ public class CorsProperties {
     private List<String> allowedOrigins;
 
     public List<String> getAllowedOrigins() {
-        return allowedOrigins;
+        return allowedOrigins != null ? allowedOrigins : List.of();
     }
 
     public void setAllowedOrigins(List<String> allowedOrigins) {
