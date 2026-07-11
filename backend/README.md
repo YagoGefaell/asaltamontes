@@ -88,7 +88,10 @@ DATABASE_PASSWORD=your_secure_password
 JWT_SECRET=your_minimum_32_characters_secret_key
 JWT_EXPIRATION_MS=900000
 JWT_REFRESH_EXPIRATION_MS=604800000
+CORS_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
 ```
+
+`CORS_ALLOWED_ORIGINS` is a comma-separated list of origins allowed to call the API. Add any machine-specific origins (LAN IPs, browser extensions, etc.) to your local `.env` only — never hardcode them in source.
 
 ### 2. Running with Docker (Recommended)
 
