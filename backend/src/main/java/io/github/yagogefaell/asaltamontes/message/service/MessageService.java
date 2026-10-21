@@ -10,6 +10,7 @@ import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
+import io.github.yagogefaell.asaltamontes.message.dto.MessagePageDto;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
@@ -17,10 +18,13 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +41,7 @@ public class MessageService {
     private final int maxGroupSize;
 
     public static final int MAX_CONTENT_LENGTH = 2000;
+    public static final int MAX_HISTORY_PAGE = 100;
     private static final int PREVIEW_LENGTH = 30;
 
     public MessageService(MessageRepository messageRepository, 
@@ -162,18 +167,29 @@ public class MessageService {
         return new ChatResponseDto(newConv.getId());
     }
 
-    @Transactional
-    public List<MessageDto> getConversationHistory(Long conversationId, String username) {
-        ConversationParticipant participant = participantRepository
-                .findByConversationIdAndUserUsername(conversationId, username)
-                .orElseThrow(() -> new ForbiddenException("No tienes permiso para acceder a este chat"));
-
-        if (participant.getUnreadCount() > 0) {
-            participant.setUnreadCount(0);
-            participantRepository.save(participant);
+    /**
+     * A page of the history (T10): the {@code limit} messages before {@code before} (or the latest ones),
+     * oldest first. Reading no longer marks the chat as read: that is chat.read or POST /read.
+     */
+    @Transactional(readOnly = true)
+    public MessagePageDto getConversationHistory(Long conversationId, Long userId, Long before, int limit) {
+        if (!participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+            throw new ForbiddenException("No tienes permiso para acceder a este chat");
         }
 
-        return messageRepository.findMessagesByConversationId(conversationId);
+        int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
+        // One extra row tells whether there is a previous page
+        Limit fetch = Limit.of(pageSize + 1);
+        List<MessageDto> newestFirst = before == null
+                ? messageRepository.findLatest(conversationId, fetch)
+                : messageRepository.findBefore(conversationId, before, fetch);
+
+        boolean hasMore = newestFirst.size() > pageSize;
+        List<MessageDto> page = new ArrayList<>(newestFirst.subList(0, Math.min(pageSize, newestFirst.size())));
+        Collections.reverse(page);
+        Long nextBefore = hasMore ? page.get(0).id() : null;
+
+        return new MessagePageDto(page, hasMore, nextBefore);
     }
 
     @Transactional

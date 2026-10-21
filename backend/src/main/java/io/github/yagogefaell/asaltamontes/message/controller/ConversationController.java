@@ -7,7 +7,7 @@ import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.message.dto.CreateGroupDto;
 import io.github.yagogefaell.asaltamontes.message.dto.PrivateRequestDto;
-import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
+import io.github.yagogefaell.asaltamontes.message.dto.MessagePageDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 
 import java.util.List;
@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 
 @RestController
@@ -80,13 +83,25 @@ public class ConversationController {
     }
 
     @GetMapping("/{conversationId}/messages")
-    public ResponseEntity<List<MessageDto>> getChatHistory(
-            @AuthenticationPrincipal UserDetails currentUser,
-            @PathVariable Long conversationId) {
-        List<MessageDto> history = messageService.getConversationHistory(
-                conversationId, 
-                currentUser.getUsername()
+    public ResponseEntity<MessagePageDto> getChatHistory(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable Long conversationId,
+            @RequestParam(required = false) Long before,
+            @RequestParam(defaultValue = "30") int limit) {
+        MessagePageDto history = messageService.getConversationHistory(
+                conversationId,
+                currentUser.getId(),
+                before,
+                limit
         );
         return ResponseEntity.ok(history);
+    }
+
+    @PostMapping("/{conversationId}/read")
+    public ResponseEntity<Void> markAsRead(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable Long conversationId) {
+        messageService.markConversationAsRead(conversationId, currentUser.getId());
+        return ResponseEntity.noContent().build();
     }
 }

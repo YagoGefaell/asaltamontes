@@ -706,7 +706,8 @@
     },
     "/api/conversations/{conversationId}/messages": {
       "get": {
-        "summary": "Get conversation history",
+        "summary": "Get one page of the conversation history (cursor by message id)",
+        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame).",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -716,17 +717,33 @@
             "required": true,
             "schema": { "type": "integer", "format": "int64" },
             "description": "Conversation ID"
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64" },
+            "description": "Only messages with a smaller id (the nextBefore of the previous page)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 30, "minimum": 1, "maximum": 100 },
+            "description": "Page size (values above 100 are capped)"
           }
         ],
         "responses": {
           "200": {
-            "description": "Conversation messages",
+            "description": "One page of messages",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/MessageDto"
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/MessageDto" } },
+                    "hasMore": { "type": "boolean" },
+                    "nextBefore": { "type": "integer", "format": "int64", "nullable": true }
                   }
                 }
               }
@@ -738,6 +755,18 @@
           "403": {
             "description": "The user is not a participant of the conversation"
           }
+        }
+      }
+    },
+    "/api/conversations/{conversationId}/read": {
+      "post": {
+        "summary": "Mark the conversation as read (unread count to 0)",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Marked as read" },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "The user is not a participant of the conversation" }
         }
       }
     },

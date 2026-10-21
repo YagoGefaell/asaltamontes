@@ -5,10 +5,12 @@ import { ConversationsContext } from "../hooks/conversations.context";
 import {
   getMyConversationsRequest,
   getConversationMessagesRequest,
+  markConversationReadRequest,
   getPrivateConversationRequest,
   createPrivateConversationRequest,
   createGroupConversationRequest,
 } from "../services/messages.service.js";
+import { mergeMessages } from "../utils/mergeMessages.js";
 
 export const ConversationsProvider = ({ children }) => {
   const { websocketClient, websocketConnected, isAuthenticated, sendMessage, currentUser } = useAuth();
@@ -17,6 +19,8 @@ export const ConversationsProvider = ({ children }) => {
   // Last error of a message we sent (from /user/queue/errors); Messages shows it and restores the text
   const [chatError, setChatError] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
+  // Per conversation: { hasMore, nextBefore, loading } of the history pagination (T10)
+  const [historyPaging, setHistoryPaging] = useState({});
   const [loadingChats, setLoadingChats] = useState(false);
   const [errorChats, setErrorChats] = useState(null);
 
@@ -40,7 +44,13 @@ export const ConversationsProvider = ({ children }) => {
   }, []);
 
   const sendReadReceipt = useCallback((conversationId, lastMessageId = null) => {
-    if (!conversationId || !websocketConnected) return;
+    if (!conversationId) return;
+
+    // Reading the history no longer marks the chat as read on the server: without WebSocket, use REST
+    if (!websocketConnected) {
+      markConversationReadRequest(conversationId);
+      return;
+    }
 
     sendMessage("/app/chat.read", {
       conversationId,
@@ -271,24 +281,50 @@ export const ConversationsProvider = ({ children }) => {
     }
 
     try {
-      const messages = await getConversationMessagesRequest(conversationId);
-      const normalizedMessages = Array.isArray(messages) ? messages : [];
+      const page = await getConversationMessagesRequest(conversationId);
+      const merged = mergeMessages(chatMessages[conversationId], page.items);
 
+      // Messages that arrived by WebSocket while the page was loading are kept (and deduplicated)
       setChatMessages((prev) => ({
         ...prev,
-        [conversationId]: normalizedMessages,
+        [conversationId]: mergeMessages(prev[conversationId], page.items),
       }));
-      markConversationAsRead(conversationId, normalizedMessages);
+      setHistoryPaging((prev) => ({
+        ...prev,
+        [conversationId]: { hasMore: page.hasMore, nextBefore: page.nextBefore, loading: false },
+      }));
+      markConversationAsRead(conversationId, merged);
     } catch {
       // No bloqueamos la UI del chat si falla la carga inicial del historial.
       markConversationAsRead(conversationId);
     }
   }, [chatMessages, markConversationAsRead]);
 
+  const loadOlderMessages = useCallback(async (conversationId) => {
+    const paging = historyPaging[conversationId];
+    if (!conversationId || !paging?.hasMore || paging.loading) return;
+
+    setHistoryPaging((prev) => ({ ...prev, [conversationId]: { ...paging, loading: true } }));
+    try {
+      const page = await getConversationMessagesRequest(conversationId, paging.nextBefore);
+      setChatMessages((prev) => ({
+        ...prev,
+        [conversationId]: mergeMessages(prev[conversationId], page.items),
+      }));
+      setHistoryPaging((prev) => ({
+        ...prev,
+        [conversationId]: { hasMore: page.hasMore, nextBefore: page.nextBefore, loading: false },
+      }));
+    } catch {
+      setHistoryPaging((prev) => ({ ...prev, [conversationId]: { ...paging, loading: false } }));
+    }
+  }, [historyPaging]);
+
   useEffect(() => {
     if (!isAuthenticated) {
       setChats([]);
       setChatMessages({});
+      setHistoryPaging({});
       setLoadingChats(false);
       setErrorChats(null);
       return;
@@ -336,21 +372,15 @@ export const ConversationsProvider = ({ children }) => {
       sendReadReceipt(conversationId, payloadMessageId);
     }
 
-    setChatMessages((prev) => {
-      const previous = prev[conversationId] || [];
-      return {
-        ...prev,
-        [conversationId]: [
-          ...previous,
-          {
-            id: payload.id,
-            content: payload.content,
-            senderUsername: payload.senderUsername,
-            sentAt: payload.sentAt,
-          },
-        ],
-      };
-    });
+    setChatMessages((prev) => ({
+      ...prev,
+      [conversationId]: mergeMessages(prev[conversationId], [{
+        id: payload.id,
+        content: payload.content,
+        senderUsername: payload.senderUsername,
+        sentAt: payload.sentAt,
+      }]),
+    }));
 
     setChats((prevChats) => {
       const existing = prevChats.find(
@@ -422,6 +452,8 @@ export const ConversationsProvider = ({ children }) => {
         ensurePrivateConversation,
         createGroupConversation,
         loadConversationMessages,
+        loadOlderMessages,
+        historyPaging,
         activeChatId,
         setActiveChatId,
         totalUnreadCount,
