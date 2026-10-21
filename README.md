@@ -102,6 +102,12 @@ Every push to `main` runs `.github/workflows/deploy.yml` on the server: it build
 - Variables: `/etc/github-runner.env` (permissions `600`, owned by the runner user). It needs every variable of `.env.example`.
 - All services have `restart: unless-stopped`: they come back after a reboot of the server.
 - **Memory limits**: Raspberry Pi OS boots with `cgroup_disable=memory`, so Docker ignores the `mem_limit` values (it prints a warning). The backend heap is capped anyway with `-Xmx512m` (`BACKEND_JAVA_OPTS`). To enforce the limits, add `cgroup_enable=memory cgroup_memory=1` to `/boot/firmware/cmdline.txt` and reboot.
+- **Backups**: the `backup` service (`db_backup`) runs `pg_dump` every day at `BACKUP_TIME` (default `03:30`, `TZ` Europe/Madrid) and once on start if the newest dump is older than a day. It keeps 7 daily and 4 weekly (Sunday) dumps in the `postgres_backups` volume, and turns `unhealthy` if the newest dump is older than 26 h.
+  - List: `docker compose exec backup ls -lh /backups/daily /backups/weekly`
+  - Copy one to the host: `docker compose cp backup:/backups/daily/<file>.dump .`
+  - Check a dump by restoring it into a scratch database: `docker compose exec backup /scripts/restore.sh /backups/daily/<file>.dump restore_check`, then `docker compose exec backup dropdb restore_check`.
+  - Restore over the live database (data loss since that dump!): `docker compose stop backend`, `docker compose exec backup /scripts/restore.sh /backups/daily/<file>.dump asaltamontes --force`, `docker compose start backend`.
+  - The dumps live on the same SD card as the database: copy them elsewhere from time to time.
 - Test stack on the same server, never touching production: `docker compose -p asaltamontes-dev -f docker-compose.yml -f docker-compose.dev.yml --env-file <file> up -d --build` (app on `:8081`, backend `127.0.0.1:8091`, DB `127.0.0.1:5434`).
 
 ### 3\. Manual Development (Optional)

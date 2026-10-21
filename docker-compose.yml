@@ -23,6 +23,37 @@ services:
     networks:
       - asaltamontes-net
 
+  # Daily pg_dump with retention (7 daily + 4 weekly) into the postgres_backups volume (T07b).
+  # Same image as `db` so pg_dump always matches the server version. Restore: see README, "Backups".
+  backup:
+    image: postgres:13
+    container_name: db_backup
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["bash", "/scripts/backup-loop.sh"]
+    environment:
+      PGHOST: db
+      PGDATABASE: asaltamontes
+      PGUSER: ${DATABASE_USERNAME}
+      PGPASSWORD: ${DATABASE_PASSWORD}
+      BACKUP_TIME: ${BACKUP_TIME:-03:30}
+      TZ: ${TZ:-Europe/Madrid}
+    volumes:
+      - ./scripts/backup:/scripts:ro
+      - postgres_backups:/backups
+    # Unhealthy when the newest daily dump is older than 26 h
+    healthcheck:
+      test: ["CMD-SHELL", "find /backups/daily -name '*.dump' -mmin -1560 | grep -q ."]
+      interval: 1h
+      timeout: 10s
+      retries: 1
+      start_period: 10m
+    mem_limit: 128m
+    networks:
+      - asaltamontes-net
+
   backend:
     build:
       context: ./backend
@@ -89,3 +120,4 @@ networks:
 
 volumes:
   postgres_data:
+  postgres_backups:
