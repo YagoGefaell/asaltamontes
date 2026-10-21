@@ -10,7 +10,7 @@
 ## División en sub-PRs (2026-10-21)
 - **T02a — Flyway + baseline** (hecho): dependencias, `V1__baseline.sql` generado desde las entidades y comparado con lo que crea Hibernate (columnas, constraints e índices idénticos; solo cambian los nombres de las constraints, ahora explícitos), `ddl-auto=validate`, `baseline-on-migrate`, `FlywayMigrationIT` y sección de migraciones en el README. Cierra BUG-005.
   - El `pg_dump --schema-only` de producción no se ha obtenido: Claude no tiene permiso para leer la BD de producción. Comprobado en local que una BD creada por Hibernate y con datos arranca con baseline + validate sin perder nada. Como la app desplegada ha ejecutado `ddl-auto=update` con las entidades actuales, su esquema tiene todas las columnas que valida Hibernate. Si aun así no arrancara, se recrea la BD (D-014).
-- **T02b — Seed de desarrollo** (pendiente): necesita la ruta del archivo de datos de ejemplo del servidor (pregunta abierta a Yago). Alternativa si no aparece: seed ficticio escrito desde cero.
+- **T02b — Seed de desarrollo** (pendiente): **seed ficticio nuevo escrito desde cero** (Yago, 2026-10-21: los datos antiguos no importan). Ubicación a elegir (`scripts/seed/` o perfil `seed`), reproducible y sin datos reales.
 
 ## Objetivo
 Dejar de depender de `spring.jpa.hibernate.ddl-auto=update`. El esquema pasa a estar versionado en migraciones SQL revisables, y Hibernate solo **valida**.
@@ -41,7 +41,7 @@ Dejar de depender de `spring.jpa.hibernate.ddl-auto=update`. El esquema pasa a e
 - Procedimiento de despliegue de esta PR en el servidor (backup previo con `pg_dump` completo antes de mergear) en la descripción de la PR.
 
 ### Seed de desarrollo (D-014)
-- Localizar en el servidor el archivo de datos de ejemplo que usa Yago y convertirlo en `scripts/seed/seed-dev.sql` (o un `CommandLineRunner` con perfil `dev`/`seed`) **reproducible** sobre el esquema de Flyway. Usuarias ficticias; contraseñas de ejemplo documentadas en el README; ningún dato personal real.
+- Escribir un seed **ficticio nuevo** (no se migran los datos de ejemplo antiguos) en `scripts/seed/seed-dev.sql` o un `CommandLineRunner` con perfil `seed`, **reproducible** sobre el esquema de Flyway. Usuarias ficticias; contraseñas de ejemplo documentadas en el README; ningún dato personal real.
 - Documentar cómo resetear la BD local o de desarrollo y cargar el seed.
 
 ## Fuera de alcance

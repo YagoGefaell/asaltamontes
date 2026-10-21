@@ -23,5 +23,6 @@ Comprobar con datos que el servidor aguanta la demo y saber cuál es el límite 
 - [ ] T01–T27 en estado `hecho`.
 - [ ] Sin bugs críticos ni altos abiertos.
 - [ ] Backups automáticos verificados en la última semana.
+- [ ] **Copia externa de los backups** fuera de la microSD funcionando y con una restauración probada desde ella (ver T25).
 - [ ] Prueba de carga superada con los objetivos acordados.
 - [ ] Yago ha hecho una prueba completa en el móvil y da el OK.
