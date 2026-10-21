@@ -641,3 +641,18 @@ body.chat-open .bottom-nav {
   background: var(--surface);
   border-top: 1px solid var(--border-soft);
 }
+
+.contacts-load-more {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.contacts-load-more:disabled {
+  cursor: default;
+}

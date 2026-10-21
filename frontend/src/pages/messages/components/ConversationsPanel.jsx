@@ -10,6 +10,9 @@ const ConversationsPane = ({
   formatMessageTime,
   onCreateGroup,
   creatingGroup,
+  hasMoreChats = false,
+  loadingMoreChats = false,
+  onLoadMoreChats,
 }) => {
   return (
     <>
@@ -91,6 +94,17 @@ const ConversationsPane = ({
             </button>
           );
         })}
+
+        {!loadingChats && !errorChats && hasMoreChats && (
+          <button
+            type="button"
+            className="contacts-load-more"
+            onClick={onLoadMoreChats}
+            disabled={loadingMoreChats}
+          >
+            {loadingMoreChats ? "Cargando…" : "Cargar más conversaciones"}
+          </button>
+        )}
       </div>
     </>
   );

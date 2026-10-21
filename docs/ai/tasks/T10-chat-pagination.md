@@ -1,6 +1,6 @@
 # T10 — Paginación por cursor del historial de chat
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 1 — Chat
 - **Depende de:** T09 (y el índice `messages (conversation_id, id DESC)` de T05; si T05 no está mergeada, crear el índice aquí)
 - **Rama sugerida:** `perf/T10-chat-pagination`
@@ -9,7 +9,7 @@
 
 ## División en sub-PRs (2026-10-21)
 - **T10a — historial por cursor** (hecho): `GET …/messages?before&limit` → `MessagePageDto`, `POST …/read`, el `GET` ya no marca como leído; frontend con scroll infinito hacia arriba (IntersectionObserver), posición de scroll conservada y `mergeMessages` para deduplicar historial + WebSocket. Cierra BUG-020.
-- **T10b — lista de conversaciones paginada** (pendiente): cursor sobre `(last_message_at DESC NULLS LAST, id DESC)` + índice (migración) + "cargar más" en el frontend.
+- **T10b — lista de conversaciones paginada** (hecho): cursor `beforeAt`/`beforeId` sobre `(last_message_at DESC NULLS LAST, id DESC)` + índice (V5), `unreadChats` total para el badge, "cargar más" en el frontend y recarga de la primera página cuando llega un mensaje de un chat no cargado.
 
 ## Objetivo
 Abrir un chat no debe descargar todos sus mensajes. Cargar los últimos N y pedir más al hacer scroll hacia arriba.

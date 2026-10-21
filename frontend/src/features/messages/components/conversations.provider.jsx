@@ -12,6 +12,9 @@ import {
   createGroupConversationRequest,
 } from "../services/messages.service.js";
 import { mergeMessages } from "../utils/mergeMessages.js";
+import { countUnreadChats, mergeChatPages, unreadChatsElsewhere } from "../utils/mergeChats.js";
+
+const INITIAL_CHATS_PAGING = { hasMore: false, nextBeforeAt: null, nextBeforeId: null, loading: false, pages: 0 };
 
 export const ConversationsProvider = ({ children }) => {
   const { websocketClient, websocketConnected, isAuthenticated, sendMessage, currentUser } = useAuth();
@@ -26,6 +29,14 @@ export const ConversationsProvider = ({ children }) => {
   const [errorChats, setErrorChats] = useState(null);
 
   const [activeChatId, setActiveChatId] = useState(null);
+
+  // Chat list by pages (T10b): cursor of the next page, and unread chats that are not loaded yet
+  const [chatsPaging, setChatsPaging] = useState(INITIAL_CHATS_PAGING);
+  const [unreadElsewhere, setUnreadElsewhere] = useState(0);
+  const chatsRef = useRef(chats);
+  useEffect(() => {
+    chatsRef.current = chats;
+  }, [chats]);
 
   const clearUnreadCount = useCallback((conversationId) => {
     setChats((prevChats) => prevChats.map((chat) => (
@@ -223,6 +234,53 @@ export const ConversationsProvider = ({ children }) => {
     return mappedChat;
   }, [buildLastMessagePreview]);
 
+  /**
+   * Puts a page of the chat list in place. mode: "replace" (first load), "fresh" (the first page again, on top
+   * of what is loaded) or "older" (the next page). Returns the resulting list (best estimate, for callers).
+   */
+  const applyChatPage = useCallback((page, mode) => {
+    const mapped = page.items.map((conversation) => mapConversationToChat(conversation));
+    const merge = (current) => (mode === "replace"
+      ? mapped
+      : mergeChatPages(current, mapped, { fresh: mode === "fresh" }));
+
+    const estimated = merge(chatsRef.current);
+    setChats(merge);
+    setUnreadElsewhere(unreadChatsElsewhere(page.unreadChats, estimated));
+    setChatsPaging((prev) => {
+      // A fresh first page does not move the cursor once older pages are loaded
+      if (mode === "fresh" && prev.pages > 1) return { ...prev, loading: false };
+      return {
+        hasMore: page.hasMore,
+        nextBeforeAt: page.nextBeforeAt,
+        nextBeforeId: page.nextBeforeId,
+        loading: false,
+        pages: mode === "older" ? prev.pages + 1 : 1,
+      };
+    });
+    return estimated;
+  }, [mapConversationToChat]);
+
+  const refreshChats = useCallback(async () => {
+    const page = await getMyConversationsRequest();
+    return applyChatPage(page, "fresh");
+  }, [applyChatPage]);
+
+  const loadMoreChats = useCallback(async () => {
+    if (!chatsPaging.hasMore || chatsPaging.loading) return;
+
+    setChatsPaging((prev) => ({ ...prev, loading: true }));
+    try {
+      const page = await getMyConversationsRequest({
+        beforeAt: chatsPaging.nextBeforeAt,
+        beforeId: chatsPaging.nextBeforeId,
+      });
+      applyChatPage(page, "older");
+    } catch {
+      setChatsPaging((prev) => ({ ...prev, loading: false }));
+    }
+  }, [chatsPaging, applyChatPage]);
+
   const createGroupConversation = useCallback(async ({ groupName, groupImage = null, users = [] }) => {
     const normalizedUsers = Array.isArray(users)
       ? users.map((username) => String(username || "").trim()).filter(Boolean)
@@ -243,12 +301,8 @@ export const ConversationsProvider = ({ children }) => {
       throw new Error("No se pudo crear el grupo");
     }
 
-    const conversations = await getMyConversationsRequest();
-    const mappedChats = Array.isArray(conversations)
-      ? conversations.map((conversation) => mapConversationToChat(conversation))
-      : [];
-
-    setChats(mappedChats);
+    // The new group has no messages yet: it may not be in the first page, so it is looked up there or built below
+    const mappedChats = await refreshChats();
 
     const createdChat = mappedChats.find(
       (chat) => String(chat.id) === String(createdConversationId)
@@ -270,7 +324,7 @@ export const ConversationsProvider = ({ children }) => {
       lastMsg: "Abre la conversacion",
       lastMessageAt: null,
     };
-  }, [mapConversationToChat]);
+  }, [refreshChats]);
 
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
@@ -324,6 +378,8 @@ export const ConversationsProvider = ({ children }) => {
   useEffect(() => {
     if (!isAuthenticated) {
       setChats([]);
+      setChatsPaging(INITIAL_CHATS_PAGING);
+      setUnreadElsewhere(0);
       setChatMessages({});
       setHistoryPaging({});
       setLoadingChats(false);
@@ -338,14 +394,9 @@ export const ConversationsProvider = ({ children }) => {
       setErrorChats(null);
 
       try {
-        const conversations = await getMyConversationsRequest();
+        const page = await getMyConversationsRequest();
         if (!mounted) return;
-
-        const mappedChats = Array.isArray(conversations)
-          ? conversations.map((conversation) => mapConversationToChat(conversation))
-          : [];
-
-        setChats(mappedChats);
+        applyChatPage(page, "replace");
       } catch (error) {
         if (!mounted) return;
         setErrorChats(error.message || "Error cargando conversaciones");
@@ -361,12 +412,12 @@ export const ConversationsProvider = ({ children }) => {
     return () => {
       mounted = false;
     };
-  }, [isAuthenticated, mapConversationToChat]);
+  }, [isAuthenticated, applyChatPage]);
 
   // Latest values for the reconnection catch-up, which must not restart when they change
   const catchUpStateRef = useRef({});
   useEffect(() => {
-    catchUpStateRef.current = { chatMessages, activeChatId, markConversationAsRead, mapConversationToChat };
+    catchUpStateRef.current = { chatMessages, activeChatId, markConversationAsRead, applyChatPage };
   });
   const wasConnectedRef = useRef(false);
 
@@ -386,12 +437,12 @@ export const ConversationsProvider = ({ children }) => {
     let cancelled = false;
 
     const catchUp = async () => {
-      const { chatMessages: cached, mapConversationToChat: mapChat } = catchUpStateRef.current;
+      const { chatMessages: cached, applyChatPage: applyPage } = catchUpStateRef.current;
 
       try {
-        const conversations = await getMyConversationsRequest();
+        const page = await getMyConversationsRequest();
         if (cancelled) return;
-        setChats(conversations.map((conversation) => mapChat(conversation)));
+        applyPage(page, "fresh");
       } catch {
         // The list stays as it was; new messages keep arriving by WebSocket
       }
@@ -461,6 +512,11 @@ export const ConversationsProvider = ({ children }) => {
       }]),
     }));
 
+    // A chat that is not loaded (older page, or new): the first page brings its real name and avatar (T10b)
+    if (!chatsRef.current.some((chat) => String(chat.id) === String(conversationId))) {
+      refreshChats().catch(() => {});
+    }
+
     setChats((prevChats) => {
       const existing = prevChats.find(
         (chat) => String(chat.id) === String(conversationId)
@@ -501,7 +557,7 @@ export const ConversationsProvider = ({ children }) => {
 
       return [updatedChat, ...remainingChats];
     });
-  }, [activeChatId, sendReadReceipt, buildLastMessagePreview]);
+  }, [activeChatId, sendReadReceipt, buildLastMessagePreview, refreshChats]);
 
   const handleChatError = useCallback((error) => {
     setChatError({ detail: error?.detail || "No se ha podido enviar el mensaje", at: Date.now() });
@@ -516,7 +572,7 @@ export const ConversationsProvider = ({ children }) => {
     handleChatError
   );
 
-  const totalUnreadCount = chats.reduce((total, chat) => total + (chat.unreadCount > 0 ? 1 : 0), 0);
+  const totalUnreadCount = countUnreadChats(chats) + unreadElsewhere;
 
   return (
     <ConversationsContext.Provider 
@@ -526,6 +582,8 @@ export const ConversationsProvider = ({ children }) => {
         chatMessages, 
         setChatMessages,
         loadingChats,
+        chatsPaging,
+        loadMoreChats,
         errorChats,
         upsertConversation,
         ensurePrivateConversation,
