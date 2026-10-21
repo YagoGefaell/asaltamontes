@@ -16,6 +16,7 @@ Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Sp
   - [1. Environment Configuration](#1-environment-configuration)
   - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
   - [3. Local Development](#3-local-development)
+  - [4. Tests](#4-tests)
 - [API & WebSocket](#api--websocket)
 - [Roadmap](#roadmap)
 
@@ -104,6 +105,19 @@ docker compose up --build
 ```bash
 ./mvnw spring-boot:run
 ```
+
+### 4. Tests
+
+```bash
+./mvnw verify                          # unit tests (*Test) + integration tests (*IT)
+./mvnw test -Dtest=<ClassName>Test     # a single unit test class
+./mvnw verify -Dit.test=<ClassName>IT  # a single integration test class (plus the unit tests)
+```
+
+- Requires **Docker**: integration tests start a PostgreSQL 17 container with Testcontainers. No `.env` is needed; the `test` profile (`src/test/resources/application-test.properties`) provides fixed values.
+- Integration tests extend `support/AbstractIntegrationTest` (shared container and Spring context) and create their own data with `TestDataFactory` (unique names, so tests never assume an empty database). `AuthTestHelper.bearer(user)` adds a valid access token to a MockMvc request.
+- Scheduled maintenance jobs are disabled in the `test` profile (`SchedulingConfig`).
+- CI runs `./mvnw verify` on every pull request.
 
 
 ## API & WebSocket

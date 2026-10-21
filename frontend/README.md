@@ -54,7 +54,11 @@ src/
 
 ### Useful Scripts
 
+Tests live next to the code they test (`*.test.js` / `*.test.jsx`); shared setup is in `src/test/setup.js`.
+
 - `npm run build`: Build the app for production in `/dist`.
+- `npm test`: Run the unit tests once (Vitest + Testing Library, jsdom). `npm run test:watch` keeps them running while you code.
+- `npm run lint`: Run ESLint.
 - `npm run preview`: Serve the production build locally.
 
 ## Environment Variables
