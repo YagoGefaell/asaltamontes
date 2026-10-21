@@ -97,7 +97,7 @@ Once the containers are healthy, the platform will be available at:
 
 ### Server deployment (self-hosted runner)
 
-Every push to `main` runs `.github/workflows/deploy.yml` on the server: it builds the new images while the current version keeps running, recreates only what changed, waits for the healthchecks and smoke-tests the app through nginx. A failing healthcheck fails the job (the logs are printed in it). Changes only in `docs/`, `*.md` or `.claude/` do not deploy.
+Every push to `main` runs `.github/workflows/deploy.yml` on the server: it builds the new images while the current version keeps running, recreates only what changed, waits for the healthchecks and smoke-tests the app through nginx. A failing healthcheck fails the job (the logs are printed in it). Changes only in `docs/`, `*.md` or `.claude/` do not deploy. After a successful deploy it removes build cache older than 24 h and unused images older than 72 h (never volumes), and warns in the job when the disk passes 80 %.
 
 - Variables: `/etc/github-runner.env` (permissions `600`, owned by the runner user). It needs every variable of `.env.example`.
 - All services have `restart: unless-stopped`: they come back after a reboot of the server.

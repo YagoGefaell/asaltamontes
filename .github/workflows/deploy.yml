@@ -30,6 +30,22 @@ jobs:
       - name: Start the new version
         run: $COMPOSE up -d --remove-orphans --wait --wait-timeout 300
 
+      # Containers created while the memory cgroup was disabled have no limit, and compose does not recreate
+      # them because their config did not change (BUG-044). Recreate only those, once.
+      - name: Apply memory limits to old containers
+        run: |
+          stale=""
+          for service in $($COMPOSE config --format json | jq -r '.services | to_entries[] | select(.value.mem_limit != null) | .key'); do
+            id=$($COMPOSE ps -q "$service")
+            if [ -n "$id" ] && [ "$(docker inspect -f '{{.HostConfig.Memory}}' "$id")" = "0" ]; then
+              stale="$stale $service"
+            fi
+          done
+          if [ -n "$stale" ]; then
+            echo "Recreating without memory limit:$stale"
+            $COMPOSE up -d --force-recreate --no-deps --wait --wait-timeout 300 $stale
+          fi
+
       - name: Smoke test through nginx
         run: |
           curl -fsS --retry 10 --retry-delay 3 --retry-all-errors http://localhost/actuator/health
@@ -43,6 +59,19 @@ jobs:
           $COMPOSE ps
           $COMPOSE logs --tail 150 backend frontend
 
-      - name: Remove dangling images
+      # The build cache and old tagged images grow on every deploy and fill the microSD (BUG-044). Never volumes.
+      - name: Clean up build cache and old images
         if: success()
-        run: docker image prune -f
+        run: |
+          docker builder prune -f --filter until=24h
+          docker image prune -a -f --filter until=72h
+          docker system df
+
+      - name: Warn if the disk is almost full
+        if: always()
+        run: |
+          used=$(df --output=pcent / | tail -1 | tr -dc '0-9')
+          echo "Disk usage: ${used}%"
+          if [ "$used" -ge 80 ]; then
+            echo "::warning::The server disk is at ${used}%"
+          fi
