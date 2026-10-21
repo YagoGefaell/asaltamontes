@@ -25,7 +25,7 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 
 ## Contexto (código actual)
 - Backend: `UserProfile.profilePictureUrl`, `Community.imageUrl`, `Conversation.groupImage` (texto libre). `UserValidator.validateProfileChange` solo comprueba que empiecen por `http(s)://`. Los DTO de búsqueda y detalle devuelven esas URLs tal cual.
-- Frontend: los campos de URL libre están en `pages/settings/EditProfile.jsx`, `pages/communities/components/CommunityCreatorPanel.jsx` y `pages/messages/components/GroupCreatorPanel.jsx`. Las imágenes se pintan en `shared/ui/UserCard.jsx`, `Profile.jsx`, `Communities.jsx`, `CommunityProfileDetail.jsx`, `Messages.jsx`, `Search.jsx` y `FollowListPage.jsx`. No existe ningún componente de subida.
+- Frontend: los campos de URL libre están en `pages/settings/EditProfile.jsx`, `pages/communities/components/CommunityCreatorPanel.jsx` y `pages/messages/components/GroupCreatorPanel.jsx`. Las imágenes se pintan en `shared/ui/UserCard.jsx`, `Profile.jsx`, `Communities.jsx`, `CommunityProfileDetail.jsx`, `Messages.jsx`, `Search.jsx` y `FollowListPage.jsx`. `shared/ui/AvatarUploader.jsx` existe pero no se usa en ninguna pantalla, y solo es un campo de texto para pegar una URL con vista previa.
 - nginx (T07a): `client_max_body_size 10m`; `/assets/` con caché inmutable.
 
 ## Alcance
@@ -42,7 +42,7 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 - Tests: subida de un JPEG con EXIF GPS → las variantes no contienen EXIF (comprobado con `metadata-extractor` o leyendo los marcadores APP1); un PNG renombrado a `.jpg` se procesa por su contenido; un PDF con `Content-Type: image/jpeg` → 400; > 10 MB → 413/400; foto vertical con orientación EXIF 6 → variante en vertical; dimensiones de cada variante.
 
 ### T17b — Frontend: componente de subida
-- `shared/components/ImageUploader.jsx`: `<input type="file" accept="image/*">` (en iOS abre cámara o galería y convierte HEIC a JPEG), vista previa local (`URL.createObjectURL`), validación previa de tamaño (≤ 10 MB) y tipo, barra de progreso (subida con `XMLHttpRequest`: `fetch` no da progreso), errores del backend y reintentar.
+- Convertir `shared/ui/AvatarUploader.jsx` en un `ImageUploader` genérico (manteniendo `AvatarUploader` como envoltorio para el avatar): `<input type="file" accept="image/*">` (en iOS abre cámara o galería y convierte HEIC a JPEG), vista previa local (`URL.createObjectURL`), validación previa de tamaño (≤ 10 MB) y tipo, barra de progreso (subida con `XMLHttpRequest`: `fetch` no da progreso), errores del backend y reintentar.
 - Usarlo en `EditProfile.jsx` (avatar), `CommunityCreatorPanel.jsx` (portada) y `GroupCreatorPanel.jsx` (imagen de grupo). En esta PR se sigue guardando la URL devuelta (`urls.medium`) en el campo actual, para no depender de T17c.
 - Tests (Vitest): rechaza > 10 MB y no-imágenes sin llamar a la API; muestra el progreso y el error del backend.
 
