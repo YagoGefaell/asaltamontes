@@ -54,7 +54,9 @@
       "Bash(docker volume rm*)",
       "Bash(docker volume prune*)",
       "Bash(docker system prune*)",
-      "Bash(rm -rf *)"
+      "Bash(rm -rf *)",
+      "Bash(git push origin dev*)",
+      "Bash(git push origin HEAD:dev*)"
     ]
   }
 }
