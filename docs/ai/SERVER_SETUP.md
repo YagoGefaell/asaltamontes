@@ -40,10 +40,10 @@ gh auth status        # comprobar
 gh auth setup-git     # que git push use gh como credencial
 ```
 
-**¿Con qué cuenta?** Si Claude usa tu cuenta, las PRs salen a tu nombre y GitHub **no te deja "Aprobar" tus propias PRs** (sí comentar y mergear). Si quieres revisarlas con "Approve/Request changes", crea una cuenta bot (p. ej. `asaltamontes-bot`), añádela como colaboradora del repo y haz `gh auth login` con ella en el servidor. Es opcional; con tu cuenta funciona todo.
+**Cuenta:** Claude usa la cuenta de Yago (tiene configurado poder aprobar sus propias PRs).
 
-## 3. Proteger `main` en GitHub (red de seguridad imprescindible en modo autónomo)
-Repo → Settings → Rules → Rulesets → New branch ruleset:
+## 3. Proteger `main` en GitHub
+✅ **Ya configurado por Yago** (protección de `main`, checks obligatorios y auto-aprobación permitida). Referencia de lo esperado:
 - Target: `main`. Enforcement: Active.
 - ✅ Restrict deletions · ✅ Block force pushes · ✅ Require a pull request before merging (0 approvals si usas tu cuenta; 1 si usas bot).
 - Required status checks: los dos jobs de `ci.yml` (`validate-backend`, `validate-frontend`).

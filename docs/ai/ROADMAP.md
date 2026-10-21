@@ -83,6 +83,7 @@
 
 ## Después de la demo (no planificado al detalle)
 
+- Perfeccionar el pipeline (Yago, 2026-10-21): p. ej. imágenes construidas en CI y publicadas en GHCR, deploy por tag/imagen en lugar de build en el servidor, rollback automático si el healthcheck falla, smoke tests tras el deploy, escaneo de dependencias (Dependabot/OWASP). Hasta entonces, T07 solo hace las mejoras mínimas de `deploy.yml`.
 - Redis: caché, rate limiting distribuido, relay de STOMP para varias instancias del backend.
 - Migración a hosting (VPS público/gestionado), CDN para imágenes (Cloudflare R2).
 - Push notifications (Web Push / FCM).

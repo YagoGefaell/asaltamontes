@@ -39,6 +39,8 @@ Hoy no hay ningún test real y la CI solo compila. Cada tarea posterior debe pod
 - `ci.yml` frontend: `npm ci` (no `npm install`), `npm run lint`, `npm test`, `npm run build`. Caché npm.
 - Publicar informe de tests como artefacto si falla (`surefire-reports`, `failsafe-reports`).
 
+- **Mantener los nombres de job** `validate-backend` y `validate-frontend`: son checks obligatorios de la protección de `main` (WORKFLOW §6). Los tests se añaden como pasos dentro de esos jobs.
+
 ## Fuera de alcance
 - Arreglar bugs detectados al escribir los tests → registrar y seguir.
 - E2E con navegador (Playwright) → se valorará en T28.

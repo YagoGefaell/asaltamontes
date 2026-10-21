@@ -46,6 +46,7 @@ cd frontend && npm ci && npm run lint && npm test && npm run build
 - Cuerpo según `docs/ai/templates/PR_BODY.md` → guárdalo en `$AI/pr-bodies/<rama>.md`.
 - `gh pr create --base <main|rama-padre> --title "<conventional title> (<ID>)" --body-file "$AI/pr-bodies/<rama>.md"`.
   Sin `gh`: deja en STATUS el enlace `https://github.com/YagoGefaell/asaltamontes/compare/main...<rama>?expand=1`.
+- Espera la CI: `gh pr checks <N> --watch`. Si falla, arréglalo en la rama; la PR no pasa a "En revisión" hasta tener los checks verdes.
 - STATUS: mueve la tarea de "En curso" a "En revisión" con el número o enlace de la PR.
 
 ## 6. No esperar

@@ -72,6 +72,9 @@ Ejemplos: `feat/T15-events-api`, `fix/BUG-006-follow-recount-tx`, `docs/bugs-cha
 - [ ] Autorrevisión del diff hecha (puedes usar `/code-review`) — sin código muerto, `console.log` de debug ni TODOs sin bug asociado.
 - [ ] `Estado` de la tarea/bugs actualizado en el diff.
 - [ ] Sección "Cómo probarlo" de la PR con pasos manuales reproducibles.
+- [ ] **CI de la PR en verde en GitHub** (`gh pr checks <N> --watch`). La rama `main` está protegida: sin checks verdes la PR no se puede mergear aunque Yago la apruebe. Si la CI falla, arreglarlo en la misma rama antes de darla por lista; una PR roja no cuenta como "en revisión" sino como "en curso".
+
+> **Nombres de los jobs de CI**: `validate-backend` y `validate-frontend` (`.github/workflows/ci.yml`) son checks obligatorios en la protección de `main`. **No se renombran ni se eliminan** sin avisar a Yago en la PR (tendría que actualizar la regla). Se pueden añadir pasos dentro de esos jobs.
 
 ## 7. Bugs
 
