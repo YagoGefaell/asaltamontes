@@ -1,6 +1,6 @@
 # BUG-046 — Los errores de comunidades llegan en inglés a la interfaz
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/community

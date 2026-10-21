@@ -1,6 +1,6 @@
 # BUG-015 — Unirse a una comunidad no valida existencia, duplicado ni baneo
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/community
