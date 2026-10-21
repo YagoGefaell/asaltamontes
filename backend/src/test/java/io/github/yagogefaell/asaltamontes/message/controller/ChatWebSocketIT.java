@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.BlockingQueue;
@@ -91,8 +92,10 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
         anaConnection.send("/app/chat.send", new SendMessageCommandDto(conversationId, "   "));
         anaConnection.send("/app/chat.send", new SendMessageCommandDto(conversationId, "x".repeat(2001)));
 
-        assertThat(errors.poll(5, TimeUnit.SECONDS).detail()).isEqualTo("El mensaje no puede estar vacío");
-        assertThat(errors.poll(5, TimeUnit.SECONDS).detail()).contains("2000");
+        // Inbound frames are processed by a thread pool: the two errors can arrive in any order
+        List<String> details = List.of(errors.poll(5, TimeUnit.SECONDS).detail(), errors.poll(5, TimeUnit.SECONDS).detail());
+        assertThat(details).containsExactlyInAnyOrder(
+                "El mensaje no puede estar vacío", "El mensaje no puede superar los 2000 caracteres");
         mockMvc.perform(get("/api/conversations/" + conversationId + "/messages").with(auth.bearer(ana)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
