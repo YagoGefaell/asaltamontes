@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:13
+    image: postgres:17
     container_name: postgres_db
     restart: unless-stopped
     environment:
@@ -11,7 +11,8 @@ services:
     ports:
       - "127.0.0.1:5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # Since T08 (PostgreSQL 17). Filled by scripts/db/upgrade-13-to-17.sh before the first deploy
+      - postgres17_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d asaltamontes"]
       interval: 10s
@@ -26,7 +27,7 @@ services:
   # Daily pg_dump with retention (7 daily + 4 weekly) into the postgres_backups volume (T07b).
   # Same image as `db` so pg_dump always matches the server version. Restore: see README, "Backups".
   backup:
-    image: postgres:13
+    image: postgres:17
     container_name: db_backup
     restart: unless-stopped
     depends_on:
@@ -119,5 +120,7 @@ networks:
     driver: bridge
 
 volumes:
+  # PostgreSQL 13 data, no longer mounted: kept for rollback (T08). Remove once 17 is validated.
   postgres_data:
+  postgres17_data:
   postgres_backups:

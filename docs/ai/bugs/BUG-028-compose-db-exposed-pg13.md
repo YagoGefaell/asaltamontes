@@ -1,6 +1,6 @@
 # BUG-028 — Compose: Postgres 13 sin soporte, BD expuesta, sin healthchecks y deploy con caída
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** infra
@@ -18,7 +18,7 @@ PostgreSQL 13 está fuera de soporte desde noviembre de 2025. El puerto `5433` p
 ## Cómo reproducir
 —
 
-**Progreso:** T07a resuelve la BD expuesta (ahora solo `127.0.0.1`), los healthchecks, el `depends_on` sin condición, la falta de `restart` y casi toda la caída del deploy (unos 15 s de API al recrear el backend). T07b añade los backups. Queda Postgres 13 (T08).
+**Progreso:** T07a resuelve la BD expuesta (ahora solo `127.0.0.1`), los healthchecks, el `depends_on` sin condición, la falta de `restart` y casi toda la caída del deploy (unos 15 s de API al recrear el backend). T07b añade los backups y T08 pasa a PostgreSQL 17.
 
 ## Arreglo propuesto
 T07 (compose, deploy, backups) y T08 (upgrade).
