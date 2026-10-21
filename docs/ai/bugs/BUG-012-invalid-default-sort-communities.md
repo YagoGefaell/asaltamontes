@@ -2,7 +2,7 @@
 
 - **Estado:** abierto
 - **Severidad:** alta
-- **Confianza:** probable (verificar con test)
+- **Confianza:** confirmado (reproducido en T01: `GET /api/communities/me` → 500)
 - **Área:** backend/community
 - **Tarea que lo resuelve:** T14
 - **Detectado:** 2026-10-21, análisis inicial del código por Claude
