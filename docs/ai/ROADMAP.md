@@ -43,7 +43,7 @@
 
 | # | Tarea | Depende de | Paralelizable con | Cierra bugs |
 |---|---|---|---|---|
-| T14 | [Corrección de comunidades (slug, ordenación, errores, paginación)](tasks/T14-communities-fixes.md) | T02, T04 | Fase 1 | BUG-012, BUG-013, BUG-014, BUG-015, BUG-035 |
+| T14 | [Corrección de comunidades (slug, ordenación, errores, paginación)](tasks/T14-communities-fixes.md) | T02, T04 | Fase 1 | BUG-012, BUG-013, BUG-014, BUG-015, BUG-035, BUG-045, BUG-046, BUG-047 |
 
 ## Fase 3 — Quedadas / eventos (prioridad 2)
 

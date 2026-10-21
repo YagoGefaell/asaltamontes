@@ -4,7 +4,7 @@
 - **Fase:** 2a — Comunidades base
 - **Depende de:** T02, T04
 - **Rama sugerida:** `fix/T14-communities-fixes`
-- **Cierra bugs:** BUG-012, BUG-013, BUG-014, BUG-015, BUG-035
+- **Cierra bugs:** BUG-012, BUG-013, BUG-014, BUG-015, BUG-035, BUG-045, BUG-046, BUG-047
 - **Tamaño:** M
 
 ## Objetivo
