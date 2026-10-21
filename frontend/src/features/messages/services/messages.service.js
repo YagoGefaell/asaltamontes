@@ -60,6 +60,29 @@ export async function getConversationMessagesRequest(conversationId, before = nu
   }
 }
 
+// Messages newer than `after`, oldest first, following the pages (T11: catching up after a reconnection).
+// complete = false if there were more than maxPages pages: the caller should reload the chat instead.
+export async function getMessagesAfterRequest(conversationId, after, maxPages = 5) {
+  const items = [];
+  let cursor = after;
+  try {
+    for (let page = 0; page < maxPages; page++) {
+      const result = await apiClient.get(
+        `/api/conversations/${conversationId}/messages?after=${encodeURIComponent(cursor)}&limit=100`
+      );
+      const pageItems = Array.isArray(result?.items) ? result.items : [];
+      items.push(...pageItems);
+      if (!result?.hasMore || pageItems.length === 0) {
+        return { items, complete: true };
+      }
+      cursor = pageItems[pageItems.length - 1].id;
+    }
+    return { items, complete: false };
+  } catch (error) {
+    throw new Error(error.message || "Error cargando mensajes");
+  }
+}
+
 // Marks the conversation as read when the WebSocket is not available (otherwise chat.read does it)
 export async function markConversationReadRequest(conversationId) {
   try {

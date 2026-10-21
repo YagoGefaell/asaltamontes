@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useAuth } from "../../auth/hooks/useAuth"; 
 import { useGlobalMessageListener } from "../hooks/useGlobalMessageListener";
 import { ConversationsContext } from "../hooks/conversations.context";
 import {
   getMyConversationsRequest,
   getConversationMessagesRequest,
+  getMessagesAfterRequest,
   markConversationReadRequest,
   getPrivateConversationRequest,
   createPrivateConversationRequest,
@@ -361,6 +362,84 @@ export const ConversationsProvider = ({ children }) => {
       mounted = false;
     };
   }, [isAuthenticated, mapConversationToChat]);
+
+  // Latest values for the reconnection catch-up, which must not restart when they change
+  const catchUpStateRef = useRef({});
+  useEffect(() => {
+    catchUpStateRef.current = { chatMessages, activeChatId, markConversationAsRead, mapConversationToChat };
+  });
+  const wasConnectedRef = useRef(false);
+
+  // T11: after a reconnection, fetch what arrived while the WebSocket was down
+  useEffect(() => {
+    if (!isAuthenticated) {
+      wasConnectedRef.current = false;
+      return;
+    }
+    if (!websocketConnected) return;
+    if (!wasConnectedRef.current) {
+      // First connection: the normal loads already have everything
+      wasConnectedRef.current = true;
+      return;
+    }
+
+    let cancelled = false;
+
+    const catchUp = async () => {
+      const { chatMessages: cached, mapConversationToChat: mapChat } = catchUpStateRef.current;
+
+      try {
+        const conversations = await getMyConversationsRequest();
+        if (cancelled) return;
+        setChats(conversations.map((conversation) => mapChat(conversation)));
+      } catch {
+        // The list stays as it was; new messages keep arriving by WebSocket
+      }
+
+      // What each chat holds after catching up, to mark the open one as read
+      const caughtUp = {};
+      for (const [conversationId, messages] of Object.entries(cached)) {
+        const lastId = getLastMessageId(messages);
+        if (lastId == null) continue;
+
+        try {
+          const missed = await getMessagesAfterRequest(conversationId, lastId);
+          if (cancelled) return;
+
+          if (!missed.complete) {
+            // Too many to merge: forget this chat so that opening it loads the latest messages again
+            const latest = await getConversationMessagesRequest(conversationId);
+            if (cancelled) return;
+            caughtUp[conversationId] = latest.items;
+            setChatMessages((prev) => ({ ...prev, [conversationId]: latest.items }));
+            setHistoryPaging((prev) => ({
+              ...prev,
+              [conversationId]: { hasMore: latest.hasMore, nextBefore: latest.nextBefore, loading: false },
+            }));
+          } else if (missed.items.length > 0) {
+            caughtUp[conversationId] = mergeMessages(messages, missed.items);
+            setChatMessages((prev) => ({
+              ...prev,
+              [conversationId]: mergeMessages(prev[conversationId], missed.items),
+            }));
+          }
+        } catch {
+          // This chat stays as it was
+        }
+      }
+
+      const { activeChatId: openChatId, markConversationAsRead: markAsRead } = catchUpStateRef.current;
+      if (openChatId != null) {
+        markAsRead(openChatId, caughtUp[String(openChatId)] ?? cached[openChatId]);
+      }
+    };
+
+    catchUp();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, websocketConnected, getLastMessageId]);
 
   const handleNewMessage = useCallback((payload) => {
     const conversationId = payload?.conversationId;

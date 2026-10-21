@@ -12,7 +12,7 @@ import { ConversationsContext } from "../../features/messages/hooks/conversation
 const Messages = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, sendMessage, websocketConnected } = useAuth();
+  const { currentUser, sendMessage, websocketConnected, websocketStatus } = useAuth();
 
   const { 
     chats, 
@@ -355,6 +355,7 @@ const Messages = () => {
             setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
           }}
           websocketConnected={websocketConnected}
+          websocketStatus={websocketStatus}
           messagesEndRef={messagesEndRef}
         />
       )}

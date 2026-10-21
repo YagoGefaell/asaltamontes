@@ -1,6 +1,6 @@
 # BUG-018 — El WebSocket acepta conexiones sin token o con token caducado y el chat deja de funcionar en silencio
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat + frontend
@@ -16,7 +16,7 @@ Si el `CONNECT` llega sin `Authorization` o con un token caducado, el intercepto
 ## Cómo reproducir
 Abrir la app, esperar más de 15 minutos, reiniciar el backend → el cliente reconecta pero no recibe mensajes.
 
-**Progreso (T09a):** parte backend resuelta: el `CONNECT` sin token, con token inválido, caducado o de refresh se rechaza con un frame `ERROR` cuyo `message` explica el motivo, y `SEND`/`SUBSCRIBE` sin usuaria se rechazan. Falta la parte del cliente (reconectar con el token renovado): T11.
+**Progreso (T09a):** parte backend resuelta: el `CONNECT` sin token, con token inválido, caducado o de refresh se rechaza con un frame `ERROR` cuyo `message` explica el motivo, y `SEND`/`SUBSCRIBE` sin usuaria se rechazan. Parte del cliente resuelta en T11: renueva el token antes de reconectar, reintenta con backoff y recupera los mensajes perdidos.
 
 ## Arreglo propuesto
 Rechazar el CONNECT no autenticado (T09) y renovar el token antes de reconectar (T11).
