@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.message.service;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
@@ -61,6 +62,10 @@ public class MessageService {
 
     @Transactional
     public Message saveMessage(Long conversationId, String senderUsername, String content) {
+        if (participantRepository.findByConversationIdAndUserUsername(conversationId, senderUsername).isEmpty()) {
+            throw new ForbiddenException("No tienes permiso para escribir en este chat");
+        }
+
         UserAccount sender = (UserAccount) userService.loadUserByUsername(senderUsername);
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("La conversación no existe"));
