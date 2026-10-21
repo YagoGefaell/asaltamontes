@@ -24,7 +24,9 @@ const Messages = () => {
     createGroupConversation,
     loadConversationMessages,
     loadingChats, 
-    errorChats
+    errorChats,
+    chatError,
+    clearChatError
   } = useContext(ConversationsContext);
 
   const [selectedChat, setSelectedChat] = useState(() => {
@@ -49,6 +51,9 @@ const Messages = () => {
     };
   });
   const [draftMessage, setDraftMessage] = useState("");
+  const [sendError, setSendError] = useState(null);
+  // Text of the last message sent, to give it back to the input if the server rejects it
+  const lastSentRef = useRef(null);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [isGroupCreatorOpen, setIsGroupCreatorOpen] = useState(false);
 
@@ -180,6 +185,26 @@ const Messages = () => {
     scrollToBottom();
   }, [selectedChat, currentMessages.length]);
 
+  // The server rejected a message (not a participant, empty, too long…): show why and restore the text
+  useEffect(() => {
+    if (!chatError) return;
+    const failedText = lastSentRef.current;
+    lastSentRef.current = null;
+    const restoreId = setTimeout(() => {
+      setSendError(chatError.detail);
+      if (failedText) {
+        setDraftMessage((current) => current || failedText);
+      }
+      clearChatError();
+    }, 0);
+    return () => clearTimeout(restoreId);
+  }, [chatError, clearChatError]);
+
+  const handleDraftChange = (value) => {
+    setDraftMessage(value);
+    if (sendError) setSendError(null);
+  };
+
   const handleSendMessage = async () => {
     const content = draftMessage.trim();
 
@@ -209,7 +234,12 @@ const Messages = () => {
     };
 
     const wasSent = sendMessage("/app/chat.send", payload);
-    if (!wasSent) return;
+    if (!wasSent) {
+      setSendError("No hay conexión con el chat. Inténtalo de nuevo en unos segundos.");
+      return;
+    }
+    lastSentRef.current = content;
+    setSendError(null);
 
     setChats((prevChats) => {
       const isGroupChat = selectedChat?.type === "GROUP";
@@ -309,7 +339,8 @@ const Messages = () => {
           currentMessages={currentMessages}
           currentUsername={currentUser?.username}
           draftMessage={draftMessage}
-          onDraftChange={setDraftMessage}
+          onDraftChange={handleDraftChange}
+          sendError={sendError}
           onSendMessage={handleSendMessage}
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}

@@ -1,3 +1,8 @@
+import { CHAT } from "../../../config/constants";
+
+// Show the counter only when it matters
+const COUNTER_THRESHOLD = CHAT.MAX_MESSAGE_LENGTH - 200;
+
 const ChatPane = ({
   selectedChat,
   currentMessages,
@@ -5,6 +10,7 @@ const ChatPane = ({
   draftMessage,
   onDraftChange,
   onSendMessage,
+  sendError,
   onLeaveChat,
   onOpenUserProfile,
   onSelectedAvatarError,
@@ -118,10 +124,15 @@ const ChatPane = ({
         <div ref={messagesEndRef} />
       </div>
 
+      {sendError && (
+        <p className="message-send-error" role="alert">{sendError}</p>
+      )}
       <div className="message-input">
         <input
           type="text"
           placeholder="Escribe un mensaje..."
+          maxLength={CHAT.MAX_MESSAGE_LENGTH}
+          aria-label="Mensaje"
           value={draftMessage}
           onChange={(e) => onDraftChange(e.target.value)}
           onKeyDown={(e) => {
@@ -130,6 +141,11 @@ const ChatPane = ({
             }
           }}
         />
+        {draftMessage.length >= COUNTER_THRESHOLD && (
+          <span className="message-counter">
+            {draftMessage.length}/{CHAT.MAX_MESSAGE_LENGTH}
+          </span>
+        )}
         <button
           type="button"
           onClick={onSendMessage}
