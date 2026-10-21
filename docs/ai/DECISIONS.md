@@ -16,10 +16,11 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 ## D-003 · Migraciones con Flyway (2026-10-21)
 - **Decisión:** el esquema se versiona con Flyway; Hibernate usa `ddl-auto=validate`. Una migración mergeada nunca se edita.
 
-## D-004 · Imágenes en almacenamiento compatible con S3, MinIO en el servidor (2026-10-21)
-- **Decisión:** se usa MinIO en el compose y el AWS SDK v2 en el backend. Las subidas van directas del navegador con URL prefirmada, el backend las procesa (quita EXIF y genera variantes) y nginx las sirve. Cuando haya hosting, se pasa a Cloudflare R2 o S3 cambiando solo la configuración.
-- **Consecuencias:** nunca se guardan binarios en Postgres ni en el sistema de archivos del contenedor del backend.
-- **Revisión pendiente (2026-10-21):** MinIO dejó de publicar imágenes Docker comunitarias en octubre de 2025 y su repositorio está archivado. Alternativas y recomendación en `tasks/T17-media-storage.md` ("Decisión pendiente"); falta la decisión de Yago.
+## D-004 · Imágenes en el sistema de archivos detrás de `MediaStorage` (2026-10-21, revisada)
+- **Decisión (Yago, 2026-10-21):** para la demo, los ficheros se guardan en un volumen de Docker (`media_data`) detrás de la interfaz `MediaStorage` (`FileSystemMediaStorage`). Las subidas pasan por el backend, que valida, quita el EXIF y genera las variantes; nginx sirve `/media/` directamente desde el volumen (solo lectura). Cuando haya hosting, se añade una implementación S3/R2 de la misma interfaz (y, con ella, las URLs prefirmadas).
+- **Motivo:** MinIO dejó de publicar imágenes Docker comunitarias en octubre de 2025 y su repositorio está archivado; un servicio S3 adicional (Garage, SeaweedFS) no compensa en la Pi (D-016).
+- **Consecuencias:** nunca se guardan binarios en Postgres. El volumen `media_data` necesita su propio backup (el de T07b solo cubre la BD). El código fuera de `media/` no conoce rutas de disco: solo `MediaStorage` y URLs públicas.
+- **Historial:** la versión inicial elegía MinIO + AWS SDK v2 con URLs prefirmadas.
 
 ## D-005 · Mapas con Leaflet y OpenStreetMap (2026-10-21)
 - **Decisión:** Leaflet + `react-leaflet` con tiles de OSM y atribución visible. Sin PostGIS de momento (basta con un bounding box sobre lat/lng indexados).
