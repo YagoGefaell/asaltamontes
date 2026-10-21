@@ -7,6 +7,10 @@
 - **Cierra bugs:** BUG-012, BUG-013, BUG-014, BUG-015, BUG-035, BUG-045, BUG-046, BUG-047
 - **Tamaño:** M
 
+## División en sub-PRs (2026-10-21)
+- **T14a — backend** (hecho): migración V4 (nombres normalizados y únicos sin distinguir mayúsculas, `slug` con backfill, índice trigram), `GET /api/communities/{slug}` (con respaldo por nombre para los enlaces antiguos), lista blanca de `sort` (`SortWhitelist`), 404/409/403 en unirse y en las operaciones de la propietaria, `POST` → 201 con `Location` y `CommunityDetailsDto`, `?query=` con comodines escapados, mensajes en español. Cierra BUG-012, BUG-014, BUG-015, BUG-046, BUG-047 y la parte backend de BUG-013.
+- **T14b — frontend** (pendiente): rutas y enlaces por `slug` (BUG-013), "cargar más" (BUG-035), buscador, rollback del botón de unirse (BUG-045).
+
 ## Objetivo
 Dejar el módulo de comunidades robusto antes de construir eventos y moderación encima.
 

@@ -168,7 +168,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest req) {
         log.error("Unexpected error on {} {}", req.getMethod(), req.getRequestURI(), ex);
-        return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred", req, null);
+        return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Ha ocurrido un error inesperado", req, null);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -176,7 +176,7 @@ public class GlobalExceptionHandler {
                                                     HttpServletRequest request) {
         log.warn("Data integrity violation on {} {}: {}", request.getMethod(), request.getRequestURI(),
                 ex.getMostSpecificCause().getMessage());
-        return buildProblem(HttpStatus.CONFLICT, "Data Integrity Violation", "Data integrity violation occurred", request, null);
+        return buildProblem(HttpStatus.CONFLICT, "Data Integrity Violation", "La operación entra en conflicto con datos existentes", request, null);
     }
 
     private ProblemDetail buildProblem(@NonNull HttpStatus status, String title, String detail, HttpServletRequest req, Map<String, ?> errors) {

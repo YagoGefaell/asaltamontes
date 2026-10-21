@@ -155,7 +155,7 @@ class ErrorHandlingIT extends AbstractIntegrationTest {
 
             mockMvc.perform(get("/api/communities/" + testData.uniqueName("missing")).with(auth.bearer(user)))
                     .andExpect(status().isNotFound())
-                    .andExpect(jsonPath("$.detail").value("Community not found"));
+                    .andExpect(jsonPath("$.detail").value("Comunidad no encontrada"));
         }
 
         @Test

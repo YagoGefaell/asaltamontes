@@ -18,3 +18,5 @@ Crear una comunidad "Trail Vigo/Sur" e intentar abrirla.
 
 ## Arreglo propuesto
 Slug único inmutable (T14).
+
+**Progreso (T14a):** el backend ya identifica las comunidades por `slug` (y acepta el nombre como respaldo). Falta que el frontend use el slug en rutas y enlaces: T14b.

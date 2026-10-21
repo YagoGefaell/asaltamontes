@@ -30,13 +30,13 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
         LEFT JOIN UserFollow f ON f.following = u AND f.follower.id = :currentUserId
         WHERE cm.community.id = :communityId 
           AND u.id <> :currentUserId
-        ORDER BY u.username ASC
     """)
     Page<CommunityMemberDto> findMembersExcept(@Param("communityId") Long communityId, @Param("currentUserId") Long currentUserId, Pageable pageable);
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
             c.id,
             c.name,
+            c.slug,
             c.imageUrl,
             m.role,
             c.memberCount
@@ -46,12 +46,31 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     """)
     Page<CommunitySearchDto> findAllCommunities(@Param("user") Long user, Pageable pageable);
 
-    boolean existsByName(String name);
+    // pattern: lowercase, with LIKE wildcards escaped and wrapped in % (CommunityService#search)
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
+            c.id,
+            c.name,
+            c.slug,
+            c.imageUrl,
+            m.role,
+            c.memberCount
+        )
+        FROM Community c
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :user
+        WHERE LOWER(c.name) LIKE :pattern ESCAPE '\\'
+    """)
+    Page<CommunitySearchDto> searchCommunities(@Param("user") Long user, @Param("pattern") String pattern, Pageable pageable);
+
+    boolean existsByNameIgnoreCase(String name);
+
+    boolean existsBySlug(String slug);
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto(
             c.id,
             c.name,
+            c.slug,
             c.description,
             c.imageUrl,
             m.role,
@@ -59,16 +78,28 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
         ) 
         FROM Community c
         LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId
-        WHERE c.name = :name
+        WHERE c.slug = :slug
+    """)
+    Optional<CommunityDetailsDto> findCommunityBySlug(@Param("slug") String slug, @Param("userId") Long userId);
+
+    // Links shared before T14 use the name
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto(
+            c.id,
+            c.name,
+            c.slug,
+            c.description,
+            c.imageUrl,
+            m.role,
+            c.memberCount
+        ) 
+        FROM Community c
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId
+        WHERE LOWER(c.name) = LOWER(:name)
     """)
     Optional<CommunityDetailsDto> findCommunityByName(@Param("name") String name, @Param("userId") Long userId);
 
-    @Query("""
-        SELECT CASE WHEN c.createdBy.id = :userId THEN true ELSE false END
-        FROM Community c
-        WHERE c.id = :communityId
-    """)
-    boolean isOwner(@Param("communityId") Long communityId, @Param("userId") Long userId);
+    boolean existsByIdAndCreatedById(Long communityId, Long userId);
 
     @Modifying
     @Query("UPDATE Community c SET c.memberCount = c.memberCount + 1 WHERE c.id = :id")

@@ -1,6 +1,6 @@
 # BUG-047 — Nombres de comunidad únicos solo de forma exacta: "Trail Vigo" y "trail vigo " conviven
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código y del esquema)
 - **Área:** backend/community

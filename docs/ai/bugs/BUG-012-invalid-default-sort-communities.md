@@ -1,6 +1,6 @@
 # BUG-012 — La ordenación por defecto `name` rompe `/communities/me` y `/communities/{id}/members`
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (reproducido en T01: `GET /api/communities/me` → 500)
 - **Área:** backend/community

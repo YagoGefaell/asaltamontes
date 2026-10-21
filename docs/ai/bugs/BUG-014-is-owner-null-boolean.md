@@ -1,6 +1,6 @@
 # BUG-014 — `isOwner` sobre una comunidad inexistente provoca 500
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable (verificar con test)
 - **Área:** backend/community
