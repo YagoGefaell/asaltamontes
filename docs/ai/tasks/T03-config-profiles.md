@@ -1,6 +1,6 @@
 # T03 — Configuración por perfiles, logs y Actuator
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 0 — Cimientos
 - **Depende de:** —
 - **Rama sugerida:** `chore/T03-config-profiles`

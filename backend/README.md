@@ -92,7 +92,20 @@ JWT_REFRESH_EXPIRATION_MS=604800000
 CORS_ALLOWED_ORIGINS=http://localhost,http://127.0.0.1
 ```
 
-`CORS_ALLOWED_ORIGINS` is a comma-separated list of origins allowed to call the API. Add any machine-specific origins (LAN IPs, browser extensions, etc.) to your local `.env` only — never hardcode them in source.
+`CORS_ALLOWED_ORIGINS` is a comma-separated list of origins allowed to call the API **and to open the WebSocket**. Add any machine-specific origins (LAN IPs, browser extensions, etc.) to your local `.env` only — never hardcode them in source. With the `dev` profile the default already includes the Vite dev server (`http://localhost:5173`).
+
+Optional variables (defaults in brackets):
+
+| Variable | Purpose |
+|---|---|
+| `SPRING_PROFILES_ACTIVE` | `dev` locally (SQL in logs, DEBUG), `prod` on the server (set by `docker-compose.yml`). With no profile the common config applies (no SQL logs). |
+| `COOKIE_SECURE` [`false`] | Adds `Secure` to the refresh token cookie. Set to `true` only when the app is served over HTTPS. |
+| `COOKIE_SAME_SITE` [`Strict`] | `SameSite` attribute of the refresh token cookie. |
+| `DB_POOL_SIZE` [`10`] | Maximum connections in the Hikari pool. |
+
+Health checks (public, no token): `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`. No other actuator endpoint is exposed.
+
+Every response carries an `X-Request-Id` header (the incoming one if valid, otherwise generated); the same id appears in every log line of that request.
 
 ### 2. Running with Docker (Recommended)
 
@@ -103,7 +116,7 @@ docker compose up --build
 ### 3. Local Development
 
 ```bash
-./mvnw spring-boot:run
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
 ### 4. Tests

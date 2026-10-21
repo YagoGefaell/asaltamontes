@@ -1,6 +1,6 @@
 # BUG-004 — Logs de SQL con parámetros activados en la configuración única
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/config

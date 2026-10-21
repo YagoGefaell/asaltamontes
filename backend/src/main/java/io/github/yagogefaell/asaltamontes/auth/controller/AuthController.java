@@ -16,6 +16,7 @@ import io.github.yagogefaell.asaltamontes.auth.dto.LoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
 import io.github.yagogefaell.asaltamontes.auth.service.AuthService;
+import io.github.yagogefaell.asaltamontes.common.cookies.CookieProperties;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import lombok.RequiredArgsConstructor;
@@ -26,20 +27,21 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
+    private final CookieProperties cookieProperties;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         TokenPairs tokens = authService.login(request.username(), request.password());
 
         return ResponseEntity.ok()
-            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken(), cookieProperties).toString())
             .body(Map.of("accessToken", tokens.accessToken()));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout() {
         return ResponseEntity.ok()
-            .header(HttpHeaders.SET_COOKIE, CookieUtil.clear("refreshToken", "/").toString())
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.clear("refreshToken", "/", cookieProperties).toString())
             .build();
     }
 
@@ -58,7 +60,7 @@ public class AuthController {
         TokenPairs tokens = authService.generateTokens(user);
 
         return ResponseEntity.status(HttpStatus.CREATED)
-            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken(), cookieProperties).toString())
             .body(Map.of("accessToken", tokens.accessToken()));
     }
 
@@ -68,7 +70,7 @@ public class AuthController {
         TokenPairs tokens = authService.googleLogin(code);
 
         return ResponseEntity.ok()
-            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken()).toString())
+            .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken(), cookieProperties).toString())
             .body(Map.of("accessToken", tokens.accessToken()));
     }
 }
