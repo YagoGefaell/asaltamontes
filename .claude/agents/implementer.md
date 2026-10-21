@@ -18,6 +18,6 @@ Reglas específicas para agentes:
 - Si te bloquea una decisión que corresponde a Yago, no la inventes: deja la PR en draft (`gh pr create --draft`) con la pregunta en la descripción, o anótala en `<.ai>/STATUS.md` → "Bloqueos y preguntas abiertas".
 - Escribe en `<.ai>/STATUS.md` solo **tus** líneas (en curso / en revisión) y en `<.ai>/SESSION_LOG.md` una entrada corta al terminar. No reescribas lo de otros.
 - No arregles bugs fuera de tu alcance: regístralos como archivo `BUG-xxx` en tu PR.
-- Nunca hagas merge, nunca hagas push a `main` ni a `dev` y nunca uses `--force` sin `--with-lease`.
+- Nunca hagas merge, nunca hagas push a `main` y nunca uses `--force` sin `--with-lease`.
 
 Tu respuesta final (para quien te ha lanzado) debe contener: el enlace o número de la PR, un resumen de 3-5 líneas, el resultado de los tests, los bugs nuevos registrados y las preguntas abiertas.

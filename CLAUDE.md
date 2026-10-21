@@ -29,10 +29,9 @@ Objetivo a largo plazo: producción con miles de usuarias concurrentes y monetiz
 
 ## Reglas innegociables
 
-- **Nunca** commitear en `main` ni en `dev`, ni hacer merge de PRs: Yago revisa y mergea personalmente.
-- **Las PRs de tareas y bugs van a `dev`** (rama de integración). A `main` solo llegan las **PRs de release** `dev → main` que abre Claude con `/release` cuando hay un bloque coherente terminado (`WORKFLOW.md` §11, D-019).
+- **Nunca** commitear en `main` ni hacer merge de PRs: Yago revisa y mergea personalmente.
 - **Una rama + una PR por unidad de trabajo** (tarea o bug). Detalles en `docs/ai/WORKFLOW.md`.
-- Cada push a `main` **despliega automáticamente** al servidor privado y crea un **tag de versión** (`deploy.yml`, `release.yml`). `dev` no se despliega. Trata cada PR como algo que acabará en producción.
+- Cada push a `main` **despliega automáticamente** al servidor privado (`.github/workflows/deploy.yml`). Trata cada PR como algo que va a producción.
 - Cambios de esquema de BD **solo con migraciones Flyway** (a partir de T02). Nunca editar una migración ya mergeada.
 - Nada de secretos en el repo. Variables nuevas → `.env.example` + `docker-compose.yml` + README.
 - No toques cambios sin commitear que no sean tuyos (p. ej. trabajo local de Yago): no los incluyas en tus commits.
