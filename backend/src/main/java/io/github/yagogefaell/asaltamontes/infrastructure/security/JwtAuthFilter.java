@@ -69,6 +69,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     return;
                 }
 
+                // A refresh token must never authenticate an API request
+                if (!jwtUtil.isType(claims, JwtUtil.ACCESS_TYPE)) {
+                    request.setAttribute(AUTH_ERROR_ATTRIBUTE, "Token inválido");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 Long id = jwtUtil.extractId(claims);
 
                 UserAccount userDetails = userService.loadUserById(id);

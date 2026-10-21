@@ -1,6 +1,6 @@
 # BUG-003 — El logout no invalida el refresh token
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/auth

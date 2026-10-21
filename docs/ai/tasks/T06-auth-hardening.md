@@ -7,6 +7,10 @@
 - **Cierra bugs:** BUG-002, BUG-003, BUG-023, BUG-024, BUG-032, BUG-033
 - **Tamaño:** L
 
+## Progreso
+- **T06a — tokens** (hecho): claim `typ`, `jti` + tabla `refresh_sessions` (V3), logout que revoca, `POST /api/users/me/sessions/revoke-all`, job de limpieza y botón en Ajustes. Cierra BUG-002, BUG-003 y BUG-040. Sin la columna `user_agent` (no la necesita ningún criterio; se añadirá si se hace una pantalla de "sesiones activas"). La rotación del refresh va como propuesta en la PR.
+- **T06b — validación, rate limiting y Google** (pendiente).
+
 ## Objetivo
 Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real, "cerrar sesión en todos los dispositivos") **sin cambiar la arquitectura actual**, protección frente a fuerza bruta y validación consistente front/back.
 

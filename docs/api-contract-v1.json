@@ -216,10 +216,22 @@
         }
       }
     },
+    "/api/users/me/sessions/revoke-all": {
+      "post": {
+        "summary": "Log out on every device",
+        "tags": ["Authentication"],
+        "description": "Revokes every refresh token of the current user (all devices, including this one) and clears the refreshToken cookie. Access tokens already issued keep working until they expire (15 min).",
+        "responses": {
+          "204": { "description": "All sessions revoked" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
     "/auth/logout": {
       "post": {
         "summary": "User logout",
         "tags": ["Authentication"],
+        "description": "Revokes the session of the refreshToken cookie (that refresh token stops working) and clears the cookie. Always 200, even without a cookie or with an invalid one.",
         "responses": {
           "200": {
             "description": "Successful logout",

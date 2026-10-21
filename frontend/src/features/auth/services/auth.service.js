@@ -65,6 +65,16 @@ export async function registerRequest({ fullName, username, email, password, con
   }
 }
 
+// ---------------- LOGOUT EVERYWHERE ----------------
+// Revokes every session of the user (all devices). The caller then runs the normal logout.
+export async function logoutEverywhereRequest() {
+  try {
+    await apiClient.post('/api/users/me/sessions/revoke-all')
+  } catch {
+    throw new Error("No se han podido cerrar las sesiones")
+  }
+}
+
 // ---------------- LOGOUT ----------------
 export async function logoutRequest() {
   try {
