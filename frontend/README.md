@@ -63,21 +63,15 @@ Tests live next to the code they test (`*.test.js` / `*.test.jsx`); shared setup
 
 ## Environment Variables
 
-Configure the backend API URL using the `VITE_API_URL` variable in a `.env` file at the root of `/frontend`:
+The app calls the backend **on its own origin** (`/api`, `/auth`, `/ws-asaltamontes`):
+- In production, nginx (`nginx.conf`) proxies those paths to the backend container.
+- With `npm run dev`, the Vite dev server proxies them to `http://localhost:8080` (change it with `VITE_DEV_BACKEND`).
 
-```
-VITE_API_URL=http://localhost:8080
-```
+So no variable is needed. `VITE_API_URL` (in `frontend/.env`) is only for pointing the app at a backend on **another** origin; the backend must then list this origin in `CORS_ALLOWED_ORIGINS`.
 
 ## Docker Deployment
 
-You can build and run the frontend in a container:
-
-```bash
-docker build -t asaltamontes-frontend .
-docker run -p 5173:80 --env VITE_API_URL=http://backend:8080 asaltamontes-frontend
-```
-Or use `docker-compose` from the project root to launch the entire stack.
+The image (nginx) serves the build and proxies the backend paths to the `backend` service, so it is meant to run inside the project's `docker compose` stack (see the root README).
 
 ## Additional Documentation
 

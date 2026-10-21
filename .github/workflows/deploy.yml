@@ -2,15 +2,47 @@ name: Deploy Asaltamontes
 on:
   push:
     branches: [ main ]
+    # Documentation and agent tooling do not change the running app
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '.claude/**'
+
+# Never two deploys at the same time on the server
+concurrency:
+  group: deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: self-hosted
+    env:
+      COMPOSE: docker compose --env-file /etc/github-runner.env
     steps:
       - name: Checkout of the repository
         uses: actions/checkout@v4
 
-      - name: Deploy Asaltamontes
+      # The current version keeps serving while the new images build
+      - name: Build images
+        run: $COMPOSE build
+
+      # Recreates only what changed and waits for every healthcheck (fails the job if one never gets healthy)
+      - name: Start the new version
+        run: $COMPOSE up -d --remove-orphans --wait --wait-timeout 300
+
+      - name: Smoke test through nginx
         run: |
-          docker compose down
-          docker compose --env-file /etc/github-runner.env up --build -d
+          curl -fsS --retry 10 --retry-delay 3 --retry-all-errors http://localhost/actuator/health
+          curl -fsS -o /dev/null http://localhost/
+          # Auth goes through the proxy too (401 without a refresh cookie is the expected answer)
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost/auth/refresh)" = "401"
+
+      - name: Show state and logs
+        if: failure()
+        run: |
+          $COMPOSE ps
+          $COMPOSE logs --tail 150 backend frontend
+
+      - name: Remove dangling images
+        if: success()
+        run: docker image prune -f

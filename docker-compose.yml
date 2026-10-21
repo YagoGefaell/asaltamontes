@@ -2,14 +2,24 @@ services:
   db:
     image: postgres:13
     container_name: postgres_db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: asaltamontes
       POSTGRES_USER: ${DATABASE_USERNAME}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+    # Only reachable from the server itself (e.g. DBeaver through an SSH tunnel), never from the LAN
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d asaltamontes"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # Applied only when the kernel has the memory cgroup enabled (see README, "Memory limits")
+    mem_limit: 512m
     networks:
       - asaltamontes-net
 
@@ -18,8 +28,10 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: backend_app
+    restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
       DATABASE_URL: ${DATABASE_URL}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -34,8 +46,18 @@ services:
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
       COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-Strict}
       DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
+      # Explicit heap: without the memory cgroup the JVM would size it from the whole host RAM
+      JAVA_TOOL_OPTIONS: ${BACKEND_JAVA_OPTS:--Xms128m -Xmx512m}
+    # Not published on the LAN: browsers reach it through nginx (frontend). Localhost only, for debugging.
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health/readiness"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+    mem_limit: 768m
     networks:
       - asaltamontes-net
 
@@ -44,13 +66,20 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: ${VITE_API_URL}
         VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     container_name: frontend_app
+    restart: unless-stopped
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 64m
     networks:
       - asaltamontes-net
 

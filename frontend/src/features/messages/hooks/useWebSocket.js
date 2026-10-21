@@ -3,6 +3,12 @@ import { Client } from "@stomp/stompjs";
 import { getAccessToken } from "../../auth/services/auth-token.js";
 import { API_CONFIG } from "../../../config/constants.js";
 
+/** ws(s):// URL of the STOMP endpoint: on the API origin if one is configured, otherwise on this page's origin. */
+export function buildBrokerUrl(apiBaseUrl, location = window.location) {
+  const origin = apiBaseUrl ? apiBaseUrl.replace(/\/$/, "") : `${location.protocol}//${location.host}`;
+  return `${origin.replace(/^http/i, "ws")}/ws-asaltamontes`;
+}
+
 export function useWebSocket(isAuthenticated) {
   const clientRef = useRef(null);
   const [client, setClient] = useState(null);
@@ -18,9 +24,7 @@ export function useWebSocket(isAuthenticated) {
     }
 
     const connectWebSocket = () => {
-      const backendOrigin = API_CONFIG.BASE_URL.replace(/\/$/, "");
-      const wsOrigin = backendOrigin.replace(/^http/i, "ws");
-      const brokerURL = `${wsOrigin}/ws-asaltamontes`;
+      const brokerURL = buildBrokerUrl(API_CONFIG.BASE_URL);
 
       const stompClient = new Client({
         brokerURL,

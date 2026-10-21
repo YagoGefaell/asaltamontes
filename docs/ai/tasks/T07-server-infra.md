@@ -7,6 +7,13 @@
 - **Cierra bugs:** BUG-027, BUG-028 (parte)
 - **Tamaño:** M
 
+## División en sub-PRs (2026-10-21)
+- **T07a — proxy same-origin, compose y deploy** (hecho): nginx con `/api`, `/auth`, `/ws-asaltamontes` y `/actuator/health`; frontend con URL relativa (y proxy de Vite en dev); compose con puertos solo en `127.0.0.1`, healthchecks, `depends_on` con condiciones, `restart` y heap explícito; `deploy.yml` sin `down`, con `--wait`, prueba de humo, `paths-ignore` y `concurrency`; `docker-compose.dev.yml` para el stack de pruebas. Cierra BUG-027.
+  - Medido en la Pi: al recrear el backend, la API cae unos 15 s (el SPA sigue sirviéndose). Cero cortes necesitaría dos instancias (después de la demo).
+  - La Pi arranca con `cgroup_disable=memory`: Docker ignora `mem_limit`. Por eso el heap va con `-Xmx512m`. Activar el cgroup es decisión de Yago (README).
+- **T07b — backups** (pendiente): `pg_dump` diario con retención y restauración probada.
+- **T07c — HTTPS con Tailscale** (pendiente, antes "T07b"): ver "Fuera de alcance".
+
 ## Objetivo
 Que la app funcione de forma estable en el servidor privado: un único origen (sin CORS ni problemas de cookies), BD no expuesta, healthchecks, despliegues sin caída larga y backups automáticos.
 
@@ -44,7 +51,7 @@ Que la app funcione de forma estable en el servidor privado: un único origen (s
 - Paso de verificación: esperar a que `backend` esté `healthy` (timeout 3 min) y fallar el job si no.
 
 ## Fuera de alcance
-- HTTPS con **Tailscale** (D-013): primero una prueba de conectividad documentada (instalar Tailscale en la Pi y en un móvil fuera de la red de casa → `tailscale status`/`tailscale ping`). Si funciona, nueva tarea `T07b` con `tailscale serve` + certificado y cookies `Secure`. La instalación de Tailscale en el sistema la hace Yago (Claude no instala servicios del sistema). Si no funciona, plan B con mkcert.
+- HTTPS con **Tailscale** (D-013): primero una prueba de conectividad documentada (instalar Tailscale en la Pi y en un móvil fuera de la red de casa → `tailscale status`/`tailscale ping`). Si funciona, nueva tarea `T07c` con `tailscale serve` + certificado y cookies `Secure`. La instalación de Tailscale en el sistema la hace Yago (Claude no instala servicios del sistema). Si no funciona, plan B con mkcert.
 - Upgrade de Postgres → T08.
 
 ## Criterios de aceptación

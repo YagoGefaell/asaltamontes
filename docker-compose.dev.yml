@@ -1,0 +1,21 @@
+# Test stack on the same server as production (WORKFLOW §10). Always with its own project name:
+#   docker compose -p asaltamontes-dev -f docker-compose.yml -f docker-compose.dev.yml --env-file <env> up -d --build
+# Own container names, ports (frontend 8081, backend 8091, DB 5434) and volumes (asaltamontes-dev_*),
+# so it never touches the production containers.
+services:
+  db:
+    container_name: asaltamontes-dev-db
+    ports: !override
+      - "127.0.0.1:5434:5432"
+
+  backend:
+    container_name: asaltamontes-dev-backend
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+    ports: !override
+      - "127.0.0.1:8091:8080"
+
+  frontend:
+    container_name: asaltamontes-dev-frontend
+    ports: !override
+      - "8081:80"

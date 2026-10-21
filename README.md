@@ -91,9 +91,18 @@ docker compose --env-file .env up --build
 
 Once the containers are healthy, the platform will be available at:
 
-- **Frontend:** `http://localhost:5173`
-- **Backend API:** `http://localhost:8080`
-- **PostgreSQL DB:** `localhost:5433` (Accessible via pgAdmin or DBeaver)
+- **App:** `http://localhost` (nginx serves the frontend and proxies `/api`, `/auth`, `/ws-asaltamontes` and `/actuator/health` to the backend; `FRONTEND_PORT` changes the port)
+- **Backend API (direct):** `http://127.0.0.1:8080`, only from the machine itself
+- **PostgreSQL DB:** `127.0.0.1:5433`, only from the machine itself (from another computer: SSH tunnel, e.g. `ssh -L 5433:127.0.0.1:5433 administrador@<server>`, then DBeaver on `localhost:5433`)
+
+### Server deployment (self-hosted runner)
+
+Every push to `main` runs `.github/workflows/deploy.yml` on the server: it builds the new images while the current version keeps running, recreates only what changed, waits for the healthchecks and smoke-tests the app through nginx. A failing healthcheck fails the job (the logs are printed in it). Changes only in `docs/`, `*.md` or `.claude/` do not deploy.
+
+- Variables: `/etc/github-runner.env` (permissions `600`, owned by the runner user). It needs every variable of `.env.example`.
+- All services have `restart: unless-stopped`: they come back after a reboot of the server.
+- **Memory limits**: Raspberry Pi OS boots with `cgroup_disable=memory`, so Docker ignores the `mem_limit` values (it prints a warning). The backend heap is capped anyway with `-Xmx512m` (`BACKEND_JAVA_OPTS`). To enforce the limits, add `cgroup_enable=memory cgroup_memory=1` to `/boot/firmware/cmdline.txt` and reboot.
+- Test stack on the same server, never touching production: `docker compose -p asaltamontes-dev -f docker-compose.yml -f docker-compose.dev.yml --env-file <file> up -d --build` (app on `:8081`, backend `127.0.0.1:8091`, DB `127.0.0.1:5434`).
 
 ### 3\. Manual Development (Optional)
 
