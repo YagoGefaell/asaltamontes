@@ -91,6 +91,14 @@
 - Monetización: perfiles de marca, posts y eventos patrocinados, analítica para marcas.
 - GPX de rutas, integración con Strava.
 
+## Versionado y releases
+
+| # | Tarea | Depende de | Paralelizable con | Cierra bugs |
+|---|---|---|---|---|
+| T31 | [Versión visible y releases fiables](tasks/T31-versioning.md) | — | cualquiera | — |
+
+Se puede hacer en cualquier momento; conviene antes de la primera release grande desde `dev`.
+
 ## Pulido de UI (intercalado)
 
 T29b+ (una PR por pantalla, ver [T29](tasks/T29-design-system.md)): se hacen cuando el límite WIP bloquea PRs de backend o al cerrar cada fase.

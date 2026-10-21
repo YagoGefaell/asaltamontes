@@ -17,7 +17,7 @@ description: Atiende el feedback de Yago en una PR abierta de Asaltamontes. Lee 
    - **Aplicar**: cambio + test si corresponde, y un commit por comentario o tema (`fix(chat): address review — validate group size`).
    - **No aplicar**: solo con un motivo técnico concreto; respóndelo en el hilo.
    - **Duda**: pregunta en el hilo y deja el resto avanzado.
-4. Si la base ha cambiado (la PR padre se ha mergeado o `main` ha avanzado con conflictos): `git rebase origin/main` y `git push --force-with-lease`. Es el único caso en que se reescribe historia.
+4. Si la base ha cambiado (la PR padre se ha mergeado o su base, `dev` o `main` en releases y hotfixes, ha avanzado con conflictos): `git rebase origin/<base>` y `git push --force-with-lease`. Es el único caso en que se reescribe historia.
 5. Vuelve a pasar la verificación completa (WORKFLOW §6).
 6. Responde en GitHub: `gh pr comment <N> --body "…"` con un resumen (qué se ha aplicado, qué no y por qué) y responde en los hilos en línea: `gh api repos/{owner}/{repo}/pulls/<N>/comments/<id>/replies -f body="…"`.
 7. **Preferencias generales** de Yago ("en general prefiero…") → memoria de Claude + propuesta de PR `docs/` sobre `CLAUDE.md`, `WORKFLOW.md` o `DECISIONS.md`.

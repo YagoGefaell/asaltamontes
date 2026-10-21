@@ -30,7 +30,7 @@ gh pr list --state merged --limit 15 --json number,title,headRefName,mergedAt
 gh pr list --state closed --limit 10 --json number,title,headRefName,closedAt,mergedAt   # cerradas sin merge = rechazadas
 ```
 Para cada PR abierta con actividad nueva: `gh pr view <N> --comments` y `gh api repos/{owner}/{repo}/pulls/<N>/comments` (comentarios en línea).
-Sin `gh`: `git log origin/main --oneline -20` para ver los merges y pedir a Yago que pegue el feedback; anotar en STATUS que `gh` falta.
+Sin `gh`: `git log origin/dev --oneline -20` (y `origin/main` para releases) para ver los merges y pedir a Yago que pegue el feedback; anotar en STATUS que `gh` falta.
 
 Actualiza `$AI/STATUS.md`:
 - PRs mergeadas → fuera de "En revisión" y a "Hecho recientemente".
@@ -41,11 +41,14 @@ Actualiza `$AI/STATUS.md`:
 ## 4. Decidir el trabajo (WORKFLOW.md §8)
 1. Feedback pendiente → `/address-review <N>`.
 2. Bugs **críticos** abiertos sin PR (`grep` en `docs/ai/bugs`, ver su README).
-3. Siguiente tarea del ROADMAP con las dependencias mergeadas, o en PR si se puede apilar. Mira el `Estado` de la tarea en `main` y "En curso/En revisión" en STATUS para no duplicar trabajo.
+3. Siguiente tarea del ROADMAP con las dependencias mergeadas, o en PR si se puede apilar. Mira el `Estado` de la tarea en `dev` y "En curso/En revisión" en STATUS para no duplicar trabajo.
 4. Bugs **altos** sin tarea.
 5. Si se ha alcanzado el **límite WIP (4 PRs sin revisar)**: bug hunting (`/bug-hunt <área>`) o refinar specs 🔍.
 
 Si hay varias tareas independientes y la sesión lo permite, se pueden lanzar en paralelo con el agente `implementer` (`subagent_type: implementer`, `isolation: worktree`), una tarea por agente, sin superar el límite WIP ni los límites de recursos de la Raspberry Pi (máximo 2 agentes, WORKFLOW §10). Pásale el ID de la tarea y la ruta absoluta de `.ai/`.
+
+## 4b. ¿Toca release?
+Compara `git log --oneline origin/main..origin/dev`. Si lo acumulado en `dev` forma un bloque coherente terminado y se cumplen las condiciones de WORKFLOW §11, y no hay otra PR de release abierta → `/release`.
 
 ## 5. Informar a Yago (breve)
 Un mensaje corto: qué ha cambiado desde la última sesión, qué vas a hacer ahora (IDs) y las preguntas abiertas que le bloquean (de STATUS). Después, empieza a trabajar; no esperes confirmación salvo que una pregunta abierta bloquee la tarea elegida.

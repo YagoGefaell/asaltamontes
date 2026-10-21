@@ -3,6 +3,7 @@
 
 Cierra: Txx · BUG-xxx
 Depende de: <!-- #N o "nada" -->
+Base: <!-- dev (normal) · main (solo release o hotfix, WORKFLOW §11) -->
 
 ## Cambios
 - 
