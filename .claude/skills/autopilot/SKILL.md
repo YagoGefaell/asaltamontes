@@ -8,6 +8,7 @@ description: Sesión autónoma larga en el servidor de casa. Encadena start-sess
 Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas: `CLAUDE.md`, `docs/ai/WORKFLOW.md` (incluido §10, servidor compartido con producción) y `docs/ai/DECISIONS.md` (sobre todo D-012, la arquitectura de Yago) siguen siendo obligatorios.
 
 ## Bucle
+0. **Antes de cada unidad de trabajo nueva**, comprueba los frenos de consumo (sección siguiente).
 1. `/start-session` (sincronizar, leer STATUS y log, reconciliar con GitHub).
 2. Elige el trabajo según WORKFLOW §8. En cada vuelta:
    - **Feedback de Yago** primero (`/address-review`).
@@ -15,6 +16,13 @@ Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas
    - **Límite WIP** (4 PRs sin revisar, o el valor que Yago ponga en STATUS como `WIP: n`): si se alcanza, no abras más PRs de código. Haz, en este orden: refinar las specs 🔍 de las siguientes tareas del roadmap (PR `docs/`), `/bug-hunt` de un área no revisada recientemente, o preparar trabajo apilado **solo** si su base está en PR y es claramente correcta.
 3. Tras cada PR abierta: actualiza `.ai/STATUS.md` (checkpoint) antes de seguir.
 4. Cada ~3 unidades de trabajo, o si el contexto crece mucho: añade una entrada intermedia a `.ai/SESSION_LOG.md`.
+
+## Frenos de consumo (cuota del plan de Claude de Yago)
+Yago quiere conservar cuota para otros usos (2026-10-21):
+- **Freno manual**: si `.ai/STATUS.md` contiene una línea `AUTOPILOT: STOP` (en cualquier sitio), no empieces nada nuevo. Termina la unidad en curso hasta un punto seguro (commit + push, PR abierta o WIP anotado), ejecuta `/end-session` y para. Yago la quita cuando quiera reanudar.
+- **Freno automático**: si en la sesión aparece cualquier aviso de que el uso **semanal** está en el 80 % o más (o "approaching weekly limit"), haz lo mismo: termina la unidad en curso, `/end-session` y para. Anota en STATUS `AUTOPILOT: STOP (cuota semanal ≥ 80 %, <fecha>)`.
+- No puedes leer tú el porcentaje exacto (`/usage` es un comando de Yago); no lo inventes ni lo estimes.
+- Ante un aviso del límite de la ventana de horas (no el semanal), no hace falta parar: termina la unidad y continúa cuando se renueve.
 
 ## Paradas obligatorias (para y deja el motivo en STATUS → "Bloqueos")
 - Una decisión que corresponde a Yago bloquea **todo** el trabajo disponible (las que bloquean solo una tarea se anotan y se pasa a otra).
