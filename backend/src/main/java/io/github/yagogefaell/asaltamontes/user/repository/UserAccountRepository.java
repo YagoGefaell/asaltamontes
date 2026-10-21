@@ -51,7 +51,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END 
         FROM UserAccount u 
-        WHERE u.username = :username 
+        WHERE LOWER(u.username) = LOWER(:username)
         AND u.id <> :userId
     """)
     boolean existsByUsernameExceptId(@Param("username") String username, @Param("userId") Long userId);
@@ -65,7 +65,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     boolean existsByEmailIgnoreCaseExceptId(@Param("email") String email, @Param("id") Long id);
 
     boolean existsByEmailIgnoreCase(String email);
-    boolean existsByUsername(String username);
+    boolean existsByUsernameIgnoreCase(String username);
     Optional<UserAccount> findByUsernameIgnoreCase(String username);
     Optional<UserAccount> findByEmailIgnoreCase(String email);
 }

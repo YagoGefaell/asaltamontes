@@ -1,6 +1,6 @@
 # BUG-009 — `@Data` en entidades JPA con relaciones bidireccionales
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** probable (verificar con test)
 - **Área:** backend/user

@@ -40,7 +40,7 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         )
         FROM UserFollow f
         JOIN f.following u
-        WHERE f.follower.username = :username
+        WHERE LOWER(f.follower.username) = LOWER(:username)
         ORDER BY u.username ASC
     """)
     Page<UserSearchDto> findFollowingByUsername(String username, Long currentUserId, Pageable pageable);
@@ -60,7 +60,7 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         )
         FROM UserFollow f
         JOIN f.follower u
-        WHERE f.following.username = :username
+        WHERE LOWER(f.following.username) = LOWER(:username)
         ORDER BY u.username ASC
     """)
     Page<UserSearchDto> findFollowersByUsername(String username, Long currentUserId, Pageable pageable);
