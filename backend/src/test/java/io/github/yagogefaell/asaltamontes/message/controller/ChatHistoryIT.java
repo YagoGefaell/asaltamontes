@@ -114,6 +114,45 @@ class ChatHistoryIT extends AbstractIntegrationTest {
         assertThat(unreadOf(conversationId, bea)).isZero();
     }
 
+    @Test
+    void after_returnsOnlyNewerMessagesOldestFirst_inPages() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        Long conversationId = testData.createPrivateConversation(ana, bea);
+        Long lastSeen = null;
+        for (int i = 1; i <= 25; i++) {
+            Long id = messageService.processIncomingMessage(conversationId, ana.getId(), "mensaje " + i).id();
+            if (i == 5) {
+                lastSeen = id;
+            }
+        }
+
+        MessagePageDto first = fetch(history(conversationId).param("after", lastSeen.toString()).param("limit", "15"), bea);
+        assertThat(first.items()).extracting(MessageDto::content).first().isEqualTo("mensaje 6");
+        assertThat(first.items()).hasSize(15);
+        assertThat(first.hasMore()).isTrue();
+        assertThat(first.nextBefore()).isNull();
+
+        Long lastOfFirst = first.items().get(14).id();
+        MessagePageDto second = fetch(history(conversationId).param("after", lastOfFirst.toString()).param("limit", "15"), bea);
+        assertThat(second.items()).extracting(MessageDto::content).containsExactly(
+                "mensaje 21", "mensaje 22", "mensaje 23", "mensaje 24", "mensaje 25");
+        assertThat(second.hasMore()).isFalse();
+    }
+
+    @Test
+    void after_isForbiddenForNonParticipants_andCannotBeCombinedWithBefore() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UserAccount outsider = testData.createUser();
+        Long conversationId = testData.createPrivateConversation(ana, bea);
+
+        mockMvc.perform(history(conversationId).param("after", "0").with(auth.bearer(outsider)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(history(conversationId).param("after", "1").param("before", "10").with(auth.bearer(ana)))
+                .andExpect(status().isBadRequest());
+    }
+
     private static MockHttpServletRequestBuilder history(Long conversationId) {
         return get("/api/conversations/" + conversationId + "/messages");
     }

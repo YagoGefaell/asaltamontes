@@ -707,7 +707,7 @@
     "/api/conversations/{conversationId}/messages": {
       "get": {
         "summary": "Get one page of the conversation history (cursor by message id)",
-        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame).",
+        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame). With `after` instead (T11), returns the `limit` messages newer than that id, oldest first; hasMore then means there are newer ones (call again with after = id of the last item) and nextBefore is null.",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -724,6 +724,13 @@
             "required": false,
             "schema": { "type": "integer", "format": "int64" },
             "description": "Only messages with a smaller id (the nextBefore of the previous page)"
+          },
+          {
+            "name": "after",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64" },
+            "description": "Only messages with a greater id (catching up after a reconnection). Cannot be combined with before"
           },
           {
             "name": "limit",
@@ -748,6 +755,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "before and after in the same request"
           },
           "401": {
             "description": "Not authenticated (missing, invalid or expired access token)"

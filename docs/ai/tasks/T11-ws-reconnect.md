@@ -1,10 +1,10 @@
 # T11 — Reconexión WebSocket con token renovado
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 1 — Chat
 - **Depende de:** T09
 - **Rama sugerida:** `fix/T11-ws-reconnect`
-- **Cierra bugs:** BUG-018 (parte frontend)
+- **Cierra bugs:** BUG-018 (parte frontend), BUG-048
 - **Tamaño:** S
 
 ## Objetivo

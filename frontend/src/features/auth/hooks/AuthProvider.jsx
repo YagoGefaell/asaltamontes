@@ -17,7 +17,7 @@ function AuthProvider({ children }) {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
 
-  const { sendMessage, websocketClient, websocketConnected } = useWebSocket(isAuthenticated);
+  const { sendMessage, websocketClient, websocketConnected, websocketStatus } = useWebSocket(isAuthenticated);
 
   useEffect(() => {
     let mounted = true;
@@ -176,6 +176,7 @@ function AuthProvider({ children }) {
         sendMessage,
         websocketClient,
         websocketConnected,
+        websocketStatus,
       }}
     >
       {children}

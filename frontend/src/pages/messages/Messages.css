@@ -631,3 +631,13 @@ body.chat-open .bottom-nav {
   color: var(--text-muted);
 }
 
+
+.message-connection-status {
+  margin: 0;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface);
+  border-top: 1px solid var(--border-soft);
+}
