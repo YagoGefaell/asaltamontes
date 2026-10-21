@@ -1,6 +1,6 @@
 # BUG-026 — CORS: el modo de desarrollo con Vite no funciona y el WebSocket admite cualquier origen
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/config

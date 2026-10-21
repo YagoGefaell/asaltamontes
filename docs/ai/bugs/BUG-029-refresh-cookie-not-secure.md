@@ -1,6 +1,6 @@
 # BUG-029 — La cookie de refresh se emite sin `Secure`
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/auth

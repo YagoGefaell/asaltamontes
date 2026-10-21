@@ -99,7 +99,7 @@ Once the containers are healthy, the platform will be available at:
 
 If you prefer to run services individually for debugging:
 
-- **Backend:** Use VS Code's `F5` (Run and Debug) to load the `.env` file automatically via `launch.json`.
+- **Backend:** Use VS Code's `F5` (Run and Debug) to load the `.env` file automatically via `launch.json`. Add `SPRING_PROFILES_ACTIVE=dev` (in `launch.json` or your `.env`) to get SQL logs and allow the Vite dev server origin.
 - **Frontend:** Run `npm install` and `npm run dev` inside the `/frontend` folder.
 
 ## Project Structure

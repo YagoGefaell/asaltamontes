@@ -17,21 +17,21 @@ public final class CookieUtil {
             .build();
     } */
 
-    public static ResponseCookie refreshToken(String token) {
+    public static ResponseCookie refreshToken(String token, CookieProperties properties) {
         return ResponseCookie.from("refreshToken", token)
             .httpOnly(true)
-            .secure(false) // Set to true in production (https)
-            .sameSite("Strict")
+            .secure(properties.isSecure())
+            .sameSite(properties.getSameSite())
             .path("/")
             .maxAge(7 * 24 * 60 * 60)
             .build();
     }
 
-    public static ResponseCookie clear(@NonNull String name, @NonNull String path) {
+    public static ResponseCookie clear(@NonNull String name, @NonNull String path, CookieProperties properties) {
         return ResponseCookie.from(name, "")
             .httpOnly(true)
-            .secure(false) // Set to true in production (https)
-            .sameSite("Strict")
+            .secure(properties.isSecure())
+            .sameSite(properties.getSameSite())
             .path(path)
             .maxAge(0)
             .build();

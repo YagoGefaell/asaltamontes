@@ -14,15 +14,17 @@ import io.github.yagogefaell.asaltamontes.infrastructure.security.WebSocketJwtIn
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketJwtInterceptor jwtInterceptor;
+    private final CorsProperties corsProperties;
 
-    public WebSocketConfig(WebSocketJwtInterceptor jwtInterceptor) {
+    public WebSocketConfig(WebSocketJwtInterceptor jwtInterceptor, CorsProperties corsProperties) {
         this.jwtInterceptor = jwtInterceptor;
+        this.corsProperties = corsProperties;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-asaltamontes")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new));
     }
 
     @Override

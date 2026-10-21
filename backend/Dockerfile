@@ -15,6 +15,9 @@ WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
+# Let the JVM size its heap from the container memory limit
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75"
+
 EXPOSE 8080
 
 ENTRYPOINT ["java","-jar","app.jar"]
