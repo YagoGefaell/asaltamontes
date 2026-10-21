@@ -1,6 +1,6 @@
 # BUG-027 — El proxy `/api/` de nginx elimina el prefijo y no hay proxy para `/auth` ni el WebSocket
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** infra

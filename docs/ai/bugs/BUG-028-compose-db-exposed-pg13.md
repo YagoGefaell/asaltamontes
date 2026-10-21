@@ -18,5 +18,7 @@ PostgreSQL 13 está fuera de soporte desde noviembre de 2025. El puerto `5433` p
 ## Cómo reproducir
 —
 
+**Progreso:** T07a resuelve la BD expuesta (ahora solo `127.0.0.1`), los healthchecks, el `depends_on` sin condición, la falta de `restart` y casi toda la caída del deploy (unos 15 s de API al recrear el backend). Quedan los backups (T07b) y Postgres 13 (T08).
+
 ## Arreglo propuesto
 T07 (compose, deploy, backups) y T08 (upgrade).

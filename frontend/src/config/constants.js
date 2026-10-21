@@ -2,9 +2,11 @@
  * Application constants and configuration
  */
 
-const DEFAULT_API_URL = "http://localhost:8080";
+// Empty = same origin: in production nginx proxies /api, /auth and /ws-asaltamontes to the backend,
+// and in development the Vite dev server does the same (vite.config.js). Set VITE_API_URL only to
+// point the frontend at a backend on another origin.
 const ENV_API_URL = import.meta.env.VITE_API_URL?.trim();
-const RESOLVED_API_URL = (ENV_API_URL || DEFAULT_API_URL).replace(/\/$/, "");
+const RESOLVED_API_URL = (ENV_API_URL || "").replace(/\/$/, "");
 
 // API Configuration
 export const API_CONFIG = {
