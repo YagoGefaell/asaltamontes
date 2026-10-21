@@ -14,6 +14,8 @@ export const ConversationsProvider = ({ children }) => {
   const { websocketClient, websocketConnected, isAuthenticated, sendMessage, currentUser } = useAuth();
 
   const [chats, setChats] = useState([]);
+  // Last error of a message we sent (from /user/queue/errors); Messages shows it and restores the text
+  const [chatError, setChatError] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   const [loadingChats, setLoadingChats] = useState(false);
   const [errorChats, setErrorChats] = useState(null);
@@ -54,7 +56,7 @@ export const ConversationsProvider = ({ children }) => {
   }, [clearUnreadCount, sendReadReceipt, getLastMessageId]);
 
   const buildPreviewPrefix = useCallback((chatType, senderId, senderName, senderUsername = null) => {
-    const rawCurrentUserId = currentUser?.id;
+    const rawCurrentUserId = currentUser?.userId;
     const currentUserId = Number(rawCurrentUserId);
     const normalizedSenderId = Number(senderId);
 
@@ -77,7 +79,7 @@ export const ConversationsProvider = ({ children }) => {
     }
 
     return null;
-  }, [currentUser?.id, currentUser?.username]);
+  }, [currentUser?.userId, currentUser?.username]);
 
   const buildLastMessagePreview = useCallback((conversation, senderUsername = null, chatTypeOverride = null) => {
     const lastMessageText = (conversation?.lastMessage || conversation?.content || "").trim();
@@ -392,10 +394,17 @@ export const ConversationsProvider = ({ children }) => {
     });
   }, [activeChatId, sendReadReceipt, buildLastMessagePreview]);
 
+  const handleChatError = useCallback((error) => {
+    setChatError({ detail: error?.detail || "No se ha podido enviar el mensaje", at: Date.now() });
+  }, []);
+
+  const clearChatError = useCallback(() => setChatError(null), []);
+
   useGlobalMessageListener(
     websocketClient,
     websocketConnected,
-    handleNewMessage
+    handleNewMessage,
+    handleChatError
   );
 
   const totalUnreadCount = chats.reduce((total, chat) => total + (chat.unreadCount > 0 ? 1 : 0), 0);
@@ -415,7 +424,9 @@ export const ConversationsProvider = ({ children }) => {
         loadConversationMessages,
         activeChatId,
         setActiveChatId,
-        totalUnreadCount
+        totalUnreadCount,
+        chatError,
+        clearChatError
       }}
     >
       {children}

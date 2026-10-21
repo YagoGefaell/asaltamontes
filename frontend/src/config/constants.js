@@ -26,6 +26,11 @@ export const API_CONFIG = {
   TIMEOUT: 10000, // 10 seconds
 }
 
+// Chat (same limit as the backend, MessageService.MAX_CONTENT_LENGTH)
+export const CHAT = {
+  MAX_MESSAGE_LENGTH: 2000,
+}
+
 // App Configuration
 export const APP_CONFIG = {
   NAME: 'Asaltamontes Female',

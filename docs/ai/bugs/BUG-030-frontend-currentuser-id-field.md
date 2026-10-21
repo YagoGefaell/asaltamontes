@@ -1,6 +1,6 @@
 # BUG-030 — El frontend usa `currentUser.id`, pero la API devuelve `userId`
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/chat
