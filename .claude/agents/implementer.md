@@ -13,6 +13,7 @@ A continuación sigue **exactamente** el procedimiento de `.claude/skills/do-tas
 
 Reglas específicas para agentes:
 - Trabaja solo dentro de tu worktree. No cambies de rama en el checkout principal ni toques otros worktrees.
+- Estás en una Raspberry Pi 5 compartida con la app desplegada: no ejecutes `./mvnw verify` si otra suite se está ejecutando (`pgrep -f surefire`); espera o haz otra parte del trabajo.
 - No levantes el stack completo con `docker compose` (los puertos chocan con otros agentes): para verificar, usa los tests con Testcontainers.
 - Si te bloquea una decisión que corresponde a Yago, no la inventes: deja la PR en draft (`gh pr create --draft`) con la pregunta en la descripción, o anótala en `<.ai>/STATUS.md` → "Bloqueos y preguntas abiertas".
 - Escribe en `<.ai>/STATUS.md` solo **tus** líneas (en curso / en revisión) y en `<.ai>/SESSION_LOG.md` una entrada corta al terminar. No reescribas lo de otros.

@@ -50,7 +50,8 @@
 | # | Tarea | Depende de | Paralelizable con | Cierra bugs |
 |---|---|---|---|---|
 | T15 | [Eventos: modelo y API](tasks/T15-events-api.md) | T14 | T17 | — |
-| T16 | [Eventos: frontend (lista, detalle con mapa, crear)](tasks/T16-events-frontend.md) | T15 | T17 | — |
+| T29a | 🔍 [Sistema de diseño: tokens y componentes base](tasks/T29-design-system.md) | T01 | T15 | — |
+| T16 | [Eventos: frontend (lista, detalle con mapa, crear)](tasks/T16-events-frontend.md) | T15, T29a | T17 | — |
 
 ## Transversal — necesario para una demo creíble
 
@@ -89,6 +90,10 @@
 - Push notifications (Web Push / FCM).
 - Monetización: perfiles de marca, posts y eventos patrocinados, analítica para marcas.
 - GPX de rutas, integración con Strava.
+
+## Pulido de UI (intercalado)
+
+T29b+ (una PR por pantalla, ver [T29](tasks/T29-design-system.md)): se hacen cuando el límite WIP bloquea PRs de backend o al cerrar cada fase.
 
 ## Bugs sueltos (no cubiertos por ninguna tarea)
 

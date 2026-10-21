@@ -9,9 +9,17 @@ La rama `chore/ai-workflow-setup` solo existe en el portátil: hay que subirla.
 3. Crea la PR: `gh pr create --base main --title "docs: AI-assisted workflow, roadmap, task specs and bug registry" --body-file .ai/pr-bodies/chore-ai-workflow-setup.md`
 4. Copia el estado local al servidor más adelante (paso 5): la carpeta `.ai/` del portátil.
 
-## 1. Herramientas en el servidor
+## 1. Herramientas en el servidor (Raspberry Pi 5, ARM64)
+Antes de instalar:
+- `free -h` y `df -h`: anota la RAM y el disco en STATUS. Con 4 GB, Claude trabajará en secuencial; con 8 GB o más, hasta 2 agentes.
+- Muy recomendable: el sistema y Docker en **SSD/NVMe**, no en la microSD (los builds y Postgres sufren mucho en SD).
+- Swap de al menos 2-4 GB (`sudo dphys-swapfile` en Raspberry Pi OS, o zram).
+
 ```bash
-sudo apt update && sudo apt install -y git tmux curl jq openjdk-21-jdk
+sudo apt update && sudo apt install -y git tmux curl jq
+# Java 21: prueba `sudo apt install -y openjdk-21-jdk`; si tu versión de Raspberry Pi OS no lo tiene:
+#   curl -s "https://get.sdkman.io" | bash && source ~/.sdkman/bin/sdkman-init.sh && sdk install java 21-tem
+java -version   # debe ser 21
 # Node 24 (si no está): https://github.com/nodesource/distributions o nvm
 node -v   # debe ser v24.x
 # Docker: ya está (corre la app). Tu usuario debe estar en el grupo docker:
@@ -66,6 +74,7 @@ cd asaltamontes && git switch chore/ai-workflow-setup   # hasta que la mergees
   - IP del servidor en la LAN.
   - Ruta del checkout del runner y nombre del proyecto de compose de producción (`docker compose ls`).
   - Ruta del archivo de datos de ejemplo de la BD (para T02).
+  - RAM y tipo de disco de la Pi (`free -h`, SD o SSD).
 
 ## 6. Arrancar la sesión autónoma
 ```bash
@@ -74,6 +83,7 @@ cd ~/work/asaltamontes
 claude
 ```
 Dentro de Claude Code:
+0. Tailscale (para T07, cuando quieras): `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`. No requiere abrir puertos en el router.
 1. Modo de permisos: **auto** (Shift+Tab hasta "auto mode"). Las reglas de `.claude/settings.json` bloquean igualmente lo peligroso: push a main, merge, `docker compose down`, borrar volúmenes, `rm -rf`.
 2. Opcional: `/remote-control` para seguirlo y contestarle desde el móvil.
 3. Escribe **`/autopilot`**. Trabajará hasta quedarse sin trabajo seguro, bloqueado o en el límite de PRs, y dejará todo registrado.

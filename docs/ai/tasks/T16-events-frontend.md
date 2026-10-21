@@ -2,7 +2,7 @@
 
 - **Estado:** pendiente
 - **Fase:** 3 — Quedadas / eventos
-- **Depende de:** T15
+- **Depende de:** T15, T29a
 - **Rama sugerida:** `feat/T16-events-frontend` (dividir: `T16a` lista + detalle, `T16b` crear/editar + mapa selector)
 - **Cierra bugs:** —
 - **Tamaño:** L

@@ -45,7 +45,7 @@ Actualiza `$AI/STATUS.md`:
 4. Bugs **altos** sin tarea.
 5. Si se ha alcanzado el **límite WIP (4 PRs sin revisar)**: bug hunting (`/bug-hunt <área>`) o refinar specs 🔍.
 
-Si hay varias tareas independientes y la sesión lo permite, se pueden lanzar en paralelo con el agente `implementer` (`subagent_type: implementer`, `isolation: worktree`), una tarea por agente, sin superar el límite WIP. Pásale el ID de la tarea y la ruta absoluta de `.ai/`.
+Si hay varias tareas independientes y la sesión lo permite, se pueden lanzar en paralelo con el agente `implementer` (`subagent_type: implementer`, `isolation: worktree`), una tarea por agente, sin superar el límite WIP ni los límites de recursos de la Raspberry Pi (máximo 2 agentes, WORKFLOW §10). Pásale el ID de la tarea y la ruta absoluta de `.ai/`.
 
 ## 5. Informar a Yago (breve)
 Un mensaje corto: qué ha cambiado desde la última sesión, qué vas a hacer ahora (IDs) y las preguntas abiertas que le bloquean (de STATUS). Después, empieza a trabajar; no esperes confirmación salvo que una pregunta abierta bloquee la tarea elegida.

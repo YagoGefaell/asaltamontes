@@ -14,7 +14,8 @@ Comprobar con datos que el servidor aguanta la demo y saber cuál es el límite 
 ## Enfoque
 - Script de seed con datos sintéticos realistas (`scripts/seed/`): 5.000 usuarias, 100 comunidades, 2.000 eventos, 500.000 mensajes y 50.000 follows. **Nunca contra la BD real**: se usa un entorno de pruebas en el mismo servidor con otro proyecto de compose.
 - Escenarios k6 (`load/`): navegación (login → home → eventos → detalle), chat (N conexiones STOMP concurrentes enviando cada X s), ráfaga de inscripciones a un evento popular.
-- Objetivos iniciales (ajustar con Yago): 500 usuarias concurrentes activas, p95 < 300 ms en REST, entrega de mensajes p95 < 500 ms, 0 errores 5xx.
+- Objetivos (D-017, Raspberry Pi 5): 100 usuarias virtuales concurrentes, p95 < 500 ms en REST, entrega de mensajes p95 < 1 s, 0 errores 5xx. **k6 se ejecuta desde el portátil**, no desde la Pi (D-016). Documentar también hasta dónde aguanta la Pi (punto de saturación) como dato para la futura migración a hosting.
+- Seed reducido acorde a la Pi (p. ej. 2.000 usuarias, 200.000 mensajes) si el completo no cabe.
 - Tuning según los resultados: pool de Hikari, índices, N+1 (activar `hibernate.generate_statistics` en el entorno de carga), límites de memoria de la JVM, `worker_connections` de nginx y el tamaño del broker WS.
 - Informe en `docs/ai/reports/load-test-<fecha>.md` con los resultados y los cuellos de botella.
 

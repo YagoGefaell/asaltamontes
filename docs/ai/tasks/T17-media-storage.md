@@ -8,6 +8,8 @@
 - **Tamaño:** L
 - **Spec:** 🔍 alto nivel — **refinar antes de implementar** (completar con la plantilla `docs/ai/templates/TASK.md` mirando el código de ese momento).
 
+> Raspberry Pi 5 (D-016): cualquier imagen nueva (MinIO, Prometheus, Grafana, Uptime Kuma…) debe existir para `linux/arm64`, y hay que vigilar la RAM; si no cabe, preferir servicios externos gratuitos.
+
 ## Objetivo
 Hoy las imágenes son URLs pegadas a mano (`profilePictureUrl`, `imageUrl`, `groupImage`). Hace falta subir fotos de verdad: avatar, portada de comunidad, imagen de evento, imagen de grupo y, más adelante, posts (T22).
 

@@ -27,7 +27,7 @@ Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real
   - `logout`: marca el `jti` de la cookie como revocado (y borra la cookie como ahora).
   - `POST /api/users/me/sessions/revoke-all` → revoca todas las sesiones de la usuaria.
   - Job diario que borra las filas caducadas hace más de 30 días.
-- **Opcional, a decidir por Yago en la PR**: rotar el refresh en cada `/auth/refresh` (nuevo `jti` + nueva cookie, revocando el anterior) con detección de reutilización. Mejora la seguridad, pero cambia el comportamiento del flujo actual; implementarlo solo si Yago lo aprueba.
+- **Decisión de Yago (2026-10-21): no se implementa en T06a.** Se entrega como **propuesta aparte** (en la descripción de la PR o en una PR `docs/`, con el diff estimado) para que Yago decida: rotar el refresh en cada `/auth/refresh` (nuevo `jti` + nueva cookie, revocando el anterior) con detección de reutilización. Mejora la seguridad, pero cambia el comportamiento del flujo actual; implementarlo solo si Yago lo aprueba.
 
 ### T06b — Validación, rate limiting y Google
 - Bean Validation en `RegisterRequest`, `LoginRequest`, `UserUpdateDto`, `CreateCommunityDto`… y `@Valid` en los controladores. Mantener los mensajes en español que ya usa `UserValidator`; las comprobaciones de unicidad siguen en el validador.

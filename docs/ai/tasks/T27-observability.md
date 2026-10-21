@@ -8,6 +8,8 @@
 - **Tamaño:** M
 - **Spec:** 🔍 alto nivel — **refinar antes de implementar** (completar con la plantilla `docs/ai/templates/TASK.md` mirando el código de ese momento).
 
+> Raspberry Pi 5 (D-016): cualquier imagen nueva (MinIO, Prometheus, Grafana, Uptime Kuma…) debe existir para `linux/arm64`, y hay que vigilar la RAM; si no cabe, preferir servicios externos gratuitos.
+
 ## Objetivo
 Durante la demo hay que enterarse de los errores antes de que las testers los cuenten.
 

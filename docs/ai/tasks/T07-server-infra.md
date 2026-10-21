@@ -44,7 +44,7 @@ Que la app funcione de forma estable en el servidor privado: un único origen (s
 - Paso de verificación: esperar a que `backend` esté `healthy` (timeout 3 min) y fallar el job si no.
 
 ## Fuera de alcance
-- HTTPS: el servidor está **solo en la LAN** (D-013). Proponer en la PR (sin implementar hasta el OK de Yago) entre: **Tailscale** (HTTPS válido con MagicDNS + `tailscale serve`, y acceso para testers invitadas a la tailnet) o **mkcert** (CA local instalada en cada dispositivo). Recomendación por defecto: Tailscale, porque también resuelve el acceso de las testers de la demo.
+- HTTPS con **Tailscale** (D-013): primero una prueba de conectividad documentada (instalar Tailscale en la Pi y en un móvil fuera de la red de casa → `tailscale status`/`tailscale ping`). Si funciona, nueva tarea `T07b` con `tailscale serve` + certificado y cookies `Secure`. La instalación de Tailscale en el sistema la hace Yago (Claude no instala servicios del sistema). Si no funciona, plan B con mkcert.
 - Upgrade de Postgres → T08.
 
 ## Criterios de aceptación
@@ -59,5 +59,6 @@ Que la app funcione de forma estable en el servidor privado: un único origen (s
 - Manual en el servidor (Yago o Claude si tiene acceso): checklist de la PR.
 
 ## Notas y riesgos
+- **Raspberry Pi 5 / ARM64** (D-016): todas las imágenes deben ser multi-arch con `linux/arm64` (`docker manifest inspect <imagen>`). Límites de memoria por servicio (orientativo para 8 GB: backend 768 MB con `-XX:MaxRAMPercentage=75`, Postgres 512 MB con `shared_buffers=128MB`, nginx 64 MB) y ajustarlos a la RAM real de la Pi.
 - **Claude trabaja en esta misma máquina** (ver `WORKFLOW.md` §10). Los cambios de compose se prueban con `docker compose -p asaltamontes-dev` y puertos alternativos, nunca recreando el proyecto de producción a mano. El deploy real lo hace el workflow al mergear.
 - Requiere probar en el servidor real. La PR debe incluir el checklist de verificación post-merge.

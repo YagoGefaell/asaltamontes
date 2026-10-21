@@ -12,7 +12,7 @@ La plataforma se presenta como un **espacio seguro para mujeres**: los mensajes 
 
 ## Alcance
 ### Backend
-- Migración: tabla `user_blocks (blocker_id, blocked_id, created_at)`, PK compuesta, índice por `blocked_id`. Columna `user_profiles.dm_policy` (`EVERYONE` | `FOLLOWING` | `MUTUALS` | `NOBODY`, por defecto `EVERYONE`). Debate: `FOLLOWING`, es decir, "personas a las que yo sigo", sería un valor por defecto más seguro; **decidir con Yago en la PR**.
+- Migración: tabla `user_blocks (blocker_id, blocked_id, created_at)`, PK compuesta, índice por `blocked_id`. Columna `user_profiles.dm_policy` (`EVERYONE` | `FOLLOWING` | `MUTUALS` | `NOBODY`, por defecto `EVERYONE`). Decidido por Yago (D-018): por defecto `EVERYONE`.
 - `POST/DELETE /api/users/{username}/block`, `GET /api/users/me/blocks` (paginado).
 - Efectos de un bloqueo (en cualquiera de los dos sentidos):
   - No se puede crear ni usar la conversación privada entre ambas (enviar → 403 con mensaje neutro).

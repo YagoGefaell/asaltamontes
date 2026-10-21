@@ -53,10 +53,30 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 
 ## D-013 · Servidor solo en la LAN de casa (2026-10-21)
 - **Contexto:** el servidor privado no es accesible desde internet; está en la red local de Yago, y el runner self-hosted y Claude trabajan en esa misma máquina.
-- **Decisión:** no hay dominio ni TLS público. Para HTTPS dentro de la LAN (lo necesita la PWA de T26 y la cookie `Secure`) se elegirá en T07 entre Tailscale (certificados válidos vía MagicDNS, acceso también desde fuera de casa) o una CA local con mkcert. **Lo decide Yago.**
+- **Decisión (Yago, 2026-10-21):** no hay dominio ni TLS público. Para HTTPS se usará **Tailscale** (certificados válidos vía MagicDNS + `tailscale serve`, acceso también desde fuera de casa y para las testers invitadas). Tailscale no necesita abrir puertos en el router (solo conexiones salientes, funciona tras CG-NAT con relés DERP); Yago tuvo problemas con su router/ISP, así que T07 **verifica primero** que funciona. Plan B: CA local con mkcert.
 - **Consecuencias:** la cookie `Secure` es configurable (T03) y por defecto `false` mientras no haya HTTPS. Las testers de la demo necesitarán acceso a la red (VPN/Tailscale) o habrá que exponerlo; se decidirá antes de T25.
 
 ## D-014 · Los datos de la BD del servidor son desechables (2026-10-21)
 - **Contexto (Yago):** no hay datos reales; existe un archivo con datos de ejemplo cargados como base, pero si se pierden no importa.
 - **Decisión:** las migraciones (T02, T05) y el upgrade de Postgres (T08) pueden recrear la BD desde cero en lugar de migrar datos con cuidado. Aun así, se mantiene la disciplina de migraciones (cuando haya datos reales, deberá funcionar igual).
 - **Consecuencias:** se localiza el archivo de datos de ejemplo del servidor y se convierte en un seed versionado y reproducible (`scripts/seed/`, sin datos personales reales) dentro de T02.
+
+## D-015 · Libertad para mejorar la interfaz (2026-10-21)
+- **Decisión (Yago):** Claude puede proponer mejoras visuales y de UX.
+- **Consecuencias:** las mejoras de UI van en **PRs propias** (`feat(ui)`/`refactor(front)`), nunca mezcladas con PRs funcionales. Las pantallas nuevas deben ser coherentes con un sistema de diseño común (T29). Mobile first. No se cambia la identidad (logo, nombre) sin consultar.
+
+## D-016 · El servidor es una Raspberry Pi 5 (2026-10-21)
+- **Contexto:** la app desplegada, el runner self-hosted y Claude Code con sus agentes corren en la misma Raspberry Pi 5 (ARM64, RAM limitada y compartida).
+- **Decisión:**
+  - Toda imagen Docker nueva debe tener variante **linux/arm64** (verificarlo antes de añadirla).
+  - Límites de memoria explícitos en el compose (JVM con `MaxRAMPercentage`, Postgres ajustado a la RAM disponible).
+  - **Agentes en paralelo: máximo 2**, y el segundo solo si hay margen de memoria (WORKFLOW §10). Empezar con 1 y medir.
+  - Las pruebas de carga (T28) se lanzan **desde otra máquina** (el portátil), no desde la Pi.
+- **Consecuencias:** la Pi es el entorno de la demo, no el de producción a escala; los objetivos de rendimiento se fijan para la demo (D-017) y el diseño sigue pensando en escalar después (hosting).
+
+## D-017 · Alcance de la demo privada (2026-10-21)
+- **Decisión (Yago):** de 20 a 50 testers, **sin fecha**: prima la calidad sobre la velocidad.
+- **Consecuencias:** objetivos de T28 para la Pi: 100 usuarias virtuales concurrentes con p95 < 500 ms en REST y entrega de mensajes < 1 s, con margen sobre las 50 reales. No se recorta alcance para llegar antes.
+
+## D-018 · Mensajes privados abiertos por defecto (2026-10-21)
+- **Decisión (Yago):** `dm_policy` por defecto = `EVERYONE` (T13). Cada usuaria puede restringirlo en Ajustes; la seguridad se apoya en bloquear (T13) y denunciar (T23).

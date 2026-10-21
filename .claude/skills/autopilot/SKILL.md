@@ -11,7 +11,7 @@ Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas
 1. `/start-session` (sincronizar, leer STATUS y log, reconciliar con GitHub).
 2. Elige el trabajo según WORKFLOW §8. En cada vuelta:
    - **Feedback de Yago** primero (`/address-review`).
-   - Después tareas y bugs con `/do-task <ID>`. Si hay 2 o 3 independientes, lánzalas en paralelo con el agente `implementer` (`isolation: worktree`), **como mucho 3 a la vez** (recursos compartidos con la app desplegada).
+   - Después tareas y bugs con `/do-task <ID>`. Si hay 2 o 3 independientes, puedes lanzar **como mucho 2 a la vez** con el agente `implementer` (`isolation: worktree`), y el segundo solo si se cumplen los umbrales de memoria y carga de WORKFLOW §10 (Raspberry Pi 5). Ante la duda, en secuencial.
    - **Límite WIP** (4 PRs sin revisar, o el valor que Yago ponga en STATUS como `WIP: n`): si se alcanza, no abras más PRs de código. Haz, en este orden: refinar las specs 🔍 de las siguientes tareas del roadmap (PR `docs/`), `/bug-hunt` de un área no revisada recientemente, o preparar trabajo apilado **solo** si su base está en PR y es claramente correcta.
 3. Tras cada PR abierta: actualiza `.ai/STATUS.md` (checkpoint) antes de seguir.
 4. Cada ~3 unidades de trabajo, o si el contexto crece mucho: añade una entrada intermedia a `.ai/SESSION_LOG.md`.
