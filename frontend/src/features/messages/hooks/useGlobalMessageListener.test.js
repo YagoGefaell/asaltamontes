@@ -47,4 +47,19 @@ describe('useGlobalMessageListener', () => {
     unmount()
     client.unsubscribes.forEach((unsubscribe) => expect(unsubscribe).toHaveBeenCalled())
   })
+
+  it('does not throw when the connection is already gone on cleanup (T11)', () => {
+    const client = fakeStompClient()
+    client.subscribe.mockImplementation(() => ({
+      // What stompjs does when the socket has closed
+      unsubscribe: () => { throw new TypeError('There is no underlying STOMP connection') },
+    }))
+
+    const { rerender } = renderHook(
+      ({ connected }) => useGlobalMessageListener(client, connected, vi.fn(), vi.fn()),
+      { initialProps: { connected: true } },
+    )
+
+    expect(() => rerender({ connected: false })).not.toThrow()
+  })
 })

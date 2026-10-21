@@ -2,6 +2,15 @@ import { useEffect, useRef } from "react";
 
 const logChatError = (error) => console.warn("Error del chat:", error?.detail);
 
+// stompjs throws if the connection is already gone (and then the server has dropped the subscription anyway)
+const safeUnsubscribe = (subscription) => {
+  try {
+    subscription?.unsubscribe();
+  } catch {
+    // Connection closed: nothing to unsubscribe from
+  }
+};
+
 export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived, onError = logChatError) {
   const subscriptionRef = useRef(null);
   const errorSubscriptionRef = useRef(null);
@@ -22,10 +31,8 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
       return;
     }
 
-    if (subscriptionRef.current) {
-      subscriptionRef.current.unsubscribe();
-      subscriptionRef.current = null;
-    }
+    safeUnsubscribe(subscriptionRef.current);
+    subscriptionRef.current = null;
 
     subscriptionRef.current = websocketClient.subscribe("/user/queue/messages", (frame) => {
       try {
@@ -48,14 +55,10 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
     });
 
     return () => {
-      if (subscriptionRef.current) {
-        subscriptionRef.current.unsubscribe();
-        subscriptionRef.current = null;
-      }
-      if (errorSubscriptionRef.current) {
-        errorSubscriptionRef.current.unsubscribe();
-        errorSubscriptionRef.current = null;
-      }
+      safeUnsubscribe(subscriptionRef.current);
+      subscriptionRef.current = null;
+      safeUnsubscribe(errorSubscriptionRef.current);
+      errorSubscriptionRef.current = null;
     };
   }, [websocketClient, websocketConnected]); 
 }
