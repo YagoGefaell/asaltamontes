@@ -192,6 +192,24 @@ public class MessageService {
         return new MessagePageDto(page, hasMore, nextBefore);
     }
 
+    /**
+     * The {@code limit} messages after {@code after}, oldest first (T11: what arrived while the WebSocket was down).
+     * {@code hasMore} means there are newer ones: ask again with after = id of the last item.
+     */
+    @Transactional(readOnly = true)
+    public MessagePageDto getMessagesAfter(Long conversationId, Long userId, Long after, int limit) {
+        if (!participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+            throw new ForbiddenException("No tienes permiso para acceder a este chat");
+        }
+
+        int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
+        List<MessageDto> oldestFirst = messageRepository.findAfter(conversationId, after, Limit.of(pageSize + 1));
+
+        boolean hasMore = oldestFirst.size() > pageSize;
+        List<MessageDto> page = List.copyOf(oldestFirst.subList(0, Math.min(pageSize, oldestFirst.size())));
+        return new MessagePageDto(page, hasMore, null);
+    }
+
     @Transactional
     public void markConversationAsRead(Long conversationId, Long userId) {
         if (participantRepository.resetUnread(conversationId, userId) == 0) {

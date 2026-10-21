@@ -35,4 +35,15 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
         ORDER BY m.id DESC
     """)
     List<MessageDto> findBefore(@Param("conversationId") Long conversationId, @Param("before") Long before, Limit limit);
+
+    // Messages newer than a known one, oldest first: catching up after a WebSocket reconnection (T11)
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
+            m.id, m.conversation.id, m.sender.username, m.content, m.sentAt
+        )
+        FROM Message m
+        WHERE m.conversation.id = :conversationId AND m.id > :after
+        ORDER BY m.id ASC
+    """)
+    List<MessageDto> findAfter(@Param("conversationId") Long conversationId, @Param("after") Long after, Limit limit);
 }

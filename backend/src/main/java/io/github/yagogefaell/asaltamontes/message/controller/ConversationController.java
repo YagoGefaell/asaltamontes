@@ -9,6 +9,7 @@ import io.github.yagogefaell.asaltamontes.message.dto.CreateGroupDto;
 import io.github.yagogefaell.asaltamontes.message.dto.PrivateRequestDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessagePageDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
+import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 
 import java.util.List;
 
@@ -87,7 +88,14 @@ public class ConversationController {
             @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable Long conversationId,
             @RequestParam(required = false) Long before,
+            @RequestParam(required = false) Long after,
             @RequestParam(defaultValue = "30") int limit) {
+        if (after != null) {
+            if (before != null) {
+                throw new BadRequestException("Usa before o after, no los dos");
+            }
+            return ResponseEntity.ok(messageService.getMessagesAfter(conversationId, currentUser.getId(), after, limit));
+        }
         MessagePageDto history = messageService.getConversationHistory(
                 conversationId,
                 currentUser.getId(),
