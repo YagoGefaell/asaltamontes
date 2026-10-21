@@ -1,6 +1,6 @@
 # BUG-008 — Usernames duplicados que solo difieren en mayúsculas rompen el login
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/user

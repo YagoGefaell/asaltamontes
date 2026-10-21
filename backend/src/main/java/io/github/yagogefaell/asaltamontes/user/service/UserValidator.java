@@ -124,7 +124,7 @@ public class UserValidator {
             errors.put("username", "No se permiten espacios ni caracteres especiales");
         } else {
             boolean exists = (excludeId == null)
-                    ? userAccountRepository.existsByUsername(username)
+                    ? userAccountRepository.existsByUsernameIgnoreCase(username)
                     : userAccountRepository.existsByUsernameExceptId(username, excludeId);
 
             if (exists) {

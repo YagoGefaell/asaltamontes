@@ -1,6 +1,6 @@
 # T05 — Higiene de entidades, unicidad de username e índices
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 0 — Cimientos
 - **Depende de:** T02
 - **Rama sugerida:** `refactor/T05-entities-indexes`

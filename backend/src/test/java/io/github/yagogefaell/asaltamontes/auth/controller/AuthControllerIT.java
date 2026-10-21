@@ -47,6 +47,20 @@ class AuthControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void register_withUsernameThatOnlyDiffersInCase_returnsConflict() throws Exception {
+        UserAccount existing = testData.createUser(testData.uniqueName("ana"));
+        String sameNameUpperCase = existing.getUsername().toUpperCase();
+        RegisterRequest request = new RegisterRequest(
+                "Otra Ana", sameNameUpperCase, testData.uniqueName("other") + "@test.local", "password123", "password123");
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errors.username").value("Username ya registrado"));
+    }
+
+    @Test
     void login_withValidCredentials_returnsAccessTokenAndRefreshCookie() throws Exception {
         UserAccount user = testData.createUser();
 

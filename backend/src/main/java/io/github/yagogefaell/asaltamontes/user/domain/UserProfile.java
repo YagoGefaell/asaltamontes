@@ -14,11 +14,13 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @Table(name="user_profiles")
 public class UserProfile {
@@ -74,5 +76,23 @@ public class UserProfile {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-}
 
+    // Identity by primary key (Hibernate's recommended pattern): no lazy relations in equals/hashCode/toString,
+    // stable across persist and valid for Hibernate proxies.
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserProfile other)) return false;
+        return userId != null && userId.equals(other.getUserId());
+    }
+
+    @Override
+    public int hashCode() {
+        return UserProfile.class.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "UserProfile{userId=" + userId + "}";
+    }
+}
