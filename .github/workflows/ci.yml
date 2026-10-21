@@ -5,6 +5,7 @@ on:
     branches: [ main ]
 
 jobs:
+  # Job names are required checks in the main branch protection: do not rename them.
   validate-backend:
     runs-on: ubuntu-latest
     defaults:
@@ -16,8 +17,18 @@ jobs:
         with: 
           java-version: '21'
           distribution: 'temurin'
-      - name: Compile Backend
-        run: ./mvnw clean compile
+          cache: maven
+      - name: Build and test Backend
+        # Unit tests (surefire) + integration tests with Testcontainers (failsafe). Runners have Docker.
+        run: ./mvnw -B clean verify
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-test-reports
+          path: |
+            backend/target/surefire-reports
+            backend/target/failsafe-reports
 
   validate-frontend:
     runs-on: ubuntu-latest
@@ -27,10 +38,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
-        with: { node-version: '24' }
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
       - name: Run Linter
         run: npm run lint
+      - name: Run Tests
+        run: npm test
       - name: Build Frontend
         run: npm run build

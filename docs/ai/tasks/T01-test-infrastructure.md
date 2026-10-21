@@ -1,6 +1,6 @@
 # T01 — Infraestructura de tests y CI que los ejecuta
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 0 — Cimientos
 - **Depende de:** —
 - **Rama sugerida:** `test/T01-test-infrastructure`

@@ -1,6 +1,6 @@
 # BUG-037 — No hay tests y la CI solo compila
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** ci
