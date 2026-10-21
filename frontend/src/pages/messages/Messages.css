@@ -623,3 +623,11 @@ body.chat-open .bottom-nav {
   white-space: nowrap;
 }
 
+.messages-load-older {
+  min-height: 1px;
+  padding: 4px 0;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+

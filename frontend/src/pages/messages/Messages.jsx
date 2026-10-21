@@ -23,6 +23,8 @@ const Messages = () => {
     ensurePrivateConversation,
     createGroupConversation,
     loadConversationMessages,
+    loadOlderMessages,
+    historyPaging,
     loadingChats, 
     errorChats,
     chatError,
@@ -180,10 +182,12 @@ const Messages = () => {
     return () => clearTimeout(syncId);
   }, [selectedChat, chats, setActiveChatId, setChats, loadConversationMessages]);
 
+  // Scroll to the bottom when the newest message changes (open chat, send, receive), not when older pages load
+  const newestMessageId = currentMessages.length > 0 ? currentMessages[currentMessages.length - 1].id : null;
   useEffect(() => {
     if (!selectedChat) return;
     scrollToBottom();
-  }, [selectedChat, currentMessages.length]);
+  }, [selectedChat, newestMessageId]);
 
   // The server rejected a message (not a participant, empty, too long…): show why and restore the text
   useEffect(() => {
@@ -341,6 +345,9 @@ const Messages = () => {
           draftMessage={draftMessage}
           onDraftChange={handleDraftChange}
           sendError={sendError}
+          hasMoreHistory={Boolean(selectedChat && historyPaging[selectedChat.id]?.hasMore)}
+          loadingOlder={Boolean(selectedChat && historyPaging[selectedChat.id]?.loading)}
+          onLoadOlder={() => selectedChat?.id && loadOlderMessages(selectedChat.id)}
           onSendMessage={handleSendMessage}
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}

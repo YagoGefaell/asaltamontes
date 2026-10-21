@@ -1,6 +1,6 @@
 # BUG-020 — El historial de chat se descarga entero
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat + frontend

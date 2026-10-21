@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { CHAT } from "../../../config/constants";
 
 // Show the counter only when it matters
@@ -11,12 +12,45 @@ const ChatPane = ({
   onDraftChange,
   onSendMessage,
   sendError,
+  hasMoreHistory = false,
+  loadingOlder = false,
+  onLoadOlder,
   onLeaveChat,
   onOpenUserProfile,
   onSelectedAvatarError,
   websocketConnected,
   messagesEndRef,
 }) => {
+  const containerRef = useRef(null);
+  const topSentinelRef = useRef(null);
+  // Scroll height before an older page is added, to keep the same messages on screen afterwards
+  const heightBeforeLoadRef = useRef(null);
+  const oldestMessageId = currentMessages.length > 0 ? currentMessages[0].id : null;
+
+  // Load older messages when the top of the list becomes visible (infinite scroll upwards)
+  useEffect(() => {
+    const sentinel = topSentinelRef.current;
+    if (!sentinel || !hasMoreHistory || !onLoadOlder || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting) && !loadingOlder) {
+        heightBeforeLoadRef.current = containerRef.current?.scrollHeight ?? null;
+        onLoadOlder();
+      }
+    }, { root: containerRef.current, rootMargin: "200px 0px 0px 0px" });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMoreHistory, loadingOlder, onLoadOlder, oldestMessageId]);
+
+  // After prepending a page, shift the scroll by the added height so nothing jumps
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    if (!container || heightBeforeLoadRef.current == null) return;
+    container.scrollTop += container.scrollHeight - heightBeforeLoadRef.current;
+    heightBeforeLoadRef.current = null;
+  }, [oldestMessageId]);
+
   const parseMessageDate = (dateLike) => {
     if (!dateLike) return null;
 
@@ -97,7 +131,12 @@ const ChatPane = ({
         </div>
       </div>
 
-      <div className="messages">
+      <div className="messages" ref={containerRef}>
+        {hasMoreHistory && (
+          <div ref={topSentinelRef} className="messages-load-older" aria-live="polite">
+            {loadingOlder ? "Cargando mensajes anteriores…" : ""}
+          </div>
+        )}
         {currentMessages.length === 0 && (
           <div className="message received">Empieza la conversacion con @{selectedChat.name}</div>
         )}

@@ -7,6 +7,10 @@
 - **Cierra bugs:** BUG-020
 - **Tamaño:** M
 
+## División en sub-PRs (2026-10-21)
+- **T10a — historial por cursor** (hecho): `GET …/messages?before&limit` → `MessagePageDto`, `POST …/read`, el `GET` ya no marca como leído; frontend con scroll infinito hacia arriba (IntersectionObserver), posición de scroll conservada y `mergeMessages` para deduplicar historial + WebSocket. Cierra BUG-020.
+- **T10b — lista de conversaciones paginada** (pendiente): cursor sobre `(last_message_at DESC NULLS LAST, id DESC)` + índice (migración) + "cargar más" en el frontend.
+
 ## Objetivo
 Abrir un chat no debe descargar todos sus mensajes. Cargar los últimos N y pedir más al hacer scroll hacia arriba.
 

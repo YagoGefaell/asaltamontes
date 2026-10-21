@@ -98,7 +98,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
                 "El mensaje no puede estar vacío", "El mensaje no puede superar los 2000 caracteres");
         mockMvc.perform(get("/api/conversations/" + conversationId + "/messages").with(auth.bearer(ana)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.items.length()").value(0));
         anaConnection.disconnect();
     }
 
