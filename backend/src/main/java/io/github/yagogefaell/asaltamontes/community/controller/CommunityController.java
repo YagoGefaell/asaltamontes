@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
@@ -72,7 +73,7 @@ public class CommunityController {
             @PathVariable Long communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
         if (communityService.isOwner(communityId, currentUser)) {
-            throw new IllegalArgumentException("Owner cannot leave the community");
+            throw new ConflictException("Owner cannot leave the community");
         }
         communityService.leaveCommunity(communityId, currentUser);
         return ResponseEntity.noContent().build();

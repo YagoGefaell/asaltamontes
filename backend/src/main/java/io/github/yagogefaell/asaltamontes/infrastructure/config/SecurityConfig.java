@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import io.github.yagogefaell.asaltamontes.infrastructure.security.JwtAuthFilter;
+import io.github.yagogefaell.asaltamontes.infrastructure.security.SecurityProblemHandler;
 
 @Configuration
 @EnableWebSecurity
@@ -23,11 +24,14 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final CorsConfigurationSource corsConfigurationSource;
+    private final SecurityProblemHandler securityProblemHandler;
 
-    public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationProvider authenticationProvider, CorsConfigurationSource corsConfigurationSource) {
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter, AuthenticationProvider authenticationProvider, CorsConfigurationSource corsConfigurationSource,
+                          SecurityProblemHandler securityProblemHandler) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.authenticationProvider = authenticationProvider;
         this.corsConfigurationSource = corsConfigurationSource;
+        this.securityProblemHandler = securityProblemHandler;
     }
 
     @Bean
@@ -41,6 +45,9 @@ public class SecurityConfig {
                         .requestMatchers("/ws-asaltamontes/**").permitAll()
                         .requestMatchers("/actuator/health/**", "/actuator/info").permitAll()
                         .anyRequest().authenticated())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(securityProblemHandler)
+                        .accessDeniedHandler(securityProblemHandler))
                 .sessionManagement(
                         session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)

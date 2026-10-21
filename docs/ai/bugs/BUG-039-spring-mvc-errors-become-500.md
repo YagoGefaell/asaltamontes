@@ -1,6 +1,6 @@
 # BUG-039 — Las rutas inexistentes y otros errores de Spring MVC devuelven 500
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (test en T03: `GET /actuator/env` autenticada → 500)
 - **Área:** backend/common

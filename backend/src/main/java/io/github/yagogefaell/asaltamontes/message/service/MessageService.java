@@ -1,6 +1,8 @@
 package io.github.yagogefaell.asaltamontes.message.service;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
@@ -68,7 +70,7 @@ public class MessageService {
 
         UserAccount sender = (UserAccount) userService.loadUserByUsername(senderUsername);
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("La conversación no existe"));
+                .orElseThrow(() -> new NotFoundException("La conversación no existe"));
 
         Message message = new Message();
         message.setConversation(conversation);
@@ -120,7 +122,7 @@ public class MessageService {
         UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
 
         if (users == null || users.isEmpty()) {
-            throw new RuntimeException("Debes añadir al menos un usuario al grupo");
+            throw new BadRequestException("Debes añadir al menos un usuario al grupo");
         }
 
         Set<String> normalizedUsernames = new LinkedHashSet<>();
@@ -134,7 +136,7 @@ public class MessageService {
         }
 
         if (normalizedUsernames.isEmpty()) {
-            throw new RuntimeException("Debes añadir usuarios válidos distintos de tu cuenta");
+            throw new BadRequestException("Debes añadir usuarios válidos distintos de tu cuenta");
         }
 
         List<UserAccount> members = normalizedUsernames.stream()
@@ -149,7 +151,7 @@ public class MessageService {
     public List<MessageDto> getConversationHistory(Long conversationId, String username) {
         ConversationParticipant participant = participantRepository
                 .findByConversationIdAndUserUsername(conversationId, username)
-                .orElseThrow(() -> new RuntimeException("No tienes permiso para acceder a este chat"));
+                .orElseThrow(() -> new ForbiddenException("No tienes permiso para acceder a este chat"));
 
         if (participant.getUnreadCount() > 0) {
             participant.setUnreadCount(0);
@@ -163,7 +165,7 @@ public class MessageService {
     public void markConversationAsRead(Long conversationId, String username) {
         ConversationParticipant participant = participantRepository
                 .findByConversationIdAndUserUsername(conversationId, username)
-                .orElseThrow(() -> new RuntimeException("No tienes permiso para acceder a este chat"));
+                .orElseThrow(() -> new ForbiddenException("No tienes permiso para acceder a este chat"));
 
         if (participant.getUnreadCount() > 0) {
             participant.setUnreadCount(0);

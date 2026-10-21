@@ -5,7 +5,9 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.MultipleFieldConflictException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.SelfFollowException;
 import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
@@ -161,12 +163,12 @@ public class UserValidator {
 
     public void validateFollowAction(long followerId, long followingId) {
         if (followerId == followingId) {
-            throw new IllegalArgumentException("No puedes seguirte a ti mismo");
+            throw new SelfFollowException();
         }
 
         boolean alreadyFollowing = userFollowRepository.existsByFollowerIdAndFollowingId(followerId, followingId);
         if (alreadyFollowing) {
-            throw new IllegalStateException("Ya sigues a este usuario");
+            throw new ConflictException("Ya sigues a este usuario");
         }
     }
 }
