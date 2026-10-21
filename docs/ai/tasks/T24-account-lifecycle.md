@@ -4,7 +4,7 @@
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T06
 - **Rama sugerida:** `feat/T24-account-lifecycle`
-- **Cierra bugs:** BUG-025
+- **Cierra bugs:** BUG-025, BUG-042
 - **Tamaño:** L
 - **Spec:** 🔍 alto nivel — **refinar antes de implementar** (completar con la plantilla `docs/ai/templates/TASK.md` mirando el código de ese momento).
 
