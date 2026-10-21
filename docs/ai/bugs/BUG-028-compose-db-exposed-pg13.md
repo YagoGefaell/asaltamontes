@@ -13,6 +13,8 @@
 ## Qué pasa
 PostgreSQL 13 está fuera de soporte desde noviembre de 2025. El puerto `5433` publicado en todas las interfaces expone la BD a la red. `depends_on` sin `condition` arranca el backend antes de que la BD acepte conexiones. El deploy hace `docker compose down` antes de construir, así que la app está caída todo el build. No hay backups.
 
+**Comprobado en el servidor (2026-10-21):** la app llevaba **unos 4 meses caída**. Los contenedores habían terminado con código 255 (probablemente un reinicio de la Pi) y no volvieron a arrancar porque ningún servicio tiene política `restart:`. Además, GitHub había borrado el registro del runner self-hosted por inactividad (el deploy de julio se canceló tras 24 h en cola); se volvió a registrar el 2026-10-21.
+
 ## Cómo reproducir
 —
 
