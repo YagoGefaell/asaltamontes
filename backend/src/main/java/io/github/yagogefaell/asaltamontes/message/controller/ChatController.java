@@ -33,14 +33,19 @@ public class ChatController {
     public void processMessage(@Payload SendMessageCommandDto command, Principal principal) {
         messageService.processIncomingMessage(
                 command.conversationId(),
-                principal.getName(),
+                userId(principal),
                 command.content()
         );
     }
 
     @MessageMapping("/chat.read")
     public void processReadReceipt(@Payload ChatReadEventDto message, Principal principal) {
-        messageService.markConversationAsRead(message.conversationId(), principal.getName());
+        messageService.markConversationAsRead(message.conversationId(), userId(principal));
+    }
+
+    /** The WebSocket principal's name is the user id (see WebSocketJwtInterceptor). */
+    private static Long userId(Principal principal) {
+        return Long.valueOf(principal.getName());
     }
 
     /** Errors in the handlers above go back to the sender's session instead of being lost. */

@@ -1,6 +1,6 @@
 # BUG-022 — El contenido de los mensajes no se valida
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat

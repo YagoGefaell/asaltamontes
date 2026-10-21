@@ -15,16 +15,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final WebSocketJwtInterceptor jwtInterceptor;
     private final CorsProperties corsProperties;
+    private final StompErrorHandler stompErrorHandler;
 
-    public WebSocketConfig(WebSocketJwtInterceptor jwtInterceptor, CorsProperties corsProperties) {
+    public WebSocketConfig(WebSocketJwtInterceptor jwtInterceptor, CorsProperties corsProperties, StompErrorHandler stompErrorHandler) {
         this.jwtInterceptor = jwtInterceptor;
         this.corsProperties = corsProperties;
+        this.stompErrorHandler = stompErrorHandler;
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-asaltamontes")
                 .setAllowedOrigins(corsProperties.getAllowedOrigins().toArray(String[]::new));
+        registry.setErrorHandler(stompErrorHandler);
     }
 
     @Override

@@ -1,30 +1,27 @@
 package io.github.yagogefaell.asaltamontes.message.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-import java.util.Optional;
-
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
-import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
-import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
@@ -41,57 +38,54 @@ class MessageServiceTest {
     @Mock
     private UserService userService;
     @Mock
-    private SimpMessagingTemplate messagingTemplate;
+    private ApplicationEventPublisher eventPublisher;
 
-    @InjectMocks
     private MessageService messageService;
+
+    @BeforeEach
+    void setUp() {
+        messageService = new MessageService(messageRepository, conversationRepository, participantRepository,
+                userService, eventPublisher, 100);
+    }
 
     @Test
     void processIncomingMessage_rejectsSenderWhoIsNotParticipant() {
-        when(participantRepository.findByConversationIdAndUserUsername(42L, "intruder"))
-                .thenReturn(Optional.empty());
+        when(participantRepository.existsByConversationIdAndUserId(42L, 7L)).thenReturn(false);
 
-        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, "intruder", "hola"))
+        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, 7L, "hola"))
                 .isInstanceOf(ForbiddenException.class);
 
         verify(messageRepository, never()).save(any(Message.class));
-        verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any());
+        verifyNoInteractions(eventPublisher);
     }
 
     @Test
-    void processIncomingMessage_savesAndBroadcastsWhenSenderIsParticipant() {
-        Conversation conversation = new Conversation();
-        conversation.setId(42L);
-        UserAccount sender = user(1L, "ana");
-        UserAccount recipient = user(2L, "bea");
-        ConversationParticipant senderParticipant = participant(conversation, sender);
-        ConversationParticipant recipientParticipant = participant(conversation, recipient);
+    void processIncomingMessage_rejectsBlankOrTooLongContentBeforeTouchingTheDatabase() {
+        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, 1L, "   "))
+                .isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, 1L, "x".repeat(2001)))
+                .isInstanceOf(BadRequestException.class);
 
-        when(participantRepository.findByConversationIdAndUserUsername(42L, "ana"))
-                .thenReturn(Optional.of(senderParticipant));
-        when(userService.loadUserByUsername("ana")).thenReturn(sender);
-        when(conversationRepository.findById(42L)).thenReturn(Optional.of(conversation));
+        verifyNoInteractions(participantRepository, messageRepository, eventPublisher);
+    }
+
+    @Test
+    void processIncomingMessage_savesTrimmedContentUpdatesCountersAndPublishesTheEvent() {
+        UserAccount ana = new UserAccount();
+        ana.setId(1L);
+        ana.setUsername("ana");
+        when(participantRepository.existsByConversationIdAndUserId(42L, 1L)).thenReturn(true);
+        when(userService.loadUserById(1L)).thenReturn(ana);
+        when(conversationRepository.getReferenceById(42L)).thenReturn(new Conversation());
         when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(participantRepository.findByConversationId(42L))
-                .thenReturn(List.of(senderParticipant, recipientParticipant));
 
-        messageService.processIncomingMessage(42L, "ana", "hola");
+        messageService.processIncomingMessage(42L, 1L, "  hola  ");
 
-        verify(messageRepository).save(any(Message.class));
-        verify(messagingTemplate).convertAndSendToUser(eq("bea"), eq("/queue/messages"), any(MessageDto.class));
-    }
-
-    private static UserAccount user(Long id, String username) {
-        UserAccount user = new UserAccount();
-        user.setId(id);
-        user.setUsername(username);
-        return user;
-    }
-
-    private static ConversationParticipant participant(Conversation conversation, UserAccount user) {
-        ConversationParticipant participant = new ConversationParticipant();
-        participant.setConversation(conversation);
-        participant.setUser(user);
-        return participant;
+        verify(participantRepository).incrementUnreadExceptSender(42L, 1L);
+        verify(conversationRepository).updateLastMessage(any(), any(), any(), any());
+        ArgumentCaptor<MessageSentEvent> event = ArgumentCaptor.forClass(MessageSentEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().message().content()).isEqualTo("hola");
+        assertThat(event.getValue().message().senderUsername()).isEqualTo("ana");
     }
 }

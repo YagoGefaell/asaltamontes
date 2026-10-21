@@ -9,6 +9,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Component;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.InvalidTokenException;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -32,29 +33,47 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor {
 
             String header = accessor.getFirstNativeHeader("Authorization");
 
-            if (header != null && header.startsWith("Bearer ")) {
-                String jwt = header.substring(7);
+            // No anonymous sessions: the client gets an ERROR frame and the connection is closed
+            if (header == null || !header.startsWith("Bearer ")) {
+                throw new InvalidTokenException("Token no proporcionado");
+            }
 
-                try {
-                    if (jwtUtil.isTokenValid(jwt)) {
-                        Claims claims = jwtUtil.extractAllClaims(jwt);
+            String jwt = header.substring(7);
 
-                        if (!jwtUtil.isExpired(claims) && jwtUtil.isType(claims, JwtUtil.ACCESS_TYPE)) {
-                            Long id = jwtUtil.extractId(claims);
-                            var userDetails = userService.loadUserById(id);
+            try {
+                Claims claims = jwtUtil.extractAllClaims(jwt);
 
-                            var authToken = new UsernamePasswordAuthenticationToken(
-                                    userDetails,
-                                    null,
-                                    userDetails.getAuthorities()
-                            );
-
-                            accessor.setUser(authToken);
-                        }
-                    }
-                } catch (Exception e) {
+                if (jwtUtil.isExpired(claims) || !jwtUtil.isType(claims, JwtUtil.ACCESS_TYPE)) {
                     throw new InvalidTokenException("Token inválido");
                 }
+
+                Long id = jwtUtil.extractId(claims);
+                var userDetails = userService.loadUserById(id);
+
+                // The principal's name is the user id: messages are routed by id (/user/{id}/queue/...),
+                // so they keep arriving after a username change
+                var authToken = new UsernamePasswordAuthenticationToken(
+                        String.valueOf(userDetails.getId()),
+                        null,
+                        userDetails.getAuthorities()
+                );
+
+                accessor.setUser(authToken);
+            } catch (Exception e) {
+                throw new InvalidTokenException("Token inválido");
+            }
+        } else if (accessor != null && (StompCommand.SEND.equals(accessor.getCommand())
+                || StompCommand.SUBSCRIBE.equals(accessor.getCommand()))) {
+
+            if (accessor.getUser() == null) {
+                throw new InvalidTokenException("No autenticado");
+            }
+
+            // Only the user's own queues can be subscribed to (/user/queue/messages, /user/queue/errors)
+            String destination = accessor.getDestination();
+            if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())
+                    && (destination == null || !destination.startsWith("/user/queue/"))) {
+                throw new ForbiddenException("Suscripción no permitida");
             }
         }
         return message;

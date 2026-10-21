@@ -106,6 +106,8 @@ Optional variables (defaults in brackets):
 
 Health checks (public, no token): `GET /actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`. No other actuator endpoint is exposed.
 
+Chat: messages are trimmed and limited to 2000 characters; groups to `asaltamontes.chat.max-group-size` participants (default 100). The STOMP `CONNECT` requires a valid access token.
+
 Rate limiting (in memory, per minute): `POST /auth/login` 5 per IP and 5 per username, `/auth/register` 3 per IP, `/auth/refresh` 30 per IP → `429` with `Retry-After`. Tune with `asaltamontes.rate-limit.*` (`enabled`, `login-per-minute`, `register-per-minute`, `refresh-per-minute`); disabled in the `test` profile.
 
 Every response carries an `X-Request-Id` header (the incoming one if valid, otherwise generated); the same id appears in every log line of that request.
