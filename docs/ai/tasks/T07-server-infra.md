@@ -11,7 +11,7 @@
 - **T07a — proxy same-origin, compose y deploy** (hecho): nginx con `/api`, `/auth`, `/ws-asaltamontes` y `/actuator/health`; frontend con URL relativa (y proxy de Vite en dev); compose con puertos solo en `127.0.0.1`, healthchecks, `depends_on` con condiciones, `restart` y heap explícito; `deploy.yml` sin `down`, con `--wait`, prueba de humo, `paths-ignore` y `concurrency`; `docker-compose.dev.yml` para el stack de pruebas. Cierra BUG-027.
   - Medido en la Pi: al recrear el backend, la API cae unos 15 s (el SPA sigue sirviéndose). Cero cortes necesitaría dos instancias (después de la demo).
   - La Pi arranca con `cgroup_disable=memory`: Docker ignora `mem_limit`. Por eso el heap va con `-Xmx512m`. Activar el cgroup es decisión de Yago (README).
-- **T07b — backups** (pendiente): `pg_dump` diario con retención y restauración probada.
+- **T07b — backups** (hecho): servicio `backup` (imagen `postgres:13`, igual que la BD) con `scripts/backup/backup-loop.sh` (dump diario, 7 diarios + 4 semanales, healthcheck por antigüedad) y `restore.sh`. Restauración probada en una BD temporal. Los dumps viven en la misma microSD: copia externa pendiente de decidir con Yago.
 - **T07c — HTTPS con Tailscale** (pendiente, antes "T07b"): ver "Fuera de alcance".
 
 ## Objetivo

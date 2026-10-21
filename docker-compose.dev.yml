@@ -8,6 +8,9 @@ services:
     ports: !override
       - "127.0.0.1:5434:5432"
 
+  backup:
+    container_name: asaltamontes-dev-backup
+
   backend:
     container_name: asaltamontes-dev-backend
     environment:
