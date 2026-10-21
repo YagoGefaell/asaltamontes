@@ -71,6 +71,11 @@ public class GlobalExceptionHandler {
         return buildProblem(HttpStatus.NOT_FOUND, "Not Found", ex.getMessage(), req, null);
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ProblemDetail handleForbidden(ForbiddenException ex, HttpServletRequest req) {
+        return buildProblem(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), req, null);
+    }
+
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest req) {
         return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "An unexpected error occurred", req, null);

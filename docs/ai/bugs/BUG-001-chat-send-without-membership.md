@@ -1,10 +1,10 @@
 # BUG-001 — Cualquier usuaria puede enviar mensajes a cualquier conversación
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** crítica
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat
-- **Tarea que lo resuelve:** T09
+- **Tarea que lo resuelve:** hotfix `fix/BUG-001-chat-membership-check` (el resto del endurecimiento del chat sigue en T09)
 - **Detectado:** 2026-10-21, análisis inicial del código por Claude
 
 ## Dónde
