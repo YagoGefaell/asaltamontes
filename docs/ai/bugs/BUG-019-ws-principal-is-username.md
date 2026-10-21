@@ -1,6 +1,6 @@
 # BUG-019 — Tras cambiar el username no llegan los mensajes en tiempo real
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat

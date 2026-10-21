@@ -1,6 +1,6 @@
 # BUG-021 — Se puede crear un chat privado consigo misma
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable (verificar con test)
 - **Área:** backend/chat

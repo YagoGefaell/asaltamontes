@@ -1,6 +1,6 @@
 # BUG-016 — Contador de no leídos con lost updates y N escrituras por mensaje
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat

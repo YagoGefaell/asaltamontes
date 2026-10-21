@@ -7,6 +7,10 @@
 - **Cierra bugs:** BUG-001, BUG-016, BUG-017, BUG-018 (parte backend), BUG-019, BUG-021, BUG-022, BUG-030
 - **Tamaño:** M
 
+## División en sub-PRs (2026-10-21)
+- **T09a — backend** (hecho): puntos 1-11 del alcance. Cierra BUG-016, BUG-017, BUG-019, BUG-021 y BUG-022, y la parte backend de BUG-018. Además, `StompErrorHandler`: los frames `ERROR` llevan el motivo real ("Token inválido", "Suscripción no permitida").
+- **T09b — frontend** (pendiente): `userId` (BUG-030), errores de envío en el `ChatPanel` devolviendo el texto al input, y `maxLength=2000` con contador.
+
 ## Objetivo
 El chat es la prioridad nº 1 y hoy cualquier usuaria autenticada puede escribir en cualquier conversación. Cerrar los agujeros de seguridad y corrección del flujo de mensajes antes de añadir funcionalidad.
 

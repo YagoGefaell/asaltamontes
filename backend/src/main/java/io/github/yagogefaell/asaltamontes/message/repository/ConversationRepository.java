@@ -2,12 +2,15 @@ package io.github.yagogefaell.asaltamontes.message.repository;
 
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
+import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -53,4 +56,14 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         ORDER BY c.lastMessageAt DESC NULLS LAST
     """)
     List<ChatSummaryDto> findActiveChatsForUser(@Param("username") String username);
+
+    // One statement, and never overwritten by a message sent earlier that commits later
+    @Modifying
+    @Query("""
+        UPDATE Conversation c
+        SET c.lastMessage = :preview, c.lastMessageAt = :sentAt, c.lastSender = :sender
+        WHERE c.id = :conversationId AND (c.lastMessageAt IS NULL OR c.lastMessageAt <= :sentAt)
+    """)
+    int updateLastMessage(@Param("conversationId") Long conversationId, @Param("preview") String preview,
+                          @Param("sentAt") LocalDateTime sentAt, @Param("sender") UserAccount sender);
 }

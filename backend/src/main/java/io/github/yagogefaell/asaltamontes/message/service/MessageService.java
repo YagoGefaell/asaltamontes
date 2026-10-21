@@ -15,7 +15,8 @@ import io.github.yagogefaell.asaltamontes.message.repository.ConversationReposit
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,68 +33,73 @@ public class MessageService {
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository participantRepository;
     private final UserService userService;
-    private final SimpMessagingTemplate messagingTemplate;
+    private final ApplicationEventPublisher eventPublisher;
+    private final int maxGroupSize;
+
+    public static final int MAX_CONTENT_LENGTH = 2000;
+    private static final int PREVIEW_LENGTH = 30;
 
     public MessageService(MessageRepository messageRepository, 
                           ConversationRepository conversationRepository,
                           ConversationParticipantRepository participantRepository,
                           UserService userService,
-                          SimpMessagingTemplate messagingTemplate) {
+                          ApplicationEventPublisher eventPublisher,
+                          @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
         this.userService = userService;
-        this.messagingTemplate = messagingTemplate;
+        this.eventPublisher = eventPublisher;
+        this.maxGroupSize = maxGroupSize;
     }
 
+    /**
+     * Saves a message from a participant and broadcasts it after commit (ChatMessageBroadcaster).
+     * Counters and the conversation preview are updated with single statements, so concurrent
+     * messages never lose an update.
+     */
     @Transactional
-    public MessageDto processIncomingMessage(Long conversationId, String senderUsername, String content) {
-        Message savedMessage = saveMessage(conversationId, senderUsername, content);
+    public MessageDto processIncomingMessage(Long conversationId, Long senderId, String content) {
+        String text = validateContent(content);
+
+        if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, senderId)) {
+            throw new ForbiddenException("No tienes permiso para escribir en este chat");
+        }
+
+        UserAccount sender = userService.loadUserById(senderId);
+
+        Message message = new Message();
+        message.setConversation(conversationRepository.getReferenceById(conversationId));
+        message.setSender(sender);
+        message.setContent(text);
+        message.setSentAt(LocalDateTime.now());
+        Message savedMessage = messageRepository.save(message);
+
+        String preview = text.length() > PREVIEW_LENGTH ? text.substring(0, PREVIEW_LENGTH).trim() + "..." : text;
+        conversationRepository.updateLastMessage(conversationId, preview, savedMessage.getSentAt(), sender);
+        participantRepository.incrementUnreadExceptSender(conversationId, senderId);
 
         MessageDto dto = new MessageDto(
                 savedMessage.getId(),
-                savedMessage.getConversation().getId(),
-                savedMessage.getSender().getUsername(),
+                conversationId,
+                sender.getUsername(),
                 savedMessage.getContent(),
                 savedMessage.getSentAt()
         );
 
-        sendMessageToConversation(dto);
+        eventPublisher.publishEvent(new MessageSentEvent(dto));
         return dto;
     }
 
-    @Transactional
-    public Message saveMessage(Long conversationId, String senderUsername, String content) {
-        if (participantRepository.findByConversationIdAndUserUsername(conversationId, senderUsername).isEmpty()) {
-            throw new ForbiddenException("No tienes permiso para escribir en este chat");
+    private static String validateContent(String content) {
+        String text = content == null ? "" : content.trim();
+        if (text.isEmpty()) {
+            throw new BadRequestException("El mensaje no puede estar vacío");
         }
-
-        UserAccount sender = (UserAccount) userService.loadUserByUsername(senderUsername);
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new NotFoundException("La conversación no existe"));
-
-        Message message = new Message();
-        message.setConversation(conversation);
-        message.setSender(sender);
-        message.setContent(content);
-        message.setSentAt(LocalDateTime.now());
-        Message savedMessage = messageRepository.save(message);
-
-        conversation.setLastMessageAt(savedMessage.getSentAt());
-        conversation.setLastMessage(savedMessage.getContent().length() > 30 ? savedMessage.getContent().substring(0, 30).trim() + "..." : savedMessage.getContent());
-        conversation.setLastSender(savedMessage.getSender());
-        conversationRepository.save(conversation);
-
-        List<ConversationParticipant> participants = participantRepository.findByConversationId(conversationId);
-        
-        for (ConversationParticipant participant : participants) {
-            if (!participant.getUser().getUsername().equals(senderUsername)) {
-                participant.setUnreadCount(participant.getUnreadCount() + 1);
-                participantRepository.save(participant);
-            }
+        if (text.length() > MAX_CONTENT_LENGTH) {
+            throw new BadRequestException("El mensaje no puede superar los " + MAX_CONTENT_LENGTH + " caracteres");
         }
-
-        return savedMessage;
+        return text;
     }
 
     @Transactional(readOnly = true)
@@ -104,6 +110,10 @@ public class MessageService {
 
     @Transactional
     public ChatResponseDto createOrGetPrivateConversation(String currentUsername, String recipientUsername) {
+        if (currentUsername.equalsIgnoreCase(recipientUsername)) {
+            throw new BadRequestException("No puedes abrir un chat contigo misma");
+        }
+
         Optional<ChatResponseDto> existingChat = getPrivateConversation(currentUsername, recipientUsername);
 
         if (existingChat.isPresent()) {
@@ -139,6 +149,11 @@ public class MessageService {
             throw new BadRequestException("Debes añadir usuarios válidos distintos de tu cuenta");
         }
 
+        // The creator is also a participant
+        if (normalizedUsernames.size() + 1 > maxGroupSize) {
+            throw new BadRequestException("Un grupo puede tener como máximo " + maxGroupSize + " participantes");
+        }
+
         List<UserAccount> members = normalizedUsernames.stream()
                 .map(username -> (UserAccount) userService.loadUserByUsername(username))
                 .toList();
@@ -162,26 +177,9 @@ public class MessageService {
     }
 
     @Transactional
-    public void markConversationAsRead(Long conversationId, String username) {
-        ConversationParticipant participant = participantRepository
-                .findByConversationIdAndUserUsername(conversationId, username)
-                .orElseThrow(() -> new ForbiddenException("No tienes permiso para acceder a este chat"));
-
-        if (participant.getUnreadCount() > 0) {
-            participant.setUnreadCount(0);
-            participantRepository.save(participant);
-        }
-    }
-
-    private void sendMessageToConversation(MessageDto message) {
-        List<ConversationParticipant> participants = participantRepository.findByConversationId(message.conversationId());
-
-        for (ConversationParticipant participant : participants) {
-            messagingTemplate.convertAndSendToUser(
-                    participant.getUser().getUsername(),
-                    "/queue/messages",
-                    message
-            );
+    public void markConversationAsRead(Long conversationId, Long userId) {
+        if (participantRepository.resetUnread(conversationId, userId) == 0) {
+            throw new ForbiddenException("No tienes permiso para acceder a este chat");
         }
     }
 

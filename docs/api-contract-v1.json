@@ -745,13 +745,13 @@
       "get": {
         "summary": "WebSocket STOMP handshake endpoint",
         "tags": ["Messages", "WebSocket"],
-        "description": "STOMP over WebSocket endpoint used for realtime private messages. The client connects to this URL and then sends a STOMP CONNECT frame with an Authorization header in format 'Bearer <accessToken>'.",
+        "description": "STOMP over WebSocket endpoint used for realtime messages. The client connects to this URL and then sends a STOMP CONNECT frame with an Authorization header 'Bearer <accessToken>'. Without a valid access token the server answers an ERROR frame (header 'message': 'Token no proporcionado' / 'Token inválido') and closes the connection. Only /user/queue/** can be subscribed to. Messages are routed by user id, so they keep arriving after a username change.",
         "responses": {
           "101": {
             "description": "Switching Protocols"
           },
           "401": {
-            "description": "Invalid or missing token during STOMP CONNECT"
+            "description": "Invalid or missing token during STOMP CONNECT (sent as a STOMP ERROR frame)"
           }
         },
         "x-stomp": {
@@ -759,9 +759,14 @@
           "userDestinationPrefix": "/user",
           "brokerPrefixes": ["/queue", "/topic"],
           "publish": {
-            "destination": "/app/chat.private",
+            "destination": "/app/chat.send",
             "payload": {
-              "$ref": "#/components/schemas/PrivateMessage"
+              "type": "object",
+              "required": ["conversationId", "content"],
+              "properties": {
+                "conversationId": { "type": "integer" },
+                "content": { "type": "string", "maxLength": 2000, "description": "Trimmed; empty or longer than 2000 characters is rejected on /user/queue/errors" }
+              }
             }
           },
           "subscribe": [

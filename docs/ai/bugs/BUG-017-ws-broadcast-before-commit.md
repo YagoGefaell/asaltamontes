@@ -1,6 +1,6 @@
 # BUG-017 — El mensaje se difunde por WebSocket antes del commit
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/chat

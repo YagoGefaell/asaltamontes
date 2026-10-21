@@ -16,5 +16,7 @@ Si el `CONNECT` llega sin `Authorization` o con un token caducado, el intercepto
 ## Cómo reproducir
 Abrir la app, esperar más de 15 minutos, reiniciar el backend → el cliente reconecta pero no recibe mensajes.
 
+**Progreso (T09a):** parte backend resuelta: el `CONNECT` sin token, con token inválido, caducado o de refresh se rechaza con un frame `ERROR` cuyo `message` explica el motivo, y `SEND`/`SUBSCRIBE` sin usuaria se rechazan. Falta la parte del cliente (reconectar con el token renovado): T11.
+
 ## Arreglo propuesto
 Rechazar el CONNECT no autenticado (T09) y renovar el token antes de reconectar (T11).
