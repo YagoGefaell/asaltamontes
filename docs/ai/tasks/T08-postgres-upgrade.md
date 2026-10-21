@@ -1,6 +1,6 @@
 # T08 — Actualizar PostgreSQL 13 → 17
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 0 — Cimientos
 - **Depende de:** T02, T07 (backups funcionando)
 - **Rama sugerida:** `chore/T08-postgres-17`
@@ -21,6 +21,11 @@ PostgreSQL 13 está fuera de soporte desde noviembre de 2025 (sin parches de seg
   4. Verificar conteos por tabla (13 vs 17) e imprimir la comparación.
 - Instrucciones de rollback (volver a apuntar al volumen antiguo).
 - Tests (Testcontainers) ya usan `postgres:17-alpine` desde T01.
+
+## Implementación (2026-10-21)
+- Imagen `postgres:17` (Debian) en lugar de `17-alpine`, para la BD y para el servicio `backup`: el script de backups usa `date -d` de GNU, que BusyBox no tiene, y así BD y `pg_dump` siguen siendo la misma imagen. Los tests siguen con `17-alpine` (misma versión mayor).
+- `scripts/db/upgrade-13-to-17.sh`: dump del 13 → volumen nuevo etiquetado para compose → restauración en un 17 temporal → `ANALYZE` → comparación de filas tabla a tabla (falla si difieren). Es idempotente (rechaza un volumen nuevo ya existente salvo con `FORCE=1`).
+- Probado en el stack `asaltamontes-dev` con 501 usuarias: conteos idénticos, la app arranca en 17 (Flyway sin migraciones pendientes, login OK) y el rollback al 13 con su volumen también funciona.
 
 ## Criterios de aceptación
 - [ ] Script probado en local con una copia de datos sintéticos.
