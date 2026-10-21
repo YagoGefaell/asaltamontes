@@ -7,6 +7,7 @@ import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
+import io.github.yagogefaell.asaltamontes.message.dto.ChatPageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
@@ -42,6 +43,7 @@ public class MessageService {
 
     public static final int MAX_CONTENT_LENGTH = 2000;
     public static final int MAX_HISTORY_PAGE = 100;
+    public static final int MAX_CHAT_PAGE = 100;
     private static final int PREVIEW_LENGTH = 30;
 
     public MessageService(MessageRepository messageRepository, 
@@ -270,7 +272,35 @@ public class MessageService {
         return savedConv;
     }
 
-    public List<ChatSummaryDto> getUserConversations(String username) {
-        return conversationRepository.findActiveChatsForUser(username);
+    /** A page of the chat list (T10b): the {@code limit} chats after the cursor, most recent first. */
+    @Transactional(readOnly = true)
+    public ChatPageDto getUserConversations(String username, LocalDateTime beforeAt, Long beforeId, int limit) {
+        if (beforeAt != null && beforeId == null) {
+            throw new BadRequestException("beforeAt necesita beforeId");
+        }
+
+        int pageSize = Math.clamp(limit, 1, MAX_CHAT_PAGE);
+        // One extra row tells whether there is another page
+        Limit fetch = Limit.of(pageSize + 1);
+        List<ChatSummaryDto> rows;
+        if (beforeId == null) {
+            rows = conversationRepository.findChatsForUser(username, fetch);
+        } else if (beforeAt != null) {
+            rows = conversationRepository.findChatsForUserBefore(username, beforeAt, beforeId, fetch);
+        } else {
+            rows = conversationRepository.findChatsWithoutMessagesForUserBefore(username, beforeId, fetch);
+        }
+
+        boolean hasMore = rows.size() > pageSize;
+        List<ChatSummaryDto> page = List.copyOf(rows.subList(0, Math.min(pageSize, rows.size())));
+        ChatSummaryDto last = hasMore ? page.get(page.size() - 1) : null;
+
+        return new ChatPageDto(
+            page,
+            hasMore,
+            last != null ? last.lastMessageAt() : null,
+            last != null ? last.conversationId() : null,
+            participantRepository.countUnreadChats(username)
+        );
     }
 }

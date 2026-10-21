@@ -3,15 +3,17 @@ package io.github.yagogefaell.asaltamontes.message.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.yagogefaell.asaltamontes.message.dto.ChatPageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
-import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.message.dto.CreateGroupDto;
 import io.github.yagogefaell.asaltamontes.message.dto.PrivateRequestDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessagePageDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 
-import java.util.List;
+import java.time.LocalDateTime;
+
+import org.springframework.format.annotation.DateTimeFormat;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -76,11 +78,14 @@ public class ConversationController {
     
 
     @GetMapping
-    public ResponseEntity<List<ChatSummaryDto>> getMyConversations(
-            @AuthenticationPrincipal UserDetails currentUser) {
-        
-        List<ChatSummaryDto> summaries = messageService.getUserConversations(currentUser.getUsername());
-        return ResponseEntity.ok(summaries);
+    public ResponseEntity<ChatPageDto> getMyConversations(
+            @AuthenticationPrincipal UserDetails currentUser,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime beforeAt,
+            @RequestParam(required = false) Long beforeId,
+            @RequestParam(defaultValue = "30") int limit) {
+
+        ChatPageDto page = messageService.getUserConversations(currentUser.getUsername(), beforeAt, beforeId, limit);
+        return ResponseEntity.ok(page);
     }
 
     @GetMapping("/{conversationId}/messages")

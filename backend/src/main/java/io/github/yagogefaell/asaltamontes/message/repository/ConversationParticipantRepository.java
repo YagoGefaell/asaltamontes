@@ -36,4 +36,8 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
         WHERE p.conversation.id = :conversationId AND p.user.id = :userId
     """)
     int resetUnread(@Param("conversationId") Long conversationId, @Param("userId") Long userId);
+
+    // Badge of the navigation bar: chats with something unread, including those not loaded yet (T10b)
+    @Query("SELECT COUNT(p) FROM ConversationParticipant p WHERE p.user.username = :username AND p.unreadCount > 0")
+    long countUnreadChats(@Param("username") String username);
 }
