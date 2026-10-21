@@ -4,6 +4,13 @@ import { CHAT } from "../../../config/constants";
 // Show the counter only when it matters
 const COUNTER_THRESHOLD = CHAT.MAX_MESSAGE_LENGTH - 200;
 
+// Shown above the input while the WebSocket is not connected (T11)
+const CONNECTION_NOTICES = {
+  connecting: "Conectando…",
+  reconnecting: "Reconectando…",
+  offline: "Sin conexión. Los mensajes llegarán cuando vuelva la red.",
+};
+
 const ChatPane = ({
   selectedChat,
   currentMessages,
@@ -19,6 +26,7 @@ const ChatPane = ({
   onOpenUserProfile,
   onSelectedAvatarError,
   websocketConnected,
+  websocketStatus = "connected",
   messagesEndRef,
 }) => {
   const containerRef = useRef(null);
@@ -163,6 +171,9 @@ const ChatPane = ({
         <div ref={messagesEndRef} />
       </div>
 
+      {!websocketConnected && CONNECTION_NOTICES[websocketStatus] && (
+        <p className="message-connection-status" role="status">{CONNECTION_NOTICES[websocketStatus]}</p>
+      )}
       {sendError && (
         <p className="message-send-error" role="alert">{sendError}</p>
       )}

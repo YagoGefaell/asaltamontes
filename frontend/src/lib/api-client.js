@@ -117,6 +117,19 @@ class ApiClient {
     return tokenlessEndpoints.some(authPath => endpoint.includes(authPath))
   }
 
+  /**
+   * Renews the access token with the refresh cookie, sharing an ongoing refresh if there is one.
+   * Returns false (and logs out) if the session can no longer be renewed. Used by the WebSocket (T11).
+   */
+  async refreshSession() {
+    return this._handleTokenRefresh()
+  }
+
+  /** Ends the session on the client (the server rejected it), as when a refresh fails. */
+  expireSession() {
+    this._handleLogout()
+  }
+
   setLogoutCallback(callback) {
     this.logoutCallback = callback
   }
