@@ -1,23 +1,35 @@
 import { describe, expect, it } from 'vitest'
-import { validateForm, validators } from './validation.js'
+import { REGISTER_RULES, validateForm, validators } from './validation.js'
 
 describe('validators', () => {
   it('email accepts a valid address and rejects malformed ones', () => {
     expect(validators.email('ana@example.com')).toBeNull()
     expect(validators.email('')).toBe('El email es requerido')
-    expect(validators.email('ana@')).toBe('El formato del email no es válido')
+    expect(validators.email('ana@')).toBe('Formato de email inválido')
   })
 
-  it('username enforces length and allowed characters', () => {
+  it('username follows the backend rules: 3-30, letters, digits, dots and underscores', () => {
     expect(validators.username('ana_trail')).toBeNull()
+    expect(validators.username('ana.trail')).toBeNull()
     expect(validators.username('')).toBe('El nombre de usuario es requerido')
-    expect(validators.username('a')).toMatch(/al menos/)
-    expect(validators.username('ana trail')).toMatch(/solo puede contener/)
+    expect(validators.username('an')).toBe('Debe tener entre 3 y 30 caracteres')
+    expect(validators.username('a'.repeat(31))).toBe('Debe tener entre 3 y 30 caracteres')
+    expect(validators.username('ana trail')).toMatch(/Solo letras/)
+    expect(validators.username('.ana')).toMatch(/sin punto/)
+    expect(validators.username('ana.')).toMatch(/sin punto/)
   })
 
-  it('password enforces minimum length', () => {
+  it('password must have 8 to 100 characters', () => {
     expect(validators.password('')).toBe('La contraseña es requerida')
-    expect(validators.password('1')).toMatch(/al menos/)
+    expect(validators.password('1234567')).toBe('Debe tener entre 8 y 100 caracteres')
+    expect(validators.password('12345678')).toBeNull()
+  })
+
+  it('fullName accepts accents, hyphens and apostrophes but not digits', () => {
+    expect(validators.fullName("María-José O'Neill")).toBeNull()
+    expect(validators.fullName('A')).toBe('Debe tener entre 2 y 60 caracteres')
+    expect(validators.fullName('Ana 2')).toBe('Solo letras, espacios, guiones y apóstrofos')
+    expect(validators.fullName('-Ana')).toBe('Solo letras, espacios, guiones y apóstrofos')
   })
 
   it('confirmPassword requires both passwords to match', () => {
@@ -49,5 +61,29 @@ describe('validateForm', () => {
     const result = validateForm({ email: 'ana@example.com' }, { email: [validators.email] })
 
     expect(result).toEqual({ isValid: true, errors: {} })
+  })
+})
+
+describe('REGISTER_RULES', () => {
+  const valid = {
+    fullName: 'Ana Pérez',
+    username: 'ana.perez',
+    email: 'ana@example.com',
+    password: 'password123',
+    confirmPassword: 'password123',
+  }
+
+  it('accepts a valid registration', () => {
+    expect(validateForm(valid, REGISTER_RULES).isValid).toBe(true)
+  })
+
+  it('reports every invalid field like the backend does', () => {
+    const { isValid, errors } = validateForm(
+      { fullName: 'A1', username: '.ana', email: 'nope', password: 'short', confirmPassword: 'other' },
+      REGISTER_RULES,
+    )
+
+    expect(isValid).toBe(false)
+    expect(Object.keys(errors).sort()).toEqual(['confirmPassword', 'email', 'fullName', 'password', 'username'])
   })
 })

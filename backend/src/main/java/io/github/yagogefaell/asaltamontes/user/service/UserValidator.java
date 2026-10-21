@@ -11,6 +11,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.SelfFollowException;
 import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
+import io.github.yagogefaell.asaltamontes.user.validation.UserFieldRules;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -108,20 +109,20 @@ public class UserValidator {
     private void validateFullName(String fullName, Map<String, String> errors) {
         if (fullName == null || fullName.isBlank()) {
             errors.put("fullName", "Nombre completo requerido");
-        } else if (fullName.length() < 3 || fullName.length() > 50) {
-            errors.put("fullName", "Debe tener entre 3 y 50 caracteres");
-        } else if (!fullName.matches("^[a-zA-ZÀ-ÿ\\s]+$")) {
-            errors.put("fullName", "No se permiten números ni caracteres especiales");
+        } else if (fullName.length() < UserFieldRules.FULL_NAME_MIN || fullName.length() > UserFieldRules.FULL_NAME_MAX) {
+            errors.put("fullName", UserFieldRules.FULL_NAME_SIZE_MESSAGE);
+        } else if (!fullName.matches(UserFieldRules.FULL_NAME_PATTERN)) {
+            errors.put("fullName", UserFieldRules.FULL_NAME_PATTERN_MESSAGE);
         }
     }
 
     private void validateUsername(String username, Long excludeId, Map<String, String> errors) {
         if (username == null || username.isBlank()) {
             errors.put("username", "Username requerido");
-        } else if (username.length() < 3 || username.length() > 50) {
-            errors.put("username", "Debe tener entre 3 y 50 caracteres");
-        } else if (!username.matches("^[a-zA-Z0-9._]+$")) {
-            errors.put("username", "No se permiten espacios ni caracteres especiales");
+        } else if (username.length() < UserFieldRules.USERNAME_MIN || username.length() > UserFieldRules.USERNAME_MAX) {
+            errors.put("username", UserFieldRules.USERNAME_SIZE_MESSAGE);
+        } else if (!username.matches(UserFieldRules.USERNAME_PATTERN)) {
+            errors.put("username", UserFieldRules.USERNAME_PATTERN_MESSAGE);
         } else {
             boolean exists = (excludeId == null)
                     ? userAccountRepository.existsByUsernameIgnoreCase(username)
@@ -136,8 +137,8 @@ public class UserValidator {
     private void validateEmail(String email, Long excludeId, Map<String, String> errors) {
         if (email == null || email.isBlank()) {
             errors.put("email", "Email requerido");
-        } else if (!email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
-            errors.put("email", "Formato de email inválido");
+        } else if (!email.matches(UserFieldRules.EMAIL_PATTERN)) {
+            errors.put("email", UserFieldRules.EMAIL_PATTERN_MESSAGE);
         } else {
             boolean exists = (excludeId == null)
                     ? userAccountRepository.existsByEmailIgnoreCase(email)
@@ -152,8 +153,8 @@ public class UserValidator {
     private void validatePassword(String password, String confirmPassword, Map<String, String> errors) {
         if (password == null || password.isBlank()) {
             errors.put("password", "Contraseña requerida");
-        } else if (password.length() < 6) {
-            errors.put("password", "Contraseña demasiado corta");
+        } else if (password.length() < UserFieldRules.PASSWORD_MIN || password.length() > UserFieldRules.PASSWORD_MAX) {
+            errors.put("password", UserFieldRules.PASSWORD_SIZE_MESSAGE);
         }
 
         if (password != null && !password.equals(confirmPassword)) {

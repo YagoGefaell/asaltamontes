@@ -76,16 +76,23 @@ export const UI_CONFIG = {
   },
 }
 
-// Validation rules
+// Validation rules: mirror of the backend's UserFieldRules (keep both in sync)
 export const VALIDATION = {
   USERNAME: {
     MIN_LENGTH: 3,
-    MAX_LENGTH: 20,
-    PATTERN: /^[a-zA-Z0-9_]+$/,
+    MAX_LENGTH: 30,
+    // Letters, digits, dots and underscores; no dot at the start or at the end
+    PATTERN: /^(?![.])[a-zA-Z0-9._]+(?<![.])$/,
   },
   PASSWORD: {
     MIN_LENGTH: 8,
     MAX_LENGTH: 100,
+  },
+  FULL_NAME: {
+    MIN_LENGTH: 2,
+    MAX_LENGTH: 60,
+    // Letters of any language, spaces, hyphens and apostrophes, starting with a letter
+    PATTERN: /^\p{L}[\p{L} '-]*$/u,
   },
   EMAIL: {
     PATTERN: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,

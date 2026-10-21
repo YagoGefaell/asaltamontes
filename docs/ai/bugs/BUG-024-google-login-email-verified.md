@@ -1,6 +1,6 @@
 # BUG-024 — El login con Google no comprueba `email_verified` y genera usernames inválidos
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/auth

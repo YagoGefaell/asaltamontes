@@ -1,6 +1,6 @@
 # BUG-032 — Las reglas de validación del frontend y del backend no coinciden
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/auth + backend/user

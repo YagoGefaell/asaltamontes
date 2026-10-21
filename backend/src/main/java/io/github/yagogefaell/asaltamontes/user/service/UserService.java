@@ -33,6 +33,7 @@ public class UserService implements UserDetailsService {
     private final UserProfileUpdater updater;
     private final UserAssembler assembler;
     private final PasswordEncoder passwordEncoder;
+    private final UsernameGenerator usernameGenerator;
 
     @Transactional
     public UserAccount registerUserWithProfile(
@@ -69,7 +70,7 @@ public class UserService implements UserDetailsService {
             .orElseGet(() -> {
                 UserAccount user = new UserAccount();
                 user.setEmail(email);
-                user.setUsername(givenName + "_" + System.currentTimeMillis());
+                user.setUsername(usernameGenerator.generate(givenName != null ? givenName : fullName));
                 user.setPasswordHash(null);
                 user.setRole(UserAccountRole.USER);
                 user.setIsVerified(false);

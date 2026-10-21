@@ -10,7 +10,7 @@ export const validators = {
   email: (email) => {
     if (!email) return 'El email es requerido'
     if (!VALIDATION.EMAIL.PATTERN.test(email)) {
-      return 'El formato del email no es válido'
+      return 'Formato de email inválido'
     }
     return null
   },
@@ -20,14 +20,11 @@ export const validators = {
    */
   username: (username) => {
     if (!username) return 'El nombre de usuario es requerido'
-    if (username.length < VALIDATION.USERNAME.MIN_LENGTH) {
-      return `El nombre de usuario debe tener al menos ${VALIDATION.USERNAME.MIN_LENGTH} caracteres`
-    }
-    if (username.length > VALIDATION.USERNAME.MAX_LENGTH) {
-      return `El nombre de usuario no puede tener más de ${VALIDATION.USERNAME.MAX_LENGTH} caracteres`
+    if (username.length < VALIDATION.USERNAME.MIN_LENGTH || username.length > VALIDATION.USERNAME.MAX_LENGTH) {
+      return `Debe tener entre ${VALIDATION.USERNAME.MIN_LENGTH} y ${VALIDATION.USERNAME.MAX_LENGTH} caracteres`
     }
     if (!VALIDATION.USERNAME.PATTERN.test(username)) {
-      return 'El nombre de usuario solo puede contener letras, números y guiones bajos'
+      return 'Solo letras, números, puntos y guiones bajos, sin punto al principio ni al final'
     }
     return null
   },
@@ -37,11 +34,8 @@ export const validators = {
    */
   password: (password) => {
     if (!password) return 'La contraseña es requerida'
-    if (password.length < VALIDATION.PASSWORD.MIN_LENGTH) {
-      return `La contraseña debe tener al menos ${VALIDATION.PASSWORD.MIN_LENGTH} caracteres`
-    }
-    if (password.length > VALIDATION.PASSWORD.MAX_LENGTH) {
-      return `La contraseña no puede tener más de ${VALIDATION.PASSWORD.MAX_LENGTH} caracteres`
+    if (password.length < VALIDATION.PASSWORD.MIN_LENGTH || password.length > VALIDATION.PASSWORD.MAX_LENGTH) {
+      return `Debe tener entre ${VALIDATION.PASSWORD.MIN_LENGTH} y ${VALIDATION.PASSWORD.MAX_LENGTH} caracteres`
     }
     return null
   },
@@ -81,12 +75,13 @@ export const validators = {
    * Validate full name
    */
   fullName: (fullName) => {
-    if (!fullName) return 'El nombre completo es requerido'
-    if (fullName.trim().length < 2) {
-      return 'El nombre completo debe tener al menos 2 caracteres'
+    if (!fullName || !fullName.trim()) return 'El nombre completo es requerido'
+    const name = fullName.trim()
+    if (name.length < VALIDATION.FULL_NAME.MIN_LENGTH || name.length > VALIDATION.FULL_NAME.MAX_LENGTH) {
+      return `Debe tener entre ${VALIDATION.FULL_NAME.MIN_LENGTH} y ${VALIDATION.FULL_NAME.MAX_LENGTH} caracteres`
     }
-    if (fullName.trim().length > 100) {
-      return 'El nombre completo no puede tener más de 100 caracteres'
+    if (!VALIDATION.FULL_NAME.PATTERN.test(name)) {
+      return 'Solo letras, espacios, guiones y apóstrofos'
     }
     return null
   },
@@ -112,4 +107,15 @@ export const validateForm = (data, rules) => {
     isValid: Object.keys(errors).length === 0,
     errors,
   }
+}
+
+/**
+ * Registration rules, the same ones the backend applies (POST /auth/register)
+ */
+export const REGISTER_RULES = {
+  fullName: [validators.fullName],
+  username: [validators.username],
+  email: [validators.email],
+  password: [validators.password],
+  confirmPassword: [(confirmPassword, data) => validators.confirmPassword(data.password, confirmPassword)],
 }
