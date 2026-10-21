@@ -5,7 +5,7 @@ description: Análisis sistemático de bugs en un área del código de Asaltamon
 
 # Bug hunting
 
-Argumento: área (`auth`, `user`, `community`, `chat`, `events`, `media`, `notifications`, `frontend-<área>`, `infra`, `ci`). Sin argumento: el área con más código cambiado recientemente (`git log --since=2.weeks --name-only origin/dev`) o la menos revisada según `$AI/SESSION_LOG.md`.
+Argumento: área (`auth`, `user`, `community`, `chat`, `events`, `media`, `notifications`, `frontend-<área>`, `infra`, `ci`). Sin argumento: el área con más código cambiado recientemente (`git log --since=2.weeks --name-only origin/main`) o la menos revisada según `$AI/SESSION_LOG.md`.
 
 ## Método
 1. **Inventario**: lista los archivos del área (backend y frontend que la consume) y lee también sus tests.
@@ -23,8 +23,8 @@ Argumento: área (`auth`, `user`, `community`, `chat`, `events`, `media`, `notif
 4. **Deduplica**: `grep -ril "<palabra clave>" docs/ai/bugs/` y mira las PRs abiertas.
 
 ## Registro
-- Rama `docs/bugs-<área>-<AAAA-MM-DD>` desde `origin/dev`, en su propio worktree.
-- Un archivo por bug con `docs/ai/templates/BUG.md`, numerado de forma consecutiva desde el último de `dev` y de las PRs abiertas.
+- Rama `docs/bugs-<área>-<AAAA-MM-DD>` desde `origin/main`, en su propio worktree.
+- Un archivo por bug con `docs/ai/templates/BUG.md`, numerado de forma consecutiva desde el último de `main` y de las PRs abiertas.
 - Asocia cada bug a una tarea existente si encaja en su alcance (y añádelo a la línea "Cierra bugs" de esa tarea), o déjalo como "ninguna (PR `fix/` propia)".
 - Si aparece algo **crítico** (seguridad o pérdida de datos), avísalo a Yago en el mensaje final de la sesión, además de registrarlo.
 - PR `docs(bugs): <área> findings (<n> bugs)` con una tabla resumen (ID, severidad, confianza, una línea).

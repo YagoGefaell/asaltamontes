@@ -82,7 +82,3 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 
 ## D-018 · Mensajes privados abiertos por defecto (2026-10-21)
 - **Decisión (Yago):** `dm_policy` por defecto = `EVERYONE` (T13). Cada usuaria puede restringirlo en Ajustes; la seguridad se apoya en bloquear (T13) y denunciar (T23).
-
-## D-019 · Rama `dev` de integración y releases a `main` (2026-10-21)
-- **Decisión (Yago):** las PRs de tareas y bugs van a `dev`; Yago las revisa y mergea (squash). Claude abre una PR de release `dev → main` cuando hay un **bloque coherente terminado**; Yago la mergea con **merge commit**. `dev` no se despliega (no hay staging: RAM de la Pi). Solo `main` despliega y crea tags.
-- **Consecuencias:** `release.yml` calcula la versión con todos los commits de cada release. Los hotfixes van directos a `main` y se sincronizan a `dev`. Detalle en `WORKFLOW.md` §11; la versión visible en la app es T31.

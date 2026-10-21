@@ -2,7 +2,7 @@ name: CI/CD Asaltamontes
 
 on:
   pull_request:
-    branches: [ main, dev ]
+    branches: [ main ]
 
 jobs:
   # Job names are required checks in the main branch protection: do not rename them.
