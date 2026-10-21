@@ -6,12 +6,12 @@
 - **Rama sugerida:** `feat/T17a-media-backend`, `feat/T17b-media-frontend`, `refactor/T17c-media-references`
 - **Cierra bugs:** —
 - **Tamaño:** L → 3 PRs
-- **Spec:** refinada el 2026-10-21. ⚠️ **Pendiente de una decisión de Yago** sobre dónde se guardan los ficheros (ver "Decisión pendiente"); el resto no depende de ella.
+- **Spec:** refinada el 2026-10-21. Almacenamiento decidido: **opción A, sistema de archivos** (D-004 revisada).
 
 ## Objetivo
 Hoy las imágenes son URLs pegadas a mano (`UserProfile.profilePictureUrl`, `Community.imageUrl`, `Conversation.groupImage`). Hace falta subir fotos de verdad desde el móvil (avatar, portada de comunidad, imagen de grupo y luego de eventos y posts, T15/T22), **sin EXIF/GPS** (las fotos del móvil llevan la ubicación de casa) y redimensionadas.
 
-## Decisión pendiente: dónde guardar los ficheros (revisa D-004)
+## Decisión: dónde guardar los ficheros (D-004) — **elegida la opción A** (Yago, 2026-10-21)
 D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edición comunitaria en octubre de 2025 (la última queda congelada y sin parches de seguridad) y su repositorio está archivado desde abril de 2026. Opciones:
 
 | Opción | En la Pi (arm64, 4 GB) | Paso a hosting | Complejidad |
@@ -21,7 +21,7 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 | C. **SeaweedFS** o **RustFS** | Un servicio más, más pesado (SeaweedFS) o muy nuevo (RustFS) | Igual que S3 | Media/alta |
 | D. Cloudflare R2 ya | Nada en la Pi | Ya está | Depende de una cuenta externa; requiere salida a internet |
 
-**Recomendación: A** para la demo. Es lo más ligero y estable en la Pi, la interfaz `MediaStorage` deja el paso a S3/R2 como un cambio de configuración + una clase, y las subidas pasan por el backend (que de todos modos tiene que recodificar la imagen para quitar el EXIF). Las URLs prefirmadas solo aportan algo con un almacenamiento S3: se añadirían con la implementación S3. Si se elige A, D-004 se actualiza: "binarios en un volumen, nunca en Postgres".
+**Recomendación: A** para la demo. Es lo más ligero y estable en la Pi, la interfaz `MediaStorage` deja el paso a S3/R2 como un cambio de configuración + una clase, y las subidas pasan por el backend (que de todos modos tiene que recodificar la imagen para quitar el EXIF). Las URLs prefirmadas solo aportan algo con un almacenamiento S3: se añadirían con la implementación S3. D-004 ya está actualizada: binarios en un volumen, nunca en Postgres.
 
 ## Contexto (código actual)
 - Backend: `UserProfile.profilePictureUrl`, `Community.imageUrl`, `Conversation.groupImage` (texto libre). `UserValidator.validateProfileChange` solo comprueba que empiecen por `http(s)://`. Los DTO de búsqueda y detalle devuelven esas URLs tal cual.

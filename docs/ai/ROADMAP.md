@@ -57,7 +57,7 @@
 
 | # | Tarea | Depende de | Paralelizable con | Cierra bugs |
 |---|---|---|---|---|
-| T17 | 🔍 [Almacenamiento de imágenes (MinIO/S3)](tasks/T17-media-storage.md) | T07 | T15, T16 | — |
+| T17 | [Almacenamiento de imágenes (sistema de archivos tras `MediaStorage`)](tasks/T17-media-storage.md) | T07 | T15, T16 | — |
 | T18 | 🔍 [Notificaciones en tiempo real](tasks/T18-notifications.md) | T09, T15 | T19 | — |
 
 ## Fase 2b / 3b — Comunidades y eventos completos
