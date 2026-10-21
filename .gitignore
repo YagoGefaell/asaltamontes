@@ -60,3 +60,6 @@ dist-ssr
 
 *.env
 /target
+# Estado local de trabajo de Claude (ver CLAUDE.md)
+.ai/
+.claude/settings.local.json
