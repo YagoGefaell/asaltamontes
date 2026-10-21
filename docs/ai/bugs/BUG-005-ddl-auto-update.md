@@ -1,6 +1,6 @@
 # BUG-005 — Hibernate modifica el esquema en producción (`ddl-auto=update`)
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/bd

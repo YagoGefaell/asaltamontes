@@ -17,6 +17,7 @@ Backend REST API for the **Asaltamontes** platform. Built with **Java 21**, **Sp
   - [2. Running with Docker (Recommended)](#2-running-with-docker-recommended)
   - [3. Local Development](#3-local-development)
   - [4. Tests](#4-tests)
+  - [5. Database Migrations](#5-database-migrations)
 - [API & WebSocket](#api--websocket)
 - [Roadmap](#roadmap)
 
@@ -131,6 +132,16 @@ docker compose up --build
 - Integration tests extend `support/AbstractIntegrationTest` (shared container and Spring context) and create their own data with `TestDataFactory` (unique names, so tests never assume an empty database). `AuthTestHelper.bearer(user)` adds a valid access token to a MockMvc request.
 - Scheduled maintenance jobs are disabled in the `test` profile (`SchedulingConfig`).
 - CI runs `./mvnw verify` on every pull request.
+
+### 5. Database Migrations
+
+The schema is versioned with **Flyway** (`src/main/resources/db/migration`). Hibernate only validates the entities against it (`ddl-auto=validate`): if an entity and the schema disagree, the app refuses to start.
+
+- New change → new file `V<next number>__short_description.sql` (e.g. `V2__add_events_table.sql`). One migration per pull request that changes the schema.
+- **Never edit a migration that is already merged**: Flyway checks their checksums and the app would not start. Fix mistakes with a new migration.
+- Name constraints and indexes explicitly (`pk_`, `fk_`, `uk_`, `ck_`, `idx_` prefixes, as in `V1__baseline.sql`).
+- Test it on a database **with data**, not only on an empty one. `./mvnw verify` already runs every migration on an empty PostgreSQL (`FlywayMigrationIT`).
+- `V1__baseline.sql` is the schema that Hibernate used to create. On a database that already had those tables, Flyway records V1 as applied without running it (`baseline-on-migrate`).
 
 
 ## API & WebSocket
