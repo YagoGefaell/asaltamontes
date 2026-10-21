@@ -8,7 +8,7 @@
 - **Tamaño:** L
 
 ## Objetivo
-Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real, "cerrar sesión en todos los dispositivos"), protección frente a fuerza bruta y validación consistente front/back.
+Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real, "cerrar sesión en todos los dispositivos") **sin cambiar la arquitectura actual**, protección frente a fuerza bruta y validación consistente front/back.
 
 ## Contexto
 - `JwtUtil`: access y refresh firmados con la misma clave, sin claim de tipo → un refresh token sirve como `Bearer` y viceversa.
@@ -18,15 +18,16 @@ Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real
 - Front `config/constants.js` `VALIDATION`: username 3–20 `[a-zA-Z0-9_]`, password ≥ 8; back: username 3–50 `[a-zA-Z0-9._]`, password ≥ 6.
 
 ## Alcance
-### T06a — Tokens
-- Claim `typ` (`access` | `refresh`) en ambos. `JwtAuthFilter` y `WebSocketJwtInterceptor` aceptan solo `access`; `/auth/refresh` solo `refresh`.
-- Tabla `refresh_tokens` (migración): `id`, `user_id` FK, `token_hash` (SHA-256), `family_id` (UUID), `expires_at`, `revoked_at`, `replaced_by_id`, `created_at`, `user_agent`, `ip`. Índices por `token_hash` (único) y `user_id`.
-- El refresh token pasa a ser **opaco aleatorio** (32 bytes, base64url), no JWT. Se guarda solo su hash.
-- **Rotación**: cada `/auth/refresh` revoca el actual y emite uno nuevo en la misma familia (nueva cookie). **Detección de reutilización**: si llega un token ya revocado → revocar toda la familia (posible robo) → 401.
-- `/auth/logout`: revoca el token de la cookie.
-- `POST /api/users/me/sessions/revoke-all` (cerrar sesión en todos los dispositivos).
-- Job programado diario que borra tokens expirados hace > 30 días.
-- `refresh` comprueba que la usuaria existe y no está deshabilitada.
+### T06a — Tokens (extendiendo el diseño actual, ver D-012)
+> **Restricción:** se mantiene la arquitectura de Yago: refresh JWT en cookie httpOnly, access JWT en memoria, `JwtUtil`, `JwtAuthFilter`, `AuthService`, `AuthController` y `CookieUtil`. No se cambia el tipo de token ni se añaden frameworks. Todo lo que vaya más allá de lo descrito aquí se propone en la PR y espera el OK de Yago.
+
+- **Claim de tipo**: `JwtUtil.generateAccessToken` ya construye un `Map` de claims → añadir `typ=access`; `generateRefreshToken` añade `typ=refresh`. Método `JwtUtil.isType(claims, type)`. `JwtAuthFilter` y `WebSocketJwtInterceptor` aceptan solo `access`; `AuthService.refreshAccessToken` solo `refresh`.
+- **Revocación con `jti`**: el refresh JWT lleva un `jti` (UUID). Nueva tabla mínima `refresh_sessions` (`jti` PK, `user_id` FK, `expires_at`, `revoked_at`, `created_at`, `user_agent`) + migración. Se crea una fila al emitir el refresh (`AuthService.generateTokens`).
+  - `refreshAccessToken`: además de validar firma y caducidad como hoy, comprueba que el `jti` existe y no está revocado, y que la usuaria existe.
+  - `logout`: marca el `jti` de la cookie como revocado (y borra la cookie como ahora).
+  - `POST /api/users/me/sessions/revoke-all` → revoca todas las sesiones de la usuaria.
+  - Job diario que borra las filas caducadas hace más de 30 días.
+- **Opcional, a decidir por Yago en la PR**: rotar el refresh en cada `/auth/refresh` (nuevo `jti` + nueva cookie, revocando el anterior) con detección de reutilización. Mejora la seguridad, pero cambia el comportamiento del flujo actual; implementarlo solo si Yago lo aprueba.
 
 ### T06b — Validación, rate limiting y Google
 - Bean Validation en `RegisterRequest`, `LoginRequest`, `UserUpdateDto`, `CreateCommunityDto`… y `@Valid` en los controladores. Mantener los mensajes en español que ya usa `UserValidator`; las comprobaciones de unicidad siguen en el validador.
@@ -44,7 +45,8 @@ Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real
 ## Criterios de aceptación
 - [ ] Usar un refresh token como `Bearer` → 401. Usar un access token en `/auth/refresh` → 401.
 - [ ] Tras logout, el refresh token anterior → 401.
-- [ ] Reutilizar un refresh token ya rotado revoca la familia (los dos tokens fallan).
+- [ ] Tras "cerrar sesión en todos los dispositivos", todos los refresh tokens de la usuaria → 401.
+- [ ] Las clases y el flujo de autenticación existentes se conservan (diff acotado; revisable por Yago en minutos).
 - [ ] 6.º intento de login en un minuto → 429.
 - [ ] Registro con datos inválidos → 400 con errores por campo; el frontend valida lo mismo antes de enviar.
 - [ ] Login con Google de un email no verificado → 401.
@@ -54,4 +56,5 @@ Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real
 - Unit test del generador de usernames de Google (acentos, espacios, colisiones, null).
 
 ## Notas y riesgos
-- Al desplegar T06a todas las sesiones existentes se invalidan (los refresh JWT antiguos dejan de valer) → avisar en la PR.
+- Al desplegar T06a, los refresh JWT emitidos antes no tienen `jti` → dejan de valer y hay que volver a iniciar sesión (aceptable: no hay usuarias reales, D-014).
+- D-012: esta tarea toca el código del que Yago está más orgulloso. Diff mínimo, mismo estilo, y explicar en la PR cada cambio en las clases de `auth/` e `infrastructure/security/`.

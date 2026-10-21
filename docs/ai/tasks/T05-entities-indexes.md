@@ -23,7 +23,7 @@ Evitar errores latentes de JPA (`@Data` en entidades), garantizar que los userna
 - `@ManyToOne(fetch = LAZY)` en `UserFollow`.
 
 ### Migración `V<n>__username_ci_and_indexes.sql`
-- **Antes**: consulta de detección de duplicados `SELECT lower(username), count(*) FROM users GROUP BY 1 HAVING count(*) > 1;` (y lo mismo con email). Si hay duplicados en el servidor, la migración **renombra** los duplicados de forma determinista (`<username>_<id>`) y la PR lo documenta. Pedir confirmación a Yago en la PR.
+- **Antes**: consulta de detección de duplicados `SELECT lower(username), count(*) FROM users GROUP BY 1 HAVING count(*) > 1;` (y lo mismo con email). Con los datos desechables (D-014) basta con que la migración no falle; aun así, si hay duplicados, la migración **renombra** los duplicados de forma determinista (`<username>_<id>`) y la PR lo documenta. Pedir confirmación a Yago en la PR.
 - Índice único `ux_users_username_lower ON users (lower(username))` y `ux_users_email_lower ON users (lower(email))`.
 - Índices:
   - `messages (conversation_id, id DESC)` (preparado para la paginación por cursor de T10).

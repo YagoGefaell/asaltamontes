@@ -45,3 +45,18 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 
 ## D-011 · Idiomas (2026-10-21)
 - **Decisión:** código, identificadores y commits en inglés; UI, mensajes a la usuaria y documentación de trabajo (`docs/ai/`) en español.
+
+## D-012 · Respetar la arquitectura actual del backend, sobre todo la autenticación (2026-10-21)
+- **Contexto (Yago):** el backend lo diseñó y escribió Yago casi sin IA y le tiene aprecio, especialmente a la autenticación: `JwtUtil`, `JwtAuthFilter`, `AuthService`, `AuthController`, `CookieUtil`, el refresh por cookie httpOnly, el access token en memoria del frontend y `WebSocketJwtInterceptor`.
+- **Decisión:** se **extiende** lo que hay, no se sustituye. Los arreglos se hacen dentro de las clases y flujos existentes, con cambios mínimos y en el estilo de Yago. No se introducen frameworks alternativos (Spring Authorization Server, OAuth2 Resource Server, Keycloak…) ni se reescriben módulos que funcionan.
+- **Consecuencias:** cualquier cambio **estructural** en la autenticación (otro tipo de token, otras clases, otro flujo) se propone primero en la descripción de la PR o en una PR `docs/` y no se implementa sin el OK explícito de Yago. Lo mismo aplica, en menor grado, al resto del backend: preferir el arreglo local al refactor.
+
+## D-013 · Servidor solo en la LAN de casa (2026-10-21)
+- **Contexto:** el servidor privado no es accesible desde internet; está en la red local de Yago, y el runner self-hosted y Claude trabajan en esa misma máquina.
+- **Decisión:** no hay dominio ni TLS público. Para HTTPS dentro de la LAN (lo necesita la PWA de T26 y la cookie `Secure`) se elegirá en T07 entre Tailscale (certificados válidos vía MagicDNS, acceso también desde fuera de casa) o una CA local con mkcert. **Lo decide Yago.**
+- **Consecuencias:** la cookie `Secure` es configurable (T03) y por defecto `false` mientras no haya HTTPS. Las testers de la demo necesitarán acceso a la red (VPN/Tailscale) o habrá que exponerlo; se decidirá antes de T25.
+
+## D-014 · Los datos de la BD del servidor son desechables (2026-10-21)
+- **Contexto (Yago):** no hay datos reales; existe un archivo con datos de ejemplo cargados como base, pero si se pierden no importa.
+- **Decisión:** las migraciones (T02, T05) y el upgrade de Postgres (T08) pueden recrear la BD desde cero en lugar de migrar datos con cuidado. Aun así, se mantiene la disciplina de migraciones (cuando haya datos reales, deberá funcionar igual).
+- **Consecuencias:** se localiza el archivo de datos de ejemplo del servidor y se convierte en un seed versionado y reproducible (`scripts/seed/`, sin datos personales reales) dentro de T02.

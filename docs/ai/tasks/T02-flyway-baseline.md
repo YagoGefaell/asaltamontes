@@ -12,7 +12,7 @@ Dejar de depender de `spring.jpa.hibernate.ddl-auto=update`. El esquema pasa a e
 
 ## Contexto
 - `application.properties`: `spring.jpa.hibernate.ddl-auto=update`.
-- El servidor privado ya tiene una BD con datos (esquema creado por Hibernate). **No se puede perder.**
+- El servidor privado tiene una BD creada por Hibernate con **datos de ejemplo desechables** (D-014): se puede recrear desde cero. Existe en el servidor un archivo con esos datos de ejemplo (ubicación por confirmar).
 - Tablas actuales (según entidades): `users`, `user_profiles`, `user_follow`, `communities`, `community_members`, `conversations`, `conversation_participants`, `messages`.
 
 ## Alcance
@@ -35,6 +35,10 @@ Dejar de depender de `spring.jpa.hibernate.ddl-auto=update`. El esquema pasa a e
 - Sección "Migraciones" en `backend/README.md`: cómo crear una nueva (`V<n>__descripcion.sql`), reglas: nunca editar una mergeada, una por PR que cambie esquema, probar con datos.
 - Procedimiento de despliegue de esta PR en el servidor (backup previo con `pg_dump` completo antes de mergear) en la descripción de la PR.
 
+### Seed de desarrollo (D-014)
+- Localizar en el servidor el archivo de datos de ejemplo que usa Yago y convertirlo en `scripts/seed/seed-dev.sql` (o un `CommandLineRunner` con perfil `dev`/`seed`) **reproducible** sobre el esquema de Flyway. Usuarias ficticias; contraseñas de ejemplo documentadas en el README; ningún dato personal real.
+- Documentar cómo resetear la BD local o de desarrollo y cargar el seed.
+
 ## Fuera de alcance
 - Cambios de esquema nuevos (índices, unicidad case-insensitive) → T05.
 - Upgrade de Postgres → T08.
@@ -50,5 +54,5 @@ Dejar de depender de `spring.jpa.hibernate.ddl-auto=update`. El esquema pasa a e
 - Test que carga `schema-server.sql` (si se obtiene y no contiene datos personales) + datos de ejemplo, arranca y verifica conteos.
 
 ## Notas y riesgos
-- **Bloqueante parcial**: necesita el `pg_dump --schema-only` del servidor. Si Yago no lo ha proporcionado, abrir la PR con el baseline de las entidades y marcarla `bloqueada` hasta comparar.
+- Como los datos son desechables, la alternativa simple es válida: baseline generado desde las entidades + recrear la BD del servidor en el despliegue (borrar el volumen solo con el OK de Yago en la PR, ya que lo hace él o el deploy, nunca Claude a mano).
 - El dump de esquema no contiene datos personales; el de datos **nunca** se sube al repo.

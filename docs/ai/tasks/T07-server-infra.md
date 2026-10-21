@@ -44,7 +44,7 @@ Que la app funcione de forma estable en el servidor privado: un único origen (s
 - Paso de verificación: esperar a que `backend` esté `healthy` (timeout 3 min) y fallar el job si no.
 
 ## Fuera de alcance
-- HTTPS/dominio público → depende de la respuesta de Yago (ver `.ai/STATUS.md`, pregunta abierta). Si el servidor es accesible desde internet, añadir Caddy o certbot en una tarea nueva.
+- HTTPS: el servidor está **solo en la LAN** (D-013). Proponer en la PR (sin implementar hasta el OK de Yago) entre: **Tailscale** (HTTPS válido con MagicDNS + `tailscale serve`, y acceso para testers invitadas a la tailnet) o **mkcert** (CA local instalada en cada dispositivo). Recomendación por defecto: Tailscale, porque también resuelve el acceso de las testers de la demo.
 - Upgrade de Postgres → T08.
 
 ## Criterios de aceptación
@@ -59,4 +59,5 @@ Que la app funcione de forma estable en el servidor privado: un único origen (s
 - Manual en el servidor (Yago o Claude si tiene acceso): checklist de la PR.
 
 ## Notas y riesgos
+- **Claude trabaja en esta misma máquina** (ver `WORKFLOW.md` §10). Los cambios de compose se prueban con `docker compose -p asaltamontes-dev` y puertos alternativos, nunca recreando el proyecto de producción a mano. El deploy real lo hace el workflow al mergear.
 - Requiere probar en el servidor real. La PR debe incluir el checklist de verificación post-merge.

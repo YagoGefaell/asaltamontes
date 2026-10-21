@@ -24,7 +24,7 @@ Una sola `application.properties` sirve hoy para todo y activa logs de SQL con p
 - Hikari: `maximum-pool-size` configurable (`DB_POOL_SIZE`, por defecto 10), `connection-timeout`, `leak-detection-threshold` en dev.
 - `spring.jpa.open-in-view=false` (comprobar que no rompe nada: los servicios deben devolver DTOs; si algo dependía de lazy loading en la vista, arreglarlo).
 - WebSocket: usar los mismos orígenes permitidos que CORS (`CorsProperties`) en `setAllowedOriginPatterns`.
-- Cookie de refresh: `secure` y `sameSite` configurables (`asaltamontes.cookies.secure`, por defecto `true` en `prod`, `false` en `dev`). `CookieUtil` deja de ser estático o recibe las propiedades.
+- Cookie de refresh: `secure` y `sameSite` configurables (`asaltamontes.cookies.secure`, por defecto `false` mientras el servidor no tenga HTTPS (D-013); `true` cuando lo tenga, `false` en `dev`). Cambio mínimo en `CookieUtil` (D-012): mantener la clase y sus métodos; p. ej. recibir `secure` como parámetro desde `AuthController`, que lo inyecta con `@Value`.
 - Actuator: `spring-boot-starter-actuator`, exponer solo `health` (con `liveness`/`readiness`) y `info` públicamente; resto deshabilitado. Permitir `/actuator/health/**` en `SecurityConfig`.
 - Logs: patrón con `traceId`/request id (filtro simple que genere `X-Request-Id` y lo meta en MDC).
 - Default de `CORS_ALLOWED_ORIGINS` en `dev` incluye `http://localhost:5173` (Vite).

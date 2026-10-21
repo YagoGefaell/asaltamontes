@@ -95,3 +95,13 @@ Ejemplos: `feat/T15-events-api`, `fix/BUG-006-follow-recount-tx`, `docs/bugs-cha
 - Tarea: `pendiente` → `en-curso` → `en-revisión (PR #N)` → `hecho` · también `bloqueada (motivo)`.
 - Bug: `abierto` → `en-curso` → `en-revisión (PR #N)` → `resuelto` · también `descartado (motivo)`.
 - En los archivos versionados solo se escribe `pendiente`/`abierto` o `hecho`/`resuelto`/`descartado`; los estados intermedios viven en `.ai/STATUS.md`.
+
+## 10. Trabajar en el servidor de casa (misma máquina que la app desplegada)
+
+Claude y sus agentes trabajan en el servidor de la LAN de Yago, donde también corren el runner self-hosted y la app desplegada (proyecto de compose de `main`).
+
+- **Producción es intocable a mano**: nunca `docker compose down/rm/restart`, ni borrar volúmenes, ni tocar la BD del proyecto desplegado. Solo cambia vía merge → `deploy.yml`. (Bloqueado también en `.claude/settings.json`.)
+- **El checkout que usa el runner** (`_work/` del runner) no se toca. Claude trabaja en su propio clon (p. ej. `~/work/asaltamontes`) y en worktrees `~/work/asaltamontes-wt/<rama>`.
+- **Pruebas manuales del stack**: `docker compose -p asaltamontes-dev -f docker-compose.yml -f docker-compose.dev.yml up -d` con puertos alternativos (frontend 8081, backend 8091, BD 5434) y volúmenes propios del proyecto `-dev`. El override `docker-compose.dev.yml` se crea en T07. Solo un stack `-dev` a la vez; bájalo al terminar (`docker compose -p asaltamontes-dev down`; esto lo hace Yago o se pide permiso puntual, porque `down` está en la lista de denegados).
+- **Recursos**: no lances más de 3 agentes en paralelo con tests de Testcontainers (CPU y RAM compartidas con la app desplegada).
+- **Tras cada merge**: si hay acceso, verifica que el deploy terminó (`gh run list --workflow deploy.yml -L 1`) y que `/actuator/health` responde. Si falla, avisa en STATUS como bloqueo prioritario; no lo arregles tocando producción.

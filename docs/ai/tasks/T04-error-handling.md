@@ -36,6 +36,8 @@ Que cada error devuelva el código HTTP correcto con un `ProblemDetail` consiste
 - `FollowService.followUser`: comprobar `existsBy…` antes de guardar o hacer `saveAndFlush` dentro del `try` para que el duplicado produzca `AlreadyFollowingException` (BUG-036).
 - Errores en `@MessageMapping` (WebSocket): `@MessageExceptionHandler` que envíe el error a `/user/queue/errors` en vez de perderlo.
 
+- **D-012**: los cambios en `JwtAuthFilter`, `SecurityConfig` y `api-client.js` deben ser mínimos y conservar su estructura; solo se cambia cómo se señaliza el error.
+
 ### Frontend
 - `api-client.js`: refrescar **solo ante 401**. Un 403 se propaga como error de permisos.
 - Suscribirse a `/user/queue/errors` y mostrar el error (toast simple o `console.warn` + estado en el chat; lo mínimo que no se pierda).

@@ -9,6 +9,7 @@ Objetivo a largo plazo: producción con miles de usuarias concurrentes y monetiz
 1. Ejecuta el skill **`/start-session`** (o sigue a mano `.claude/skills/start-session/SKILL.md`).
 2. Nunca empieces a programar sin saber qué tarea (`Txx`) o bug (`BUG-xxx`) estás resolviendo.
 3. Al terminar, ejecuta **`/end-session`** para dejar el registro actualizado.
+4. Sesión autónoma larga (vía libre de Yago): **`/autopilot`**. Preparación del servidor: `docs/ai/SERVER_SETUP.md`.
 
 ## Mapa de documentación de trabajo
 
@@ -35,6 +36,8 @@ Objetivo a largo plazo: producción con miles de usuarias concurrentes y monetiz
 - Nada de secretos en el repo. Variables nuevas → `.env.example` + `docker-compose.yml` + README.
 - No toques cambios sin commitear que no sean tuyos (p. ej. trabajo local de Yago): no los incluyas en tus commits.
 - Si descubres un bug fuera del alcance de tu tarea: **no lo arregles en la misma PR**; regístralo (`docs/ai/bugs/`) y sigue.
+- **Respeta la arquitectura del backend de Yago, sobre todo la autenticación** (`DECISIONS.md` D-012): extender y arreglar en el sitio, nunca sustituir. Los cambios estructurales se proponen y esperan su OK.
+- **Trabajas en la misma máquina donde corre la app desplegada** (servidor de casa, runner self-hosted). Nunca toques los contenedores, volúmenes ni la BD del proyecto de compose de producción. Para pruebas manuales, usa `docker compose -p asaltamontes-dev` con puertos alternativos (ver `WORKFLOW.md` §10).
 
 ## Stack y estructura
 

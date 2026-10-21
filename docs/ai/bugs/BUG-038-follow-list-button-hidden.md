@@ -17,4 +17,4 @@ El backend devuelve `isFollowing = null` para la propia usuaria y `true/false` p
 Abrir la lista de seguidores de otra persona → no hay botón "Seguir" para quien no sigues.
 
 ## Arreglo propuesto
-`showFollowButton={user.isFollowing !== null}`. **Yago ya tiene este arreglo sin commitear en su copia local** (2026-10-21): conviene que lo suba él o confirme que Claude abra la PR.
+`showFollowButton={user.isFollowing !== null}`. Yago tenía este arreglo en local y lo descartó (2026-10-21): lo resuelve Claude en una PR `fix/BUG-038-*` propia.

@@ -11,6 +11,8 @@
 PostgreSQL 13 está fuera de soporte desde noviembre de 2025 (sin parches de seguridad). Pasar a 17 sin perder datos.
 
 ## Alcance
+> Simplificado por D-014: como los datos son desechables, basta con cambiar la imagen, usar un volumen nuevo y cargar el seed de T02. El script de dump/restore se mantiene como procedimiento documentado para cuando haya datos reales.
+
 - `docker-compose.yml`: `image: postgres:17-alpine` y **volumen nuevo** (`postgres17_data`); el antiguo se conserva hasta validar.
 - Script `scripts/db/upgrade-13-to-17.sh` (idempotente y comentado):
   1. `pg_dumpall` (o `pg_dump -Fc`) desde el contenedor 13.

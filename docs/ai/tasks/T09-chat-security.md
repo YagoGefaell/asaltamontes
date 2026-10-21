@@ -41,6 +41,9 @@ El chat es la prioridad nº 1 y hoy cualquier usuaria autenticada puede escribir
 - Mostrar los errores de envío que llegan por `/user/queue/errors` (T04) en el `ChatPanel`, devolviendo el texto al input si falla.
 - Contador de caracteres / `maxLength=2000` en el input del chat.
 
+## Notas
+- D-012: el cambio en `WebSocketJwtInterceptor` (rechazar el CONNECT, principal por id) se hace dentro de la clase existente, sin reestructurarla.
+
 ## Fuera de alcance
 - Paginación → T10. Reconexión con token renovado en el cliente → T11.
 
