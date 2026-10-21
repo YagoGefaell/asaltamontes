@@ -1,6 +1,6 @@
 # T04 — Manejo de errores unificado
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 0 — Cimientos
 - **Depende de:** T01
 - **Rama sugerida:** `refactor/T04-error-handling`

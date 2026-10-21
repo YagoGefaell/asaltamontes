@@ -1,6 +1,6 @@
 # BUG-011 — Token caducado o inválido devuelve 403 en lugar de 401
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/auth + frontend

@@ -5,6 +5,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
@@ -30,7 +33,7 @@ public class CommunityService {
     @Transactional
     public Community create(CreateCommunityDto request, UserAccount currentUser) {
         if (communityRepository.existsByName(request.name())) {
-            throw new IllegalArgumentException("Community with that name already exists");
+            throw new ConflictException("Community with that name already exists");
         }
 
         Community community = new Community(
@@ -58,7 +61,7 @@ public class CommunityService {
 
     public CommunityDetailsDto getCommunityByName(String communityName, UserAccount currentUser) {
         return communityRepository.findCommunityByName(communityName, currentUser.getId())
-            .orElseThrow(() -> new IllegalArgumentException("Community not found"));
+            .orElseThrow(() -> new NotFoundException("Community not found"));
     }
 
     public Page<CommunityMemberDto> getCommunityMembersExcept(Long communityId, Long userId, Pageable pageable) {
@@ -83,7 +86,7 @@ public class CommunityService {
         long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {
-            throw new IllegalArgumentException("User is not a member of this community");
+            throw new NotFoundException("User is not a member of this community");
         }
         communityRepository.decrementMemberCount(communityId);
     }
@@ -91,7 +94,7 @@ public class CommunityService {
     @Transactional
     public void deleteCommunity(Long communityId, UserAccount currentUser) {
         if (!isOwner(communityId, currentUser)) {
-            throw new IllegalArgumentException("Only the owner can delete the community");
+            throw new ForbiddenException("Only the owner can delete the community");
         }
         communityMemberRepository.deleteAllByCommunityId(communityId);
         communityRepository.deleteById(communityId);

@@ -1,6 +1,6 @@
 # BUG-036 — Seguir dos veces no produce `AlreadyFollowingException`
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable (verificar con test)
 - **Área:** backend/user

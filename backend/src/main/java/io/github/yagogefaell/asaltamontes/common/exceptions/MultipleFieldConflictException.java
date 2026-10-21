@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.CONFLICT)
-public class MultipleFieldConflictException extends RuntimeException {
+public class MultipleFieldConflictException extends ConflictException {
 
     private final Map<String, String> errors;
 

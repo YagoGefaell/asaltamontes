@@ -1,6 +1,6 @@
 # BUG-010 — Errores de negocio devuelven 500 y los errores inesperados no se registran
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/common

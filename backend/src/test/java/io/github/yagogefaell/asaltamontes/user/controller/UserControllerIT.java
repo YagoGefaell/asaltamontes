@@ -21,9 +21,8 @@ class UserControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void getMe_withoutToken_isRejected() throws Exception {
-        // Current behaviour: Spring Security's default entry point answers 403. T04 will change it to 401.
+    void getMe_withoutToken_isUnauthorized() throws Exception {
         mockMvc.perform(get("/api/users/me"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 }

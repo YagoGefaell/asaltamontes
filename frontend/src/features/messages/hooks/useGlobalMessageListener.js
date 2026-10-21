@@ -1,13 +1,21 @@
 import { useEffect, useRef } from "react";
 
-export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived) {
+const logChatError = (error) => console.warn("Error del chat:", error?.detail);
+
+export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived, onError = logChatError) {
   const subscriptionRef = useRef(null);
+  const errorSubscriptionRef = useRef(null);
   
   const savedCallback = useRef(onMessageReceived);
+  const savedErrorCallback = useRef(onError);
 
   useEffect(() => {
     savedCallback.current = onMessageReceived;
   }, [onMessageReceived]);
+
+  useEffect(() => {
+    savedErrorCallback.current = onError;
+  }, [onError]);
 
   useEffect(() => {
     if (!websocketClient || !websocketConnected) {
@@ -30,10 +38,23 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
       }
     });
 
+    // Errors of our own STOMP sends (e.g. writing to a chat we don't belong to), see ChatController
+    errorSubscriptionRef.current = websocketClient.subscribe("/user/queue/errors", (frame) => {
+      try {
+        savedErrorCallback.current?.(JSON.parse(frame.body));
+      } catch (parseError) {
+        console.error("Error parseando error websocket", parseError);
+      }
+    });
+
     return () => {
       if (subscriptionRef.current) {
         subscriptionRef.current.unsubscribe();
         subscriptionRef.current = null;
+      }
+      if (errorSubscriptionRef.current) {
+        errorSubscriptionRef.current.unsubscribe();
+        errorSubscriptionRef.current = null;
       }
     };
   }, [websocketClient, websocketConnected]); 

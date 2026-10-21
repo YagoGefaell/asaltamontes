@@ -29,8 +29,13 @@ public class FollowService {
     public void followUser(Long followerId, String usernameToFollow) {
         UserAccount following = getUserToFollowOrThrow(followerId, usernameToFollow);
 
+        if (userFollowRepository.existsByFollowerIdAndFollowingId(followerId, following.getId())) {
+            throw new AlreadyFollowingException(usernameToFollow);
+        }
+
         try {
-            userFollowRepository.save(
+            // Flush inside the try so a concurrent duplicate fails here (unique constraint) and not at commit
+            userFollowRepository.saveAndFlush(
                 new UserFollow(
                     userAccountRepository.getReferenceById(followerId),
                     following

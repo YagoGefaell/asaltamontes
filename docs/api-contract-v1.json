@@ -718,10 +718,10 @@
             }
           },
           "401": {
-            "description": "Not authenticated"
+            "description": "Not authenticated (missing, invalid or expired access token)"
           },
-          "500": {
-            "description": "Unexpected server error or access denied by server-side validation"
+          "403": {
+            "description": "The user is not a participant of the conversation"
           }
         }
       }
@@ -754,6 +754,16 @@
               "destination": "/user/queue/messages",
               "payload": {
                 "$ref": "#/components/schemas/PrivateMessage"
+              }
+            },
+            {
+              "destination": "/user/queue/errors",
+              "description": "Errors of the frames this session sent (e.g. writing to a conversation the user does not belong to). Only the sending session receives them.",
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "detail": { "type": "string", "example": "No tienes permiso para escribir en este chat" }
+                }
               }
             }
           ]

@@ -1,9 +1,6 @@
 package io.github.yagogefaell.asaltamontes.infrastructure.config;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -31,12 +28,7 @@ class ActuatorIT extends AbstractIntegrationTest {
     void otherEndpoints_areNotExposedEvenWhenAuthenticated() throws Exception {
         UserAccount user = testData.createUser();
 
-        // Not exposed means no actuator data. Today unknown routes answer 500 instead of 404 (BUG-039, T04).
-        mockMvc.perform(get("/actuator/env").with(auth.bearer(user)))
-                .andExpect(status().is(not(200)))
-                .andExpect(content().string(not(containsString("propertySources"))));
-        mockMvc.perform(get("/actuator/beans").with(auth.bearer(user)))
-                .andExpect(status().is(not(200)))
-                .andExpect(content().string(not(containsString("contexts"))));
+        mockMvc.perform(get("/actuator/env").with(auth.bearer(user))).andExpect(status().isNotFound());
+        mockMvc.perform(get("/actuator/beans").with(auth.bearer(user))).andExpect(status().isNotFound());
     }
 }

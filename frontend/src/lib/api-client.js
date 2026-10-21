@@ -41,7 +41,8 @@ class ApiClient {
       const response = await fetch(`${this.baseURL}${endpoint}`, config)
       clearTimeout(timeoutId)
       
-      if ((response.status === 401 || response.status === 403) && 
+      // Only 401 means the session (access token) is no longer valid; 403 is a real permission error
+      if (response.status === 401 && 
           !isRetry && 
           this.enableAutoRefresh && 
           !this._isAuthEndpoint(endpoint)) {

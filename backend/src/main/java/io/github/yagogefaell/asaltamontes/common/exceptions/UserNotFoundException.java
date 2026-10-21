@@ -1,6 +1,6 @@
 package io.github.yagogefaell.asaltamontes.common.exceptions;
 
-public class UserNotFoundException extends RuntimeException {
+public class UserNotFoundException extends NotFoundException {
     public UserNotFoundException(String username) {
         super("User not found: " + username);
     }
