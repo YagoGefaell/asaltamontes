@@ -7,14 +7,18 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Optional;
+
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
+import io.github.yagogefaell.asaltamontes.community.domain.MemberStatus;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, Long> {
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
             c.id,
-            c.name, 
+            c.name,
+            c.slug,
             c.imageUrl,
             m.role,
             c.memberCount
@@ -24,6 +28,13 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
         WHERE m.userAccount.id = :userId
     """)
     Page<CommunitySearchDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);
+
+    @Query("""
+        SELECT m.status FROM CommunityMember m
+        WHERE m.community.id = :communityId AND m.userAccount.id = :userId
+    """)
+    Optional<MemberStatus> findStatus(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
     @Modifying
     @Query("""
         DELETE FROM CommunityMember cm 

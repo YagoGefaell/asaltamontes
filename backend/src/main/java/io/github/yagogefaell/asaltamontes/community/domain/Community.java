@@ -28,8 +28,9 @@ import lombok.Setter;
 @Table(name = "communities")
 public class Community {
 
-    public Community(String name, String description, String imageUrl, UserAccount createdBy) {
+    public Community(String name, String slug, String description, String imageUrl, UserAccount createdBy) {
         this.name = name;
+        this.slug = slug;
         this.description = description;
         this.imageUrl = imageUrl;
         this.createdBy = createdBy;
@@ -39,8 +40,13 @@ public class Community {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    // Unique regardless of case (index on lower(name), V4)
+    @Column(nullable = false, length = 100)
     private String name;
+
+    // Identifier in URLs (T14)
+    @Column(nullable = false, unique = true, length = 120)
+    private String slug;
 
     @Column(columnDefinition = "TEXT")
     private String description;

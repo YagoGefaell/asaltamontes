@@ -8,9 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
+
 import jakarta.validation.Valid;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
+import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
@@ -29,34 +32,36 @@ public class CommunityController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createCommunity(
+    public ResponseEntity<CommunityDetailsDto> createCommunity(
             @AuthenticationPrincipal UserAccount currentUser,
             @Valid @RequestBody CreateCommunityDto request) {
 
-        communityService.create(request, currentUser);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        Community community = communityService.create(request, currentUser);
+        CommunityDetailsDto created = communityService.getCommunity(community.getSlug(), currentUser);
+        return ResponseEntity.created(URI.create("/api/communities/" + created.slug())).body(created);
     }
 
     @GetMapping
     public ResponseEntity<Page<CommunitySearchDto>> getAllCommunities(
             @AuthenticationPrincipal UserAccount currentUser,
-            @PageableDefault(size = 20, sort = "name") Pageable pageable
+            @RequestParam(required = false) String query,
+            @PageableDefault(size = 20) Pageable pageable
         ) {
-        Page<CommunitySearchDto> communities = communityService.getAllCommunities(currentUser, pageable);
+        Page<CommunitySearchDto> communities = communityService.getAllCommunities(currentUser, query, pageable);
         return ResponseEntity.ok(communities);
     }
 
     @GetMapping("/me")
     public ResponseEntity<Page<CommunitySearchDto>> getMyCommunities(
             @AuthenticationPrincipal UserAccount currentUser,
-            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable) {
         Page<CommunitySearchDto> communities = communityService.getMyCommunities(currentUser, pageable);
         return ResponseEntity.ok(communities);
     }
 
-    @GetMapping("/{communityName}")
-    public ResponseEntity<CommunityDetailsDto> getCommunity(@PathVariable String communityName, @AuthenticationPrincipal UserAccount currentUser) {
-        CommunityDetailsDto community = communityService.getCommunityByName(communityName, currentUser);
+    @GetMapping("/{slug}")
+    public ResponseEntity<CommunityDetailsDto> getCommunity(@PathVariable String slug, @AuthenticationPrincipal UserAccount currentUser) {
+        CommunityDetailsDto community = communityService.getCommunity(slug, currentUser);
         return ResponseEntity.ok(community);
     }
 
@@ -73,7 +78,7 @@ public class CommunityController {
             @PathVariable Long communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
         if (communityService.isOwner(communityId, currentUser)) {
-            throw new ConflictException("Owner cannot leave the community");
+            throw new ConflictException("La propietaria no puede salir de la comunidad");
         }
         communityService.leaveCommunity(communityId, currentUser);
         return ResponseEntity.noContent().build();
@@ -83,7 +88,7 @@ public class CommunityController {
     public ResponseEntity<Page<CommunityMemberDto>> getCommunityMembers(
             @PathVariable Long communityId,
             @AuthenticationPrincipal UserAccount currentUser,
-            @PageableDefault(size = 20, sort = "name") Pageable pageable) {
+            @PageableDefault(size = 20) Pageable pageable) {
         Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser.getId(), pageable);
         return ResponseEntity.ok(members);
     }
