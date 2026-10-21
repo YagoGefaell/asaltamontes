@@ -9,7 +9,7 @@
 
 ## Dónde
 - `frontend/src/shared/components/CommunityJoinButton.jsx` → `useOptimisticToggle(..., onOptimisticChange)`
-- `frontend/src/shared/hooks/useOptimisticToggle.js` → `executeAsync` (en el `catch` solo hace `setState(serverStateRef.current)`)
+- `frontend/src/hooks/useOptimisticToggle.js` → `executeAsync` (en el `catch` solo hace `setState(serverStateRef.current)`)
 - `frontend/src/pages/communities/Communities.jsx` y `CommunityProfileDetail.jsx` → `handleToggleCommunity` (cambia `role` y `memberCount` del padre)
 
 ## Qué pasa
