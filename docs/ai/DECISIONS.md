@@ -19,6 +19,7 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 ## D-004 · Imágenes en almacenamiento compatible con S3, MinIO en el servidor (2026-10-21)
 - **Decisión:** se usa MinIO en el compose y el AWS SDK v2 en el backend. Las subidas van directas del navegador con URL prefirmada, el backend las procesa (quita EXIF y genera variantes) y nginx las sirve. Cuando haya hosting, se pasa a Cloudflare R2 o S3 cambiando solo la configuración.
 - **Consecuencias:** nunca se guardan binarios en Postgres ni en el sistema de archivos del contenedor del backend.
+- **Revisión pendiente (2026-10-21):** MinIO dejó de publicar imágenes Docker comunitarias en octubre de 2025 y su repositorio está archivado. Alternativas y recomendación en `tasks/T17-media-storage.md` ("Decisión pendiente"); falta la decisión de Yago.
 
 ## D-005 · Mapas con Leaflet y OpenStreetMap (2026-10-21)
 - **Decisión:** Leaflet + `react-leaflet` con tiles de OSM y atribución visible. Sin PostGIS de momento (basta con un bounding box sobre lat/lng indexados).
