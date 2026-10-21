@@ -1,6 +1,7 @@
 import "./SettingsMenu.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { logoutEverywhereRequest } from "../../features/auth/services/auth.service";
 
 export default function SettingsMenu() {
   const navigate = useNavigate();
@@ -13,6 +14,19 @@ export default function SettingsMenu() {
         navigate("/access");
       } catch (error) {
         console.error("Error al cerrar sesión:", error);
+      }
+    }
+  };
+
+  const handleLogoutEverywhere = async () => {
+    if (window.confirm("Se cerrará tu sesión en todos tus dispositivos, también en este. ¿Continuar?")) {
+      try {
+        await logoutEverywhereRequest();
+        await logout();
+        navigate("/access");
+      } catch (error) {
+        console.error("Error al cerrar las sesiones:", error);
+        window.alert(error.message);
       }
     }
   };
@@ -41,7 +55,10 @@ export default function SettingsMenu() {
     },
     {
       title: "Sesión",
-      items: [{ label: "Cerrar sesión", action: handleLogout, isAction: true }],
+      items: [
+        { label: "Cerrar sesión", action: handleLogout, isAction: true },
+        { label: "Cerrar sesión en todos los dispositivos", action: handleLogoutEverywhere, isAction: true },
+      ],
     },
   ];
 

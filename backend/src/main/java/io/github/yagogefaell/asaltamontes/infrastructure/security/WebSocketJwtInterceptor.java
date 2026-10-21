@@ -39,7 +39,7 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor {
                     if (jwtUtil.isTokenValid(jwt)) {
                         Claims claims = jwtUtil.extractAllClaims(jwt);
 
-                        if (!jwtUtil.isExpired(claims)) {
+                        if (!jwtUtil.isExpired(claims) && jwtUtil.isType(claims, JwtUtil.ACCESS_TYPE)) {
                             Long id = jwtUtil.extractId(claims);
                             var userDetails = userService.loadUserById(id);
 
@@ -53,7 +53,7 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor {
                         }
                     }
                 } catch (Exception e) {
-                    throw new InvalidTokenException(jwt);
+                    throw new InvalidTokenException("Token inválido");
                 }
             }
         }

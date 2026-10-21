@@ -1,6 +1,6 @@
 # BUG-040 — El interceptor del WebSocket usa el JWT como mensaje de la excepción
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable (lectura de código)
 - **Área:** backend/auth

@@ -16,6 +16,11 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
+    /** Claim that tells access and refresh tokens apart, so one can never be used as the other. */
+    public static final String TYPE_CLAIM = "typ";
+    public static final String ACCESS_TYPE = "access";
+    public static final String REFRESH_TYPE = "refresh";
+
     private final JwtProperties jwtProperties;
     private final SecretKey signingKey;
 
@@ -27,6 +32,7 @@ public class JwtUtil {
     public String generateAccessToken(Long id) {
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put(TYPE_CLAIM, ACCESS_TYPE);
 
         return Jwts.builder()
                 .claims()
@@ -40,9 +46,11 @@ public class JwtUtil {
                 
     }
 
-    public String generateRefreshToken(Long id) {
+    public String generateRefreshToken(Long id, String jti) {
         return Jwts.builder()
                 .claims()
+                .add(TYPE_CLAIM, REFRESH_TYPE)
+                .id(jti)
                 .subject(id.toString())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.getRefreshExpiration()))
@@ -71,6 +79,10 @@ public class JwtUtil {
 
     public Long extractId(Claims claims) {
         return Long.valueOf(claims.getSubject());
+    }
+
+    public boolean isType(Claims claims, String type) {
+        return type.equals(claims.get(TYPE_CLAIM, String.class));
     }
 
     public boolean isExpired(Claims claims) {

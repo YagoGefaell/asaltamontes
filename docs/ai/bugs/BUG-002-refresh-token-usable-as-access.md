@@ -1,6 +1,6 @@
 # BUG-002 — El refresh token sirve como access token y viceversa
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/auth
