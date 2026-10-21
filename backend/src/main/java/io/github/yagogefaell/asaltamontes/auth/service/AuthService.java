@@ -56,6 +56,10 @@ public class AuthService {
 
         var payload = googleTokenVerifier.verify(tokenId);
 
+        if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+            throw new InvalidTokenException("El email de Google no está verificado");
+        }
+
         UserAccount user = userService.findOrCreateGoogleUser(
                 payload.getEmail(),
                 (String) payload.get("name"),

@@ -3,6 +3,7 @@ import RegisterForm from "../../features/auth/components/RegisterForm.jsx";
 import { useAuth } from "../../features/auth/hooks/useAuth.js";
 import { GoogleLoginButton } from '../../shared/components/GoogleLoginButton.jsx';
 import { useState } from "react";
+import { REGISTER_RULES, validateForm } from "../../utils/validation.js";
 import "./Register.css";
 
 const Register = () => {
@@ -13,8 +14,11 @@ const Register = () => {
   const [fieldErrors, setFieldErrors] = useState({});
 
   const handleRegister = async ({ fullName, username, email, password, confirmPassword }) => {
-    // Limpiar errores antes de enviar
-    setFieldErrors({});
+    // Mismas reglas que el backend: no se envía nada que vaya a rechazar
+    const { isValid, errors } = validateForm({ fullName, username, email, password, confirmPassword }, REGISTER_RULES);
+    setFieldErrors(errors);
+    if (!isValid) return;
+
     try {
       await register(fullName, username, email, password, confirmPassword);
       navigate("/home");

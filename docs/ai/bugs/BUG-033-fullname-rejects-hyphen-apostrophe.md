@@ -1,6 +1,6 @@
 # BUG-033 — El nombre completo rechaza guiones y apóstrofos
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/user

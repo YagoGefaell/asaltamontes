@@ -34,11 +34,12 @@
           }
         },
         "responses": {
+          "429": { "description": "Too many attempts (rate limiting); see the Retry-After header" },
           "201": {
             "description": "User registered successfully"
           },
           "400": {
-            "description": "Invalid data or user/email already exists",
+            "description": "Invalid fields (Bean Validation, errors per field). A username/email already taken or a confirmPassword mismatch answers 409 with the same errors map",
             "content": {
               "application/json": {
                 "schema": {
@@ -191,6 +192,7 @@
           }
         },
         "responses": {
+          "429": { "description": "Too many attempts (rate limiting); see the Retry-After header" },
           "200": {
             "description": "Successful login",
             "headers": {
@@ -259,6 +261,7 @@
           }
         ],
         "responses": {
+          "429": { "description": "Too many attempts (rate limiting); see the Retry-After header" },
           "200": {
             "description": "Token successfully refreshed",
             "content": {

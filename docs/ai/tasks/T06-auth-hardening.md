@@ -1,6 +1,6 @@
 # T06 — Endurecimiento de autenticación
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 0 — Cimientos
 - **Depende de:** T02, T04
 - **Rama sugerida:** `feat/T06-auth-hardening` (dividir: `T06a` tokens, `T06b` validación + rate limit + Google)
@@ -9,7 +9,7 @@
 
 ## Progreso
 - **T06a — tokens** (hecho): claim `typ`, `jti` + tabla `refresh_sessions` (V3), logout que revoca, `POST /api/users/me/sessions/revoke-all`, job de limpieza y botón en Ajustes. Cierra BUG-002, BUG-003 y BUG-040. Sin la columna `user_agent` (no la necesita ningún criterio; se añadirá si se hace una pantalla de "sesiones activas"). La rotación del refresh va como propuesta en la PR.
-- **T06b — validación, rate limiting y Google** (pendiente).
+- **T06b — validación, rate limiting y Google** (hecho): reglas únicas en `UserFieldRules` (Bean Validation → 400 + `UserValidator`) replicadas en `constants.js`/`REGISTER_RULES`; `AuthRateLimitFilter` (en memoria, ventana fija, configurable con `asaltamontes.rate-limit.*`); `email_verified` y `UsernameGenerator` para Google. Cierra BUG-023, BUG-024, BUG-032 y BUG-033. La confirmación de contraseña sigue en `UserValidator` (409), como antes.
 
 ## Objetivo
 Tokens que no se pueden intercambiar entre sí, sesiones revocables (logout real, "cerrar sesión en todos los dispositivos") **sin cambiar la arquitectura actual**, protección frente a fuerza bruta y validación consistente front/back.

@@ -1,6 +1,6 @@
 # BUG-023 — Login y registro sin validación de entrada ni límite de intentos
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/auth

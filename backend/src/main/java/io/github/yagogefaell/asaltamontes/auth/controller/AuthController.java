@@ -19,6 +19,7 @@ import io.github.yagogefaell.asaltamontes.auth.service.AuthService;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieProperties;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -30,7 +31,7 @@ public class AuthController {
     private final CookieProperties cookieProperties;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
         TokenPairs tokens = authService.login(request.username(), request.password());
 
         return ResponseEntity.ok()
@@ -55,7 +56,7 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
 
         UserAccount user = authService.register(request);
 
