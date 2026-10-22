@@ -13,6 +13,7 @@ Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas
 2. Elige el trabajo según WORKFLOW §8. En cada vuelta:
    - **Feedback de Yago** primero (`/address-review`).
    - Después tareas y bugs con `/do-task <ID>`. Si hay 2 o 3 independientes, puedes lanzar **como mucho 2 a la vez** con el agente `implementer` (`isolation: worktree`), y el segundo solo si se cumplen los umbrales de memoria y carga de WORKFLOW §10 (Raspberry Pi 5). Ante la duda, en secuencial.
+   - **Recuento de PRs siempre en vivo**: Yago mergea mientras trabajas. Antes de empezar cada unidad de trabajo, y **siempre antes de decidir que el WIP está lleno o que no queda trabajo**, vuelve a consultar GitHub: `gh pr list --state open --author "@me" --json number,isDraft,title`. No uses el número que recuerdas ni el que pone STATUS. Si mientras tanto ha bajado del límite, sigue con código.
    - **Límite WIP** (4 PRs sin revisar, o el valor que Yago ponga en STATUS como `WIP: n`): si se alcanza, no abras más PRs de código. Haz, en este orden: refinar las specs 🔍 de las siguientes tareas del roadmap (PR `docs/`), `/bug-hunt` de un área no revisada recientemente, o preparar trabajo apilado **solo** si su base está en PR y es claramente correcta.
 3. Tras cada PR abierta: actualiza `.ai/STATUS.md` (checkpoint) antes de seguir.
 4. Cada ~3 unidades de trabajo, o si el contexto crece mucho: añade una entrada intermedia a `.ai/SESSION_LOG.md`.
@@ -28,7 +29,7 @@ Yago quiere conservar cuota para otros usos (2026-10-21):
 - Una decisión que corresponde a Yago bloquea **todo** el trabajo disponible (las que bloquean solo una tarea se anotan y se pasa a otra).
 - El deploy de `main` ha fallado o la app desplegada no responde → avísalo como bloqueo prioritario; no lo arregles tocando producción.
 - Encuentras algo **crítico** de seguridad: regístralo, abre el hotfix si es pequeño y claro, y destácalo para Yago.
-- No queda trabajo seguro: WIP lleno, specs refinadas, áreas recién revisadas.
+- No queda trabajo seguro: WIP lleno, specs refinadas, áreas recién revisadas. **Antes de parar por esto, repite el recuento en vivo** (ver arriba) y relee STATUS por si Yago ha respondido algo; para solo si sigue igual.
 - Cualquier acción que requeriría saltarse una regla de permisos o de `settings.json`: no la intentes por otro camino.
 
 ## Nunca, aunque parezca razonable

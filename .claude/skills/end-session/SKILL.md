@@ -9,6 +9,7 @@ description: Cierre de sesión en Asaltamontes. Deja .ai/STATUS.md al día y añ
 ROOT=$(git rev-parse --path-format=absolute --git-common-dir)/..; AI="$ROOT/.ai"
 ```
 
+0. **Recuento final en vivo**: `gh pr list --state open --author "@me"` justo antes de escribir STATUS. Lo que dejes anotado como "en revisión" debe coincidir con GitHub en ese momento.
 1. **Nada a medias sin registrar**: cada rama con trabajo sin push → commit WIP (`wip: …`) y push, o anota en STATUS por qué no se ha subido. No dejes cambios sin commitear en worktrees sin anotarlo.
 2. **Actualiza `$AI/STATUS.md`** (formato en `start-session`): en curso, PRs con enlace, siguiente en la cola, preguntas para Yago.
 3. **Añade al final de `$AI/SESSION_LOG.md`** (nunca reescribas entradas anteriores):
