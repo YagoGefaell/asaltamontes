@@ -4,7 +4,7 @@
 - **Fase:** 1 — Chat
 - **Depende de:** T09
 - **Rama sugerida:** `feat/T12-group-management`
-- **Cierra bugs:** —
+- **Cierra bugs:** BUG-056, BUG-057 (parte)
 - **Tamaño:** M
 
 ## Objetivo
