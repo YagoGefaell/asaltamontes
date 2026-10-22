@@ -20,6 +20,7 @@ import CommunityProfileDetail from "../pages/communities/CommunityProfileDetail.
 import CommunitySettingsMenu from "../pages/communities/CommunitySettingsMenu.jsx";
 import Events from "../pages/events/Events.jsx";
 import EventDetail from "../pages/events/EventDetail.jsx";
+import EventEditor from "../pages/events/EventEditor.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
@@ -55,7 +56,9 @@ export function AppRouter() {
           <Route path="communities" element={<Communities />} />
           <Route path="communities/:slug" element={<CommunityProfileDetail />} />
           <Route path="events" element={<Events />} />
+          <Route path="events/new" element={<EventEditor />} />
           <Route path="events/:id" element={<EventDetail />} />
+          <Route path="events/:id/edit" element={<EventEditor />} />
         </Route>
 
         {/* ---- Rutas de Followers/Following (sin navbar) ---- */}

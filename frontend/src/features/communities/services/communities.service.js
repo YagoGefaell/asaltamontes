@@ -65,3 +65,19 @@ export async function deleteCommunityRequest(communityId) {
     throw new Error(error.message || "Error al borrar la comunidad")
   }
 }
+
+// -------- COMMUNITIES SHE CAN ORGANIZE IN --------
+// GET /api/communities/me has her role in each one; only OWNER and MODERATOR can create events (T16b)
+export async function getOrganizableCommunitiesRequest() {
+  try {
+    const result = []
+    for (let page = 0; page < 5; page++) {
+      const response = await apiClient.get(`/api/communities/me?page=${page}&size=50`)
+      result.push(...(Array.isArray(response?.content) ? response.content : []))
+      if (response?.last !== false) break
+    }
+    return result.filter((community) => community.role === 'OWNER' || community.role === 'MODERATOR')
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo tus comunidades')
+  }
+}

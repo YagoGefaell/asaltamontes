@@ -1,0 +1,61 @@
+.event-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.event-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.event-form__row--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* 360 px: three number fields side by side get too narrow */
+@media (max-width: 400px) {
+  .event-form__row,
+  .event-form__row--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.event-form__row > * {
+  min-width: 0;
+}
+
+.event-form__hint {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.event-form__place {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  min-width: 0;
+}
+
+.event-form__place legend {
+  padding: 0 var(--space-2);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.event-form__point {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}

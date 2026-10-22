@@ -297,3 +297,10 @@
     padding: 1rem;
   }
 }
+
+.community-events-wrapper {
+  width: 100%;
+  max-width: 420px;
+  margin-top: 1rem;
+  box-sizing: border-box;
+}

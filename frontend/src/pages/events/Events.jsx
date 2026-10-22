@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useEvents } from '../../features/events/hooks/useEvents.js'
 import EventCard from '../../features/events/components/EventCard.jsx'
 import EventFilters from '../../features/events/components/EventFilters.jsx'
@@ -11,6 +12,7 @@ import './Events.css'
 const CITY_DEBOUNCE_MS = 300
 
 export default function Events() {
+  const navigate = useNavigate()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [debouncedCity, setDebouncedCity] = useState('')
 
@@ -42,6 +44,7 @@ export default function Events() {
     <div className="events-page">
       <header className="events-header">
         <h2>Quedadas</h2>
+        <Button size="small" onClick={() => navigate('/events/new')}>Crear quedada</Button>
       </header>
 
       <EventFilters filters={filters} onChange={setFilters} />
