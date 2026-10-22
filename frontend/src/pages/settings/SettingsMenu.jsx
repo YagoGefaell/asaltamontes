@@ -1,11 +1,13 @@
 import "./SettingsMenu.css";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useToast } from "../../shared/ui/Toast";
 import { logoutEverywhereRequest } from "../../features/auth/services/auth.service";
 
 export default function SettingsMenu() {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const toast = useToast();
 
   const handleLogout = async () => {
     if (window.confirm("¿Estás segura de que quieres cerrar sesión?")) {
@@ -26,7 +28,7 @@ export default function SettingsMenu() {
         navigate("/access");
       } catch (error) {
         console.error("Error al cerrar las sesiones:", error);
-        window.alert(error.message);
+        toast.error(error.message);
       }
     }
   };

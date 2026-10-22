@@ -22,7 +22,7 @@
 }
 
 .access-subtitle {
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--text-muted);
   margin-top: 0.5rem;
 }
@@ -46,11 +46,11 @@
 /* Botón principal */
 .btn-primary {
   background-color: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border: none;
   padding: 1rem;
-  font-size: 1.1rem;
-  border-radius: 12px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-md);
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.15s ease, transform 0.1s ease;
@@ -70,8 +70,8 @@
   border: 2px solid var(--primary);
   color: var(--primary);
   padding: 1rem;
-  font-size: 1.1rem;
-  border-radius: 12px;
+  font-size: var(--text-lg);
+  border-radius: var(--radius-md);
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
@@ -92,7 +92,7 @@
   text-align: center;
   margin: 1.5rem 0;
   color: var(--text-soft);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .login-divider::before,

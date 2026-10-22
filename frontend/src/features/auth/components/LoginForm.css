@@ -12,7 +12,7 @@
 }
 
 .input-group label {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-color);
   opacity: 0.8;
@@ -21,10 +21,10 @@
 /* Inputs */
 .input-group input {
   padding: 0.9rem;
-  background: var(--card-bg);
+  background: var(--surface);
   border: 1.8px solid var(--border-color);
-  border-radius: 10px;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   color: var(--text-color);
   transition: border-color 0.2s ease-in-out, background 0.2s;
 }
@@ -42,11 +42,11 @@
 /* Botón */
 .login-btn {
   background-color: var(--primary);
-  color: white;
+  color: var(--on-primary);
   padding: 1rem;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
   font-weight: bold;
   cursor: pointer;
 }
@@ -58,7 +58,7 @@
 .form-error {
   margin: 0;
   color: var(--primary); /* color del texto */
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   display: flex;
   align-items: center; /* centra el ícono con el texto */
   gap: 0.4rem; /* espacio entre icono y mensaje */

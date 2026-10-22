@@ -5,34 +5,34 @@
   justify-content: center;
   min-height: 50vh;
   padding: 2rem;
-  background-color: var(--background, #f9fafb);
+  background-color: var(--background);
 }
 
 .error-boundary__content {
   max-width: 28rem;
   text-align: center;
   padding: 2rem;
-  background: white;
-  border-radius: 1rem;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
 }
 
 .error-boundary__icon {
   display: flex;
   justify-content: center;
   margin-bottom: 1.5rem;
-  color: #ef4444;
+  color: var(--error);
 }
 
 .error-boundary__title {
-  font-size: 1.5rem;
+  font-size: var(--text-2xl);
   font-weight: 600;
-  color: var(--text-primary, #111827);
+  color: var(--text-color);
   margin-bottom: 0.75rem;
 }
 
 .error-boundary__message {
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-muted);
   line-height: 1.6;
   margin-bottom: 2rem;
 }
@@ -47,7 +47,7 @@
 .error-boundary__retry-btn,
 .error-boundary__home-btn {
   padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
+  border-radius: var(--radius-sm);
   font-weight: 500;
   border: none;
   cursor: pointer;
@@ -59,50 +59,50 @@
 }
 
 .error-boundary__retry-btn {
-  background-color: var(--primary, #6366f1);
-  color: white;
+  background-color: var(--primary);
+  color: var(--on-primary);
 }
 
 .error-boundary__retry-btn:hover {
-  background-color: var(--primary-dark, #4f46e5);
+  background-color: var(--pressed-color);
   transform: translateY(-1px);
 }
 
 .error-boundary__home-btn {
   background-color: transparent;
-  color: var(--text-secondary, #6b7280);
-  border: 1px solid var(--border, #d1d5db);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
 }
 
 .error-boundary__home-btn:hover {
-  background-color: var(--background, #f9fafb);
-  color: var(--text-primary, #111827);
+  background-color: var(--background);
+  color: var(--text-color);
 }
 
 /* Development error details */
 .error-boundary__details {
   margin-top: 2rem;
   padding: 1rem;
-  background-color: #f3f4f6;
-  border-radius: 0.5rem;
+  background-color: var(--background-alt);
+  border-radius: var(--radius-sm);
   text-align: left;
 }
 
 .error-boundary__details summary {
   cursor: pointer;
   font-weight: 500;
-  color: var(--text-primary, #111827);
+  color: var(--text-color);
   margin-bottom: 0.5rem;
 }
 
 .error-boundary__stack {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   line-height: 1.4;
-  color: #dc2626;
-  background-color: #fef2f2;
+  color: var(--error-text);
+  background-color: var(--error-bg);
   padding: 1rem;
-  border-radius: 0.25rem;
+  border-radius: var(--radius-sm);
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;

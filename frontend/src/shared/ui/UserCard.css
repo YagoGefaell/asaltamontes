@@ -10,37 +10,16 @@
   border: none;
   border-radius: 0;
   -webkit-tap-highlight-color: transparent;
-  border-bottom: 1px solid var(--border-color, #f1f3f5);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .user-card:hover {
-  background: var(--hover-bg, rgba(0, 0, 0, 0.02));
+  background: var(--hover-color);
 }
 
 .user-card.pressed {
-  background: var(--pressed-bg, rgba(0, 0, 0, 0.04));
+  background: var(--background-alt);
   transform: none;
-}
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-  transition: opacity 0.2s ease;
-  background-color: var(--background-alt, #f8f9fa);
-  border: none;
-}
-
-.user-avatar-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--primary);
-  color: #fff;
-  font-weight: 700;
-  font-size: 1rem;
-  text-transform: uppercase;
 }
 
 .user-card:hover .user-avatar {
@@ -70,22 +49,22 @@
 .user-card-action button {
   min-width: 95px;
   padding: 0.5rem 1rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   white-space: nowrap;
   pointer-events: auto;
 }
 
 .user-name {
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   line-height: 1.4;
   color: var(--text-color);
   margin: 0;
 }
 
 .user-username {
-  font-size: 0.85rem;
-  color: var(--text-muted, #6c757d);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
   font-weight: 400;
   margin: 0;
 }
@@ -96,6 +75,6 @@
 }
 
 .user-card.pressed .user-username {
-  color: var(--text-muted, #6c757d);
+  color: var(--text-muted);
 }
 

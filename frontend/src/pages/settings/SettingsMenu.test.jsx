@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsMenu from './SettingsMenu.jsx'
+import { ToastProvider } from '../../shared/ui/Toast.jsx'
 import { logoutEverywhereRequest } from '../../features/auth/services/auth.service'
 
 const logout = vi.fn()
@@ -26,7 +27,7 @@ describe('SettingsMenu', () => {
     logoutEverywhereRequest.mockResolvedValue()
     logout.mockResolvedValue()
 
-    render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
+    render(<ToastProvider><MemoryRouter><SettingsMenu /></MemoryRouter></ToastProvider>)
     fireEvent.click(screen.getByText('Cerrar sesión en todos los dispositivos'))
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/access'))
@@ -37,7 +38,7 @@ describe('SettingsMenu', () => {
   it('does nothing if the user cancels', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
 
-    render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
+    render(<ToastProvider><MemoryRouter><SettingsMenu /></MemoryRouter></ToastProvider>)
     fireEvent.click(screen.getByText('Cerrar sesión en todos los dispositivos'))
 
     expect(logoutEverywhereRequest).not.toHaveBeenCalled()

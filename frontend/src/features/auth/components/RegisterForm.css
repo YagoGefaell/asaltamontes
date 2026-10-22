@@ -13,7 +13,7 @@
 }
 
 .input-group label {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-color);
   opacity: 0.8;
@@ -21,9 +21,9 @@
 
 .input-group input {
   padding: 0.9rem;
-  background: var(--card-bg);
-  border-radius: 10px;
-  font-size: 1rem;
+  background: var(--surface);
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
   color: var(--text-color);
   transition: border-color 0.2s ease-in-out;
 }
@@ -41,11 +41,11 @@
 /* Botones */
 button.form-btn {
   background-color: var(--primary);
-  color: white;
+  color: var(--on-primary);
   padding: 1rem;
   border: none;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
   font-weight: bold;
   cursor: pointer;
   transition: opacity 0.2s;

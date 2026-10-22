@@ -21,7 +21,7 @@
 /* --- LINKS --- */
 .bottom-nav a {
   color: var(--text-muted);
-  font-size: 1.4rem;
+  font-size: var(--text-2xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -29,7 +29,7 @@
   width: 55px;
   height: 45px;
 
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   transition: color 0.2s ease, background-color 0.2s ease;
   position: relative;
 }
@@ -42,19 +42,19 @@
   background-color: var(--secondary);
   color: var(--surface);
   
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   
   min-width: 18px;
   height: 18px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   
   display: flex;
   align-items: center;
   justify-content: center;
   
   border: 2px solid var(--surface);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .bottom-nav .active .unread-count {

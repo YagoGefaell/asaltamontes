@@ -9,12 +9,12 @@
   /* Ajuste a tu sistema de diseño */
   background-color: var(--surface);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   
   /* Tipografía */
   color: var(--text-color);
   font-family: 'Inter', system-ui, sans-serif;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 500;
   
   cursor: pointer;

@@ -1,4 +1,5 @@
-import Loading from "../../../shared/components/Loading";
+import Skeleton from "../../../shared/ui/Skeleton";
+import EmptyState from "../../../shared/ui/EmptyState";
 import { formatters } from "../../../utils/helpers";
 
 const ConversationsPane = ({
@@ -47,12 +48,21 @@ const ConversationsPane = ({
       </div>
 
       <div className="contacts-list">
-        {loadingChats && <Loading />}
+        {loadingChats && (
+          <div role="status" aria-label="Cargando conversaciones" className="contacts-skeleton">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="contacts-skeleton__row">
+                <Skeleton circle width="44px" height="44px" />
+                <Skeleton width="60%" height="1rem" />
+              </div>
+            ))}
+          </div>
+        )}
 
         {!loadingChats && errorChats && <p className="contact-preview">{errorChats}</p>}
 
         {!loadingChats && !errorChats && chats.length === 0 && (
-          <p className="no-results">Aún no tienes conversaciones.</p>
+          <EmptyState title="Aún no tienes conversaciones." />
         )}
 
         {!loadingChats && !errorChats && chats.map((chat) => {

@@ -1,7 +1,7 @@
 .section-card {
-  background-color: var(--card-bg);
-  border-radius: 15px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  background-color: var(--surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   gap: 12px;

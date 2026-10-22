@@ -11,22 +11,22 @@
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--primary);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: var(--shadow-sm);
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .avatar-uploader .avatar-preview:hover {
   transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-sm);
 }
 
 .avatar-uploader input {
   flex: 1;
   min-width: 200px;
   padding: 10px 14px;
-  border-radius: 12px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--input-border);
+  font-size: var(--text-base);
   background-color: var(--background);
   color: var(--text-color);
   transition: all 0.2s;
@@ -35,7 +35,7 @@
 .avatar-uploader input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 5px rgba(255, 79, 139, 0.3);
+  box-shadow: var(--focus-ring);
 }
 
 /* Responsive */

@@ -1,3 +1,5 @@
+@import "./tokens.css";
+
 :root {
   --background: #fafafa;
   --background-alt: #f2f2f2;

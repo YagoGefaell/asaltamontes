@@ -13,13 +13,13 @@
   max-width: 600px;
   padding: 1rem;
   text-align: center;
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  border-bottom: 1px solid var(--border-color);
   box-sizing: border-box;
 }
 
 .settings-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text-color);
 }
@@ -47,7 +47,7 @@
 }
 
 .back-btn:hover {
-  background: rgba(0,0,0,0.06);
+  background: var(--background-alt);
 }
 
 .back-icon {
@@ -61,7 +61,7 @@
   max-width: 600px;
   padding: 1rem;
   box-sizing: border-box;
-  border-bottom: 1px solid var(--border-color, rgba(0,0,0,0.1));
+  border-bottom: 1px solid var(--border-color);
 
   display: flex;
   align-items: center;
@@ -71,7 +71,7 @@
 
 .settings-title {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text-color);
 }

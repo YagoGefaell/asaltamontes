@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FollowUserButton from "../components/FollowUserButton";
 import Button from "../forms/Button";
+import Avatar from "./Avatar";
 import { formatters } from "../../utils/helpers";
 import "./UserCard.css";
 
@@ -18,10 +19,8 @@ const UserCard = ({
   chatLoading = false
 }) => {
   const [pressed, setPressed] = useState(false);
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const navigate = useNavigate();
   const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
-  const initial = formatters.getInitial(fullName, username);
 
   const handleCardClick = (e) => {
     const target = e.target;
@@ -58,18 +57,7 @@ const UserCard = ({
       onMouseUp={handlePressEnd}
       onMouseLeave={handlePressEnd}
     >
-      {!avatarLoadError ? (
-        <img
-          src={avatarUrl}
-          alt={username}
-          className="user-avatar"
-          onError={() => setAvatarLoadError(true)}
-        />
-      ) : (
-        <div className="user-avatar user-avatar-fallback" aria-hidden="true">
-          {initial}
-        </div>
-      )}
+      <Avatar src={avatarUrl} name={fullName || username} className="user-avatar" />
       <div className="user-info">
         <span className="user-name">{fullName || username}</span>
         <span className="user-username">@{username}</span>

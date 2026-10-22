@@ -7,6 +7,7 @@ import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import { formatters } from "../../utils/helpers.js";
 import Loading from "../../shared/components/Loading";
 import Button from "../../shared/forms/Button";
+import EmptyState from "../../shared/ui/EmptyState";
 import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 import { communityPath } from "../../features/communities/utils/communityPath.js";
 
@@ -180,9 +181,10 @@ const Communities = () => {
                 );
               })
             ) : (
-              <p className="no-results">
-                {query ? `No hay comunidades que coincidan con "${query}"` : "No hay comunidades disponibles"}
-              </p>
+              <EmptyState
+                className="communities-empty"
+                title={query ? `No hay comunidades que coincidan con "${query}"` : "No hay comunidades disponibles"}
+              />
             )}
           </>
         )}

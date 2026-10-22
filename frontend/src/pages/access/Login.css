@@ -11,7 +11,7 @@
 /* --- TÍTULO --- */
 .login-title {
   text-align: center;
-  font-size: 1.8rem;
+  font-size: var(--text-2xl);
   font-weight: 800;
   color: var(--primary);
   margin-top: 2rem;
@@ -28,7 +28,7 @@
 .login-register {
   margin-top: 1.6rem;
   text-align: center;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   color: var(--text-soft);
 }
 
@@ -50,7 +50,7 @@
   text-align: center;
   margin: 1.5rem 0;
   color: var(--text-soft);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .login-divider::before,

@@ -11,7 +11,7 @@
 }
 
 .section-title {
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   font-weight: 700;
   margin-bottom: 0.8rem;
   color: var(--text-color);
@@ -27,10 +27,10 @@
 
 /* Item */
 .settings-item {
-  background: var(--card-bg);
+  background: var(--surface);
   padding: 0.9rem 1rem;
   margin-bottom: 0.6rem;
-  border-radius: 14px;
+  border-radius: var(--radius-md);
 
   display: flex;
   justify-content: space-between;
@@ -40,19 +40,19 @@
   cursor: pointer;
 
   transition: background 0.2s ease, color 0.2s ease;
-  border: 1px solid var(--border-soft, rgba(0,0,0,0.08));
-  box-shadow: 0 2px 4px var(--shadow-color, rgba(0,0,0,0.05));
+  border: 1px solid var(--border-soft);
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 /* Hover */
 .settings-item:hover {
   background: var(--pressed-color);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 /* Flecha */
 .arrow {
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   opacity: 0.6;
 }
 
@@ -65,7 +65,7 @@
 
 .danger-item:hover {
   background: var(--error);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .danger-item .arrow {
