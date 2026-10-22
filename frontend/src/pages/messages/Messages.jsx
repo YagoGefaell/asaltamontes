@@ -94,6 +94,9 @@ const Messages = () => {
     }
   };
 
+  // Leaving /messages (navbar, logout...) with a chat open: its messages are no longer on screen (BUG-052)
+  useEffect(() => () => setActiveChatId(null), [setActiveChatId]);
+
   const handleEnterChat = useCallback(async (chat) => {
     setSelectedChat(chat);
     setActiveChatId(chat.id || null);

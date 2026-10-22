@@ -388,6 +388,7 @@ export const ConversationsProvider = ({ children }) => {
       setChatMessages({});
       setHistoryPaging({});
       setHistoryError({});
+      setActiveChatId(null);
       setLoadingChats(false);
       setErrorChats(null);
       return;

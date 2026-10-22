@@ -3,13 +3,14 @@ import { act, render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const listener = vi.hoisted(() => ({ onMessage: null }))
+const auth = vi.hoisted(() => ({ isAuthenticated: true, sendMessage: () => {} }))
 
 vi.mock('../../auth/hooks/useAuth', () => ({
   useAuth: () => ({
     websocketClient: null,
     websocketConnected: false,
-    isAuthenticated: true,
-    sendMessage: vi.fn(),
+    isAuthenticated: auth.isAuthenticated,
+    sendMessage: auth.sendMessage,
     currentUser: { username: 'ana' },
   }),
 }))
@@ -33,6 +34,8 @@ import { ConversationsContext } from '../hooks/conversations.context'
 import { getConversationMessagesRequest, markConversationReadRequest } from '../services/messages.service.js'
 
 function renderProvider() {
+  auth.isAuthenticated = true
+  auth.sendMessage = vi.fn()
   const ctx = { current: null }
   const Probe = () => {
     const value = useContext(ConversationsContext)
@@ -41,7 +44,9 @@ function renderProvider() {
     })
     return null
   }
-  render(<ConversationsProvider><Probe /></ConversationsProvider>)
+  const tree = <ConversationsProvider><Probe /></ConversationsProvider>
+  const utils = render(tree)
+  ctx.rerender = () => utils.rerender(<ConversationsProvider><Probe /></ConversationsProvider>)
   return ctx
 }
 
@@ -83,6 +88,46 @@ describe('ConversationsProvider history loading (BUG-051)', () => {
     })
 
     expect(getConversationMessagesRequest).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('ConversationsProvider active chat (BUG-052)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    listener.onMessage = null
+  })
+
+  const live = { id: 2, conversationId: 7, content: 'nuevo', senderUsername: 'bea', sentAt: '2026-10-22T10:05:00Z' }
+
+  it('counts a live message as unread once the active chat is cleared', async () => {
+    const ctx = renderProvider()
+    await waitFor(() => expect(listener.onMessage).toBeTypeOf('function'))
+    act(() => {
+      ctx.current.setChats([{ id: 7, type: 'INDIVIDUAL', name: 'Bea', unreadCount: 0 }])
+      ctx.current.setActiveChatId(7)
+    })
+    act(() => listener.onMessage(live))
+    expect(ctx.current.chats[0].unreadCount).toBe(0)
+    expect(markConversationReadRequest).toHaveBeenCalledWith(7)
+
+    markConversationReadRequest.mockClear()
+    act(() => ctx.current.setActiveChatId(null))
+    act(() => listener.onMessage({ ...live, id: 3 }))
+
+    expect(ctx.current.chats[0].unreadCount).toBe(1)
+    expect(markConversationReadRequest).not.toHaveBeenCalled()
+  })
+
+  it('clears the active chat on logout', async () => {
+    const ctx = renderProvider()
+    await waitFor(() => expect(ctx.current).not.toBeNull())
+    act(() => ctx.current.setActiveChatId(7))
+    expect(ctx.current.activeChatId).toBe(7)
+
+    auth.isAuthenticated = false
+    act(() => ctx.rerender())
+
+    expect(ctx.current.activeChatId).toBeNull()
   })
 })
 
