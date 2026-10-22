@@ -1,6 +1,8 @@
 package io.github.yagogefaell.asaltamontes.event.controller;
 
+import java.math.BigDecimal;
 import java.net.URI;
+import java.time.Instant;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,13 +19,16 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.yagogefaell.asaltamontes.event.domain.AttendeeStatus;
+import io.github.yagogefaell.asaltamontes.event.domain.EventType;
 import io.github.yagogefaell.asaltamontes.event.dto.CancelEventDto;
+import io.github.yagogefaell.asaltamontes.event.dto.EventFilter;
 import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeeDto;
 import io.github.yagogefaell.asaltamontes.event.dto.CreateEventDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventDetailsDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
 import io.github.yagogefaell.asaltamontes.event.dto.UpdateEventDto;
 import io.github.yagogefaell.asaltamontes.event.service.EventService;
+import io.github.yagogefaell.asaltamontes.user.domain.RunningLevel;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,12 +48,28 @@ public class EventController {
         return ResponseEntity.created(URI.create("/api/events/" + created.id())).body(created);
     }
 
-    /** Upcoming events the user can see, soonest first. Filters: T15c. */
+    /** Events the user can see, soonest first; by default the upcoming ones. All filters are optional. */
     @GetMapping
-    public ResponseEntity<Page<EventSummaryDto>> getUpcomingEvents(
+    public ResponseEntity<Page<EventSummaryDto>> searchEvents(
             @AuthenticationPrincipal UserAccount currentUser,
+            @RequestParam(required = false) Instant from,
+            @RequestParam(required = false) Instant to,
+            @RequestParam(required = false) EventType type,
+            @RequestParam(required = false) RunningLevel level,
+            @RequestParam(required = false) Long communityId,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) BigDecimal minDistance,
+            @RequestParam(required = false) BigDecimal maxDistance,
+            @RequestParam(required = false) Double minLat,
+            @RequestParam(required = false) Double maxLat,
+            @RequestParam(required = false) Double minLng,
+            @RequestParam(required = false) Double maxLng,
+            @RequestParam(required = false) String organizer,
+            @RequestParam(required = false) String attending,
             @PageableDefault(size = 20) Pageable pageable) {
-        return ResponseEntity.ok(eventService.listUpcoming(currentUser, pageable));
+        EventFilter filter = EventFilter.of(from, to, type, level, communityId, city, minDistance, maxDistance,
+                minLat, maxLat, minLng, maxLng, organizer, attending);
+        return ResponseEntity.ok(eventService.search(currentUser, filter, pageable));
     }
 
     @GetMapping("/{eventId}")

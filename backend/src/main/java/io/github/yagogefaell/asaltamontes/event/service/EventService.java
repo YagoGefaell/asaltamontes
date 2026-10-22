@@ -4,8 +4,10 @@ import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.util.Optional;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Limit;
@@ -33,6 +35,7 @@ import io.github.yagogefaell.asaltamontes.event.domain.EventVisibility;
 import io.github.yagogefaell.asaltamontes.event.dto.CreateEventDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeeDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventDetailsDto;
+import io.github.yagogefaell.asaltamontes.event.dto.EventFilter;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
 import io.github.yagogefaell.asaltamontes.event.dto.UpdateEventDto;
 import io.github.yagogefaell.asaltamontes.event.repository.EventAttendeeRepository;
@@ -116,9 +119,43 @@ public class EventService {
     }
 
     @Transactional(readOnly = true)
-    public Page<EventSummaryDto> listUpcoming(UserAccount user, Pageable pageable) {
+    public Page<EventSummaryDto> search(UserAccount user, EventFilter filter, Pageable pageable) {
+        validate(filter);
+        Instant from = filter.from() != null ? filter.from() : Instant.now();
         Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), MAX_PAGE));
-        return eventRepository.findUpcomingVisibleTo(user.getId(), Instant.now(), page);
+        return eventRepository.search(user.getId(), from, filter, page);
+    }
+
+    /** Upcoming events of a community, with the same visibility rules as the general listing. */
+    @Transactional(readOnly = true)
+    public Page<EventSummaryDto> searchByCommunity(String slug, UserAccount user, EventFilter filter, Pageable pageable) {
+        Long communityId = communityRepository.findCommunityBySlug(slug, user.getId())
+                .orElseThrow(() -> new NotFoundException("Comunidad no encontrada")).id();
+        EventFilter inCommunity = new EventFilter(filter.from(), filter.to(), filter.type(), filter.level(), communityId,
+                filter.city(), filter.minDistance(), filter.maxDistance(), filter.minLat(), filter.maxLat(),
+                filter.minLng(), filter.maxLng(), filter.organizerMe(), filter.attendingMe());
+        return search(user, inCommunity, pageable);
+    }
+
+    private void validate(EventFilter f) {
+        if (f.from() != null && f.to() != null && f.to().isBefore(f.from())) {
+            throw new BadRequestException("'to' no puede ser anterior a 'from'");
+        }
+        if (f.minDistance() != null && f.maxDistance() != null && f.maxDistance().compareTo(f.minDistance()) < 0) {
+            throw new BadRequestException("La distancia máxima no puede ser menor que la mínima");
+        }
+        Double[] box = {f.minLat(), f.maxLat(), f.minLng(), f.maxLng()};
+        long given = Arrays.stream(box).filter(Objects::nonNull).count();
+        if (given == 0) {
+            return;
+        }
+        if (given < 4) {
+            throw new BadRequestException("El área necesita minLat, maxLat, minLng y maxLng");
+        }
+        if (f.minLat() < -90 || f.maxLat() > 90 || f.minLng() < -180 || f.maxLng() > 180
+                || f.minLat() > f.maxLat() || f.minLng() > f.maxLng()) {
+            throw new BadRequestException("El área no es válida");
+        }
     }
 
     @Transactional
