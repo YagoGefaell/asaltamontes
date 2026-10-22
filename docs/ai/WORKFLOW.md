@@ -67,6 +67,7 @@ Ejemplos: `feat/T15-events-api`, `fix/BUG-006-follow-recount-tx`, `docs/bugs-cha
 - [ ] `cd backend && ./mvnw verify` en verde.
 - [ ] `cd frontend && npm run lint && npm run build` (y `npm test` cuando exista) en verde.
 - [ ] Si hay cambio de esquema: migración Flyway nueva, probada sobre una BD con datos (no solo vacía).
+- [ ] Si la migración toca objetos que ya existían antes de Flyway (constraints, índices): localízalos por su definición, no por su nombre. La BD de producción la creó Hibernate y sus nombres no son los de `V1__baseline.sql` (BUG-049).
 - [ ] Si cambia la API: actualizado `docs/api-contract-v1.json` y el servicio del frontend correspondiente.
 - [ ] Variables de entorno nuevas documentadas (`.env.example`, compose, README).
 - [ ] Autorrevisión del diff hecha (puedes usar `/code-review`) — sin código muerto, `console.log` de debug ni TODOs sin bug asociado.

@@ -1,5 +1,41 @@
 -- T14: community names unique regardless of case and spacing (BUG-047), and a URL slug (BUG-013).
 
+-- 0. Drop the old exact-match uniqueness first: normalizing spaces below may make two names equal.
+-- The unique constraint on name is called uk_communities_name only in databases created by V1. The production one
+-- was created by Hibernate before Flyway (baseline), with a generated name: drop it by its column (BUG-049).
+DO $$
+DECLARE
+    constraint_name text;
+BEGIN
+    FOR constraint_name IN
+        SELECT con.conname
+        FROM pg_constraint con
+        JOIN pg_attribute att ON att.attrelid = con.conrelid AND att.attnum = ANY (con.conkey)
+        WHERE con.conrelid = 'communities'::regclass
+          AND con.contype = 'u'
+          AND cardinality(con.conkey) = 1
+          AND att.attname = 'name'
+    LOOP
+        EXECUTE format('ALTER TABLE communities DROP CONSTRAINT %I', constraint_name);
+    END LOOP;
+
+    -- Just in case the uniqueness exists as a plain unique index instead of a constraint
+    FOR constraint_name IN
+        SELECT idx.relname
+        FROM pg_index i
+        JOIN pg_class idx ON idx.oid = i.indexrelid
+        JOIN pg_attribute att ON att.attrelid = i.indrelid AND att.attnum = i.indkey[0]
+        WHERE i.indrelid = 'communities'::regclass
+          AND i.indisunique
+          AND i.indnatts = 1
+          AND i.indexprs IS NULL
+          AND att.attname = 'name'
+          AND NOT EXISTS (SELECT 1 FROM pg_constraint con WHERE con.conindid = i.indexrelid)
+    LOOP
+        EXECUTE format('DROP INDEX %I', constraint_name);
+    END LOOP;
+END $$;
+
 -- 1. Same normalization as CommunityService: trimmed, single spaces
 UPDATE communities
 SET name = regexp_replace(btrim(name), '\s+', ' ', 'g')
@@ -13,7 +49,6 @@ WHERE EXISTS (
     WHERE lower(older.name) = lower(c.name) AND older.id < c.id
 );
 
-ALTER TABLE communities DROP CONSTRAINT uk_communities_name;
 CREATE UNIQUE INDEX ux_communities_name_lower ON communities (lower(name));
 
 -- 3. Slug: lowercase ASCII letters, digits and single hyphens (SlugGenerator does the same for new ones)
