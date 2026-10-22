@@ -1,36 +1,52 @@
 .btn {
-  padding: 1rem;
-  border-radius: 12px;
-  font-size: 1.1rem;
+  min-height: var(--touch-min);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--text-lg);
   font-weight: bold;
   cursor: pointer;
-  transition: opacity 0.2s;
-  border: none;
+  transition: opacity 0.2s, background-color 0.2s;
+  border: 1px solid transparent;
 }
 
 /* Tamaños */
 .btn.small {
-  padding: 0.5rem 1rem;
-  font-size: 0.9rem;
-  border-radius: 8px;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
 }
 
 .btn.medium {
-  padding: 1rem;
-  font-size: 1.1rem;
-  border-radius: 12px;
+  padding: var(--space-4);
+  font-size: var(--text-lg);
+  border-radius: var(--radius-md);
 }
 
 /* Variantes */
 .btn.primary {
   background-color: var(--primary);
-  color: white;
+  color: var(--on-primary);
 }
 
 .btn.secondary {
-  background-color: var(--card-bg);
+  background-color: var(--surface);
   color: var(--primary);
   border: 2px solid var(--primary);
+}
+
+.btn.danger {
+  background-color: var(--error);
+  color: var(--on-error);
+}
+
+.btn.ghost {
+  background-color: transparent;
+  color: var(--primary);
+}
+
+.btn.ghost:hover:not(:disabled) {
+  background-color: var(--hover-color);
+  opacity: 1;
 }
 
 .btn.outline {
@@ -40,12 +56,17 @@
 }
 
 .btn.outline:hover {
-  background-color: var(--hover-bg, rgba(0, 0, 0, 0.02));
+  background-color: var(--hover-color);
 }
 
 /* Hover */
 .btn:hover {
   opacity: 0.9;
+}
+
+/* Cargando */
+.btn.is-loading {
+  cursor: progress;
 }
 
 /* Disabled */

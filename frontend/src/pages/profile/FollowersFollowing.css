@@ -24,7 +24,7 @@
 .followers-title,
 .following-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   color: var(--text-color);
   text-align: center;
@@ -47,7 +47,7 @@
 }
 
 .back-btn:hover {
-  background: rgba(0,0,0,0.06);
+  background: var(--background-alt);
 }
 
 .back-icon {
@@ -64,21 +64,21 @@
 .search-input-container input {
   width: 100%;
   padding: 0.875rem 1rem;
-  border: 1px solid var(--border-color, #dee2e6);
-  border-radius: 8px;
-  font-size: 1rem;
-  background: var(--input-bg, white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  background: var(--input-bg);
   color: var(--text-color);
   outline: none;
   transition: border-color 0.2s ease;
 }
 
 .search-input-container input:focus {
-  border-color: var(--primary, #007bff);
+  border-color: var(--primary);
 }
 
 .search-input-container input::placeholder {
-  color: var(--text-muted, #6c757d);
+  color: var(--text-muted);
 }
 
 .followers-results,
@@ -107,13 +107,13 @@
 
 /* Follow action error banner */
 .follow-error-banner {
-  background: #fee;
-  color: #c00;
+  background: var(--error-bg);
+  color: var(--error-text);
   padding: 0.75rem 1rem;
   margin: 0.5rem 1rem;
-  border-radius: 8px;
-  border-left: 4px solid #c00;
-  font-size: 0.9rem;
+  border-radius: var(--radius-sm);
+  border-left: 4px solid var(--error);
+  font-size: var(--text-sm);
   animation: slideDown 0.3s ease;
 }
 
@@ -138,7 +138,7 @@
 
 /* Results count */
 .results-count {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   color: var(--text-muted);
   padding: 0.5rem 0 1rem 0;
   text-align: center;
@@ -156,11 +156,11 @@
 
 .load-more-btn {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border: none;
   padding: 0.75rem 2rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -196,20 +196,13 @@
   }
   
   .results-count {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
     padding: 0.5rem 0;
   }
   
   .load-more-btn {
     padding: 0.6rem 1.5rem;
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
   }
 }
 
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-  .search-input-container input {
-    background: var(--input-bg-dark, #2c3e50);
-    border-color: var(--border-color-dark, #495057);
-  }
-}

@@ -7,7 +7,7 @@
 }
 
 .input-group label {
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-color);
   opacity: 0.85;
@@ -20,7 +20,7 @@
   position: relative;
 
   background: var(--surface);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
 
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -37,7 +37,7 @@
   padding: 0.9rem 1rem;
   padding-right: 3rem; /* espacio para iconos */
 
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--text-color);
 
   resize: none; /* textarea sin resize feo */
@@ -112,6 +112,6 @@
 /* --- ERROR --- */
 .form-error {
   color: var(--error);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   margin-top: 0.2rem;
 }

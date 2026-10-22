@@ -70,7 +70,7 @@
 }
 
 .story-name {
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   width: 60px;
   text-align: center;
@@ -96,7 +96,7 @@
   }
 
   .story-name {
-    font-size: 0.75rem;
+    font-size: var(--text-xs);
     width: 70px;
   }
 }
@@ -122,7 +122,7 @@
 /* ===== POST CARD ===== */
 .post-card {
   background-color: var(--surface);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 2px 8px var(--shadow-color);
   border: 1px solid var(--border-soft);
@@ -130,7 +130,7 @@
 
 @media (min-width: 600px) {
   .post-card {
-    border-radius: 16px;
+    border-radius: var(--radius-md);
     box-shadow: 0 4px 12px var(--shadow-color);
     border: none;
   }
@@ -168,7 +168,7 @@
 
 .post-username {
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-color);
   white-space: nowrap;
   overflow: hidden;
@@ -177,12 +177,12 @@
 
 @media (min-width: 600px) {
   .post-username {
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 }
 
 .post-menu {
-  font-size: 1rem;
+  font-size: var(--text-base);
   cursor: pointer;
   color: var(--text-soft);
   transition: color 0.2s ease;
@@ -198,7 +198,7 @@
 
 @media (min-width: 600px) {
   .post-menu {
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
   }
 
   .post-menu:hover {
@@ -226,7 +226,7 @@
 /* ===== POST ACTIONS ===== */
 .post-actions {
   padding: 0.5rem 0.75rem;
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   display: flex;
   gap: 0.5rem;
   border-bottom: 1px solid var(--border-soft);
@@ -235,7 +235,7 @@
 @media (min-width: 600px) {
   .post-actions {
     padding: 0.6rem 1rem;
-    font-size: 1.4rem;
+    font-size: var(--text-2xl);
     gap: 1rem;
   }
 }
@@ -244,9 +244,9 @@
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   padding: 0.3rem 0.4rem;
-  border-radius: 0.3rem;
+  border-radius: var(--radius-sm);
   transition: all 0.2s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -258,7 +258,7 @@
 
 @media (min-width: 600px) {
   .action-btn {
-    font-size: 1.4rem;
+    font-size: var(--text-2xl);
     padding: 0.3rem 0.5rem;
   }
 
@@ -279,13 +279,13 @@
 /* ===== POST CONTENT ===== */
 .post-content {
   padding: 0.75rem;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 @media (min-width: 600px) {
   .post-content {
     padding: 0.75rem 1rem 1rem;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 }
 
@@ -294,12 +294,12 @@
   display: block;
   margin-bottom: 0.3rem;
   color: var(--text-color);
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
 }
 
 @media (min-width: 600px) {
   .post-likes {
-    font-size: 0.85rem;
+    font-size: var(--text-sm);
   }
 }
 
@@ -317,6 +317,6 @@
   }
 
   .post-card {
-    border-radius: 16px;
+    border-radius: var(--radius-md);
   }
 }

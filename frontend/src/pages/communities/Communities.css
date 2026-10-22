@@ -26,7 +26,7 @@
 
 .communities-header h2 {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   color: var(--text-color);
 }
@@ -43,7 +43,7 @@
 .create-community-btn {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: var(--surface);
   color: var(--text-color);
@@ -86,7 +86,7 @@
 .community-card {
   background: var(--surface);
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 1rem;
   text-align: center;
   transition: all 0.2s;
@@ -121,7 +121,7 @@
   width: 100%;
   height: 100%;
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   font-size: 2rem;
   font-weight: bold;
   display: flex;
@@ -131,7 +131,7 @@
 
 .community-card h3 {
   margin: 0.5rem 0;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-color);
   word-break: break-word;
@@ -139,7 +139,7 @@
 
 .community-members {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   margin-bottom: 0.75rem;
 }
@@ -180,7 +180,7 @@
   }
 
   .communities-header h2 {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
 
   .create-community-btn:hover {
@@ -201,7 +201,7 @@
   }
 
   .community-card {
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     padding: 1.5rem;
   }
 
@@ -216,11 +216,11 @@
   }
 
   .community-card h3 {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 
   .community-members {
-    font-size: 0.8rem;
+    font-size: var(--text-xs);
     margin-bottom: 1rem;
   }
 }
@@ -250,9 +250,9 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 2rem 1rem;
-  color: var(--error-color, #e74c3c);
+  color: var(--error-text);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 .no-results {
@@ -261,7 +261,7 @@
   margin-top: 2rem;
   color: var(--text-muted);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 /* ==========================================================================
@@ -298,7 +298,7 @@
 }
 
 .community-creator-label {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-soft);
   font-weight: 500;
 }
@@ -307,10 +307,10 @@
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--input-bg);
   color: var(--text-color);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   padding: 0.65rem 0.75rem;
   font-family: inherit;
 }
@@ -318,7 +318,7 @@
 .community-creator-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .community-creator-textarea {
@@ -328,8 +328,8 @@
 
 .community-creator-error {
   margin: 0;
-  font-size: 0.84rem;
-  color: #dc2626;
+  font-size: var(--text-sm);
+  color: var(--error-text);
 }
 
 .community-creator-actions {
@@ -342,9 +342,9 @@
 .community-creator-btn-submit {
   flex: 1;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 0.7rem 0.9rem;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -368,7 +368,7 @@
 
 .community-creator-btn-submit {
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: #fff;
+  color: var(--on-primary);
   border: none;
 }
 
@@ -404,10 +404,10 @@
   width: 100%;
   padding: 10px 14px;
   border: 1px solid var(--border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--surface);
   color: inherit;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 .communities-load-more {
@@ -415,13 +415,17 @@
   margin: 8px auto 24px;
   padding: 10px 20px;
   border: 1px solid var(--border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 .communities-load-more:disabled {
   cursor: default;
+}
+
+.communities-empty {
+  grid-column: 1 / -1;
 }

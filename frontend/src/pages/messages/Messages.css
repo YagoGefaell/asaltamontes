@@ -31,7 +31,7 @@ body.chat-open .bottom-nav {
 
 .messages-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 600;
   color: var(--text-color);
 }
@@ -45,7 +45,7 @@ body.chat-open .bottom-nav {
 .create-group-btn {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: var(--surface);
   color: var(--text-color);
@@ -88,7 +88,7 @@ body.chat-open .bottom-nav {
 }
 
 .group-creator-label {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-soft);
 }
 
@@ -96,28 +96,28 @@ body.chat-open .bottom-nav {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--border-color);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--input-bg);
   color: var(--text-color);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   padding: 0.65rem 0.75rem;
 }
 
 .group-creator-hint {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--text-soft);
 }
 
 .group-creator-error {
   margin: 0;
-  font-size: 0.84rem;
-  color: #dc2626;
+  font-size: var(--text-sm);
+  color: var(--error-text);
 }
 
 .group-search-results {
   border: 1px solid var(--border-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -145,12 +145,12 @@ body.chat-open .bottom-nav {
   height: 34px;
   border-radius: 50%;
   background: linear-gradient(45deg, var(--primary), var(--primary-light));
-  color: #fff;
+  color: var(--on-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .group-search-avatar-image {
@@ -164,12 +164,12 @@ body.chat-open .bottom-nav {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .group-search-username {
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 .group-selected-users {
@@ -183,14 +183,14 @@ body.chat-open .bottom-nav {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--border-soft);
   background: var(--background);
   padding: 0.24rem 0.5rem;
 }
 
 .group-chip-label {
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--text-color);
 }
 
@@ -209,10 +209,10 @@ body.chat-open .bottom-nav {
 .group-creator-submit {
   margin-top: 0.3rem;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 0.7rem 0.9rem;
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 600;
   cursor: pointer;
 }
@@ -231,18 +231,18 @@ body.chat-open .bottom-nav {
 
 @media (min-width: 600px) {
   .messages-title {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
 }
 
 .back-button {
   width: 40px;
   height: 40px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--border-soft);
   background: var(--surface);
   color: var(--text-color);
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -271,7 +271,7 @@ body.chat-open .bottom-nav {
 }
 
 .chat-back-btn:hover {
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--background-alt);
 }
 
 .chat-back-icon {
@@ -292,13 +292,13 @@ body.chat-open .bottom-nav {
   border-radius: 50%;
   border: 1px solid var(--primary);
   background: linear-gradient(45deg, var(--primary), var(--primary-light));
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 700;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   flex-shrink: 0;
 }
 
@@ -317,7 +317,7 @@ body.chat-open .bottom-nav {
 
 .chat-name {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   color: var(--text-color);
   white-space: nowrap;
   overflow: hidden;
@@ -325,7 +325,7 @@ body.chat-open .bottom-nav {
 }
 
 .chat-status {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
 }
 
@@ -346,7 +346,7 @@ body.chat-open .bottom-nav {
   gap: 0.75rem;
   padding: 0.75rem;
   border: 1px solid var(--border-soft);
-  border-radius: 14px;
+  border-radius: var(--radius-md);
   background: var(--surface);
   cursor: pointer;
   text-align: left;
@@ -365,13 +365,13 @@ body.chat-open .bottom-nav {
   height: 44px;
   border-radius: 50%;
   background: linear-gradient(45deg, var(--primary), var(--primary-light));
-  color: #fff;
+  color: var(--on-primary);
   font-weight: 700;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem;
+  font-size: var(--text-xl);
   flex-shrink: 0;
 }
 
@@ -402,14 +402,14 @@ body.chat-open .bottom-nav {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #facc15;
+  background: var(--highlight);
   box-shadow: 0 0 0 2px var(--surface);
   flex-shrink: 0;
 }
 
 .contact-name {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   color: var(--text-color);
   white-space: nowrap;
   overflow: hidden;
@@ -417,7 +417,7 @@ body.chat-open .bottom-nav {
 }
 
 .contact-preview {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--text-soft);
   white-space: nowrap;
   overflow: hidden;
@@ -425,7 +425,7 @@ body.chat-open .bottom-nav {
 }
 
 .contact-time {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   white-space: nowrap;
   flex-shrink: 0;
@@ -451,10 +451,10 @@ body.chat-open .bottom-nav {
   max-width: 85%;
   width: fit-content;
   padding: 8px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   word-wrap: break-word;
   overflow-wrap: anywhere;
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   line-height: 1.3;
 }
 
@@ -465,7 +465,7 @@ body.chat-open .bottom-nav {
 
 .message-time-marker {
   align-self: center;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   margin: 0.35rem 0 0.25rem;
   padding: 0 0.35rem;
@@ -473,7 +473,7 @@ body.chat-open .bottom-nav {
 
 .message.sent {
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: white;
+  color: var(--on-primary);
   margin-left: auto;
 }
 
@@ -501,7 +501,7 @@ body.chat-open .bottom-nav {
   flex: 1;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   font-size: 16px;
   background: var(--input-bg);
   color: var(--text-color);
@@ -522,12 +522,12 @@ body.chat-open .bottom-nav {
 .message-input button {
   padding: 10px 16px;
   background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: white;
+  color: var(--on-primary);
   border: none;
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   cursor: pointer;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   transition: transform 0.2s;
   touch-action: manipulation;
   -webkit-appearance: none;
@@ -545,7 +545,7 @@ body.chat-open .bottom-nav {
   }
 
   .messages-title {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
 
   .back-button {
@@ -556,11 +556,11 @@ body.chat-open .bottom-nav {
   .chat-avatar {
     width: 42px;
     height: 42px;
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
   }
 
   .chat-name {
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
 
   .messages {
@@ -571,7 +571,7 @@ body.chat-open .bottom-nav {
   .message {
     max-width: 70%;
     padding: 10px 16px;
-    border-radius: 18px;
+    border-radius: var(--radius-lg);
   }
 
   .message-input {
@@ -580,12 +580,12 @@ body.chat-open .bottom-nav {
 
   .message-input input {
     padding: 10px 16px;
-    font-size: 0.95rem;
+    font-size: var(--text-base);
   }
 
   .message-input button {
     padding: 10px 20px;
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
   }
 
   .message-input button:hover {
@@ -610,7 +610,7 @@ body.chat-open .bottom-nav {
 .message-send-error {
   margin: 0;
   padding: 6px 12px;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   color: var(--error);
   background: var(--surface);
   border-top: 1px solid var(--border-soft);
@@ -618,7 +618,7 @@ body.chat-open .bottom-nav {
 
 .message-counter {
   align-self: center;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
   white-space: nowrap;
 }
@@ -627,7 +627,7 @@ body.chat-open .bottom-nav {
   min-height: 1px;
   padding: 4px 0;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -635,7 +635,7 @@ body.chat-open .bottom-nav {
 .message-connection-status {
   margin: 0;
   padding: 6px 12px;
-  font-size: 0.8rem;
+  font-size: var(--text-xs);
   text-align: center;
   color: var(--text-muted);
   background: var(--surface);
@@ -649,10 +649,23 @@ body.chat-open .bottom-nav {
   border: none;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 
 .contacts-load-more:disabled {
   cursor: default;
+}
+
+.contacts-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.contacts-skeleton__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }

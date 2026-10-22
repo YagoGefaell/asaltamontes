@@ -1,7 +1,7 @@
 .form-error {
   margin: 0;
   color: var(--primary); /* color del texto */
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
   display: flex;
   align-items: center; /* centra el ícono con el texto */
   gap: 0.4rem; /* espacio entre icono y mensaje */

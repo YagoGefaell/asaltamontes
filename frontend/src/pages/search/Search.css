@@ -13,16 +13,16 @@
   background: var(--background);
   z-index: 10;
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color, #f1f3f5);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .search-input-container input {
   width: 100%;
   padding: 0.875rem 1rem;
-  border-radius: 8px;
-  border: 1px solid var(--input-border, #dee2e6);
-  font-size: 1rem;
-  background-color: var(--input-bg, white);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--input-border);
+  font-size: var(--text-base);
+  background-color: var(--input-bg);
   color: var(--text-color);
   box-sizing: border-box;
   transition: border-color 0.2s ease;
@@ -30,7 +30,7 @@
 
 .search-input-container input:focus {
   outline: none;
-  border-color: var(--primary, #007bff);
+  border-color: var(--primary);
 }
 
 .search-input-container input::placeholder {
@@ -53,7 +53,7 @@
   background: var(--error-bg);
   color: var(--error);
   padding: 1rem;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   text-align: center;
   font-weight: 500;
   border: 1px solid var(--error);
@@ -64,7 +64,7 @@
   text-align: center;
   margin-top: 1rem;
   color: var(--text-soft);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-style: italic;
 }
 
@@ -73,7 +73,7 @@
   margin-top: 2rem;
   color: var(--text-muted);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--text-base);
 }
 
 /* Load more functionality */
@@ -85,11 +85,11 @@
 
 .load-more-btn {
   background: var(--primary);
-  color: white;
+  color: var(--on-primary);
   border: none;
   padding: 0.75rem 2rem;
-  border-radius: 20px;
-  font-size: 0.9rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;

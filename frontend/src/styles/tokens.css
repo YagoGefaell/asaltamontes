@@ -1,0 +1,74 @@
+/*
+ * Design tokens (T29a). Escalas y colores semanticos.
+ * La paleta de marca (--primary, --secondary...) vive en global.css.
+ * Regla: ningun color hexadecimal fuera de este archivo y global.css (npm run lint:colors).
+ */
+:root {
+  /* Escala tipografica */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* Espaciado */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+
+  /* Radios */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* Tamano tactil minimo */
+  --touch-min: 44px;
+
+  /* Colores semanticos (claro) */
+  --on-primary: #fff;
+  --on-error: #fff;
+  --info: #1976d2;
+  --info-bg: #e3f2fd;
+  --error-text: #c62828;
+  --error-border: #ef9a9a;
+  --warning-text: #92400e;
+  --overlay: rgba(0, 0, 0, 0.5);
+  --track-off: #ccc;
+  --highlight: #facc15;
+
+  /* Elevacion */
+  --shadow-sm: 0 2px 6px var(--shadow-color);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.16);
+
+  /* Foco */
+  --focus-ring: 0 0 0 3px var(--input-focus);
+  --focus-outline: 2px solid var(--primary);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --on-primary: #fff;
+    --on-error: #fff;
+    --info: #64b5f6;
+    --info-bg: #14283a;
+    --error-text: #ef9a9a;
+    --error-border: #7f2f2f;
+    --warning-text: #ffcc80;
+    --overlay: rgba(0, 0, 0, 0.65);
+    --track-off: #555;
+    --highlight: #facc15;
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* Foco visible para teclado */
+:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}

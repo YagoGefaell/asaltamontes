@@ -1,24 +1,29 @@
-// src/shared/components/Button.jsx
-import React from "react";
+// src/shared/forms/Button.jsx
 import "./Button.css";
 
-function Button({ 
-  children, 
-  variant = "primary", 
-  type = "button", 
+const VARIANTS = ["primary", "secondary", "danger", "ghost", "outline"];
+
+function Button({
+  children,
+  variant = "primary",
+  type = "button",
   size = "medium",
   loading = false,
   disabled = false,
-  ...props 
+  className = "",
+  ...props
 }) {
-  const className = `btn ${variant} ${size}`;
-  const isDisabled = disabled || loading;
-  
+  const safeVariant = VARIANTS.includes(variant) ? variant : "primary";
+  const classes = ["btn", safeVariant, size, loading ? "is-loading" : "", className]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <button 
-      type={type} 
-      className={className} 
-      disabled={isDisabled}
+    <button
+      type={type}
+      className={classes}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
       {loading ? "Cargando..." : children}
