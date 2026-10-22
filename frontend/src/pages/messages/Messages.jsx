@@ -25,6 +25,7 @@ const Messages = () => {
     loadConversationMessages,
     loadOlderMessages,
     historyPaging,
+    historyError,
     loadingChats, 
     chatsPaging,
     loadMoreChats,
@@ -64,6 +65,11 @@ const Messages = () => {
   const messagesEndRef = useRef(null);
 
   const currentMessages = selectedChat ? (chatMessages[selectedChat.id] || []) : [];
+
+  // A chat without id is a new conversation: there is no history to load
+  const historyStatus = !selectedChat?.id || historyPaging[selectedChat.id]
+    ? "loaded"
+    : historyError[selectedChat.id] ? "error" : "loading";
 
   const formatMessageTime = useCallback((dateLike) => {
     if (!dateLike) return "";
@@ -353,6 +359,8 @@ const Messages = () => {
           hasMoreHistory={Boolean(selectedChat && historyPaging[selectedChat.id]?.hasMore)}
           loadingOlder={Boolean(selectedChat && historyPaging[selectedChat.id]?.loading)}
           onLoadOlder={() => selectedChat?.id && loadOlderMessages(selectedChat.id)}
+          historyStatus={historyStatus}
+          onRetryHistory={() => selectedChat?.id && loadConversationMessages(selectedChat.id)}
           onSendMessage={handleSendMessage}
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}

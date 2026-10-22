@@ -22,6 +22,8 @@ const ChatPane = ({
   hasMoreHistory = false,
   loadingOlder = false,
   onLoadOlder,
+  historyStatus = "loaded",
+  onRetryHistory,
   onLeaveChat,
   onOpenUserProfile,
   onSelectedAvatarError,
@@ -145,7 +147,16 @@ const ChatPane = ({
             {loadingOlder ? "Cargando mensajes anteriores…" : ""}
           </div>
         )}
-        {currentMessages.length === 0 && (
+        {historyStatus === "error" && currentMessages.length === 0 && (
+          <div className="message received" role="alert">
+            No se pudo cargar la conversación.{" "}
+            <button type="button" className="messages-retry-btn" onClick={onRetryHistory}>Reintentar</button>
+          </div>
+        )}
+        {historyStatus === "loading" && currentMessages.length === 0 && (
+          <div className="message received" role="status">Cargando mensajes…</div>
+        )}
+        {historyStatus === "loaded" && currentMessages.length === 0 && (
           <div className="message received">Empieza la conversacion con @{selectedChat.name}</div>
         )}
 

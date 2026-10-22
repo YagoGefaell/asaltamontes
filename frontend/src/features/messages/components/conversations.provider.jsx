@@ -25,6 +25,8 @@ export const ConversationsProvider = ({ children }) => {
   const [chatMessages, setChatMessages] = useState({});
   // Per conversation: { hasMore, nextBefore, loading } of the history pagination (T10)
   const [historyPaging, setHistoryPaging] = useState({});
+  // Conversations whose first page of history failed to load (BUG-061): { [id]: true }
+  const [historyError, setHistoryError] = useState({});
   const [loadingChats, setLoadingChats] = useState(false);
   const [errorChats, setErrorChats] = useState(null);
 
@@ -337,6 +339,7 @@ export const ConversationsProvider = ({ children }) => {
       return;
     }
 
+    setHistoryError((prev) => (prev[conversationId] ? { ...prev, [conversationId]: false } : prev));
     try {
       const page = await getConversationMessagesRequest(conversationId);
       const merged = mergeMessages(chatMessages[conversationId], page.items);
@@ -352,8 +355,8 @@ export const ConversationsProvider = ({ children }) => {
       }));
       markConversationAsRead(conversationId, merged);
     } catch {
-      // No bloqueamos la UI del chat si falla la carga inicial del historial.
-      markConversationAsRead(conversationId);
+      // The user has not seen any message: do not mark as read, let the chat offer a retry (BUG-061)
+      setHistoryError((prev) => ({ ...prev, [conversationId]: true }));
     }
   }, [chatMessages, historyPaging, markConversationAsRead]);
 
@@ -384,6 +387,7 @@ export const ConversationsProvider = ({ children }) => {
       setUnreadElsewhere(0);
       setChatMessages({});
       setHistoryPaging({});
+      setHistoryError({});
       setLoadingChats(false);
       setErrorChats(null);
       return;
@@ -593,6 +597,7 @@ export const ConversationsProvider = ({ children }) => {
         loadConversationMessages,
         loadOlderMessages,
         historyPaging,
+        historyError,
         activeChatId,
         setActiveChatId,
         totalUnreadCount,

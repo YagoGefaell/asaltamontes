@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import ChatPane from './ChatPanel.jsx'
 
@@ -54,5 +54,28 @@ describe('ChatPanel', () => {
     renderPanel({ sendError: 'No tienes permiso para escribir en este chat' })
 
     expect(screen.getByRole('alert')).toHaveTextContent('No tienes permiso para escribir en este chat')
+  })
+
+  it('shows a retry instead of the empty-chat text when the history failed (BUG-061)', () => {
+    const onRetryHistory = vi.fn()
+    renderPanel({ historyStatus: 'error', onRetryHistory })
+
+    expect(screen.queryByText(/Empieza la conversacion/)).not.toBeInTheDocument()
+    expect(screen.getByText(/No se pudo cargar la conversación/)).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(onRetryHistory).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not show the empty-chat text while the history is loading (BUG-061)', () => {
+    renderPanel({ historyStatus: 'loading' })
+
+    expect(screen.queryByText(/Empieza la conversacion/)).not.toBeInTheDocument()
+    expect(screen.getByText('Cargando mensajes…')).toBeInTheDocument()
+  })
+
+  it('shows the empty-chat text only when the history loaded with no messages', () => {
+    renderPanel({ historyStatus: 'loaded' })
+
+    expect(screen.getByText('Empieza la conversacion con @Bea')).toBeInTheDocument()
   })
 })
