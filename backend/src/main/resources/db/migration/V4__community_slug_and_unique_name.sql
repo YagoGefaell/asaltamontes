@@ -18,6 +18,22 @@ BEGIN
     LOOP
         EXECUTE format('ALTER TABLE communities DROP CONSTRAINT %I', constraint_name);
     END LOOP;
+
+    -- Just in case the uniqueness exists as a plain unique index instead of a constraint
+    FOR constraint_name IN
+        SELECT idx.relname
+        FROM pg_index i
+        JOIN pg_class idx ON idx.oid = i.indexrelid
+        JOIN pg_attribute att ON att.attrelid = i.indrelid AND att.attnum = i.indkey[0]
+        WHERE i.indrelid = 'communities'::regclass
+          AND i.indisunique
+          AND i.indnatts = 1
+          AND i.indexprs IS NULL
+          AND att.attname = 'name'
+          AND NOT EXISTS (SELECT 1 FROM pg_constraint con WHERE con.conindid = i.indexrelid)
+    LOOP
+        EXECUTE format('DROP INDEX %I', constraint_name);
+    END LOOP;
 END $$;
 
 -- 1. Same normalization as CommunityService: trimmed, single spaces
