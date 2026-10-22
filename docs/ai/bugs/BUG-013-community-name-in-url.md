@@ -1,6 +1,6 @@
 # BUG-013 — El nombre de la comunidad se usa como identificador de URL sin codificar
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/community + backend

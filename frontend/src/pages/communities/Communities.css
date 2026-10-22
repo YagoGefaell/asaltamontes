@@ -396,3 +396,32 @@
     transform: scale(0.98);
   }
 }
+.communities-search {
+  padding: 0 16px 12px;
+}
+
+.communities-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--surface);
+  color: inherit;
+  font-size: 0.95rem;
+}
+
+.communities-load-more {
+  display: block;
+  margin: 8px auto 24px;
+  padding: 10px 20px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.communities-load-more:disabled {
+  cursor: default;
+}

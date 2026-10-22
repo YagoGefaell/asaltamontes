@@ -1,6 +1,6 @@
 # BUG-045 — Unirse/salir de una comunidad: si la petición falla, el rol y el contador no se revierten
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/communities

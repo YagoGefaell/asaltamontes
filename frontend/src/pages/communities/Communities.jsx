@@ -1,5 +1,5 @@
 import "./Communities.css";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
 import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
@@ -8,13 +8,24 @@ import { formatters } from "../../utils/helpers.js";
 import Loading from "../../shared/components/Loading";
 import Button from "../../shared/forms/Button";
 import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
+import { communityPath } from "../../features/communities/utils/communityPath.js";
+
+const SEARCH_DEBOUNCE_MS = 300;
 
 const Communities = () => {
   const navigate = useNavigate();
-  const { communities, setCommunities, loading, error, refetch } = useCommunities();
+  const [searchText, setSearchText] = useState("");
+  const [query, setQuery] = useState("");
+  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities(query);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
+
+  // Search when the user stops typing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => setQuery(searchText.trim()), SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeoutId);
+  }, [searchText]);
 
   const openCreator = useCallback(() => {
     setIsCreatorOpen(true);
@@ -100,6 +111,17 @@ const Communities = () => {
         </div>
       </div>
 
+      <div className="communities-search">
+        <input
+          type="search"
+          className="communities-search-input"
+          placeholder="Buscar comunidades"
+          aria-label="Buscar comunidades"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+      </div>
+
       <div className="communities-grid">
         {loading && (
           <div className="communities-loading">
@@ -117,22 +139,22 @@ const Communities = () => {
                   <div 
                     key={community.id} 
                     className="community-card"
-                    onClick={() => navigate(`/communities/${community.name}`)}
+                    onClick={() => navigate(communityPath(community))}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
-                        navigate(`/communities/${community.name}`);
+                        navigate(communityPath(community));
                       }
                     }}
                   >
                     <div className="community-card-avatar">
-                      {!imageErrors[community.name] ? (
+                      {!imageErrors[community.id] ? (
                         <img 
                           src={formatters.avatar(community.imageUrl, community.name, community.name)}
                           alt={community.name}
                           className="community-avatar-image"
-                          onError={() => setImageErrors(prev => ({ ...prev, [community.name]: true }))}
+                          onError={() => setImageErrors(prev => ({ ...prev, [community.id]: true }))}
                         />
                       ) : (
                         <div className="community-avatar-fallback" aria-hidden="true">
@@ -158,11 +180,24 @@ const Communities = () => {
                 );
               })
             ) : (
-              <p className="no-results">No hay comunidades disponibles</p>
+              <p className="no-results">
+                {query ? `No hay comunidades que coincidan con "${query}"` : "No hay comunidades disponibles"}
+              </p>
             )}
           </>
         )}
       </div>
+
+      {!loading && !error && hasMore && (
+        <button
+          type="button"
+          className="communities-load-more"
+          onClick={loadMore}
+          disabled={loadingMore}
+        >
+          {loadingMore ? "Cargando…" : "Cargar más comunidades"}
+        </button>
+      )}
     </div>
   );
 };

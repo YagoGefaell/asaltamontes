@@ -1,6 +1,6 @@
 # BUG-035 — El listado de comunidades solo muestra las 20 primeras
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/community
