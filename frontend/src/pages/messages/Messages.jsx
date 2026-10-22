@@ -26,6 +26,8 @@ const Messages = () => {
     loadOlderMessages,
     historyPaging,
     loadingChats, 
+    chatsPaging,
+    loadMoreChats,
     errorChats,
     chatError,
     clearChatError
@@ -316,6 +318,9 @@ const Messages = () => {
           onEnterChat={handleEnterChat}
           onCreateGroup={openGroupCreator}
           creatingGroup={creatingGroup}
+          hasMoreChats={chatsPaging.hasMore}
+          loadingMoreChats={chatsPaging.loading}
+          onLoadMoreChats={loadMoreChats}
           onAvatarError={(chatId) => {
             setChats((prevChats) => prevChats.map((existingChat) => (
               String(existingChat.id) === String(chatId)

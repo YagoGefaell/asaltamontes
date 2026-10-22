@@ -681,22 +681,53 @@
     },
     "/api/conversations": {
       "get": {
-        "summary": "Get authenticated user's conversations",
+        "summary": "Get one page of the authenticated user's conversations (cursor)",
+        "description": "Most recent first: by lastMessageAt DESC (chats without messages last), then id DESC. For the next page, call again with beforeAt = nextBeforeAt (omit it when null) and beforeId = nextBeforeId. unreadChats counts every chat with unread messages, not only this page (navigation badge).",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "beforeAt",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "format": "date-time" },
+            "description": "lastMessageAt of the last chat of the previous page (nextBeforeAt). Requires beforeId"
+          },
+          {
+            "name": "beforeId",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "format": "int64" },
+            "description": "conversationId of the last chat of the previous page (nextBeforeId)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 30, "minimum": 1, "maximum": 100 },
+            "description": "Page size (values above 100 are capped)"
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Conversation summaries",
+            "description": "One page of conversation summaries",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ChatSummary"
+                  "type": "object",
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/ChatSummary" } },
+                    "hasMore": { "type": "boolean" },
+                    "nextBeforeAt": { "type": "string", "format": "date-time", "nullable": true },
+                    "nextBeforeId": { "type": "integer", "format": "int64", "nullable": true },
+                    "unreadChats": { "type": "integer", "format": "int64" }
                   }
                 }
               }
             }
+          },
+          "400": {
+            "description": "beforeAt without beforeId"
           },
           "401": {
             "description": "Not authenticated"

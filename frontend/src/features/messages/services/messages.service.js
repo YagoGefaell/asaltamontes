@@ -1,9 +1,20 @@
 import { apiClient } from "../../../lib/api-client.js";
 
-export async function getMyConversationsRequest() {
+// One page of the chat list, most recent first (T10b). Without a cursor, the first page.
+export async function getMyConversationsRequest({ beforeAt = null, beforeId = null } = {}) {
+  const params = new URLSearchParams();
+  if (beforeId != null) params.set("beforeId", beforeId);
+  if (beforeAt != null) params.set("beforeAt", beforeAt);
+  const query = params.toString() ? `?${params}` : "";
   try {
-    const conversations = await apiClient.get("/api/conversations");
-    return Array.isArray(conversations) ? conversations : [];
+    const page = await apiClient.get(`/api/conversations${query}`);
+    return {
+      items: Array.isArray(page?.items) ? page.items : [],
+      hasMore: Boolean(page?.hasMore),
+      nextBeforeAt: page?.nextBeforeAt ?? null,
+      nextBeforeId: page?.nextBeforeId ?? null,
+      unreadChats: Number(page?.unreadChats) || 0,
+    };
   } catch (error) {
     throw new Error(error.message || "Error obteniendo conversaciones");
   }

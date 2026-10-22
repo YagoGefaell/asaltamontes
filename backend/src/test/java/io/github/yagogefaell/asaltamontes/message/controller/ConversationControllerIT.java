@@ -22,10 +22,10 @@ class ConversationControllerIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/conversations").with(auth.bearer(bea)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].conversationId").value(hasItem(conversationId.intValue())));
+                .andExpect(jsonPath("$.items[*].conversationId").value(hasItem(conversationId.intValue())));
 
         mockMvc.perform(get("/api/conversations").with(auth.bearer(outsider)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].conversationId").value(not(hasItem(conversationId.intValue()))));
+                .andExpect(jsonPath("$.items[*].conversationId").value(not(hasItem(conversationId.intValue()))));
     }
 }
