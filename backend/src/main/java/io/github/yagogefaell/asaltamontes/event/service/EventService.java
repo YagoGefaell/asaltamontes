@@ -5,8 +5,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Optional;
+import java.util.List;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +31,7 @@ import io.github.yagogefaell.asaltamontes.event.domain.EventAttendee;
 import io.github.yagogefaell.asaltamontes.event.domain.EventStatus;
 import io.github.yagogefaell.asaltamontes.event.domain.EventVisibility;
 import io.github.yagogefaell.asaltamontes.event.dto.CreateEventDto;
+import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeeDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventDetailsDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
 import io.github.yagogefaell.asaltamontes.event.dto.UpdateEventDto;
@@ -37,6 +40,7 @@ import io.github.yagogefaell.asaltamontes.event.repository.EventRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -54,6 +58,7 @@ public class EventService {
     private final CommunityMemberRepository communityMemberRepository;
     private final UserAccountRepository userAccountRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EntityManager entityManager;
 
     /** Creates the event; the organizer is its first attendee (GOING). */
     @Transactional
@@ -129,6 +134,11 @@ public class EventService {
         Double latitude = changes.latitude() != null ? changes.latitude() : event.getLatitude();
         Double longitude = changes.longitude() != null ? changes.longitude() : event.getLongitude();
         validateCoordinates(latitude, longitude);
+        if (changes.capacity() != null) {
+            // Same order as join/leave, and with the current number of attendees
+            lockAndRefresh(event);
+        }
+        Integer previousCapacity = event.getCapacity();
         if (changes.capacity() != null && changes.capacity() < event.getAttendeeCount()) {
             throw new ConflictException("Ya hay " + event.getAttendeeCount() + " personas apuntadas: no puedes dejar menos plazas");
         }
@@ -150,6 +160,10 @@ public class EventService {
 
         // Flush here so a concurrent edit fails as a 409 inside this request (@Version)
         eventRepository.saveAndFlush(event);
+        if (changes.capacity() != null && previousCapacity != null && changes.capacity() > previousCapacity) {
+            promoteFromWaitlist(event);
+            entityManager.refresh(event);
+        }
         return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
     }
 
@@ -168,6 +182,124 @@ public class EventService {
             eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason()));
         }
         return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
+    }
+
+    /**
+     * Joins the event (T15b): GOING if there is a free place, otherwise WAITLIST at the end. Idempotent: joining
+     * again returns the current status. Everything runs with the event row locked, so places are never exceeded
+     * and waitlist positions stay 1..n without gaps, however many people join at once.
+     */
+    @Transactional
+    public EventDetailsDto join(Long eventId, UserAccount user) {
+        Event event = findVisible(eventId, user);
+        lockAndRefresh(event);
+        requireOpen(event);
+
+        Optional<EventAttendee> current = attendeeRepository.findByEventIdAndUserId(eventId, user.getId());
+        if (current.isPresent() && current.get().getStatus() != AttendeeStatus.CANCELLED) {
+            return toDetails(event, user, current.get().getStatus());
+        }
+
+        EventAttendee attendee = current.orElseGet(() ->
+                new EventAttendee(event, userAccountRepository.getReferenceById(user.getId()), AttendeeStatus.GOING));
+        if (hasFreePlace(event)) {
+            attendee.setStatus(AttendeeStatus.GOING);
+            attendee.setWaitlistPosition(null);
+            eventRepository.addToAttendeeCount(eventId, 1);
+        } else {
+            attendee.setStatus(AttendeeStatus.WAITLIST);
+            attendee.setWaitlistPosition(attendeeRepository.maxWaitlistPosition(eventId, AttendeeStatus.WAITLIST) + 1);
+        }
+        attendeeRepository.saveAndFlush(attendee);
+
+        entityManager.refresh(event);
+        return toDetails(event, user, attendee.getStatus());
+    }
+
+    /**
+     * Leaves the event or the waitlist. A free place goes to the first one on the waitlist. Idempotent.
+     * The organizer cannot leave her own event: she cancels it.
+     */
+    @Transactional
+    public EventDetailsDto leave(Long eventId, UserAccount user) {
+        Event event = findVisible(eventId, user);
+        lockAndRefresh(event);
+
+        Optional<EventAttendee> current = attendeeRepository.findByEventIdAndUserId(eventId, user.getId())
+                .filter(attendee -> attendee.getStatus() != AttendeeStatus.CANCELLED);
+        if (current.isEmpty()) {
+            return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
+        }
+        if (event.getOrganizer().getId().equals(user.getId())) {
+            throw new ConflictException("La organizadora no puede salir de su evento; si no se va a hacer, cancélalo");
+        }
+
+        EventAttendee attendee = current.get();
+        AttendeeStatus previous = attendee.getStatus();
+        Integer position = attendee.getWaitlistPosition();
+        attendee.setStatus(AttendeeStatus.CANCELLED);
+        attendee.setWaitlistPosition(null);
+        attendeeRepository.saveAndFlush(attendee);
+
+        if (previous == AttendeeStatus.WAITLIST) {
+            attendeeRepository.shiftWaitlistAfter(eventId, position);
+        } else {
+            eventRepository.addToAttendeeCount(eventId, -1);
+            entityManager.refresh(event);
+            if (event.getStatus() == EventStatus.SCHEDULED) {
+                promoteFromWaitlist(event);
+            }
+        }
+
+        entityManager.refresh(event);
+        return toDetails(event, user, AttendeeStatus.CANCELLED);
+    }
+
+    /** Attendees by status (GOING by default): GOING in order of arrival, WAITLIST by position. */
+    @Transactional(readOnly = true)
+    public Page<EventAttendeeDto> getAttendees(Long eventId, AttendeeStatus status, UserAccount user, Pageable pageable) {
+        findVisible(eventId, user);
+        Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), MAX_PAGE));
+        return attendeeRepository.findAttendees(eventId, status == null ? AttendeeStatus.GOING : status, page);
+    }
+
+    // Fills the free places with the first ones on the waitlist. The caller holds the lock of the event.
+    private void promoteFromWaitlist(Event event) {
+        while (hasFreePlace(event)) {
+            List<EventAttendee> next = attendeeRepository.findWaitlist(event.getId(), Limit.of(1));
+            if (next.isEmpty()) {
+                return;
+            }
+            EventAttendee promoted = next.get(0);
+            int position = promoted.getWaitlistPosition();
+            promoted.setStatus(AttendeeStatus.GOING);
+            promoted.setWaitlistPosition(null);
+            attendeeRepository.saveAndFlush(promoted);
+            attendeeRepository.shiftWaitlistAfter(event.getId(), position);
+            eventRepository.addToAttendeeCount(event.getId(), 1);
+            entityManager.refresh(event);
+            eventPublisher.publishEvent(new AttendeePromoted(event.getId(), promoted.getUser().getId()));
+        }
+    }
+
+    private boolean hasFreePlace(Event event) {
+        return event.getCapacity() == null || event.getAttendeeCount() < event.getCapacity();
+    }
+
+    private void lockAndRefresh(Event event) {
+        eventRepository.lockById(event.getId());
+        // What other transactions committed before we got the lock (places, capacity)
+        entityManager.refresh(event);
+    }
+
+    private static void requireOpen(Event event) {
+        EventStatus status = statusAt(event, Instant.now());
+        if (status == EventStatus.CANCELLED) {
+            throw new ConflictException("El evento está cancelado");
+        }
+        if (status == EventStatus.FINISHED || !event.getStartsAt().isAfter(Instant.now())) {
+            throw new ConflictException("El evento ya ha empezado");
+        }
     }
 
     private Event findVisible(Long eventId, UserAccount user) {

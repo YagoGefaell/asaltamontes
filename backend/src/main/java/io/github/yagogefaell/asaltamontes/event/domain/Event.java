@@ -82,8 +82,9 @@ public class Event {
     // null = no limit
     private Integer capacity;
 
-    // GOING attendees, kept with conditional UPDATEs (T15b)
-    @Column(name = "attendee_count", nullable = false)
+    // GOING attendees. Only the bulk UPDATEs of EventRepository change it (T15b): saving the entity never writes
+    // it, so an edit loaded before someone joined cannot put the old number back
+    @Column(name = "attendee_count", nullable = false, updatable = false)
     private int attendeeCount = 0;
 
     @Enumerated(EnumType.STRING)
