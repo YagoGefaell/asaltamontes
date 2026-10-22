@@ -826,14 +826,50 @@
         }
       },
       "get": {
-        "summary": "Upcoming scheduled events the user can see, soonest first (T15a; filters in T15c)",
+        "summary": "Scheduled events the user can see, soonest first; upcoming by default (T15a, T15c)",
+        "description": "All filters are optional and combine with AND. Events of a COMMUNITY-visibility community the user does not belong to (or is banned from) never appear, whatever the filters. Cancelled events are not listed. Events without distance or coordinates never match a distance or bounding-box filter.",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "name": "from", "in": "query", "description": "ISO-8601 instant; default: now", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "description": "ISO-8601 instant; must not be before from", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["MEETUP", "TRAINING", "RACE", "TRIP"] } },
+          { "name": "level", "in": "query", "schema": { "type": "string", "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"] } },
+          { "name": "communityId", "in": "query", "schema": { "type": "integer", "format": "int64" } },
+          { "name": "city", "in": "query", "description": "Case-insensitive exact match", "schema": { "type": "string" } },
+          { "name": "minDistance", "in": "query", "description": "km", "schema": { "type": "number" } },
+          { "name": "maxDistance", "in": "query", "description": "km; not below minDistance", "schema": { "type": "number" } },
+          { "name": "minLat", "in": "query", "description": "Bounding box: the four of minLat, maxLat, minLng, maxLng or none", "schema": { "type": "number" } },
+          { "name": "maxLat", "in": "query", "schema": { "type": "number" } },
+          { "name": "minLng", "in": "query", "schema": { "type": "number" } },
+          { "name": "maxLng", "in": "query", "schema": { "type": "number" } },
+          { "name": "organizer", "in": "query", "description": "Only 'me': events she organizes", "schema": { "type": "string", "enum": ["me"] } },
+          { "name": "attending", "in": "query", "description": "Only 'me': events where she is GOING or on the WAITLIST", "schema": { "type": "string", "enum": ["me"] } },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
-        "responses": { "200": { "description": "Spring Page of EventSummary" } }
+        "responses": {
+          "200": { "description": "Spring Page of EventSummary" },
+          "400": { "description": "Invalid filter (unknown enum value, to before from, maxDistance below minDistance, incomplete or inverted bounding box, organizer/attending other than 'me')" }
+        }
+      }
+    },
+    "/api/communities/{slug}/events": {
+      "get": {
+        "summary": "Events of a community the user can see, soonest first; upcoming by default (T15c)",
+        "description": "Same visibility rules and filters as GET /api/events (from, to, type, level, city, minDistance, maxDistance, attending), without communityId or bounding box.",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Spring Page of EventSummary" },
+          "400": { "description": "Invalid filter" },
+          "404": { "description": "Community not found" }
+        }
       }
     },
     "/api/events/{eventId}": {

@@ -1,6 +1,6 @@
 # T15 — Eventos (quedadas, entrenos, carreras): modelo y API
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 3 — Quedadas / eventos
 - **Depende de:** T14
 - **Rama sugerida:** `feat/T15-events-api` (dividir: `T15a` modelo + CRUD, `T15b` inscripción + lista de espera, `T15c` búsqueda y filtros)
@@ -11,7 +11,9 @@
 - **T15a — modelo + CRUD** (hecho): migración V5 (`events`, `event_attendees`), paquete `event/`, `POST /api/events` (la organizadora queda `GOING`; con `communityId`, solo OWNER/MODERATOR), `GET /api/events/{id}` (`myStatus`, `canEdit`, `status` con `FINISHED` derivado), `PATCH` (organizadora o moderación; no por debajo de las inscritas; no si está cancelado), `POST …/cancel` (idempotente, publica `EventCancelled`), `GET /api/events` (próximos visibles, paginado), visibilidad `COMMUNITY` (404 para quien no es miembro o está baneada), `@Version` → 409.
   - Diferencias con este diseño: `event_attendees` usa `id` + unique `(event_id, user_id)` como `community_members` (no PK compuesta); `status` solo guarda `SCHEDULED`/`CANCELLED`. Sin `FINISHED` guardado; un evento sin `ends_at` cuenta como terminado 12 h después de empezar. Visibilidad y comunidad no se cambian con `PATCH`. Los índices de ciudad y bbox van con sus filtros en T15c.
 - **T15b — inscripción y lista de espera** (hecho): `join`/`leave` con la fila del evento bloqueada (`SELECT … FOR UPDATE`), `attendee_count` solo con `UPDATE` masivos (`updatable = false` en la entidad: una edición cargada antes no devuelve el número antiguo), lista de espera con posiciones 1..n sin huecos, promoción al salir una `GOING` o al subir las plazas (`AttendeePromoted`), idempotencia, la organizadora no puede salir (409), `GET …/attendees?status=`. IT con 100 inscripciones simultáneas y 10 plazas.
-- **T15c — búsqueda y filtros** (pendiente): filtros de `GET /api/events`, `GET /api/communities/{slug}/events`, índices de ciudad y bbox, EXPLAIN.
+- **T15c — búsqueda y filtros** (hecho): filtros de `GET /api/events` (`from`, `to`, `type`, `level`, `communityId`, `city` sin distinguir mayúsculas, `minDistance`/`maxDistance`, bbox completo o nada, `organizer=me`, `attending=me` con `GOING` y `WAITLIST`), `GET /api/communities/{slug}/events` (controlador propio en `event/`), `400` para filtros inválidos. Consulta construida con Criteria API (`EventSearchRepositoryImpl`): solo entran en el SQL los filtros presentes; la versión JPQL con `:p IS NULL OR …` fallaba en PostgreSQL ("could not determine data type of parameter") y no podría usar índices. La regla de visibilidad `COMMUNITY` va siempre en el mismo `WHERE`. Migración V6: `(lower(city), starts_at)` parcial y `(latitude, longitude)` parcial.
+  - EXPLAIN (PG 17 desechable, 200 000 eventos, 5 000 usuarias, 300 comunidades; todas con índice y < 1 ms salvo el `COUNT` de una ciudad con 3080 resultados, 6,5 ms): listado por defecto `idx_events_starts_at` (0,2 ms); ciudad `idx_events_city_starts_at` (0,2 ms); bbox pequeño `idx_events_coordinates` por bitmap (0,6 ms); comunidad `idx_events_community_starts_at` (0,1 ms); `organizer=me` `idx_events_organizer` (0,3 ms); `attending=me` `idx_event_attendees_user_status` (0,4 ms); tipo + nivel + distancia + ventana de fechas: recorre `idx_events_starts_at` en la ventana y filtra (0,2 ms; sin índice propio, no compensa con el volumen esperado).
+  - Pendiente fuera de T15: frontend (T16).
 
 ## Objetivo
 La funcionalidad diferencial de la app: organizar quedadas para correr en montaña. Una usuaria (o una comunidad) crea un evento con lugar, hora, distancia, desnivel, nivel y plazas; otras se apuntan, con lista de espera si se llena.
