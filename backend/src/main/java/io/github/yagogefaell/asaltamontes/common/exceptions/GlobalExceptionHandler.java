@@ -10,6 +10,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.lang.NonNull;
@@ -169,6 +170,14 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleGeneric(Exception ex, HttpServletRequest req) {
         log.error("Unexpected error on {} {}", req.getMethod(), req.getRequestURI(), ex);
         return buildProblem(HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "Ha ocurrido un error inesperado", req, null);
+    }
+
+    /** Two people saved the same thing at once (@Version): the second one has to reload (T15a). */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ProblemDetail handleOptimisticLocking(ObjectOptimisticLockingFailureException ex, HttpServletRequest req) {
+        log.info("Concurrent update on {} {}: {}", req.getMethod(), req.getRequestURI(), ex.getMessage());
+        return buildProblem(HttpStatus.CONFLICT, "Conflict",
+                "Alguien ha cambiado estos datos a la vez; recarga y vuelve a intentarlo", req, null);
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

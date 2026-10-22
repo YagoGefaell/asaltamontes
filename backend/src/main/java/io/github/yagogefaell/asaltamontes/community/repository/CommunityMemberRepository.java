@@ -35,6 +35,8 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     """)
     Optional<MemberStatus> findStatus(@Param("communityId") Long communityId, @Param("userId") Long userId);
 
+    Optional<CommunityMember> findByCommunityIdAndUserAccountId(Long communityId, Long userId);
+
     @Modifying
     @Query("""
         DELETE FROM CommunityMember cm 
