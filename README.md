@@ -111,6 +111,16 @@ Every push to `main` runs `.github/workflows/deploy.yml` on the server: it build
 - **PostgreSQL 17** (since T08) on the `postgres17_data` volume. The 13 → 17 move is a manual, guided step done once before deploying T08: `ENV_FILE=/etc/github-runner.env scripts/db/upgrade-13-to-17.sh` copies the data into the new volume and compares row counts table by table. The old `postgres_data` volume stays untouched for rollback (point `db` back to `postgres:13` + `postgres_data`).
 - Test stack on the same server, never touching production: `docker compose -p asaltamontes-dev -f docker-compose.yml -f docker-compose.dev.yml --env-file <file> up -d --build` (app on `:8081`, backend `127.0.0.1:8091`, DB `127.0.0.1:5434`).
 
+### Demo data (seed)
+
+Fictional data for local work, the test stack or a demo (T02b): 24 users, 6 communities with members, follows, private chats and a group chat. No real personal data.
+
+- Enable the `seed` profile next to the usual one: `SPRING_PROFILES_ACTIVE=prod,seed` (or `dev,seed`) in the `.env`, then start the backend. It runs once at startup and logs `Seed: created …`.
+- Login: **`demo` / `Montana-2026`** (every seeded user has the same password; e.g. `lucia.trail`, `marta_monte`).
+- It only seeds a database **without users**. To add the demo data to one that already has some (e.g. the test stack), also pass `-Dasaltamontes.seed.force=true` (`BACKEND_JAVA_OPTS=-Xms128m -Xmx512m -Dasaltamontes.seed.force=true`). If the `demo` user exists it does nothing, so restarting is safe.
+- Reset the test stack database: `docker compose -p asaltamontes-dev down -v` (deletes its volumes), then `up` again with the `seed` profile.
+- Never enable `seed` in production.
+
 ### 3\. Manual Development (Optional)
 
 If you prefer to run services individually for debugging:
