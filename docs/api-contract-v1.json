@@ -780,6 +780,64 @@
         }
       }
     },
+    "/api/events": {
+      "post": {
+        "summary": "Create an event (T15a)",
+        "description": "The organizer becomes its first attendee (GOING). With communityId only OWNER/MODERATOR members of that community can create it. visibility COMMUNITY requires communityId. timezone defaults to Europe/Madrid.",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateEvent" } } } },
+        "responses": {
+          "201": { "description": "Created (Location: /api/events/{id})", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventDetails" } } } },
+          "400": { "description": "Invalid data (past start, end before start, half coordinates, unknown timezone, COMMUNITY without community…)" },
+          "403": { "description": "Not staff of the community" },
+          "404": { "description": "Community not found" }
+        }
+      },
+      "get": {
+        "summary": "Upcoming scheduled events the user can see, soonest first (T15a; filters in T15c)",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": { "200": { "description": "Spring Page of EventSummary" } }
+      }
+    },
+    "/api/events/{eventId}": {
+      "get": {
+        "summary": "Event detail with myStatus (GOING, WAITLIST, CANCELLED or null) and canEdit",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": { "description": "The event", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventDetails" } } } },
+          "404": { "description": "Not found, or a COMMUNITY event and the user is not an (unbanned) member" }
+        }
+      },
+      "patch": {
+        "summary": "Edit an event: null fields stay as they are; visibility and community cannot change",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": {
+          "200": { "description": "The updated event" },
+          "400": { "description": "Invalid data" },
+          "403": { "description": "Not the organizer nor community staff" },
+          "409": { "description": "Cancelled event, capacity below attendeeCount, or edited by someone else at the same time" }
+        }
+      }
+    },
+    "/api/events/{eventId}/cancel": {
+      "post": {
+        "summary": "Cancel an event (idempotent). Optional body { \"reason\": string ≤ 500 }",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "responses": { "200": { "description": "The event, status CANCELLED" }, "403": { "description": "Not the organizer nor community staff" } }
+      }
+    },
     "/ws-asaltamontes": {
       "get": {
         "summary": "WebSocket STOMP handshake endpoint",
@@ -832,6 +890,32 @@
   },
   "components": {
     "schemas": {
+      "CreateEvent": {
+        "type": "object",
+        "required": ["title", "type", "startsAt"],
+        "properties": {
+          "title": { "type": "string", "maxLength": 120 },
+          "description": { "type": "string", "maxLength": 4000 },
+          "type": { "type": "string", "enum": ["MEETUP", "TRAINING", "RACE", "TRIP"] },
+          "startsAt": { "type": "string", "format": "date-time" },
+          "endsAt": { "type": "string", "format": "date-time" },
+          "timezone": { "type": "string", "example": "Europe/Madrid" },
+          "meetingPointName": { "type": "string", "maxLength": 200 },
+          "latitude": { "type": "number" },
+          "longitude": { "type": "number" },
+          "city": { "type": "string", "maxLength": 80 },
+          "distanceKm": { "type": "number" },
+          "elevationGainM": { "type": "integer" },
+          "level": { "type": "string", "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"] },
+          "capacity": { "type": "integer", "minimum": 1, "maximum": 500, "nullable": true },
+          "visibility": { "type": "string", "enum": ["PUBLIC", "COMMUNITY"] },
+          "communityId": { "type": "integer", "format": "int64" }
+        }
+      },
+      "EventDetails": {
+        "type": "object",
+        "description": "CreateEvent fields plus: id, status (SCHEDULED, CANCELLED, FINISHED), attendeeCount, communitySlug, communityName, organizerUsername, organizerFullName, organizerPictureUrl, imageUrl, cancelReason, cancelledAt, myStatus, canEdit"
+      },
       "ChatResponse": {
         "type": "object",
         "properties": {

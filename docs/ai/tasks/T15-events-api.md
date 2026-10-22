@@ -7,6 +7,12 @@
 - **Cierra bugs:** —
 - **Tamaño:** L
 
+## División en sub-PRs (2026-10-22)
+- **T15a — modelo + CRUD** (hecho): migración V5 (`events`, `event_attendees`), paquete `event/`, `POST /api/events` (la organizadora queda `GOING`; con `communityId`, solo OWNER/MODERATOR), `GET /api/events/{id}` (`myStatus`, `canEdit`, `status` con `FINISHED` derivado), `PATCH` (organizadora o moderación; no por debajo de las inscritas; no si está cancelado), `POST …/cancel` (idempotente, publica `EventCancelled`), `GET /api/events` (próximos visibles, paginado), visibilidad `COMMUNITY` (404 para quien no es miembro o está baneada), `@Version` → 409.
+  - Diferencias con este diseño: `event_attendees` usa `id` + unique `(event_id, user_id)` como `community_members` (no PK compuesta); `status` solo guarda `SCHEDULED`/`CANCELLED`. Sin `FINISHED` guardado; un evento sin `ends_at` cuenta como terminado 12 h después de empezar. Visibilidad y comunidad no se cambian con `PATCH`. Los índices de ciudad y bbox van con sus filtros en T15c.
+- **T15b — inscripción y lista de espera** (pendiente): `join`/`leave` con `UPDATE` condicional de `attendee_count`, lista de espera con posiciones, promoción (`AttendeePromoted`), `GET …/attendees`, IT de concurrencia.
+- **T15c — búsqueda y filtros** (pendiente): filtros de `GET /api/events`, `GET /api/communities/{slug}/events`, índices de ciudad y bbox, EXPLAIN.
+
 ## Objetivo
 La funcionalidad diferencial de la app: organizar quedadas para correr en montaña. Una usuaria (o una comunidad) crea un evento con lugar, hora, distancia, desnivel, nivel y plazas; otras se apuntan, con lista de espera si se llena.
 
