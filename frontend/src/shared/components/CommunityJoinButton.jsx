@@ -18,10 +18,16 @@ function CommunityJoinButton({
   const lastActionTimeRef = useRef(0)
   
   const onToggleRef = useRef(onToggle)
+  // Role to give back if leaving fails (a moderator stays a moderator, BUG-045)
+  const memberRoleRef = useRef(role)
 
   useEffect(() => {
     onToggleRef.current = onToggle
   }, [onToggle])
+
+  useEffect(() => {
+    if (role) memberRoleRef.current = role
+  }, [role])
 
   const handleSave = useCallback(async (newIsMember) => {
     if (newIsMember) {
@@ -37,9 +43,10 @@ function CommunityJoinButton({
     isMember,
     handleSave,
     delayBeforeRequest,
-    (newIsMember) => {
+    (newIsMember, { rollback = false } = {}) => {
       if (onToggleRef.current) {
-        onToggleRef.current(newIsMember ? 'MEMBER' : null)
+        const restoredRole = rollback ? memberRoleRef.current || 'MEMBER' : 'MEMBER'
+        onToggleRef.current(newIsMember ? restoredRole : null)
       }
     }
   )
