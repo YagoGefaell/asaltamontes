@@ -1,0 +1,28 @@
+.events-page {
+  background: var(--background);
+  min-height: 100vh;
+  padding-bottom: 5rem;
+}
+
+.events-header {
+  padding: 0.55rem var(--space-3);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.events-header h2 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
