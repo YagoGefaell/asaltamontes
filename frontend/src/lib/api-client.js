@@ -56,7 +56,7 @@ class ApiClient {
             throw error
           }
         } catch (refreshError) {
-          if (refreshError.status) {
+          if (refreshError.status || refreshError.transient) {
             throw refreshError
           } else {
             const error = new Error('Authentication failed')
@@ -93,7 +93,7 @@ class ApiClient {
   async _performRefresh() {
     try {
       const { refreshTokenRequest } = await import('../features/auth/services/auth.service.js')
-      const success = await refreshTokenRequest()
+      const success = await refreshTokenRequest({ rethrowTransient: true })
       
       if (success) {
         return true
@@ -101,7 +101,9 @@ class ApiClient {
         this._handleLogout()
         return false
       }
-    } catch {
+    } catch (error) {
+      // Network, timeout or 5xx while renewing: the session may still be valid, so do not log out (BUG-055)
+      if (error.transient) throw error
       this._handleLogout()
       return false
     }
@@ -119,7 +121,8 @@ class ApiClient {
 
   /**
    * Renews the access token with the refresh cookie, sharing an ongoing refresh if there is one.
-   * Returns false (and logs out) if the session can no longer be renewed. Used by the WebSocket (T11).
+   * Returns false (and logs out) if the server rejected the session; throws (`transient`) if it could not be
+   * reached, without logging out. Used by the WebSocket (T11).
    */
   async refreshSession() {
     return this._handleTokenRefresh()
