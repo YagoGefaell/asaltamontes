@@ -9,7 +9,7 @@
 
 ## División en sub-PRs (2026-10-21)
 - **T10a — historial por cursor** (hecho): `GET …/messages?before&limit` → `MessagePageDto`, `POST …/read`, el `GET` ya no marca como leído; frontend con scroll infinito hacia arriba (IntersectionObserver), posición de scroll conservada y `mergeMessages` para deduplicar historial + WebSocket. Cierra BUG-020.
-- **T10b — lista de conversaciones paginada** (hecho): cursor `beforeAt`/`beforeId` sobre `(last_message_at DESC NULLS LAST, id DESC)` + índice (V5), `unreadChats` total para el badge, "cargar más" en el frontend y recarga de la primera página cuando llega un mensaje de un chat no cargado.
+- **T10b — lista de conversaciones paginada** (hecho): cursor `beforeAt`/`beforeId` sobre `(last_message_at DESC NULLS LAST, id DESC)` **sin índice nuevo** (EXPLAIN con 100 000 chats: PostgreSQL parte de las participaciones de la usuaria y ordena solo las suyas, ~20 ms con 2000; un índice sobre `last_message_at` no se usaría y encarecería cada mensaje), `unreadChats` total para el badge, "cargar más" en el frontend y recarga de la primera página cuando llega un mensaje de un chat no cargado.
 
 ## Objetivo
 Abrir un chat no debe descargar todos sus mensajes. Cargar los últimos N y pedir más al hacer scroll hacia arriba.

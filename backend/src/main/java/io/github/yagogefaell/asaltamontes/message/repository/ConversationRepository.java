@@ -27,7 +27,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     """)
     Optional<Conversation> findPrivateConversation(@Param("user1") String user1, @Param("user2") String user2);
 
-    // Chat list by cursor over (last_message_at DESC NULLS LAST, id DESC), index of V4 (T10b).
+    // Chat list by cursor over (last_message_at DESC NULLS LAST, id DESC) (T10b). PostgreSQL starts from the
+    // participations of the user (idx_conversation_participants_user) and sorts only her chats: no index on
+    // conversations helps here, and one on last_message_at would slow down every message (EXPLAIN in #44).
     // Three queries instead of optional parameters, so PostgreSQL always gets typed ones (as in MessageRepository).
     @Query("""
         SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
