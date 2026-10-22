@@ -56,5 +56,18 @@
       "Bash(docker system prune*)",
       "Bash(rm -rf *)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/scripts/hooks/protect-merged-migrations.sh"
+          }
+        ]
+      }
+    ]
   }
 }
