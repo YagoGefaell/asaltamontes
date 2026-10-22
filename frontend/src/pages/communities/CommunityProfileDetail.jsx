@@ -6,13 +6,14 @@ import Loading from "../../shared/components/Loading";
 import FormError from "../../shared/forms/FormError";
 import { formatters } from "../../utils/helpers";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
+import { communityPath } from "../../features/communities/utils/communityPath";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 function CommunityProfile() {
-  const { communityName } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { community, setCommunity, loading, error } = useCommunityDetail(communityName);
+  const { community, setCommunity, loading, error } = useCommunityDetail(slug);
   
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
@@ -21,10 +22,17 @@ function CommunityProfile() {
   const isOwner = community && currentUser && (community.role === 'ADMIN' || community.role === 'OWNER');
 
   useEffect(() => {
-    if (!communityName) {
+    if (!slug) {
       navigate("/communities");
     }
-  }, [communityName, navigate]);
+  }, [slug, navigate]);
+
+  // Links shared before T14 carry the name: move to the canonical URL with the slug
+  useEffect(() => {
+    if (community?.slug && community.slug !== slug) {
+      navigate(communityPath(community), { replace: true });
+    }
+  }, [community, slug, navigate]);
 
   const handleToggleCommunity = (newRole) => {
     setCommunity((prev) => {
@@ -94,7 +102,7 @@ function CommunityProfile() {
         {isOwner && (
           <button
             className="settings-icon-btn"
-            onClick={() => navigate(`/communities/${communityName}/settings`)}
+            onClick={() => navigate(communityPath(community, "/settings"))}
             aria-label="Ir a ajustes de comunidad"
           >
             <svg

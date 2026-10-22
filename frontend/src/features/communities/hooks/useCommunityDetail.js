@@ -1,13 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
-import { getCommunityByNameRequest } from '../services/communities.service'
+import { getCommunityRequest } from '../services/communities.service'
 
-export function useCommunityDetail(communityName) {
+export function useCommunityDetail(slug) {
   const [community, setCommunity] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!communityName) {
+    if (!slug) {
       setError('Nombre de comunidad inválido')
       setLoading(false)
       return
@@ -18,7 +18,7 @@ export function useCommunityDetail(communityName) {
 
     const fetchCommunityDetail = async () => {
       try {
-        const communityData = await getCommunityByNameRequest(communityName)
+        const communityData = await getCommunityRequest(slug)
         setCommunity(communityData)
         setError(null)
       } catch (err) {
@@ -30,10 +30,10 @@ export function useCommunityDetail(communityName) {
     }
 
     fetchCommunityDetail()
-  }, [communityName])
+  }, [slug])
 
   const refetch = useCallback(async () => {
-    if (!communityName) {
+    if (!slug) {
       setError('Nombre de comunidad inválido')
       setLoading(false)
       return
@@ -43,7 +43,7 @@ export function useCommunityDetail(communityName) {
     setError(null)
 
     try {
-      const communityData = await getCommunityByNameRequest(communityName)
+      const communityData = await getCommunityRequest(slug)
       setCommunity(communityData)
       setError(null)
     } catch (err) {
@@ -52,7 +52,7 @@ export function useCommunityDetail(communityName) {
     } finally {
       setLoading(false)
     }
-  }, [communityName])
+  }, [slug])
 
   return { community, setCommunity, loading, error, refetch }
 }

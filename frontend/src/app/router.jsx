@@ -51,7 +51,7 @@ export function AppRouter() {
           <Route path="messages" element={<Messages />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="communities" element={<Communities />} />
-          <Route path="communities/:communityName" element={<CommunityProfileDetail />} />
+          <Route path="communities/:slug" element={<CommunityProfileDetail />} />
         </Route>
 
         {/* ---- Rutas de Followers/Following (sin navbar) ---- */}
@@ -81,7 +81,7 @@ export function AppRouter() {
         />
 
         <Route
-          path="/communities/:communityName/settings"
+          path="/communities/:slug/settings"
           element={
             <CommunitySettingsPage>
               <CommunitySettingsMenu />

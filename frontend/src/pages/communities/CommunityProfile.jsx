@@ -4,18 +4,18 @@ import { useCommunityDetail } from "../../features/communities/hooks/useCommunit
 import CommunityProfileDetail from "./CommunityProfileDetail";
 
 function CommunityProfile() {
-  const { communityName } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
-  const { community, loading, error, refetch } = useCommunityDetail(communityName);
+  const { community, loading, error, refetch } = useCommunityDetail(slug);
 
   const isMember = community?.isMember || false;
 
   useEffect(() => {
-    if (!communityName) {
+    if (!slug) {
       navigate("/communities");
       return;
     }
-  }, [communityName, navigate]);
+  }, [slug, navigate]);
 
   return (
     <CommunityProfileDetail

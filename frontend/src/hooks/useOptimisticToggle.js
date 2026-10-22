@@ -30,7 +30,10 @@ export function useOptimisticToggle(initialState = false, onSave = null, delayBe
       serverStateRef.current = finalState
     } catch (err) {
       setError(err.message || 'Error en la petición')
+      // Roll back here and in the parent, which applied the optimistic change too (BUG-045)
+      previousStateRef.current = serverStateRef.current
       setState(serverStateRef.current)
+      onOptimisticChangeRef.current?.(serverStateRef.current, { rollback: true })
     } finally {
       setIsLoading(false)
     }
