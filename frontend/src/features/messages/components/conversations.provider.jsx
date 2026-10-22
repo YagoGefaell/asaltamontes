@@ -329,7 +329,9 @@ export const ConversationsProvider = ({ children }) => {
   const loadConversationMessages = useCallback(async (conversationId) => {
     if (!conversationId) return;
 
-    const alreadyLoaded = chatMessages[conversationId];
+    // A live message can create chatMessages[id] before the history is loaded (BUG-051):
+    // "loaded" means the first page arrived, which is what historyPaging records
+    const alreadyLoaded = historyPaging[conversationId] ? chatMessages[conversationId] : null;
     if (alreadyLoaded) {
       markConversationAsRead(conversationId, alreadyLoaded);
       return;
@@ -353,7 +355,7 @@ export const ConversationsProvider = ({ children }) => {
       // No bloqueamos la UI del chat si falla la carga inicial del historial.
       markConversationAsRead(conversationId);
     }
-  }, [chatMessages, markConversationAsRead]);
+  }, [chatMessages, historyPaging, markConversationAsRead]);
 
   const loadOlderMessages = useCallback(async (conversationId) => {
     const paging = historyPaging[conversationId];
