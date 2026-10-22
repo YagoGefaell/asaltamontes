@@ -1,9 +1,9 @@
 # T16 — Eventos: frontend (lista, detalle con mapa, crear y editar)
 
-- **Estado:** pendiente
+- **Estado:** pendiente (T16a hecho en PR apilada sobre T29a; T16 sigue pendiente por T16b)
 - **Fase:** 3 — Quedadas / eventos
 - **Depende de:** T15, T29a
-- **Rama sugerida:** `feat/T16-events-frontend` (dividir: `T16a` lista + detalle, `T16b` crear/editar + mapa selector)
+- **Rama sugerida:** `feat/T16-events-frontend` (dividida: `T16a` lista + detalle con mapa de solo lectura y filtros, **hecho**; `T16b` crear/editar + selector de punto en el mapa + sección en la comunidad + **vista de mapa de la lista**, pendiente)
 - **Cierra bugs:** —
 - **Tamaño:** L
 
@@ -31,3 +31,8 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 
 ## Notas y riesgos
 - Dependencias nuevas: `leaflet` + `react-leaflet` (versiones exactas). Respetar la política de uso de tiles de OSM (atribución visible, sin tráfico masivo); si el volumen crece, cambiar a MapTiler o a tiles propios.
+
+## Registro T16a
+- Hecho: servicios/hooks/componentes en `src/features/events`, páginas `/events` y `/events/:id`, pestaña "Quedadas" en `NavBar`, filtros (fechas, tipo, nivel, ciudad, "mis quedadas"), scroll infinito, inscripción con actualización optimista y rollback (`useEventAttendance`, no reutiliza `useOptimisticToggle` porque hay tres resultados: dentro / lista de espera / fuera), mapa Leaflet con carga perezosa en el detalle.
+- Pasa a T16b: la **vista de mapa de la lista** (requiere consultar por bounding box y cargar Leaflet en la lista), el formulario crear/editar, el selector de punto y la sección "Próximas quedadas" en la comunidad.
+- La posición en la lista de espera sale de `GET /api/events/{id}/attendees?status=WAITLIST` (el DTO del evento no la incluye).

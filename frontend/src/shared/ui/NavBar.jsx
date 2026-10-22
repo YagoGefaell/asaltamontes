@@ -1,6 +1,6 @@
 import React from "react";
 import { NavLink } from "react-router-dom";
-import { FaHome, FaSearch, FaEnvelope, FaBell, FaUsers, FaUser } from "react-icons/fa";
+import { FaHome, FaSearch, FaEnvelope, FaBell, FaUsers, FaUser, FaCalendarAlt } from "react-icons/fa";
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
 import "./NavBar.css";
 
@@ -17,6 +17,9 @@ const Navbar = () => {
       </NavLink>
       <NavLink to="/communities" className={({ isActive }) => (isActive ? "active" : "")}>
         <FaUsers />
+      </NavLink>
+      <NavLink to="/events" aria-label="Quedadas" className={({ isActive }) => (isActive ? "active" : "")}>
+        <FaCalendarAlt />
       </NavLink>
       <NavLink to="/notifications" className={({ isActive }) => (isActive ? "active" : "")}>
         <FaBell />
