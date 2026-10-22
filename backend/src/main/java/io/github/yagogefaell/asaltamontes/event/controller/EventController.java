@@ -13,9 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.yagogefaell.asaltamontes.event.domain.AttendeeStatus;
 import io.github.yagogefaell.asaltamontes.event.dto.CancelEventDto;
+import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeeDto;
 import io.github.yagogefaell.asaltamontes.event.dto.CreateEventDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventDetailsDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
@@ -69,5 +72,28 @@ public class EventController {
             @PathVariable Long eventId,
             @Valid @RequestBody(required = false) CancelEventDto request) {
         return ResponseEntity.ok(eventService.cancel(eventId, request != null ? request.reason() : null, currentUser));
+    }
+
+    @PostMapping("/{eventId}/join")
+    public ResponseEntity<EventDetailsDto> joinEvent(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(eventService.join(eventId, currentUser));
+    }
+
+    @PostMapping("/{eventId}/leave")
+    public ResponseEntity<EventDetailsDto> leaveEvent(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable Long eventId) {
+        return ResponseEntity.ok(eventService.leave(eventId, currentUser));
+    }
+
+    @GetMapping("/{eventId}/attendees")
+    public ResponseEntity<Page<EventAttendeeDto>> getAttendees(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable Long eventId,
+            @RequestParam(required = false) AttendeeStatus status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(eventService.getAttendees(eventId, status, currentUser, pageable));
     }
 }
