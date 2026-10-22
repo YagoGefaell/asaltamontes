@@ -100,4 +100,25 @@ describe('ApiClient', () => {
     expect(logout).toHaveBeenCalledTimes(1)
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
+
+  it('keeps the session when the refresh cannot reach the server (BUG-055)', async () => {
+    const logout = vi.fn()
+    client.setLogoutCallback(logout)
+    const networkError = Object.assign(new Error('Failed to fetch'), { transient: true })
+    refreshTokenRequest.mockRejectedValueOnce(networkError)
+    fetchMock.mockResolvedValueOnce(jsonResponse(401, { detail: 'Token expirado' }))
+
+    await expect(client.get('/api/users/me')).rejects.toMatchObject({ message: 'Failed to fetch', transient: true })
+    expect(logout).not.toHaveBeenCalled()
+    expect(refreshTokenRequest).toHaveBeenCalledWith({ rethrowTransient: true })
+  })
+
+  it('refreshSession throws on a transient failure instead of logging out', async () => {
+    const logout = vi.fn()
+    client.setLogoutCallback(logout)
+    refreshTokenRequest.mockRejectedValueOnce(Object.assign(new Error('502'), { transient: true, status: 502 }))
+
+    await expect(client.refreshSession()).rejects.toMatchObject({ status: 502 })
+    expect(logout).not.toHaveBeenCalled()
+  })
 })

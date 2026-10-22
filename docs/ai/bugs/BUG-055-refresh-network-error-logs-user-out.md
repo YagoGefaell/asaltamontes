@@ -1,6 +1,6 @@
 # BUG-055 — Un fallo de red o un 5xx al renovar el token cierra la sesión de la usuaria
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código); el impacto real depende de la duración del access token
 - **Área:** frontend/auth (afecta al chat y a todo el api-client)

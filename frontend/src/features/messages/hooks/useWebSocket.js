@@ -58,8 +58,17 @@ export function useWebSocket(isAuthenticated) {
         }
         if (forceRefresh || isTokenExpiringSoon(token)) {
           forceRefresh = false;
-          // Logs out by itself if the session can no longer be renewed
-          token = (await apiClient.refreshSession()) ? getAccessToken() : null;
+          try {
+            // Logs out by itself if the server rejected the session
+            token = (await apiClient.refreshSession()) ? getAccessToken() : null;
+          } catch {
+            // Server unreachable (deploy, flaky network): keep the session and retry with backoff
+            forceRefresh = true;
+            connecting = false;
+            await stompClient.deactivate();
+            if (!stopped) scheduleReconnect();
+            return;
+          }
         }
 
         if (!token || stopped) {

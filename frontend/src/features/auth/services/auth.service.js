@@ -119,7 +119,10 @@ export async function verifySessionRequest() {
 }
 
 // ---------------- REFRESH TOKEN ----------------
-export async function refreshTokenRequest() {
+// Returns false when the server rejected the refresh (401/403: the session is over). With
+// rethrowTransient, network/timeout/5xx errors are thrown (marked `transient`) instead of reported as
+// a rejected session, so the caller does not log the user out because of a deploy or a flaky network.
+export async function refreshTokenRequest({ rethrowTransient = false } = {}) {
   try {
     const response = await authApiClient.post('/auth/refresh')
     const accessToken = extractAccessToken(response)
@@ -127,7 +130,11 @@ export async function refreshTokenRequest() {
       setAccessToken(accessToken)
     }
     return true
-  } catch {
+  } catch (error) {
+    if (rethrowTransient && error.status !== 401 && error.status !== 403) {
+      error.transient = true
+      throw error
+    }
     return false
   }
 }

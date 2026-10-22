@@ -101,6 +101,25 @@ describe('useWebSocket reconnection (T11)', () => {
     expect(clients[0].connectHeaders.Authorization).toBe(`Bearer ${renewed}`)
   })
 
+  it('keeps the session and retries when the token cannot be renewed because the server is unreachable (BUG-055)', async () => {
+    setAccessToken(jwt(20))
+    refreshSession.mockRejectedValueOnce(Object.assign(new Error('502'), { transient: true }))
+
+    const { result } = renderHook(() => useWebSocket(true))
+    await flush()
+
+    expect(expireSession).not.toHaveBeenCalled()
+    expect(result.current.websocketStatus).toBe('reconnecting')
+
+    const renewed = jwt(900)
+    refreshSession.mockImplementation(async () => { setAccessToken(renewed); return true })
+    await act(async () => { vi.advanceTimersByTime(1000) })
+    await flush()
+
+    expect(refreshSession).toHaveBeenCalledTimes(2)
+    expect(clients[0].connectHeaders.Authorization).toBe(`Bearer ${renewed}`)
+  })
+
   it('reconnects with exponential backoff after the socket closes', async () => {
     const { result } = renderHook(() => useWebSocket(true))
     await flush()
