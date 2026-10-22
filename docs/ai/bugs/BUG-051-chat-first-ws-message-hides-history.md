@@ -1,6 +1,6 @@
 # BUG-051 — Un mensaje recibido por WebSocket en un chat nunca abierto impide cargar su historial
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** alta
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/chat
