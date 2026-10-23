@@ -1,5 +1,7 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
+import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
+import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -34,6 +36,7 @@ public class UserService implements UserDetailsService {
     private final UserAssembler assembler;
     private final PasswordEncoder passwordEncoder;
     private final UsernameGenerator usernameGenerator;
+    private final MediaReferenceService mediaReferences;
 
     @Transactional
     public UserAccount registerUserWithProfile(
@@ -93,6 +96,7 @@ public class UserService implements UserDetailsService {
     public UserSelfDto editProfile(long id, UserUpdateDto dto) {
 
         validator.validateProfileChange(id, dto);
+        mediaReferences.checkLinkable(dto.profilePictureUrl(), MediaPurpose.AVATAR, id);
 
         UserAccount user = userAccountRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));

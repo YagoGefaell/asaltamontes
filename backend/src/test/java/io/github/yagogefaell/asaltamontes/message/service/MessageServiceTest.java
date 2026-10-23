@@ -39,13 +39,15 @@ class MessageServiceTest {
     private UserService userService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService mediaReferences;
 
     private MessageService messageService;
 
     @BeforeEach
     void setUp() {
         messageService = new MessageService(messageRepository, conversationRepository, participantRepository,
-                userService, eventPublisher, 100);
+                userService, eventPublisher, mediaReferences, 100);
     }
 
     @Test
