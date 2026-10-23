@@ -151,6 +151,23 @@
             <artifactId>google-api-client</artifactId>
             <version>2.7.0</version>
         </dependency>
+
+        <!-- Image processing (T17a): resizing + EXIF orientation, and ImageIO readers for WebP and CMYK JPEG -->
+        <dependency>
+            <groupId>net.coobird</groupId>
+            <artifactId>thumbnailator</artifactId>
+            <version>0.4.21</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-jpeg</artifactId>
+            <version>3.15.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.twelvemonkeys.imageio</groupId>
+            <artifactId>imageio-webp</artifactId>
+            <version>3.15.3</version>
+        </dependency>
     </dependencies>
 
     <build>

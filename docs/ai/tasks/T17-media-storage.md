@@ -1,6 +1,6 @@
 # T17 — Almacenamiento de imágenes
 
-- **Estado:** pendiente
+- **Estado:** pendiente (T17a hecho en la PR de `feat/T17a-media-backend`; faltan T17b y T17c)
 - **Fase:** Transversal
 - **Depende de:** T07 (hecho: nginx same-origin, `client_max_body_size 10m`), T05 (hecho)
 - **Rama sugerida:** `feat/T17a-media-backend`, `feat/T17b-media-frontend`, `refactor/T17c-media-references`
@@ -40,6 +40,14 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 - Compose: volumen `media_data` montado en el backend (rw) y en el frontend/nginx (ro); nginx `location /media/ { alias …; expires 1y; add_header Cache-Control "public, immutable"; }`. El backup de T07b **no** cubre `media_data`: anotarlo en la PR (o añadir un `tar` diario al servicio `backup`).
 - Variables nuevas: `MEDIA_DIR`, documentadas.
 - Tests: subida de un JPEG con EXIF GPS → las variantes no contienen EXIF (comprobado con `metadata-extractor` o leyendo los marcadores APP1); un PNG renombrado a `.jpg` se procesa por su contenido; un PDF con `Content-Type: image/jpeg` → 400; > 10 MB → 413/400; foto vertical con orientación EXIF 6 → variante en vertical; dimensiones de cada variante.
+
+**Notas de implementación de T17a** (decisiones menores al implementar; la migración es `V7__media.sql`):
+- Límite adicional de **40 Mpx** decodificados (`asaltamontes.media.max-pixels`) además de 64-8000 px por lado: 8000x8000 son ~190 MB de heap y la Pi tiene `-Xmx512m`.
+- Semáforo de 1 permiso (`max-concurrent-processing`) con espera de 20 s; si no hay hueco, 429 con `Retry-After`.
+- Respuestas: archivo > 10 MB → 413; no es imagen / corrupta / muy pequeña / muy grande en píxeles → 400 con mensaje en español; > 30 subidas/hora → 429 con `Retry-After`.
+- Rutas: `/{avatar|community-cover|group-image|event-image}/{uuid}/{thumb|medium|large}.jpg`. El UUID es aleatorio (`SecureRandom`): la URL es la capacidad de verla, como en los CDN de las redes sociales. Cualquier usuaria autenticada puede subir; el control de "esta media es tuya y del `purpose` correcto" llega con T17c, cuando haya referencias.
+- Las medias huérfanas (subidas y nunca referenciadas) se limpian en T17c.
+- El backup de T07b **no** cubre `media_data` (documentado en el README, con un `tar` de ejemplo).
 
 ### T17b — Frontend: componente de subida
 - Convertir `shared/ui/AvatarUploader.jsx` en un `ImageUploader` genérico (manteniendo `AvatarUploader` como envoltorio para el avatar): `<input type="file" accept="image/*">` (en iOS abre cámara o galería y convierte HEIC a JPEG), vista previa local (`URL.createObjectURL`), validación previa de tamaño (≤ 10 MB) y tipo, barra de progreso (subida con `XMLHttpRequest`: `fetch` no da progreso), errores del backend y reintentar.
