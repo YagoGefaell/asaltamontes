@@ -23,5 +23,8 @@ public record EventSummaryDto(
     String communitySlug,
     String communityName,
     String organizerUsername,
-    String imageUrl
+    String imageUrl,
+    // Meeting point; null when the event has none (BUG-062)
+    Double latitude,
+    Double longitude
 ) {}
