@@ -100,6 +100,56 @@ class MediaLinkingIT extends AbstractIntegrationTest {
         createGroup(ana, avatar, bea).andExpect(status().isBadRequest());
     }
 
+    @Test
+    void pathTricksCannotSmuggleAnotherUsersMedia() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        String mine = uploadAndGetMediumUrl(bea, "COMMUNITY_COVER");
+        String anas = uploadAndGetMediumUrl(ana, "COMMUNITY_COVER");
+        String myId = mine.split("/")[3];
+        String otherPath = anas; // /media/community-cover/<ana>/medium.jpg
+
+        List<String> attacks = List.of(
+                "/media/community-cover/" + myId + "/../../.." + otherPath,
+                "/media/../media/community-cover/" + anas.split("/")[3] + "/medium.jpg",
+                "/./media/community-cover/" + anas.split("/")[3] + "/medium.jpg",
+                "/%6dedia/community-cover/" + anas.split("/")[3] + "/medium.jpg",
+                "/media/community-cover/%2e%2e/" + anas.split("/")[3] + "/medium.jpg",
+                "\\media\\community-cover\\" + anas.split("/")[3] + "\\medium.jpg",
+                "//evil.example" + otherPath,
+                "/media/community-cover/" + anas.split("/")[3] + "/medium.jpg\n",
+                "/media/community-cover/" + anas.split("/")[3] + "/me\tdium.jpg",
+                "/media/community-cover/" + anas.split("/")[3] + "/medium.jpg\r\nX: y",
+                "/media/community-cover/" + anas.split("/")[3] + "/medium.jpg?x=1",
+                "/media/community-cover/" + anas.split("/")[3].toUpperCase() + "/medium.jpg",
+                "https://evil.example/x/../media/community-cover/" + anas.split("/")[3] + "/medium.jpg",
+                "https://evil.example/media/community-cover/" + myId + "/..%2f" + anas.split("/")[3] + "/medium.jpg",
+                "foto.jpg");
+        int n = 0;
+        for (String attack : attacks) {
+            createCommunity(bea, "Trail Bea " + n++, attack).andExpect(status().is4xxClientError());
+        }
+        // None of them created a community
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/api/communities")
+                        .param("query", "Trail Bea").with(auth.bearer(bea)))
+                .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void pathTricksAreRejectedInProfileAndGroupToo() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        String anasId = uploadAndGetMediumUrl(ana, "AVATAR").split("/")[3];
+
+        patchProfile(bea, "https://evil.example/x/../media/avatar/" + anasId + "/medium.jpg")
+                .andExpect(status().is4xxClientError());
+        patchProfile(bea, "/media/avatar/" + anasId + "/../../avatar/" + anasId + "/medium.jpg")
+                .andExpect(status().is4xxClientError());
+        createGroup(bea, "/media/../media/group-image/" + anasId + "/medium.jpg", ana)
+                .andExpect(status().is4xxClientError());
+        createGroup(bea, "uploads/foto.jpg", ana).andExpect(status().isBadRequest());
+    }
+
     // ----- helpers -----
 
     private String uploadAndGetMediumUrl(UserAccount user, String purpose) throws Exception {
