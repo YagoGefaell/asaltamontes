@@ -43,3 +43,10 @@ Yago da libertad para mejorar la interfaz (D-015). Antes de construir muchas pan
 - Estaban sin definir (y por tanto transparentes o con fallback): `--card-bg`, `--hover-bg`, `--pressed-bg`, `--text-secondary`, `--primary-dark`, `--error-color`. Ahora usan tokens existentes (`--surface`, `--hover-color`, `--background-alt`, `--text-muted`, `--pressed-color`, `--error-text`). Efecto visible: tarjetas y barra inferior con fondo de superficie también en oscuro.
 - Uso: `Avatar` en `UserCard`; `EmptyState` en Comunidades y Chat; `Skeleton` en la lista de conversaciones; `Modal` + `Toast` en el borrado de comunidad; `Toast` en cerrar sesión en todos los dispositivos. `Button` ya estaba en uso.
 - Pendiente para T29b+: sustituir los ~39 `<button>` a mano por `Button`, y el tamaño táctil de 44 px de iconos sueltos (solo `.btn` lo cumple ahora).
+
+## T29b-comunidades (lista de Comunidades)
+
+- Skeletons de tarjetas al cargar; error con botón "Reintentar"; estado vacío con acción (crear comunidad / limpiar búsqueda); "Cargar más" con `Button` y estado `loading`.
+- Tarjeta: `Avatar` compartido y enlace real (`Link`) en lugar de `div role="button"` con un botón anidado (HTML inválido y mala accesibilidad); el botón de unirse queda fuera del enlace.
+- Botón de crear a 44 px mediante `Button`; aviso `Toast` al crear la comunidad.
+- Fuera de alcance (siguientes PRs de T29b): detalle de comunidad (`CommunityProfileDetail`), ajustes y panel de creación. Estado de T29: sigue pendiente (Perfil, Ajustes, Acceso).

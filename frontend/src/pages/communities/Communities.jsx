@@ -1,26 +1,27 @@
 import "./Communities.css";
 import { useState, useCallback, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
 import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
-import { formatters } from "../../utils/helpers.js";
-import Loading from "../../shared/components/Loading";
 import Button from "../../shared/forms/Button";
 import EmptyState from "../../shared/ui/EmptyState";
+import Avatar from "../../shared/ui/Avatar";
+import Skeleton from "../../shared/ui/Skeleton";
+import { useToast } from "../../shared/ui/Toast";
 import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 import { communityPath } from "../../features/communities/utils/communityPath.js";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const SKELETON_CARDS = 6;
 
 const Communities = () => {
-  const navigate = useNavigate();
+  const toast = useToast();
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
   const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities(query);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
-  const [imageErrors, setImageErrors] = useState({});
 
   // Search when the user stops typing
   useEffect(() => {
@@ -61,12 +62,13 @@ const Communities = () => {
       try {
         await createCommunityRequest(communityData);
         setIsCreatorOpen(false);
+        toast.success("Comunidad creada");
         await refetch();
       } finally {
         setCreatingCommunity(false);
       }
     },
-    [creatingCommunity, refetch]
+    [creatingCommunity, refetch, toast]
   );
 
   if (isCreatorOpen) {
@@ -85,30 +87,18 @@ const Communities = () => {
       <div className="communities-header">
         <h2>Comunidades</h2>
         <div className="communities-header-actions">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
             className="create-community-btn"
             aria-label="Crear comunidad"
             title="Crear comunidad"
             onClick={openCreator}
             disabled={creatingCommunity}
           >
-            <svg
-              className="create-community-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg className="create-community-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -123,82 +113,65 @@ const Communities = () => {
         />
       </div>
 
-      <div className="communities-grid">
-        {loading && (
-          <div className="communities-loading">
-            <Loading />
+      <div className="communities-grid" aria-busy={loading || undefined}>
+        {loading &&
+          Array.from({ length: SKELETON_CARDS }, (_, i) => (
+            <div key={i} className="community-card community-card--skeleton" data-testid="community-skeleton">
+              <Skeleton width="80px" height="80px" circle />
+              <Skeleton width="70%" height="1rem" />
+              <Skeleton width="40%" height="0.75rem" />
+            </div>
+          ))}
+
+        {!loading && error && (
+          <div className="communities-error" role="alert">
+            <p>{error}</p>
+            <Button variant="secondary" onClick={refetch}>Reintentar</Button>
           </div>
         )}
 
-        {error && <p className="communities-error">{error}</p>}
+        {!loading && !error && communities.length > 0 &&
+          communities.map((community) => (
+            <div key={community.id} className="community-card">
+              <Link to={communityPath(community)} className="community-card-link">
+                <Avatar src={community.imageUrl} name={community.name} size="xl" />
+                <h3>{community.name}</h3>
+                <span className="community-members">
+                  {community.memberCount} {community.memberCount === 1 ? "miembro" : "miembros"}
+                </span>
+              </Link>
+              <div className="community-card-actions">
+                <CommunityJoinButton
+                  communityId={community.id}
+                  role={community.role}
+                  joinLabel="Unirse"
+                  memberLabel="Miembro"
+                  onToggle={handleToggleCommunityForButton(community.id)}
+                />
+              </div>
+            </div>
+          ))}
 
-        {!loading && !error && (
-          <>
-            {communities.length > 0 ? (
-              communities.map((community) => {
-                return (
-                  <div 
-                    key={community.id} 
-                    className="community-card"
-                    onClick={() => navigate(communityPath(community))}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        navigate(communityPath(community));
-                      }
-                    }}
-                  >
-                    <div className="community-card-avatar">
-                      {!imageErrors[community.id] ? (
-                        <img 
-                          src={formatters.avatar(community.imageUrl, community.name, community.name)}
-                          alt={community.name}
-                          className="community-avatar-image"
-                          onError={() => setImageErrors(prev => ({ ...prev, [community.id]: true }))}
-                        />
-                      ) : (
-                        <div className="community-avatar-fallback" aria-hidden="true">
-                          {formatters.getInitial(community.name, community.name)}
-                        </div>
-                      )}
-                    </div>
-                    <h3>{community.name}</h3>
-                    <span className="community-members">
-                      {community.memberCount} {community.memberCount === 1 ? 'miembro' : 'miembros'}
-                    </span>
-                    
-                    <div className="community-card-actions" onClick={(e) => e.stopPropagation()}>
-                      <CommunityJoinButton
-                        communityId={community.id}
-                        role={community.role}
-                        joinLabel="Unirse"
-                        memberLabel="Miembro"
-                        onToggle={handleToggleCommunityForButton(community.id)}
-                      />
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <EmptyState
-                className="communities-empty"
-                title={query ? `No hay comunidades que coincidan con "${query}"` : "No hay comunidades disponibles"}
-              />
-            )}
-          </>
+        {!loading && !error && communities.length === 0 && (
+          <EmptyState
+            className="communities-empty"
+            title={query ? `No hay comunidades que coincidan con "${query}"` : "Todavía no hay comunidades"}
+            description={query ? "Prueba con otro nombre." : "Crea la primera y reúne a tu grupo."}
+            action={
+              query ? (
+                <Button variant="secondary" onClick={() => setSearchText("")}>Limpiar búsqueda</Button>
+              ) : (
+                <Button onClick={openCreator}>Crear comunidad</Button>
+              )
+            }
+          />
         )}
       </div>
 
       {!loading && !error && hasMore && (
-        <button
-          type="button"
-          className="communities-load-more"
-          onClick={loadMore}
-          disabled={loadingMore}
-        >
-          {loadingMore ? "Cargando…" : "Cargar más comunidades"}
-        </button>
+        <Button variant="secondary" className="communities-load-more" onClick={loadMore} loading={loadingMore}>
+          Cargar más comunidades
+        </Button>
       )}
     </div>
   );
