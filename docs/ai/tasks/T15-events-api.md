@@ -77,3 +77,8 @@ La funcionalidad diferencial de la app: organizar quedadas para correr en monta�
 
 ## Tests requeridos
 - IT de cada endpoint y permiso; IT de concurrencia (join masivo, join/leave intercalados); unit tests de validación.
+
+## Zona horaria y PATCH (decisión 2026-10-23: D-019 y D-020)
+- `timezone`: el backend valida con `ZoneId.of` y **solo acepta identificadores IANA** (rechaza desfases fijos como `+02:00` y abreviaturas); la hora pertenece al lugar del evento.
+- `PATCH /api/events/{id}`: `null` explícito vacía un campo opcional, ausente = sin cambios (D-020); contrato documentado en `docs/api-contract-v1.json`.
+- Frontend (T16): zona por defecto = la del navegador; selector IANA con buscador en "Avanzado"; mostrar hora del evento y, si la zona de quien lo ve difiere, también la suya.

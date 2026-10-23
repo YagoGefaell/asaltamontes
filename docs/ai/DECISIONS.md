@@ -82,3 +82,18 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 
 ## D-018 · Mensajes privados abiertos por defecto (2026-10-21)
 - **Decisión (Yago):** `dm_policy` por defecto = `EVERYONE` (T13). Cada usuaria puede restringirlo en Ajustes; la seguridad se apoya en bloquear (T13) y denunciar (T23).
+
+## D-019 · La plataforma será internacional (2026-10-23)
+- **Decisión (Yago):** habrá eventos y usuarias en todo el mundo. Regla de zonas horarias: **la hora pertenece al lugar del evento**.
+- **Consecuencias:**
+  1. Al crear un evento, la zona por defecto es la del navegador de la organizadora (no `Europe/Madrid` fijo).
+  2. Selector de zona IANA con buscador, en un apartado "Avanzado" del formulario.
+  3. El backend valida con `ZoneId` y **nunca acepta desfases fijos** (`+02:00`); solo identificadores IANA.
+  4. Al mostrar: hora local del evento y, si la zona de quien lo ve es distinta, también la suya.
+  5. Deducir la zona a partir del punto del mapa queda para **después de la demo** (memoria de la Pi).
+  6. En general: **nada de supuestos solo-España** en zonas horarias, formatos de fecha/número ni unidades (km/m ↔ mi/ft…). Textos y formatos pasan por `Intl` con la configuración regional de la usuaria; las unidades se guardan en SI y se formatean al mostrar. La traducción de la interfaz a otros idiomas es un tema aparte (no decidido).
+- **Implementación:** PR `fix(events): time zone selector and clearing optional fields` (ver T15/T16).
+
+## D-020 · PATCH: `null` explícito vacía, campo ausente no cambia (2026-10-23)
+- **Decisión (Yago):** en los `PATCH` de la API, un campo con `null` explícito **vacía** el valor (si es opcional) y un campo ausente significa **sin cambios**. Se documenta en `docs/api-contract-v1.json`.
+- **Consecuencias:** los DTO de actualización deben distinguir "ausente" de `null` (p. ej. `JsonNullable` o un mapa de campos presentes). Empieza por eventos; el resto de PATCH se alinea cuando se toquen.

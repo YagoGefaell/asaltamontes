@@ -75,3 +75,17 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 ## Notas y riesgos
 - La RAM de la Pi: decodificar una foto de 48 Mpx ocupa ~200 MB de heap. El límite de dimensiones y procesar **una imagen a la vez** (semáforo de 1-2 permisos) evitan quedarse sin memoria con `-Xmx512m` (T07a).
 - Sin cgroup de memoria (T07a) no hay red de seguridad: el semáforo es imprescindible.
+
+## Requisitos escritos antes de producción (respuestas de Yago, 2026-10-23)
+Hallazgos del `security-reviewer` sobre #64 y decisiones posteriores. No bloquean la demo en la LAN (D-013), sí la producción abierta.
+
+### T17b (frontend de medios + enlazar imágenes)
+- Al enlazar una imagen a un recurso (perfil, comunidad, grupo, evento) el backend valida **que `media.owner_id` es la usuaria que enlaza, que el `purpose` coincide con el recurso y que la usuaria puede modificar ese recurso** (OWNER/MODERATOR de la comunidad, organizadora del evento, administradora del grupo). Test de IDOR: usar la imagen de otra usuaria → 403/404.
+
+### T17c (referencias, limpieza y backups)
+- **Limpieza de huérfanos**: tarea programada que borra de disco y BD las imágenes sin referencia pasado un plazo (p. ej. 24 h) y **cuota de almacenamiento por usuaria**.
+- **Backup de `media_data`**: `tar` diario en el servicio `backup`, **conservando solo las 3 últimas copias** y **comprobando antes que hay espacio en disco** (si no lo hay, no copia y avisa en el log/health). Restauración documentada en el README.
+- (Opcional) conservar el perfil ICC en el recodificado; hoy se pierde y las fotos Display P3 se ven apagadas.
+
+### Antes de producción (ver también T23)
+- Hoy `/media/` se sirve **sin autenticación** y la protección es un UUID aleatorio. Para imágenes de contenido privado (comunidades privadas, grupos, eventos de comunidad) hace falta otra estrategia (URLs firmadas con caducidad o `auth_request` de nginx). Decidirlo antes de abrir la plataforma; `Cache-Control: immutable` impide además retirar una imagen ya descargada.
