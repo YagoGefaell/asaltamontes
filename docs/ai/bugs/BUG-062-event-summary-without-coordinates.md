@@ -1,6 +1,6 @@
 # BUG-062 — `EventSummaryDto` no incluye latitud/longitud: la vista de mapa de la lista no puede dibujar chinchetas
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/events (hueco de contrato)

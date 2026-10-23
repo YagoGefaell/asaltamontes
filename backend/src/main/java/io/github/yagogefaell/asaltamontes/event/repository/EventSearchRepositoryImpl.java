@@ -49,7 +49,8 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
                 e.get("id"), e.get("title"), e.get("type"), e.get("startsAt"), e.get("timezone"),
                 e.get("meetingPointName"), e.get("city"), e.get("distanceKm"), e.get("elevationGainM"),
                 e.get("level"), e.get("capacity"), e.get("attendeeCount"),
-                community.get("slug"), community.get("name"), organizer.get("username"), e.get("imageUrl")));
+                community.get("slug"), community.get("name"), organizer.get("username"), e.get("imageUrl"),
+                e.get("latitude"), e.get("longitude")));
         query.where(predicates(cb, query, e, community, userId, from, filter).toArray(Predicate[]::new));
         query.orderBy(cb.asc(e.get("startsAt")), cb.asc(e.get("id")));
         TypedQuery<EventSummaryDto> typed = entityManager.createQuery(query)

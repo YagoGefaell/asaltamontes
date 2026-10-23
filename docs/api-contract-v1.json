@@ -849,7 +849,7 @@
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
         "responses": {
-          "200": { "description": "Spring Page of EventSummary" },
+          "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none)" },
           "400": { "description": "Invalid filter (unknown enum value, to before from, maxDistance below minDistance, incomplete or inverted bounding box, organizer/attending other than 'me')" }
         }
       }
@@ -866,7 +866,7 @@
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
         "responses": {
-          "200": { "description": "Spring Page of EventSummary" },
+          "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none)" },
           "400": { "description": "Invalid filter" },
           "404": { "description": "Community not found" }
         }

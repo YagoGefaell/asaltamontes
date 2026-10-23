@@ -78,7 +78,12 @@ class EventSearchIT extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/events").with(auth.bearer(ana)).param("city", tag)
                         .param("minLat", "42").param("maxLat", "43").param("minLng", "-9").param("maxLng", "-8"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[*].title").value(contains(t(tag, "dentro"))));
+                .andExpect(jsonPath("$.content[*].title").value(contains(t(tag, "dentro"))))
+                .andExpect(jsonPath("$.content[0].latitude").value(42.2))
+                .andExpect(jsonPath("$.content[0].longitude").value(-8.7));
+        // Events without a meeting point come back with null coordinates (BUG-062)
+        mockMvc.perform(get("/api/events").with(auth.bearer(ana)).param("city", tag))
+                .andExpect(jsonPath("$.content[?(@.title=='" + t(tag, "sin-coordenadas") + "')].latitude").value(contains((Object) null)));
         // The bounding box alone (no city): a box around Madrid finds the Madrid event
         mockMvc.perform(get("/api/events").with(auth.bearer(ana))
                         .param("size", "50").param("minLat", "40.3").param("maxLat", "40.5").param("minLng", "-3.8").param("maxLng", "-3.6"))
