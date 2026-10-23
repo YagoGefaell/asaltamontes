@@ -60,6 +60,12 @@
   font-weight: 600;
 }
 
+.event-detail__viewer-time {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
 .event-detail__when::first-letter {
   text-transform: uppercase;
 }

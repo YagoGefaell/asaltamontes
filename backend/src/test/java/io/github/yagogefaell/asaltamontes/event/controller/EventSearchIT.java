@@ -183,6 +183,7 @@ class EventSearchIT extends AbstractIntegrationTest {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("title", t(city, name));
         body.put("type", "MEETUP");
+        body.put("timezone", "Europe/Madrid");
         body.put("startsAt", BASE.plus(dayOffset, ChronoUnit.DAYS).toString());
         body.put("meetingPointName", "Punto de encuentro");
         body.put("city", city);

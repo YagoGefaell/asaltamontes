@@ -2,6 +2,9 @@ package io.github.yagogefaell.asaltamontes.event.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.github.yagogefaell.asaltamontes.event.domain.EventType;
 import io.github.yagogefaell.asaltamontes.user.domain.RunningLevel;
@@ -11,7 +14,11 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 
-/** Changes to an event (PATCH, T15a): null fields stay as they are. Visibility and community cannot change. */
+/**
+ * Changes to an event (PATCH, D-020): an absent field stays as it is; an explicit {@code null} clears it if it is
+ * optional (and is a 400 if it is required: title, type, startsAt, timezone). {@code present} holds the names of the
+ * fields sent, which a record alone cannot tell from null. Visibility and community cannot change.
+ */
 public record UpdateEventDto(
     @Size(min = 1, max = 120, message = "El título debe tener entre 1 y 120 caracteres")
     String title,
@@ -50,5 +57,17 @@ public record UpdateEventDto(
     RunningLevel level,
 
     @Min(value = 1, message = "Debe haber al menos una plaza") @Max(value = 500, message = "Como máximo 500 plazas")
-    Integer capacity
-) {}
+    Integer capacity,
+
+    @JsonIgnore
+    Set<String> present
+) {
+    public boolean has(String field) {
+        return present != null && present.contains(field);
+    }
+
+    public UpdateEventDto withPresent(Set<String> fields) {
+        return new UpdateEventDto(title, description, type, startsAt, endsAt, timezone, meetingPointName, latitude,
+                longitude, city, distanceKm, elevationGainM, level, capacity, Set.copyOf(fields));
+    }
+}

@@ -200,6 +200,120 @@ class EventControllerIT extends AbstractIntegrationTest {
         assertThatThrownBy(() -> eventRepository.save(stale)).isInstanceOf(ObjectOptimisticLockingFailureException.class);
     }
 
+    @Test
+    void timezone_acceptsOnlyRegionalIanaIds_andIsRequired() throws Exception {
+        UserAccount ana = testData.createUser();
+
+        for (String ok : new String[] {"Europe/Madrid", "America/Argentina/Buenos_Aires", "Asia/Kolkata", "Pacific/Auckland", "UTC"}) {
+            create(ana, event("Zona " + ok, Map.of("timezone", ok)))
+                    .andExpect(status().isCreated())
+                    .andExpect(jsonPath("$.timezone").value(ok));
+        }
+        // Fixed offsets, ambiguous abbreviations, unofficial zones, blanks
+        for (String bad : new String[] {"+02:00", "UTC+2", "GMT+2", "Etc/GMT-2", "CET", "EST", "GMT", "Z", "Marte/Olimpo", " ", ""}) {
+            create(ana, event("Zona mala", Map.of("timezone", bad))).andExpect(status().isBadRequest());
+        }
+        Map<String, Object> noZone = event("Sin zona de verdad");
+        noZone.remove("timezone");
+        create(ana, noZone).andExpect(status().isBadRequest());
+        create(ana, event("Zona mala", Map.of("timezone", "CET")))
+                .andExpect(jsonPath("$.detail").value("Zona horaria no válida: usa un identificador como Europe/Madrid"));
+
+        long id = idOf(create(ana, event("Editar zona")));
+        update(ana, id, Map.of("timezone", "Asia/Tokyo")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.timezone").value("Asia/Tokyo"));
+        update(ana, id, Map.of("timezone", "+02:00")).andExpect(status().isBadRequest());
+        update(ana, id, Map.of("timezone", "EST")).andExpect(status().isBadRequest());
+        update(ana, id, nullField("timezone")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/events/" + id).with(auth.bearer(ana)))
+                .andExpect(jsonPath("$.timezone").value("Asia/Tokyo"));
+    }
+
+    @Test
+    void patch_nullClearsEachOptionalField_andAbsentLeavesThemAlone() throws Exception {
+        UserAccount ana = testData.createUser();
+        Map<String, Object> full = new LinkedHashMap<>(event("Completo"));
+        full.putAll(Map.of("description", "Larga", "endsAt", NEXT_WEEK.plus(3, ChronoUnit.HOURS).toString(),
+                "latitude", 42.2, "longitude", -8.7, "city", "Vigo", "distanceKm", 12.5, "elevationGainM", 800,
+                "level", "INTERMEDIATE", "capacity", 10));
+        long id = idOf(create(ana, full).andExpect(status().isCreated()));
+
+        // Absent = no change (also an empty body)
+        update(ana, id, Map.of("title", "Completo 2")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.description").value("Larga"))
+                .andExpect(jsonPath("$.endsAt").exists())
+                .andExpect(jsonPath("$.latitude").value(42.2))
+                .andExpect(jsonPath("$.longitude").value(-8.7))
+                .andExpect(jsonPath("$.meetingPointName").value("Parking del Galiñeiro"))
+                .andExpect(jsonPath("$.city").value("Vigo"))
+                .andExpect(jsonPath("$.distanceKm").value(12.5))
+                .andExpect(jsonPath("$.elevationGainM").value(800))
+                .andExpect(jsonPath("$.level").value("INTERMEDIATE"))
+                .andExpect(jsonPath("$.capacity").value(10));
+        update(ana, id, Map.of()).andExpect(status().isOk()).andExpect(jsonPath("$.title").value("Completo 2"));
+
+        for (String field : new String[] {"description", "endsAt", "meetingPointName", "city", "distanceKm",
+                "elevationGainM", "level", "capacity"}) {
+            update(ana, id, nullField(field)).andExpect(status().isOk())
+                    .andExpect(jsonPath("$." + field).doesNotExist())
+                    .andExpect(jsonPath("$.title").value("Completo 2"));
+        }
+        // Coordinates go together
+        update(ana, id, nullField("latitude")).andExpect(status().isBadRequest());
+        Map<String, Object> both = nullField("latitude");
+        both.put("longitude", null);
+        update(ana, id, both).andExpect(status().isOk())
+                .andExpect(jsonPath("$.latitude").doesNotExist())
+                .andExpect(jsonPath("$.longitude").doesNotExist());
+        assertThat(eventRepository.findById(id).orElseThrow().getCapacity()).isNull();
+    }
+
+    @Test
+    void patch_nullInARequiredFieldIsRejected_andNothingChanges() throws Exception {
+        UserAccount ana = testData.createUser();
+        long id = idOf(create(ana, event("Obligatorios")));
+
+        for (String field : new String[] {"title", "type", "startsAt", "timezone"}) {
+            Map<String, Object> body = nullField(field);
+            body.put("city", "Cambiada");
+            update(ana, id, body).andExpect(status().isBadRequest());
+        }
+        update(ana, id, Map.of("type", "NOPE")).andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/events/" + id).with(auth.bearer(ana))
+                .contentType(MediaType.APPLICATION_JSON).content("[]")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/events/" + id).with(auth.bearer(ana)))
+                .andExpect(jsonPath("$.title").value("Obligatorios"))
+                .andExpect(jsonPath("$.city").doesNotExist());
+    }
+
+    @Test
+    void patch_clearingTheCapacityMovesTheWaitlistUp_andKeepsOptimisticLocking() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UserAccount carla = testData.createUser();
+        long id = idOf(create(ana, event("Limitado", Map.of("capacity", 2))));
+        mockMvc.perform(post("/api/events/" + id + "/join").with(auth.bearer(bea))).andExpect(status().isOk());
+        mockMvc.perform(post("/api/events/" + id + "/join").with(auth.bearer(carla)))
+                .andExpect(jsonPath("$.myStatus").value("WAITLIST"));
+
+        update(ana, id, nullField("capacity")).andExpect(status().isOk()).andExpect(jsonPath("$.attendeeCount").value(3));
+        mockMvc.perform(get("/api/events/" + id).with(auth.bearer(carla)))
+                .andExpect(jsonPath("$.myStatus").value("GOING"));
+
+        // A stale writer still loses after a PATCH (version bumped)
+        Event stale = eventRepository.findById(id).orElseThrow();
+        update(ana, id, Map.of("city", "Lugo")).andExpect(status().isOk());
+        stale.setTitle("Pisando");
+        assertThatThrownBy(() -> eventRepository.saveAndFlush(stale))
+                .isInstanceOf(ObjectOptimisticLockingFailureException.class);
+    }
+
+    private static Map<String, Object> nullField(String field) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put(field, null);
+        return body;
+    }
+
     private Map<String, Object> event(String title) {
         return event(title, Map.of());
     }
@@ -208,6 +322,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("title", title);
         body.put("type", "MEETUP");
+        body.put("timezone", "Europe/Madrid");
         body.put("startsAt", NEXT_WEEK.toString());
         body.put("meetingPointName", "Parking del Galiñeiro");
         body.putAll(overrides);

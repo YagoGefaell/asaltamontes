@@ -111,6 +111,40 @@ describe('payloads', () => {
     expect(toUpdatePayload(original, original, ZONE)).toEqual({})
     expect(toUpdatePayload({ ...original, capacity: '12', title: 'Rodaje largo' }, original, ZONE))
       .toEqual({ capacity: 12, title: 'Rodaje largo' })
-    expect(toUpdatePayload({ ...original, description: '' }, original, ZONE)).toEqual({ description: '' })
+  })
+
+  it('create sends the zone chosen in the form, not an assumed one', () => {
+    expect(toCreatePayload({ ...valid, timezone: 'America/Bogota' }).timezone).toBe('America/Bogota')
+    expect(toCreatePayload({ ...valid, timezone: 'America/Bogota' }).startsAt).toBe('2026-11-02T14:30:00.000Z')
+    expect(EMPTY_FORM.timezone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  })
+
+  it('edit sends null for every optional field she emptied (D-020)', () => {
+    const event = {
+      title: 'Rodaje', type: 'MEETUP', startsAt: '2026-11-02T08:30:00Z', endsAt: '2026-11-02T10:30:00Z', timezone: ZONE,
+      description: 'Suave', meetingPointName: 'Parking', latitude: 40.1, longitude: -3.7, city: 'Madrid',
+      distanceKm: 12.5, elevationGainM: 300, level: 'BEGINNER', capacity: 10, visibility: 'PUBLIC',
+    }
+    const original = formFromEvent(event)
+    const emptied = {
+      ...original, description: '  ', endsAt: '', meetingPointName: '', latitude: null, longitude: null, city: '',
+      distanceKm: '', elevationGainM: '', level: '', capacity: '',
+    }
+    expect(toUpdatePayload(emptied, original)).toEqual({
+      description: null, endsAt: null, meetingPointName: null, latitude: null, longitude: null, city: null,
+      distanceKm: null, elevationGainM: null, level: null, capacity: null,
+    })
+    // Untouched fields are absent, never null
+    expect(toUpdatePayload({ ...original, city: 'Vigo' }, original)).toEqual({ city: 'Vigo' })
+  })
+
+  it('edit: changing only the zone sends it with the instants re-read in the new zone', () => {
+    const original = formFromEvent({ title: 'R', type: 'MEETUP', startsAt: '2026-11-02T08:30:00Z', timezone: ZONE })
+    expect(toUpdatePayload({ ...original, timezone: 'America/Bogota' }, original)).toEqual({
+      timezone: 'America/Bogota', startsAt: '2026-11-02T14:30:00.000Z',
+    })
+    // A zone change counts as a change of start: it must be in the future
+    expect(validateEventForm({ ...original, timezone: 'America/Bogota' }, { now: new Date('2027-01-01T00:00:00Z'), original }).startsAt)
+      .toBeDefined()
   })
 })

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.net.URI;
 import java.time.Instant;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -26,8 +27,8 @@ import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeeDto;
 import io.github.yagogefaell.asaltamontes.event.dto.CreateEventDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventDetailsDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
-import io.github.yagogefaell.asaltamontes.event.dto.UpdateEventDto;
 import io.github.yagogefaell.asaltamontes.event.service.EventService;
+import io.github.yagogefaell.asaltamontes.event.service.UpdateEventReader;
 import io.github.yagogefaell.asaltamontes.user.domain.RunningLevel;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.validation.Valid;
@@ -39,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class EventController {
 
     private final EventService eventService;
+    private final UpdateEventReader updateEventReader;
 
     @PostMapping
     public ResponseEntity<EventDetailsDto> createEvent(
@@ -83,8 +85,9 @@ public class EventController {
     public ResponseEntity<EventDetailsDto> updateEvent(
             @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable Long eventId,
-            @Valid @RequestBody UpdateEventDto changes) {
-        return ResponseEntity.ok(eventService.update(eventId, changes, currentUser));
+            @RequestBody JsonNode body) {
+        // The raw JSON tells an absent field (no change) from an explicit null (clears it), D-020
+        return ResponseEntity.ok(eventService.update(eventId, updateEventReader.read(body), currentUser));
     }
 
     @PostMapping("/{eventId}/cancel")

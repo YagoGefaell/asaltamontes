@@ -5,7 +5,7 @@ import EventForm from '../../features/events/components/EventForm.jsx'
 import { useEvent } from '../../features/events/hooks/useEvent.js'
 import { createEventRequest, updateEventRequest } from '../../features/events/services/events.service.js'
 import {
-  EMPTY_FORM, browserTimeZone, formFromEvent, toCreatePayload, toUpdatePayload,
+  EMPTY_FORM, formFromEvent, toCreatePayload, toUpdatePayload,
 } from '../../features/events/utils/eventForm.js'
 import { getOrganizableCommunitiesRequest } from '../../features/communities/services/communities.service.js'
 import EmptyState from '../../shared/ui/EmptyState.jsx'
@@ -28,7 +28,7 @@ function Header({ title }) {
 
 // Field errors of the API's 400 ({ field: message }) that the form knows how to show
 function fieldErrors(error) {
-  const known = ['title', 'description', 'type', 'startsAt', 'endsAt', 'meetingPointName', 'city', 'distanceKm', 'elevationGainM', 'capacity']
+  const known = ['title', 'description', 'type', 'startsAt', 'endsAt', 'meetingPointName', 'city', 'distanceKm', 'elevationGainM', 'capacity', 'timezone']
   return Object.fromEntries(Object.entries(error?.errors ?? {}).filter(([key]) => known.includes(key)))
 }
 
@@ -78,7 +78,7 @@ function CreateEvent() {
   }, [])
 
   const { submitting, serverErrors, submit } = useSave(
-    () => createEventRequest(toCreatePayload(values, browserTimeZone())),
+    () => createEventRequest(toCreatePayload(values)),
     (event) => {
       toast.success('Quedada creada')
       navigate(`/events/${event.id}`, { replace: true })
@@ -105,10 +105,9 @@ function EditForm({ event }) {
   const toast = useToast()
   const [original] = useState(() => formFromEvent(event))
   const [values, setValues] = useState(original)
-  const timeZone = event.timezone || browserTimeZone()
 
   const { submitting, serverErrors, submit } = useSave(
-    () => updateEventRequest(event.id, toUpdatePayload(values, original, timeZone)),
+    () => updateEventRequest(event.id, toUpdatePayload(values, original)),
     () => {
       toast.success('Cambios guardados')
       navigate(`/events/${event.id}`, { replace: true })
@@ -122,7 +121,6 @@ function EditForm({ event }) {
       onChange={setValues}
       onSubmit={submit}
       submitting={submitting}
-      timeZone={timeZone}
       original={original}
       communityName={event.communityName}
       serverErrors={serverErrors}

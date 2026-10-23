@@ -1,9 +1,7 @@
 package io.github.yagogefaell.asaltamontes.event.service;
 
-import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -50,7 +48,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EventService {
 
-    public static final String DEFAULT_TIMEZONE = "Europe/Madrid";
+    private static final List<String> REQUIRED_FIELDS = List.of("title", "type", "startsAt", "timezone");
     // Without an end time, an event counts as finished this long after it starts
     static final Duration DEFAULT_DURATION = Duration.ofHours(12);
     private static final int MAX_PAGE = 50;
@@ -91,7 +89,7 @@ public class EventService {
         event.setType(request.type());
         event.setStartsAt(request.startsAt());
         event.setEndsAt(request.endsAt());
-        event.setTimezone(validTimezone(request.timezone()));
+        event.setTimezone(EventTimezones.require(request.timezone()));
         event.setMeetingPointName(request.meetingPointName());
         event.setLatitude(request.latitude());
         event.setLongitude(request.longitude());
@@ -158,50 +156,72 @@ public class EventService {
         }
     }
 
+    /**
+     * PATCH semantics (D-020): a field absent from the body stays as it is, an explicit null clears it when it is
+     * optional and is a 400 when it is required (title, type, startsAt, timezone).
+     */
     @Transactional
     public EventDetailsDto update(Long eventId, UpdateEventDto changes, UserAccount user) {
+        for (String required : REQUIRED_FIELDS) {
+            if (changes.has(required) && valueOf(changes, required) == null) {
+                throw new BadRequestException("El campo " + required + " no puede quedar vacío");
+            }
+        }
         Event event = findEditable(eventId, user);
 
-        Instant startsAt = changes.startsAt() != null ? changes.startsAt() : event.getStartsAt();
-        Instant endsAt = changes.endsAt() != null ? changes.endsAt() : event.getEndsAt();
-        if (changes.startsAt() != null && !startsAt.isAfter(Instant.now())) {
+        Instant startsAt = changes.has("startsAt") ? changes.startsAt() : event.getStartsAt();
+        Instant endsAt = changes.has("endsAt") ? changes.endsAt() : event.getEndsAt();
+        if (changes.has("startsAt") && !startsAt.isAfter(Instant.now())) {
             throw new BadRequestException("El evento tiene que empezar en el futuro");
         }
         validateEnd(startsAt, endsAt);
-        Double latitude = changes.latitude() != null ? changes.latitude() : event.getLatitude();
-        Double longitude = changes.longitude() != null ? changes.longitude() : event.getLongitude();
+        Double latitude = changes.has("latitude") ? changes.latitude() : event.getLatitude();
+        Double longitude = changes.has("longitude") ? changes.longitude() : event.getLongitude();
         validateCoordinates(latitude, longitude);
-        if (changes.capacity() != null) {
+        String timezone = changes.has("timezone") ? EventTimezones.require(changes.timezone()) : event.getTimezone();
+        boolean capacityChanges = changes.has("capacity");
+        if (capacityChanges) {
             // Same order as join/leave, and with the current number of attendees
             lockAndRefresh(event);
         }
         Integer previousCapacity = event.getCapacity();
-        if (changes.capacity() != null && changes.capacity() < event.getAttendeeCount()) {
+        if (capacityChanges && changes.capacity() != null && changes.capacity() < event.getAttendeeCount()) {
             throw new ConflictException("Ya hay " + event.getAttendeeCount() + " personas apuntadas: no puedes dejar menos plazas");
         }
 
-        if (changes.title() != null) event.setTitle(changes.title().strip());
-        if (changes.description() != null) event.setDescription(changes.description());
-        if (changes.type() != null) event.setType(changes.type());
+        if (changes.has("title")) event.setTitle(changes.title().strip());
+        if (changes.has("description")) event.setDescription(changes.description());
+        if (changes.has("type")) event.setType(changes.type());
         event.setStartsAt(startsAt);
         event.setEndsAt(endsAt);
-        if (changes.timezone() != null) event.setTimezone(validTimezone(changes.timezone()));
-        if (changes.meetingPointName() != null) event.setMeetingPointName(changes.meetingPointName());
+        event.setTimezone(timezone);
+        if (changes.has("meetingPointName")) event.setMeetingPointName(changes.meetingPointName());
         event.setLatitude(latitude);
         event.setLongitude(longitude);
-        if (changes.city() != null) event.setCity(changes.city());
-        if (changes.distanceKm() != null) event.setDistanceKm(changes.distanceKm());
-        if (changes.elevationGainM() != null) event.setElevationGainM(changes.elevationGainM());
-        if (changes.level() != null) event.setLevel(changes.level());
-        if (changes.capacity() != null) event.setCapacity(changes.capacity());
+        if (changes.has("city")) event.setCity(changes.city());
+        if (changes.has("distanceKm")) event.setDistanceKm(changes.distanceKm());
+        if (changes.has("elevationGainM")) event.setElevationGainM(changes.elevationGainM());
+        if (changes.has("level")) event.setLevel(changes.level());
+        if (capacityChanges) event.setCapacity(changes.capacity());
 
         // Flush here so a concurrent edit fails as a 409 inside this request (@Version)
         eventRepository.saveAndFlush(event);
-        if (changes.capacity() != null && previousCapacity != null && changes.capacity() > previousCapacity) {
+        // More places, or no limit any more: the waitlist moves up
+        if (capacityChanges && previousCapacity != null
+                && (changes.capacity() == null || changes.capacity() > previousCapacity)) {
             promoteFromWaitlist(event);
             entityManager.refresh(event);
         }
         return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
+    }
+
+    private static Object valueOf(UpdateEventDto changes, String field) {
+        return switch (field) {
+            case "title" -> changes.title();
+            case "type" -> changes.type();
+            case "startsAt" -> changes.startsAt();
+            default -> changes.timezone();
+        };
     }
 
     /** Idempotent: cancelling a cancelled event returns it as it is. */
@@ -389,17 +409,6 @@ public class EventService {
     private static void validateCoordinates(Double latitude, Double longitude) {
         if ((latitude == null) != (longitude == null)) {
             throw new BadRequestException("Indica latitud y longitud, o ninguna de las dos");
-        }
-    }
-
-    private static String validTimezone(String timezone) {
-        if (timezone == null || timezone.isBlank()) {
-            return DEFAULT_TIMEZONE;
-        }
-        try {
-            return ZoneId.of(timezone.strip()).getId();
-        } catch (DateTimeException e) {
-            throw new BadRequestException("Zona horaria no válida");
         }
     }
 

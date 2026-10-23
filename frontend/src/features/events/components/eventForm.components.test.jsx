@@ -44,6 +44,21 @@ describe('EventForm', () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rodaje', latitude: 40.5, longitude: -3.7 }))
   })
 
+  it('defaults to the device zone and lets her pick another under "Avanzado" with a search box', async () => {
+    const onSubmit = await renderForm()
+    const device = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const select = screen.getByLabelText('Zona horaria')
+    expect(select.value).toBe(device)
+    fireEvent.change(screen.getByLabelText('Buscar zona horaria'), { target: { value: 'tokyo' } })
+    expect(screen.getByRole('option', { name: 'Asia/Tokyo' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'America/Lima' })).not.toBeInTheDocument()
+    fireEvent.change(select, { target: { value: 'Asia/Tokyo' } })
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Rodaje' } })
+    fireEvent.change(screen.getByLabelText('Empieza'), { target: { value: '2999-01-02T09:30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ timezone: 'Asia/Tokyo' }))
+  })
+
   it('removes the point', async () => {
     await renderForm({ initial: { ...EMPTY_FORM, latitude: 40.5, longitude: -3.7 } })
     fireEvent.click(screen.getByRole('button', { name: 'Quitar punto' }))

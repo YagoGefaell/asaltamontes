@@ -29,7 +29,7 @@ La funcionalidad diferencial de la app: organizar quedadas para correr en monta�
 | status | varchar(20) | `SCHEDULED` · `CANCELLED` · `FINISHED` (derivable, ver notas) |
 | starts_at | timestamptz | not null, futuro al crear |
 | ends_at | timestamptz | nullable, > starts_at |
-| timezone | varchar(40) | por defecto `Europe/Madrid` (se muestra la hora local del evento) |
+| timezone | varchar(40) | obligatoria, id IANA regional (D-019); sin valor por defecto en el backend (el cliente manda la del navegador); se muestra la hora local del evento |
 | meeting_point_name | varchar(200) | texto libre ("Parking del Monte Galiñeiro") |
 | latitude / longitude | double precision | nullable, rango válido |
 | city | varchar(80) | para filtrar sin coordenadas |
@@ -52,7 +52,7 @@ La funcionalidad diferencial de la app: organizar quedadas para correr en monta�
 ## API
 - `POST /api/events` (crear; si `communityId`, requiere ser OWNER/MODERATOR de la comunidad; la organizadora queda inscrita como `GOING`).
 - `GET /api/events/{id}` → detalle + `myStatus` + `canEdit`.
-- `PATCH /api/events/{id}` (organizadora o moderación de la comunidad). Reducir `capacity` por debajo de `attendee_count` → 409.
+- `PATCH /api/events/{id}` (organizadora o moderación de la comunidad). `null` explícito vacía un campo opcional y ausente no cambia (D-020; sin dependencias nuevas: el controlador lee el JSON como árbol, `UpdateEventReader`). Reducir `capacity` por debajo de `attendee_count` → 409.
 - `POST /api/events/{id}/cancel` → `status = CANCELLED` + motivo (las notificaciones a asistentes llegan en T18; dejar el evento de dominio `EventCancelled` publicado).
 - `POST /api/events/{id}/join` → `GOING` si hay plaza, si no `WAITLIST` con posición.
 - `POST /api/events/{id}/leave` → si era `GOING` y hay lista de espera, **promociona** a la primera (evento de dominio `AttendeePromoted`).
@@ -82,3 +82,7 @@ La funcionalidad diferencial de la app: organizar quedadas para correr en monta�
 - `timezone`: el backend valida con `ZoneId.of` y **solo acepta identificadores IANA** (rechaza desfases fijos como `+02:00` y abreviaturas); la hora pertenece al lugar del evento.
 - `PATCH /api/events/{id}`: `null` explícito vacía un campo opcional, ausente = sin cambios (D-020); contrato documentado en `docs/api-contract-v1.json`.
 - Frontend (T16): zona por defecto = la del navegador; selector IANA con buscador en "Avanzado"; mostrar hora del evento y, si la zona de quien lo ve difiere, también la suya.
+
+### Zona horaria y PATCH: implementado (PR `fix(events): time zone selector and clearing optional fields`)
+- `timezone` obligatoria al crear. Se acepta un id de `ZoneId.getAvailableZoneIds()` que sea regional (contiene `/`, p. ej. `Europe/Madrid`) o `UTC`. Se rechazan con 400 los desfases fijos (`+02:00`, `UTC+2`, `GMT+2`, `Etc/GMT-2`: ignoran el horario de verano), las abreviaturas heredadas de tzdata (`CET`, `EST`, `MST`, `GMT`...: ambiguas y sin lugar asociado) y los alias `SystemV/...`. Mensaje: "Zona horaria no válida: usa un identificador como Europe/Madrid".
+- `PATCH`: obligatorios (`title`, `type`, `startsAt`, `timezone`) con `null` dan 400; `latitude`/`longitude` se vacían juntas; `capacity: null` quita el límite y la lista de espera sube. `@Version` y el 409 sin cambios.

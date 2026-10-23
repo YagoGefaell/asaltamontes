@@ -814,7 +814,7 @@
     "/api/events": {
       "post": {
         "summary": "Create an event (T15a)",
-        "description": "The organizer becomes its first attendee (GOING). With communityId only OWNER/MODERATOR members of that community can create it. visibility COMMUNITY requires communityId. timezone defaults to Europe/Madrid.",
+        "description": "The organizer becomes its first attendee (GOING). With communityId only OWNER/MODERATOR members of that community can create it. visibility COMMUNITY requires communityId. timezone is required: an IANA region id (see CreateEvent.timezone), because the time belongs to the event place (D-019).",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateEvent" } } } },
@@ -884,7 +884,9 @@
         }
       },
       "patch": {
-        "summary": "Edit an event: null fields stay as they are; visibility and community cannot change",
+        "summary": "Edit an event (D-020): absent field = unchanged, explicit null = clears an optional field; visibility and community cannot change",
+        "description": "Optional fields that null clears: description, endsAt, meetingPointName, latitude + longitude (both or none), city, distanceKm, elevationGainM, level, capacity (null = no limit; the waitlist moves up). Required fields (title, type, startsAt, timezone) with null give 400. Body: UpdateEvent. Concurrency (@Version) unchanged: a concurrent edit gives 409.",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateEvent" } } } },
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
@@ -1044,14 +1046,14 @@
     "schemas": {
       "CreateEvent": {
         "type": "object",
-        "required": ["title", "type", "startsAt"],
+        "required": ["title", "type", "startsAt", "timezone"],
         "properties": {
           "title": { "type": "string", "maxLength": 120 },
           "description": { "type": "string", "maxLength": 4000 },
           "type": { "type": "string", "enum": ["MEETUP", "TRAINING", "RACE", "TRIP"] },
           "startsAt": { "type": "string", "format": "date-time" },
           "endsAt": { "type": "string", "format": "date-time" },
-          "timezone": { "type": "string", "example": "Europe/Madrid" },
+          "timezone": { "type": "string", "maxLength": 40, "example": "Europe/Madrid", "description": "Required. IANA region id from ZoneId.getAvailableZoneIds() (Europe/Madrid, America/Argentina/Buenos_Aires) or UTC. Rejected with 400: fixed offsets (+02:00, UTC+2, GMT+2, Etc/GMT-2) and legacy abbreviations (CET, EST, GMT...). No default: the client sends the browser zone unless the user picks another." },
           "meetingPointName": { "type": "string", "maxLength": 200 },
           "latitude": { "type": "number" },
           "longitude": { "type": "number" },
@@ -1062,6 +1064,26 @@
           "capacity": { "type": "integer", "minimum": 1, "maximum": 500, "nullable": true },
           "visibility": { "type": "string", "enum": ["PUBLIC", "COMMUNITY"] },
           "communityId": { "type": "integer", "format": "int64" }
+        }
+      },
+      "UpdateEvent": {
+        "type": "object",
+        "description": "PATCH body (D-020). Every property is optional: absent = unchanged; explicit null clears it if the field is optional (400 if it is title, type, startsAt or timezone). Same constraints as CreateEvent; visibility and communityId are ignored.",
+        "properties": {
+          "title": { "type": "string", "maxLength": 120, "nullable": false },
+          "description": { "type": "string", "maxLength": 4000, "nullable": true },
+          "type": { "type": "string", "enum": ["MEETUP", "TRAINING", "RACE", "TRIP"], "nullable": false },
+          "startsAt": { "type": "string", "format": "date-time", "nullable": false },
+          "endsAt": { "type": "string", "format": "date-time", "nullable": true },
+          "timezone": { "type": "string", "maxLength": 40, "nullable": false, "example": "Europe/Madrid" },
+          "meetingPointName": { "type": "string", "maxLength": 200, "nullable": true },
+          "latitude": { "type": "number", "nullable": true },
+          "longitude": { "type": "number", "nullable": true },
+          "city": { "type": "string", "maxLength": 80, "nullable": true },
+          "distanceKm": { "type": "number", "nullable": true },
+          "elevationGainM": { "type": "integer", "nullable": true },
+          "level": { "type": "string", "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"], "nullable": true },
+          "capacity": { "type": "integer", "minimum": 1, "maximum": 500, "nullable": true }
         }
       },
       "EventDetails": {
