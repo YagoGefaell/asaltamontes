@@ -1,6 +1,6 @@
 # BUG-052 — Al salir de /messages con un chat abierto, `activeChatId` queda fijo y los mensajes nuevos se dan por leídos
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/chat
