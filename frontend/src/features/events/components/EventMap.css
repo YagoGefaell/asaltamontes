@@ -5,6 +5,23 @@
   z-index: 0;
 }
 
+.event-map--list {
+  height: 60vh;
+  min-height: 320px;
+}
+
+.events-map-popup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.events-map-popup strong {
+  color: var(--primary);
+}
+
 .event-map--picker {
   height: 280px;
   cursor: crosshair;

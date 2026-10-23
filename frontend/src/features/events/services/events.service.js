@@ -18,7 +18,7 @@ function toPage(response, fallbackPage) {
 }
 
 // Query string of GET /api/events; only the filters that have a value are sent (T15c)
-export function buildEventsQuery({ page = 0, from, to, type, level, city, mine, size = EVENTS_PAGE_SIZE } = {}) {
+export function buildEventsQuery({ page = 0, from, to, type, level, city, mine, bounds, size = EVENTS_PAGE_SIZE } = {}) {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
   if (from) params.set('from', from)
   if (to) params.set('to', to)
@@ -26,7 +26,27 @@ export function buildEventsQuery({ page = 0, from, to, type, level, city, mine, 
   if (level) params.set('level', level)
   if (city && city.trim()) params.set('city', city.trim())
   if (mine) params.set('attending', 'me')
+  if (bounds) {
+    params.set('minLat', String(bounds.minLat))
+    params.set('maxLat', String(bounds.maxLat))
+    params.set('minLng', String(bounds.minLng))
+    params.set('maxLng', String(bounds.maxLng))
+  }
   return params
+}
+
+// The API rejects boxes outside the world, and a zoomed-out or wrapped map can report them
+const clamp = (n, min, max) => Math.min(max, Math.max(min, n))
+const round = (n) => Math.round(n * 1e5) / 1e5
+
+/** Bounding box of the API from the corners of the visible map area. */
+export function toBounds({ south, west, north, east }) {
+  return {
+    minLat: round(clamp(south, -90, 90)),
+    maxLat: round(clamp(north, -90, 90)),
+    minLng: round(clamp(west, -180, 180)),
+    maxLng: round(clamp(east, -180, 180)),
+  }
 }
 
 // -------- SEARCH EVENTS --------
@@ -36,6 +56,22 @@ export async function getEventsRequest(filters = {}) {
     return toPage(response, filters.page ?? 0)
   } catch (error) {
     throw new Error(error.message || 'Error obteniendo quedadas')
+  }
+}
+
+// Pins per request: the map shows the soonest ones of the area and asks to zoom in for the rest
+export const MAP_EVENTS_LIMIT = 50
+
+// -------- SEARCH EVENTS IN AN AREA (map view) --------
+// One request, same filters as the list. `total` is how many exist in the area (more than `items` when capped).
+export async function getEventsInBoundsRequest(bounds, filters = {}) {
+  try {
+    const params = buildEventsQuery({ ...filters, bounds, page: 0, size: MAP_EVENTS_LIMIT })
+    const response = await apiClient.get(`/api/events?${params}`)
+    const items = Array.isArray(response?.content) ? response.content : []
+    return { items, total: Number.isInteger(response?.totalElements) ? response.totalElements : items.length }
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo quedadas del mapa')
   }
 }
 

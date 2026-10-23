@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEvents } from '../../features/events/hooks/useEvents.js'
 import EventCard from '../../features/events/components/EventCard.jsx'
+import EventsMapSection from '../../features/events/components/EventsMapSection.jsx'
 import EventFilters from '../../features/events/components/EventFilters.jsx'
 import { EMPTY_FILTERS, hasActiveFilters, toQueryFilters } from '../../features/events/utils/eventFilters.js'
 import EmptyState from '../../shared/ui/EmptyState.jsx'
@@ -10,11 +11,17 @@ import Button from '../../shared/forms/Button.jsx'
 import './Events.css'
 
 const CITY_DEBOUNCE_MS = 300
+const VIEWS = [
+  { value: 'list', label: 'Lista' },
+  { value: 'map', label: 'Mapa' },
+]
 
 export default function Events() {
   const navigate = useNavigate()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [debouncedCity, setDebouncedCity] = useState('')
+  const [view, setView] = useState('list')
+  const mapView = view === 'map'
 
   // Search by city when she stops typing
   useEffect(() => {
@@ -26,7 +33,7 @@ export default function Events() {
     () => toQueryFilters({ ...filters, city: debouncedCity }),
     [filters, debouncedCity],
   )
-  const { events, loading, loadingMore, hasMore, loadMore, error, refetch } = useEvents(queryFilters)
+  const { events, loading, loadingMore, hasMore, loadMore, error, refetch } = useEvents(queryFilters, !mapView)
 
   // Infinite scroll: load the next page when the sentinel comes into view
   const sentinelRef = useRef(null)
@@ -47,9 +54,25 @@ export default function Events() {
         <Button size="small" onClick={() => navigate('/events/new')}>Crear quedada</Button>
       </header>
 
+      <div className="events-view-toggle" role="group" aria-label="Vista">
+        {VIEWS.map(({ value, label }) => (
+          <button
+            key={value}
+            type="button"
+            className={`events-view-toggle__option${view === value ? ' is-active' : ''}`}
+            aria-pressed={view === value}
+            onClick={() => setView(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <EventFilters filters={filters} onChange={setFilters} />
 
-      <div className="events-list">
+      {mapView && <EventsMapSection filters={queryFilters} />}
+
+      {!mapView && <div className="events-list">
         {loading && [0, 1, 2].map((i) => <Skeleton key={i} height="104px" />)}
 
         {!loading && error && (
@@ -76,7 +99,7 @@ export default function Events() {
             <Button variant="ghost" onClick={loadMore} loading={loadingMore}>Cargar más</Button>
           </>
         )}
-      </div>
+      </div>}
     </div>
   )
 }

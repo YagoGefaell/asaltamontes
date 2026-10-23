@@ -30,3 +30,27 @@
   gap: var(--space-3);
   padding: var(--space-3);
 }
+
+.events-view-toggle {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3) 0;
+  background: var(--surface);
+}
+
+.events-view-toggle__option {
+  flex: 1;
+  min-height: var(--touch-min);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-soft);
+  background: var(--background);
+  color: var(--text-color);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.events-view-toggle__option.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
