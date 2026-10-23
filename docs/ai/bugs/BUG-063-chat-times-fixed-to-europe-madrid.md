@@ -1,6 +1,6 @@
 # BUG-063 — Las horas del chat se formatean siempre en `Europe/Madrid` y con `es-ES`
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/messages (D-019: nada de supuestos solo-España)
