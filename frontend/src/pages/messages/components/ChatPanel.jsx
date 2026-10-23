@@ -77,11 +77,9 @@ const ChatPane = ({
     const date = parseMessageDate(dateLike);
     if (!date) return "";
 
-    return date.toLocaleTimeString("es-ES", {
+    return date.toLocaleTimeString(undefined, {
       hour: "2-digit",
       minute: "2-digit",
-      hour12: false,
-      timeZone: "Europe/Madrid",
     });
   };
 

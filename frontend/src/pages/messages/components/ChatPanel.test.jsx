@@ -78,4 +78,16 @@ describe('ChatPanel', () => {
 
     expect(screen.getByText('Empieza la conversacion con @Bea')).toBeInTheDocument()
   })
+
+  it("formats message times with the viewer's locale and time zone, not a fixed one (BUG-063, D-019)", () => {
+    const spy = vi.spyOn(Date.prototype, 'toLocaleTimeString').mockReturnValue('08:30')
+    renderPanel({ currentMessages: [{ id: 1, content: 'hola', senderUsername: 'bea', sentAt: '2026-10-23T13:30:00Z' }] })
+
+    expect(spy).toHaveBeenCalled()
+    for (const [locale, options] of spy.mock.calls) {
+      expect(locale).toBeUndefined()
+      expect(options).not.toHaveProperty('timeZone')
+    }
+    spy.mockRestore()
+  })
 })
