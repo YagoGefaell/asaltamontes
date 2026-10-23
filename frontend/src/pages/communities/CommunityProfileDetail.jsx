@@ -7,6 +7,7 @@ import FormError from "../../shared/forms/FormError";
 import { formatters } from "../../utils/helpers";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { communityPath } from "../../features/communities/utils/communityPath";
+import CommunityEvents from "../../features/events/components/CommunityEvents";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 function CommunityProfile() {
@@ -159,6 +160,10 @@ function CommunityProfile() {
             onToggle={handleToggleCommunity}
           />
         </div>
+      </div>
+
+      <div className="community-events-wrapper">
+        <CommunityEvents community={community} />
       </div>
 
       {community.members && community.members.length > 0 && (

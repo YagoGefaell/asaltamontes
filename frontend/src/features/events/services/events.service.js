@@ -1,6 +1,13 @@
 import { apiClient } from '../../../lib/api-client.js'
 
 export const EVENTS_PAGE_SIZE = 20
+// Keeps the API's field errors (error.errors) so the form can show them next to each field
+function apiError(error, fallback) {
+  const wrapped = new Error(error.message || fallback)
+  wrapped.status = error.status
+  wrapped.errors = error.errors
+  return wrapped
+}
 
 function toPage(response, fallbackPage) {
   return {
@@ -67,5 +74,34 @@ export async function getEventAttendeesRequest(eventId, { status = 'GOING', page
     return toPage(response, page)
   } catch (error) {
     throw new Error(error.message || 'Error obteniendo asistentes')
+  }
+}
+
+// -------- CREATE / EDIT --------
+export async function createEventRequest(payload) {
+  try {
+    return await apiClient.post('/api/events', payload)
+  } catch (error) {
+    throw apiError(error, 'Error creando la quedada')
+  }
+}
+
+export async function updateEventRequest(eventId, payload) {
+  try {
+    return await apiClient.patch(`/api/events/${encodeURIComponent(eventId)}`, payload)
+  } catch (error) {
+    throw apiError(error, 'Error guardando la quedada')
+  }
+}
+
+// -------- COMMUNITY EVENTS --------
+// Upcoming events of a community the user can see
+export async function getCommunityEventsRequest(slug, { page = 0, size = 5 } = {}) {
+  try {
+    const params = new URLSearchParams({ page: String(page), size: String(size) })
+    const response = await apiClient.get(`/api/communities/${encodeURIComponent(slug)}/events?${params}`)
+    return toPage(response, page)
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo las quedadas de la comunidad')
   }
 }

@@ -1,0 +1,25 @@
+.community-events {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.community-events__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.community-events__header h3 {
+  margin: 0;
+  font-size: var(--text-lg);
+  color: var(--text-color);
+}
+
+.community-events__muted {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}

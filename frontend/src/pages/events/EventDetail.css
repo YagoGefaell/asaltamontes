@@ -25,6 +25,7 @@
 
 .event-detail__header h2 {
   margin: 0;
+  flex: 1;
   font-size: var(--text-lg);
   min-width: 0;
   overflow-wrap: anywhere;

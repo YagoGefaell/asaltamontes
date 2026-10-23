@@ -4,3 +4,8 @@
   border-radius: var(--radius-md);
   z-index: 0;
 }
+
+.event-map--picker {
+  height: 280px;
+  cursor: crosshair;
+}

@@ -150,6 +150,9 @@ export default function EventDetail() {
           <FaArrowLeft />
         </button>
         <h2>{event.title}</h2>
+        {event.canEdit && event.status !== 'CANCELLED' && (
+          <Button variant="outline" size="small" onClick={() => navigate(`/events/${event.id}/edit`)}>Editar</Button>
+        )}
       </header>
 
       <div className="event-detail__content">

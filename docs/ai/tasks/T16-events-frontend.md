@@ -1,9 +1,9 @@
 # T16 — Eventos: frontend (lista, detalle con mapa, crear y editar)
 
-- **Estado:** pendiente (T16a hecho en PR apilada sobre T29a; T16 sigue pendiente por T16b)
+- **Estado:** pendiente (T16a y T16b hechas en PRs apiladas; T16 sigue pendiente por T16c)
 - **Fase:** 3 — Quedadas / eventos
 - **Depende de:** T15, T29a
-- **Rama sugerida:** `feat/T16-events-frontend` (dividida: `T16a` lista + detalle con mapa de solo lectura y filtros, **hecho**; `T16b` crear/editar + selector de punto en el mapa + sección en la comunidad + **vista de mapa de la lista**, pendiente)
+- **Rama sugerida:** `feat/T16-events-frontend` (dividida: `T16a` lista + detalle con mapa de solo lectura y filtros, **hecho**; `T16b` crear/editar + selector de punto en el mapa + sección "Próximas quedadas" en la comunidad, **hecho**; `T16c` vista de mapa de la lista por bbox, **bloqueada por BUG-062**)
 - **Cierra bugs:** —
 - **Tamaño:** L
 
@@ -36,3 +36,8 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 - Hecho: servicios/hooks/componentes en `src/features/events`, páginas `/events` y `/events/:id`, pestaña "Quedadas" en `NavBar`, filtros (fechas, tipo, nivel, ciudad, "mis quedadas"), scroll infinito, inscripción con actualización optimista y rollback (`useEventAttendance`, no reutiliza `useOptimisticToggle` porque hay tres resultados: dentro / lista de espera / fuera), mapa Leaflet con carga perezosa en el detalle.
 - Pasa a T16b: la **vista de mapa de la lista** (requiere consultar por bounding box y cargar Leaflet en la lista), el formulario crear/editar, el selector de punto y la sección "Próximas quedadas" en la comunidad.
 - La posición en la lista de espera sale de `GET /api/events/{id}/attendees?status=WAITLIST` (el DTO del evento no la incluye).
+
+## División T16b / T16c (2026-10-22)
+- **T16b (hecha, apilada sobre T16a):** `/events/new` y `/events/:id/edit` (`EventEditor`), `EventForm` con validación espejo de la API (`utils/eventForm.js`), selector de punto con Leaflet (`LocationPicker`: toque + marcador arrastrable), fechas en la zona del evento, selector de comunidad con `GET /api/communities/me` filtrado por rol OWNER/MODERATOR (no hizo falta backend), botón "Editar" en el detalle (`canEdit`), "Crear quedada" en la lista y sección "Próximas quedadas" + "Crear quedada" (OWNER/MODERATOR) en la comunidad.
+- **T16c (pendiente):** vista "Mapa" en `/events` con la API por bbox. `EventSummaryDto` no trae `latitude`/`longitude` (BUG-062): hay que añadirlos en backend antes. Después: `getEventsInBoundsRequest` (bbox de `moveend` con debounce, máx. 50 chinchetas, mismos filtros que la lista) y alternador Lista/Mapa.
+- Huecos conocidos de la API para el editor: `PATCH` no permite vaciar un campo opcional ya guardado (null = sin cambios; solo la descripción se vacía con `""`), y la zona horaria se fija al crear (la del navegador) sin selector.
