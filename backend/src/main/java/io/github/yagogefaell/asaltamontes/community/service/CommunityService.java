@@ -54,15 +54,17 @@ public class CommunityService {
         }
 
         // The creator becomes OWNER, so she may set the cover; the image must be hers
-        mediaReferences.checkLinkable(request.imageUrl(), MediaPurpose.COMMUNITY_COVER, currentUser.getId());
+        MediaReferenceService.Linked cover = mediaReferences.link(request.coverMediaId(), request.imageUrl(),
+                MediaPurpose.COMMUNITY_COVER, currentUser.getId(), null);
 
         Community community = new Community(
             name,
             uniqueSlug(name),
             request.description(),
-            request.imageUrl(),
+            cover.url(),
             currentUser
         );
+        community.setCoverMediaId(cover.mediaId());
 
         community = communityRepository.save(community);
 

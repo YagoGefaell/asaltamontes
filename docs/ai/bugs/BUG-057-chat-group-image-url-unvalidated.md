@@ -1,6 +1,6 @@
 # BUG-057 — La imagen del grupo es una URL libre: fuga de IP a terceros y error de BD si pasa de 255 caracteres
 
-- **Estado:** abierto
+- **Estado:** resuelto (T17c)
 - **Severidad:** baja
 - **Confianza:** probable (la fuga es inherente al diseño; el error de longitud hay que comprobarlo contra la BD)
 - **Área:** frontend/chat + backend/message
@@ -21,3 +21,8 @@ Quien crea un grupo puede poner cualquier URL (`http://servidor-ajeno/pixel.png`
 
 ## Arreglo propuesto
 Corto plazo: validar en backend (`https` obligatorio, ≤255, nombre ≤80) con 400 y mensaje en español, y `maxLength` en el input. Largo plazo (T17): subida de imágenes a nuestro almacenamiento y dejar de aceptar URLs externas.
+
+## Resolución (T17c)
+- Las URLs externas ya no se aceptan al escribir (perfil, comunidad, grupo): solo `...MediaId` o la URL interna de una subida propia (`/media/<purpose>/<uuid>/...`), que el servidor convierte en referencia por id. Quien envía `https://servidor-ajeno/pixel.png` recibe 400 "Solo se pueden usar imágenes subidas a la aplicación". Así ningún navegador de miembra contacta con un tercero por una imagen elegida por otra usuaria.
+- Excepción deliberada: el valor externo que el recurso ya tiene guardado (p. ej. la foto de Google de las cuentas OAuth) se acepta si llega idéntico, para que editar otros campos no rompa nada. Esos datos antiguos se siguen mostrando; se sustituyen cuando la usuaria sube una foto.
+- `@Size(max = 255)` en `imageUrl`/`groupImage`/`profilePictureUrl` (400 con mensaje en español en lugar de un 500 de BD) y `@Size(max = 80)` en `groupName`. `@Valid` añadido al endpoint de grupos.

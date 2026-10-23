@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.PayloadTooLargeException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsException;
 import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.RateLimiter;
@@ -65,7 +66,12 @@ public class MediaService {
                     + Math.max(1, retryAfter / 60) + " minutos", retryAfter);
         }
 
+        long used = mediaRepository.sumBytesByOwner(owner.getId());
+        checkQuota(used, 0);
+
         ImageProcessor.Processed processed = processLimited(file);
+        // Concurrent uploads of the same user can overshoot a little: the quota is a soft limit by design
+        checkQuota(used, processed.totalBytes());
 
         UUID id = UUID.randomUUID();
         String prefix = purpose.pathSegment() + "/" + id + "/";
@@ -90,6 +96,14 @@ public class MediaService {
         }
         return new MediaDto(id, new MediaUrlsDto(
                 storage.publicUrl(keys[0]), storage.publicUrl(keys[1]), storage.publicUrl(keys[2])));
+    }
+
+    private void checkQuota(long used, long adding) {
+        long max = properties.getMaxBytesPerUser().toBytes();
+        if (used + adding > max || used >= max) {
+            throw new ConflictException("Has alcanzado tu límite de almacenamiento de imágenes ("
+                    + max / (1024 * 1024) + " MB). Cambia o elimina alguna imagen y vuelve a intentarlo");
+        }
     }
 
     /** The slot is taken before the bytes are read, so waiting requests hold no copy of their upload. */

@@ -65,12 +65,13 @@ public class ConversationController {
     @PostMapping("/group")
     public ResponseEntity<ChatResponseDto> createGroupChat(
         @AuthenticationPrincipal UserDetails currentUser, 
-        @RequestBody CreateGroupDto request
+        @jakarta.validation.Valid @RequestBody CreateGroupDto request
     ) {
         ChatResponseDto response = messageService.createGroupConversation(
             currentUser.getUsername(),
             request.groupName(),
             request.groupImage(),
+            request.groupMediaId(),
             request.users()
         );
         return ResponseEntity.ok(response);

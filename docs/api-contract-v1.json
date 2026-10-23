@@ -149,7 +149,8 @@
                 "type": "object",
                 "properties": {
                   "groupName": { "type": "string", "example": "Trail Runners" },
-                  "groupImage": { "type": "string", "example": "https://example.com/group.jpg" },
+                  "groupImage": { "type": "string", "maxLength": 255, "description": "T17c: only the URL of one of your own uploads (urls.medium); external URLs are rejected (400). Prefer groupMediaId", "example": "/media/group-image/0b1c.../medium.jpg" },
+                  "groupMediaId": { "type": "string", "format": "uuid", "description": "T17c: id of a GROUP_IMAGE media of the caller (404 if missing or not hers, 400 if wrong purpose)" },
                   "users": {
                     "type": "array",
                     "items": { "type": "string", "example": "runner123" }
@@ -334,7 +335,8 @@
                   "fullName": { "type": "string", "example": "María Runner Updated" },
                   "bio": { "type": "string", "example": "New bio" },
                   "city": { "type": "string", "example": "Barcelona" },
-                  "profilePictureUrl": { "type": "string", "example": "https://example.com/newpic.jpg" },
+                  "profilePictureUrl": { "type": "string", "maxLength": 255, "description": "T17c: URL of one of your own uploads (urls.medium), or an empty string to remove the picture; a new external URL gives 400 (the value already stored, e.g. Google's, is accepted unchanged). Prefer avatarMediaId", "example": "/media/avatar/0b1c.../medium.jpg" },
+                  "avatarMediaId": { "type": "string", "format": "uuid", "description": "T17c: id of an AVATAR media of the caller (404 if missing or not hers, 400 if wrong purpose). The previous picture is deleted" },
                   "isPublicProfile": { "type": "boolean", "example": false }
                 }
               }
@@ -994,7 +996,7 @@
     },
     "/api/media": {
       "post": {
-        "summary": "Upload an image (T17a). Re-encoded as JPEG without EXIF/GPS in three sizes (longest side 128, 640, 1280 px; never enlarged). T17b: to use it, send its url (urls.medium) as profilePictureUrl (PATCH /api/users/me), imageUrl (POST /api/communities) or groupImage (POST /api/conversations/group); the media must belong to the caller and have the matching purpose (AVATAR, COMMUNITY_COVER, GROUP_IMAGE), otherwise 404 (not hers or missing) or 400 (wrong purpose)",
+        "summary": "Upload an image (T17a). Re-encoded as JPEG without EXIF/GPS in three sizes (longest side 128, 640, 1280 px; never enlarged). T17c: to use it, send its id as avatarMediaId (PATCH /api/users/me), coverMediaId (POST /api/communities, request field imageUrl still accepted with urls.medium) or groupMediaId (POST /api/conversations/group); the media must belong to the caller and have the matching purpose (AVATAR, COMMUNITY_COVER, GROUP_IMAGE), otherwise 404 (not hers or missing) or 400 (wrong purpose). Responses keep returning the URL of the medium variant in profilePictureUrl / imageUrl / groupImage. Images not linked to anything are deleted after 24 h; each user may store up to 50 MB",
         "tags": ["Media"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
@@ -1036,6 +1038,7 @@
           },
           "400": { "description": "Not a valid image, too small or too big in pixels, unknown purpose or missing file" },
           "401": { "description": "Not authenticated" },
+          "409": { "description": "T17c: the user reached her image storage quota (default 50 MB)" },
           "413": { "description": "File larger than 10 MB" },
           "429": { "description": "More than 30 uploads in an hour (Retry-After in seconds), or the server is busy processing other images" }
         }

@@ -1,6 +1,5 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
-import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -70,13 +69,6 @@ public class UserValidator {
             String city = dto.city().trim();
             if (city.length() < 2 || city.length() > 50) {
                 errors.put("city", "Debe tener entre 2 y 50 caracteres");
-            }
-        }
-
-        if (dto.profilePictureUrl() != null) {
-            String url = dto.profilePictureUrl().trim();
-            if (!MediaReferenceService.isInternal(url) && !url.matches("^(http|https)://.*$")) {
-                errors.put("profilePictureUrl", "Debe ser una URL válida con http o https");
             }
         }
 

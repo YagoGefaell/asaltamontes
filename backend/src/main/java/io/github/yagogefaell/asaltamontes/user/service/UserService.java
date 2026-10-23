@@ -1,6 +1,9 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
+import java.util.UUID;
+
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
+import io.github.yagogefaell.asaltamontes.media.service.MediaCleanupService;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,6 +40,7 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final UsernameGenerator usernameGenerator;
     private final MediaReferenceService mediaReferences;
+    private final MediaCleanupService mediaCleanup;
 
     @Transactional
     public UserAccount registerUserWithProfile(
@@ -96,7 +100,6 @@ public class UserService implements UserDetailsService {
     public UserSelfDto editProfile(long id, UserUpdateDto dto) {
 
         validator.validateProfileChange(id, dto);
-        mediaReferences.checkLinkable(dto.profilePictureUrl(), MediaPurpose.AVATAR, id);
 
         UserAccount user = userAccountRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
@@ -105,8 +108,28 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UserNotFoundException(id));
 
         updater.applyChanges(user, profile, dto);
+        linkAvatar(profile, dto);
 
         return assembler.toUserMe(user, profile);
+    }
+
+    /**
+     * Sets or removes the profile picture when the request carries one. The previous picture is deleted when
+     * nothing else references it; an unchanged legacy external URL (e.g. the Google one) is kept as is.
+     */
+    private void linkAvatar(UserProfile profile, UserUpdateDto dto) {
+        if (dto.avatarMediaId() == null && dto.profilePictureUrl() == null) {
+            return;
+        }
+        UUID previous = profile.getAvatarMediaId();
+        String legacyExternal = previous == null ? profile.getProfilePictureUrl() : null;
+        MediaReferenceService.Linked avatar = mediaReferences.link(dto.avatarMediaId(), dto.profilePictureUrl(),
+                MediaPurpose.AVATAR, profile.getUserId(), legacyExternal);
+        profile.setAvatarMediaId(avatar.mediaId());
+        profile.setProfilePictureUrl(avatar.url());
+        if (previous != null && !previous.equals(avatar.mediaId())) {
+            mediaCleanup.deleteIfUnreferenced(previous, null);
+        }
     }
 
     @Transactional(readOnly = true)

@@ -54,10 +54,10 @@ class MediaLinkingIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void avatar_externalUrlsStillWork() throws Exception {
+    void avatar_externalUrlsAreRejected() throws Exception {
         UserAccount ana = testData.createUser();
 
-        patchProfile(ana, "https://example.com/foto.jpg").andExpect(status().isOk());
+        patchProfile(ana, "https://example.com/foto.jpg").andExpect(status().isBadRequest());
     }
 
     @Test

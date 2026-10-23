@@ -33,10 +33,7 @@ public class UserProfileUpdater {
                 .map(String::trim)
                 .ifPresent(profile::setCity);
 
-        // PROFILE PICTURE URL
-        Optional.ofNullable(dto.profilePictureUrl())
-                .map(String::trim)
-                .ifPresent(profile::setProfilePictureUrl);
+        // The profile picture is linked in UserService (media ownership checks, cleanup of the old one)
 
         // PUBLIC PROFILE
         Optional.ofNullable(dto.isPublicProfile())

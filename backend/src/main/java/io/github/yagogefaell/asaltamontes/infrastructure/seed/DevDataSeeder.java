@@ -108,7 +108,7 @@ public class DevDataSeeder implements CommandLineRunner {
         for (int c = 0; c < COMMUNITIES.length; c++) {
             UserAccount owner = c == 0 ? users.get(0) : users.get(1 + random.nextInt(users.size() - 1));
             Community community = communityService.create(
-                    new CreateCommunityDto(COMMUNITIES[c][0], COMMUNITIES[c][1], null), owner);
+                    new CreateCommunityDto(COMMUNITIES[c][0], COMMUNITIES[c][1], null, null), owner);
             // demo is also a member of two more, so the demo account has something to browse
             if (c == 1 || c == 3) {
                 communityService.joinCommunity(community.getId(), users.get(0));
@@ -142,7 +142,7 @@ public class DevDataSeeder implements CommandLineRunner {
             sendConversation(conversationId, List.of(pair), random);
         }
 
-        Long group = messageService.createGroupConversation(users.get(0).getUsername(), "Quedada del domingo", null,
+        Long group = messageService.createGroupConversation(users.get(0).getUsername(), "Quedada del domingo", null, null,
                 users.subList(1, 7).stream().map(UserAccount::getUsername).toList()).conversationId();
         sendConversation(group, users.subList(0, 7), random);
 

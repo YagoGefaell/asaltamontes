@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class MessageService {
@@ -140,10 +141,12 @@ public class MessageService {
     }
 
     @Transactional
-    public ChatResponseDto createGroupConversation(String currentUsername, String groupName, String groupImage, List<String> users) {
+    public ChatResponseDto createGroupConversation(String currentUsername, String groupName, String groupImage,
+                                                   UUID groupMediaId, List<String> users) {
         UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
         // The creator administers the new group, so she may set its image; the image must be hers
-        mediaReferences.checkLinkable(groupImage, MediaPurpose.GROUP_IMAGE, creator.getId());
+        MediaReferenceService.Linked image = mediaReferences.link(groupMediaId, groupImage, MediaPurpose.GROUP_IMAGE,
+                creator.getId(), null);
 
         if (users == null || users.isEmpty()) {
             throw new BadRequestException("Debes añadir al menos un usuario al grupo");
@@ -172,7 +175,7 @@ public class MessageService {
                 .map(username -> (UserAccount) userService.loadUserByUsername(username))
                 .toList();
 
-        Conversation newConv = createGroupConversation(creator, members, groupName, groupImage);
+        Conversation newConv = createGroupConversation(creator, members, groupName, image);
         return new ChatResponseDto(newConv.getId());
     }
 
@@ -245,11 +248,13 @@ public class MessageService {
         return savedConv;
     }
 
-    private Conversation createGroupConversation(UserAccount creator, List<UserAccount> members, String groupName, String groupImage) {
+    private Conversation createGroupConversation(UserAccount creator, List<UserAccount> members, String groupName,
+                                                 MediaReferenceService.Linked image) {
         Conversation conv = new Conversation();
         conv.setType(ChatType.GROUP);
         conv.setGroupName((groupName == null || groupName.isBlank()) ? "Nuevo grupo" : groupName.trim());
-        conv.setGroupImage((groupImage == null || groupImage.isBlank()) ? null : groupImage.trim());
+        conv.setGroupImage(image.url());
+        conv.setGroupMediaId(image.mediaId());
         conv.setCreatedAt(LocalDateTime.now());
         Conversation savedConv = conversationRepository.save(conv);
 

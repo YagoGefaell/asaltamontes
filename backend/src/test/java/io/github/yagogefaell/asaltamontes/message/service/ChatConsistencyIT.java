@@ -54,7 +54,7 @@ class ChatConsistencyIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount cris = testData.createUser();
-        Long groupId = messageService.createGroupConversation(ana.getUsername(), "Trail", null,
+        Long groupId = messageService.createGroupConversation(ana.getUsername(), "Trail", null, null,
                 List.of(bea.getUsername(), cris.getUsername())).conversationId();
 
         ExecutorService pool = Executors.newFixedThreadPool(10);
