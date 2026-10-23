@@ -1,5 +1,9 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { CHAT } from "../../../config/constants";
+import Button from "../../../shared/forms/Button";
+import EmptyState from "../../../shared/ui/EmptyState";
+import Skeleton from "../../../shared/ui/Skeleton";
+import { formatDayLabel, formatMessageTime, isSameDay, parseMessageDate } from "../../../features/messages/utils/messageDates";
 
 // Show the counter only when it matters
 const COUNTER_THRESHOLD = CHAT.MAX_MESSAGE_LENGTH - 200;
@@ -61,28 +65,6 @@ const ChatPane = ({
     heightBeforeLoadRef.current = null;
   }, [oldestMessageId]);
 
-  const parseMessageDate = (dateLike) => {
-    if (!dateLike) return null;
-
-    const rawValue = String(dateLike).trim();
-    const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(rawValue);
-    const normalizedValue = hasTimezone ? rawValue : `${rawValue}Z`;
-    const parsedDate = new Date(normalizedValue);
-
-    if (Number.isNaN(parsedDate.getTime())) return null;
-    return parsedDate;
-  };
-
-  const formatMarkerTime = (dateLike) => {
-    const date = parseMessageDate(dateLike);
-    if (!date) return "";
-
-    return date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   const shouldRenderTimeMarker = (messages, index) => {
     if (index === 0) return true;
 
@@ -95,12 +77,21 @@ const ChatPane = ({
     return (currentDate.getTime() - previousDate.getTime()) > oneHourMs;
   };
 
+  // A new calendar day starts here (also the very first message)
+  const dayLabelFor = (messages, index) => {
+    const currentDate = parseMessageDate(messages[index]?.sentAt);
+    if (!currentDate) return "";
+    const previousDate = index > 0 ? parseMessageDate(messages[index - 1]?.sentAt) : null;
+    if (previousDate && isSameDay(currentDate, previousDate)) return "";
+    return formatDayLabel(messages[index].sentAt);
+  };
+
   return (
     <>
       <div className="messages-header">
-        <button
+        <Button
+          variant="ghost"
           className="chat-back-btn"
-          type="button"
           aria-label="Volver"
           onClick={onLeaveChat}
         >
@@ -112,10 +103,11 @@ const ChatPane = ({
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            aria-hidden="true"
           >
             <polyline points="15 18 9 12 15 6" />
           </svg>
-        </button>
+        </Button>
         <div
           className="chat-title"
           onClick={(event) => onOpenUserProfile(selectedChat, event)}
@@ -139,32 +131,52 @@ const ChatPane = ({
         </div>
       </div>
 
-      <div className="messages" ref={containerRef}>
+      <div
+        className="messages"
+        ref={containerRef}
+        role="log"
+        aria-live="polite"
+        aria-relevant="additions"
+        aria-label={`Mensajes con ${selectedChat.name}`}
+      >
         {hasMoreHistory && (
           <div ref={topSentinelRef} className="messages-load-older" aria-live="polite">
             {loadingOlder ? "Cargando mensajes anteriores…" : ""}
           </div>
         )}
         {historyStatus === "error" && currentMessages.length === 0 && (
-          <div className="message received" role="alert">
-            No se pudo cargar la conversación.{" "}
-            <button type="button" className="messages-retry-btn" onClick={onRetryHistory}>Reintentar</button>
-          </div>
+          <EmptyState
+            title="No se pudo cargar la conversación."
+            action={<Button variant="secondary" size="small" onClick={onRetryHistory}>Reintentar</Button>}
+          />
         )}
         {historyStatus === "loading" && currentMessages.length === 0 && (
-          <div className="message received" role="status">Cargando mensajes…</div>
+          <div role="status" aria-label="Cargando mensajes" className="messages-skeleton">
+            <Skeleton width="55%" height="2.25rem" />
+            <Skeleton width="40%" height="2.25rem" className="messages-skeleton__sent" />
+            <Skeleton width="65%" height="2.25rem" />
+          </div>
         )}
         {historyStatus === "loaded" && currentMessages.length === 0 && (
-          <div className="message received">Empieza la conversacion con @{selectedChat.name}</div>
+          <EmptyState
+            title={`Empieza la conversación con @${selectedChat.name}`}
+            description="Escribe el primer mensaje abajo."
+          />
         )}
 
         {currentMessages.map((message, index) => {
           const isSent = message.senderUsername === currentUsername;
           const showTimeMarker = shouldRenderTimeMarker(currentMessages, index);
-          const markerLabel = formatMarkerTime(message.sentAt);
+          const markerLabel = formatMessageTime(message.sentAt);
+          const dayLabel = dayLabelFor(currentMessages, index);
 
           return (
             <div key={`${message.id}-${index}`} className="message-row">
+              {dayLabel && (
+                <div className="message-day-separator" role="separator" aria-label={dayLabel}>
+                  <span>{dayLabel}</span>
+                </div>
+              )}
               {showTimeMarker && markerLabel && (
                 <div className="message-time-marker">{markerLabel}</div>
               )}
@@ -201,17 +213,17 @@ const ChatPane = ({
           }}
         />
         {draftMessage.length >= COUNTER_THRESHOLD && (
-          <span className="message-counter">
+          <span className="message-counter" aria-live="polite">
             {draftMessage.length}/{CHAT.MAX_MESSAGE_LENGTH}
           </span>
         )}
-        <button
-          type="button"
+        <Button
+          className="message-send-btn"
           onClick={onSendMessage}
           disabled={!draftMessage.trim() || !websocketConnected}
         >
           Enviar
-        </button>
+        </Button>
       </div>
     </>
   );

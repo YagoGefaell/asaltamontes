@@ -1,5 +1,6 @@
 import Skeleton from "../../../shared/ui/Skeleton";
 import EmptyState from "../../../shared/ui/EmptyState";
+import Button from "../../../shared/forms/Button";
 import { formatters } from "../../../utils/helpers";
 
 const ConversationsPane = ({
@@ -20,8 +21,8 @@ const ConversationsPane = ({
       <div className="messages-header">
         <h2 className="messages-title">Mensajes</h2>
         <div className="messages-header-actions">
-          <button
-            type="button"
+          <Button
+            variant="outline"
             className="create-group-btn"
             aria-label="Crear grupo"
             title="Crear grupo"
@@ -43,7 +44,7 @@ const ConversationsPane = ({
                 strokeLinejoin="round"
               />
             </svg>
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -59,10 +60,15 @@ const ConversationsPane = ({
           </div>
         )}
 
-        {!loadingChats && errorChats && <p className="contact-preview">{errorChats}</p>}
+        {!loadingChats && errorChats && (
+          <EmptyState title="No se pudieron cargar las conversaciones." description={errorChats} />
+        )}
 
         {!loadingChats && !errorChats && chats.length === 0 && (
-          <EmptyState title="Aún no tienes conversaciones." />
+          <EmptyState
+            title="Aún no tienes conversaciones."
+            description="Escribe a alguien desde su perfil o crea un grupo con el botón +."
+          />
         )}
 
         {!loadingChats && !errorChats && chats.map((chat) => {
@@ -100,20 +106,20 @@ const ConversationsPane = ({
                 <span className="contact-time">{formatMessageTime(chat.lastMessageAt)}</span>
               )}
 
-              {chat.unreadCount > 0 && <span className="unread-dot" aria-label="Mensajes sin leer" />}
+              {chat.unreadCount > 0 && <span className="unread-dot" role="img" aria-label="Mensajes sin leer" />}
             </button>
           );
         })}
 
         {!loadingChats && !errorChats && hasMoreChats && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             className="contacts-load-more"
             onClick={onLoadMoreChats}
             disabled={loadingMoreChats}
           >
             {loadingMoreChats ? "Cargando…" : "Cargar más conversaciones"}
-          </button>
+          </Button>
         )}
       </div>
     </>

@@ -11,6 +11,7 @@ vi.mock('../../features/auth/hooks/useAuth', () => ({
   }),
 }))
 
+import { ToastProvider } from '../../shared/ui/Toast.jsx'
 import Messages from './Messages.jsx'
 import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
 
@@ -38,7 +39,7 @@ describe('Messages (BUG-052)', () => {
     }
     const { unmount } = render(
       <MemoryRouter>
-        <ConversationsContext.Provider value={value}><Messages /></ConversationsContext.Provider>
+        <ToastProvider><ConversationsContext.Provider value={value}><Messages /></ConversationsContext.Provider></ToastProvider>
       </MemoryRouter>,
     )
     expect(setActiveChatId).not.toHaveBeenCalled()

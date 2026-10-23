@@ -1,6 +1,6 @@
 # T29 — Sistema de diseño y pulido de la interfaz
 
-- **Estado:** pendiente (T29a hecha en esta PR; sigue pendiente por T29b+)
+- **Estado:** pendiente (T29a hecha; T29b-chat hecha; faltan Comunidades, Perfil, Ajustes y Acceso)
 - **Fase:** Transversal (UI)
 - **Depende de:** T01 (tests de frontend)
 - **Rama sugerida:** `refactor/T29a-design-tokens`, `feat/T29b-ui-polish-<pantalla>`…
@@ -50,3 +50,11 @@ Yago da libertad para mejorar la interfaz (D-015). Antes de construir muchas pan
 - Tarjeta: `Avatar` compartido y enlace real (`Link`) en lugar de `div role="button"` con un botón anidado (HTML inválido y mala accesibilidad); el botón de unirse queda fuera del enlace.
 - Botón de crear a 44 px mediante `Button`; aviso `Toast` al crear la comunidad.
 - Fuera de alcance (siguientes PRs de T29b): detalle de comunidad (`CommunityProfileDetail`), ajustes y panel de creación. Estado de T29: sigue pendiente (Perfil, Ajustes, Acceso).
+
+## T29b-chat (hecha, 2026-10-23)
+- Alcance: solo `/messages` (lista, panel de chat, creador de grupo). Sin cambios funcionales ni de API.
+- `Button` sustituye a los `<button>` de acción (enviar, volver, crear grupo, reintentar, cargar más, enviar el grupo, quitar participante). Las filas de conversación y de resultados de búsqueda siguen siendo `<button>` nativos (son filas de lista, no acciones), con `min-height` de 44 px.
+- Estados: esqueleto de mensajes al cargar el historial, `EmptyState` en chat vacío, error de historial (con "Reintentar") y error de la lista de conversaciones; "Sin resultados" al buscar participantes; `Toast` "Grupo creado".
+- Fechas (D-019): `features/messages/utils/messageDates.js` con `Intl` en el idioma y la zona del navegador (antes `es-ES` / `Europe/Madrid` fijos); separadores de día "Hoy" / "Ayer" / fecha larga.
+- Accesibilidad: lista de mensajes con `role="log"` y `aria-live="polite"`; objetivos táctiles de 44 px; foco visible en el campo de mensaje; textos pequeños con `--text-muted` (más contraste) en lugar de `--text-soft`; alertas con `role="alert"`.
+- Pendiente de T29b: Comunidades, Perfil, Ajustes, Acceso.

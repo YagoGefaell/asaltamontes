@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import Button from "../../../shared/forms/Button.jsx";
 import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 import { getUsersByUsername } from "../../../features/users/services/users.service.js";
@@ -147,8 +148,8 @@ const GroupCreatorPanel = ({
   return (
     <div className="group-creator-page" aria-label="Crear grupo">
       <div className="messages-header">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           className="chat-back-btn"
           onClick={handleClose}
           disabled={creatingGroup}
@@ -163,7 +164,7 @@ const GroupCreatorPanel = ({
               strokeLinejoin="round"
             />
           </svg>
-        </button>
+        </Button>
         <h2 className="messages-title">Crear grupo</h2>
       </div>
 
@@ -202,9 +203,13 @@ const GroupCreatorPanel = ({
             autoComplete="off"
           />
 
-          {participantSearchLoading && <p className="group-creator-hint">Buscando usuarios...</p>}
+          {participantSearchLoading && <p className="group-creator-hint" role="status">Buscando usuarios...</p>}
           {!participantSearchLoading && participantSearchError && (
-            <p className="group-creator-error">{participantSearchError}</p>
+            <p className="group-creator-error" role="alert">{participantSearchError}</p>
+          )}
+
+          {!participantSearchLoading && !participantSearchError && participantsQuery.trim().length >= 2 && participantResults.length === 0 && (
+            <p className="group-creator-hint" role="status">Sin resultados para esa búsqueda.</p>
           )}
 
           {!participantSearchLoading && !participantSearchError && participantResults.length > 0 && (
@@ -239,24 +244,25 @@ const GroupCreatorPanel = ({
             {selectedParticipants.map((participant) => (
               <div key={participant.username} className="group-selected-user-chip">
                 <span className="group-chip-label">@{participant.username}</span>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="small"
                   className="group-chip-remove"
                   onClick={() => removeParticipant(participant.username)}
                   disabled={creatingGroup}
                   aria-label={`Quitar ${participant.username}`}
                 >
-                  x
-                </button>
+                  <span aria-hidden="true">×</span>
+                </Button>
               </div>
             ))}
           </div>
 
-          {createGroupError && <p className="group-creator-error">{createGroupError}</p>}
+          {createGroupError && <p className="group-creator-error" role="alert">{createGroupError}</p>}
 
-          <button type="submit" className="group-creator-submit" disabled={creatingGroup || uploadingImage}>
+          <Button type="submit" className="group-creator-submit" disabled={creatingGroup || uploadingImage}>
             {creatingGroup ? "Creando..." : "Crear grupo"}
-          </button>
+          </Button>
       </form>
     </div>
   );

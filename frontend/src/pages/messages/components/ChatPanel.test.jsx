@@ -60,7 +60,7 @@ describe('ChatPanel', () => {
     const onRetryHistory = vi.fn()
     renderPanel({ historyStatus: 'error', onRetryHistory })
 
-    expect(screen.queryByText(/Empieza la conversacion/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Empieza la conversación/)).not.toBeInTheDocument()
     expect(screen.getByText(/No se pudo cargar la conversación/)).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
     expect(onRetryHistory).toHaveBeenCalledTimes(1)
@@ -69,14 +69,55 @@ describe('ChatPanel', () => {
   it('does not show the empty-chat text while the history is loading (BUG-061)', () => {
     renderPanel({ historyStatus: 'loading' })
 
-    expect(screen.queryByText(/Empieza la conversacion/)).not.toBeInTheDocument()
-    expect(screen.getByText('Cargando mensajes…')).toBeInTheDocument()
+    expect(screen.queryByText(/Empieza la conversación/)).not.toBeInTheDocument()
+    expect(screen.getByRole('status', { name: 'Cargando mensajes' })).toBeInTheDocument()
   })
 
   it('shows the empty-chat text only when the history loaded with no messages', () => {
     renderPanel({ historyStatus: 'loaded' })
 
-    expect(screen.getByText('Empieza la conversacion con @Bea')).toBeInTheDocument()
+    expect(screen.getByText('Empieza la conversación con @Bea')).toBeInTheDocument()
+  })
+
+  it('announces new messages politely in a labelled log region', () => {
+    renderPanel()
+
+    const log = screen.getByRole('log', { name: 'Mensajes con Bea' })
+    expect(log).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('inserts a day separator when the day changes', () => {
+    const messages = [
+      { id: 1, senderUsername: 'bea', content: 'hola', sentAt: '2020-01-01T10:00:00Z' },
+      { id: 2, senderUsername: 'ana', content: 'que tal', sentAt: '2020-01-01T10:05:00Z' },
+      { id: 3, senderUsername: 'bea', content: 'bien', sentAt: '2020-01-05T10:00:00Z' },
+    ]
+    renderPanel({ currentMessages: messages })
+
+    expect(screen.getAllByRole('separator')).toHaveLength(2)
+  })
+
+  it('disables the send button without text or connection and uses the shared Button', () => {
+    const { rerender } = renderPanel({ draftMessage: '' })
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Enviar' })).toHaveClass('btn')
+
+    rerender(
+      <ChatPane
+        selectedChat={{ id: 1, name: 'Bea', type: 'INDIVIDUAL' }}
+        currentMessages={[]}
+        currentUsername="ana"
+        draftMessage="hola"
+        onDraftChange={vi.fn()}
+        onSendMessage={vi.fn()}
+        onLeaveChat={vi.fn()}
+        onOpenUserProfile={vi.fn()}
+        onSelectedAvatarError={vi.fn()}
+        websocketConnected
+        messagesEndRef={{ current: null }}
+      />,
+    )
+    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled()
   })
 
   it("formats message times with the viewer's locale and time zone, not a fixed one (BUG-063, D-019)", () => {
