@@ -1,6 +1,6 @@
 # BUG-061 — Si falla la carga del historial, el chat parece vacío y se marca como leído
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** frontend/chat
