@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { getEventsRequest } from '../services/events.service.js'
 
 /** Events by pages for some filters (infinite scroll: the page asks for loadMore). `filters` must be memoized. */
-export function useEvents(filters) {
+export function useEvents(filters, enabled = true) {
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -56,9 +56,10 @@ export function useEvents(filters) {
     }
   }, [filters, hasMore, loading, loadingMore])
 
+  // Disabled (e.g. the map view is showing): no request until she comes back; it then catches up with the filters
   useEffect(() => {
-    fetchFirst()
-  }, [fetchFirst])
+    if (enabled) fetchFirst()
+  }, [fetchFirst, enabled])
 
   return { events, loading, loadingMore, hasMore, loadMore, error, refetch: fetchFirst }
 }

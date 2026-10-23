@@ -1,9 +1,9 @@
 # T16 — Eventos: frontend (lista, detalle con mapa, crear y editar)
 
-- **Estado:** pendiente (T16a y T16b hechas en PRs apiladas; T16 sigue pendiente por T16c)
+- **Estado:** hecho (T16a, T16b y T16c)
 - **Fase:** 3 — Quedadas / eventos
 - **Depende de:** T15, T29a
-- **Rama sugerida:** `feat/T16-events-frontend` (dividida: `T16a` lista + detalle con mapa de solo lectura y filtros, **hecho**; `T16b` crear/editar + selector de punto en el mapa + sección "Próximas quedadas" en la comunidad, **hecho**; `T16c` vista de mapa de la lista por bbox, **bloqueada por BUG-062**)
+- **Rama sugerida:** `feat/T16-events-frontend` (dividida: `T16a` lista + detalle con mapa de solo lectura y filtros, **hecho**; `T16b` crear/editar + selector de punto en el mapa + sección "Próximas quedadas" en la comunidad, **hecho**; `T16c` vista de mapa de la lista por bbox, **hecho**, tras BUG-062)
 - **Cierra bugs:** —
 - **Tamaño:** L
 
@@ -21,10 +21,10 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 - Mobile first (la mayoría de uso será desde el móvil); comprobar a 360 px de ancho.
 
 ## Criterios de aceptación
-- [ ] Flujo completo en móvil: ver lista → filtrar "este finde" → abrir → apuntarse → aparece en "mis quedadas".
-- [ ] Evento lleno muestra lista de espera y la posición.
-- [ ] Crear un evento con punto en el mapa y verlo en el detalle.
-- [ ] Lint/build limpios; sin errores en consola.
+- [x] Flujo completo en móvil: ver lista → filtrar "este finde" → abrir → apuntarse → aparece en "mis quedadas".
+- [x] Evento lleno muestra lista de espera y la posición.
+- [x] Crear un evento con punto en el mapa y verlo en el detalle.
+- [x] Lint/build limpios; sin errores en consola.
 
 ## Tests requeridos
 - Vitest + Testing Library: botón de inscripción (todos los estados), validación del formulario, formateo de fechas.
@@ -41,3 +41,11 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 - **T16b (hecha, apilada sobre T16a):** `/events/new` y `/events/:id/edit` (`EventEditor`), `EventForm` con validación espejo de la API (`utils/eventForm.js`), selector de punto con Leaflet (`LocationPicker`: toque + marcador arrastrable), fechas en la zona del evento, selector de comunidad con `GET /api/communities/me` filtrado por rol OWNER/MODERATOR (no hizo falta backend), botón "Editar" en el detalle (`canEdit`), "Crear quedada" en la lista y sección "Próximas quedadas" + "Crear quedada" (OWNER/MODERATOR) en la comunidad.
 - **T16c (pendiente):** vista "Mapa" en `/events` con la API por bbox. `EventSummaryDto` no trae `latitude`/`longitude` (BUG-062): hay que añadirlos en backend antes. Después: `getEventsInBoundsRequest` (bbox de `moveend` con debounce, máx. 50 chinchetas, mismos filtros que la lista) y alternador Lista/Mapa.
 - Huecos conocidos de la API para el editor: `PATCH` no permite vaciar un campo opcional ya guardado (null = sin cambios; solo la descripción se vacía con `""`), y la zona horaria se fija al crear (la del navegador) sin selector.
+
+## Registro T16c (2026-10-23)
+- Backend previo: BUG-062 (`latitude`/`longitude` en `EventSummaryDto`), resuelto en su propia PR.
+- Alternador **Lista / Mapa** en `/events` (`Events.jsx`); la lista deja de buscar mientras se ve el mapa (`useEvents(filters, enabled)`).
+- `EventsMapSection` (estado del área visible, mensajes y reintento) + `EventsMapView` (Leaflet, cargado con `React.lazy` solo al abrir el mapa; chincheta por quedada con popup que enlaza al detalle) + `useEventsInBounds` (debounce de 400 ms sobre el bbox, solo cuenta la última respuesta, mantiene las chinchetas anteriores mientras busca).
+- Servicio: `buildEventsQuery` acepta `bounds`; `getEventsInBoundsRequest` pide la primera página con `size=50` (`MAP_EVENTS_LIMIT`) con los mismos filtros que la lista y devuelve `total`; `toBounds` recorta el área a lat +-90 / lng +-180 (un mapa alejado da longitudes fuera de rango y la API respondería 400).
+- Si hay más de 50 en el área se avisa ("Mostrando las 50 primeras de N. Acerca el mapa..."). Las quedadas sin punto en el mapa no salen en esta vista (el bbox las excluye); siguen en la lista.
+- Sin agrupación (clustering) de chinchetas: con el tope de 50 no hace falta aún.
