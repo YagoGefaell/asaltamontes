@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
+import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 import { getUsersByUsername } from "../../../features/users/services/users.service.js";
 
 const GroupCreatorPanel = ({
@@ -16,6 +18,7 @@ const GroupCreatorPanel = ({
   const [participantSearchError, setParticipantSearchError] = useState(null);
   const [selectedParticipants, setSelectedParticipants] = useState([]);
   const [createGroupError, setCreateGroupError] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const resetState = useCallback(() => {
     setGroupName("");
@@ -116,7 +119,7 @@ const GroupCreatorPanel = ({
   const handleSubmit = useCallback(async (event) => {
     event.preventDefault();
 
-    if (creatingGroup) return;
+    if (creatingGroup || uploadingImage) return;
 
     if (selectedParticipants.length === 0) {
       setCreateGroupError("Debes seleccionar al menos un participante.");
@@ -135,7 +138,7 @@ const GroupCreatorPanel = ({
     } catch (error) {
       setCreateGroupError(error?.message || "No se pudo crear el grupo");
     }
-  }, [creatingGroup, selectedParticipants, onSubmitGroup, groupName, groupImage, onClose]);
+  }, [creatingGroup, uploadingImage, selectedParticipants, onSubmitGroup, groupName, groupImage, onClose]);
 
   if (!isOpen) {
     return null;
@@ -176,13 +179,15 @@ const GroupCreatorPanel = ({
             disabled={creatingGroup}
           />
 
-          <label className="group-creator-label" htmlFor="group-image-input">Imagen del grupo (URL)</label>
-          <input
-            id="group-image-input"
-            type="url"
-            className="group-creator-input"
+          <span className="group-creator-label">Imagen del grupo (opcional)</span>
+          <ImageUploader
             value={groupImage}
-            onChange={(event) => setGroupImage(event.target.value)}
+            onChange={setGroupImage}
+            onUploadingChange={setUploadingImage}
+            purpose={MEDIA_PURPOSE.GROUP_IMAGE}
+            label="Imagen del grupo"
+            chooseLabel="Elegir imagen"
+            changeLabel="Cambiar imagen"
             disabled={creatingGroup}
           />
 
@@ -249,7 +254,7 @@ const GroupCreatorPanel = ({
 
           {createGroupError && <p className="group-creator-error">{createGroupError}</p>}
 
-          <button type="submit" className="group-creator-submit" disabled={creatingGroup}>
+          <button type="submit" className="group-creator-submit" disabled={creatingGroup || uploadingImage}>
             {creatingGroup ? "Creando..." : "Crear grupo"}
           </button>
       </form>

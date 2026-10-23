@@ -1,5 +1,7 @@
 package io.github.yagogefaell.asaltamontes.community.service;
 
+import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
+import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import java.util.Locale;
 import java.util.Map;
 
@@ -35,10 +37,13 @@ public class CommunityService {
 
     private final CommunityRepository communityRepository;
     private final CommunityMemberRepository communityMemberRepository;
+    private final MediaReferenceService mediaReferences;
 
-    public CommunityService(CommunityRepository communityRepository, CommunityMemberRepository communityMemberRepository) {
+    public CommunityService(CommunityRepository communityRepository, CommunityMemberRepository communityMemberRepository,
+                            MediaReferenceService mediaReferences) {
         this.communityRepository = communityRepository;
         this.communityMemberRepository = communityMemberRepository;
+        this.mediaReferences = mediaReferences;
     }
     
     @Transactional
@@ -47,6 +52,9 @@ public class CommunityService {
         if (communityRepository.existsByNameIgnoreCase(name)) {
             throw new ConflictException("Ya existe una comunidad con ese nombre");
         }
+
+        // The creator becomes OWNER, so she may set the cover; the image must be hers
+        mediaReferences.checkLinkable(request.imageUrl(), MediaPurpose.COMMUNITY_COVER, currentUser.getId());
 
         Community community = new Community(
             name,

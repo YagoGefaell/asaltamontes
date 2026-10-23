@@ -1,37 +1,18 @@
-import { useState, useEffect } from "react";
 import { formatters } from "../../utils/helpers";
-import "./AvatarUploader.css";
+import { MEDIA_PURPOSE } from "../../features/media/services/media.service.js";
+import ImageUploader from "./ImageUploader.jsx";
 
-export default function AvatarUploader({ value, onChange, fullName, username }) {
-  const [preview, setPreview] = useState(value);
-  
-  // Generar avatar por defecto usando la función utilitaria
-  const defaultAvatar = formatters.avatar(null, fullName, username);
-
-  useEffect(() => {
-    setPreview(value);
-  }, [value]);
-
-  const handleChange = (e) => {
-    const url = e.target.value;
-    setPreview(url);
-    onChange(url);
-  };
-
+/** Foto de perfil: un `ImageUploader` con el propósito AVATAR y el avatar por defecto como imagen de reserva. */
+export default function AvatarUploader({ value, onChange, fullName, username, ...rest }) {
   return (
-    <div className="avatar-uploader">
-      <img
-        src={preview || defaultAvatar}
-        alt="Avatar"
-        className="avatar-preview"
-      />
-      <input
-        type="text"
-        placeholder="URL de la foto"
-        value={value}
-        onChange={handleChange}
-        className="input-text"
-      />
-    </div>
+    <ImageUploader
+      {...rest}
+      value={value}
+      onChange={onChange}
+      purpose={MEDIA_PURPOSE.AVATAR}
+      label="Foto de perfil"
+      fallbackSrc={formatters.avatar(null, fullName, username)}
+      shape="round"
+    />
   );
 }

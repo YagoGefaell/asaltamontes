@@ -4,8 +4,9 @@ import { useNavigate } from "react-router-dom";
 import Input from "../../shared/forms/Input.jsx";
 import Button from "../../shared/forms/Button.jsx";
 import ToggleSwitch from "../../shared/ui/ToggleSwitch.jsx";
+import AvatarUploader from "../../shared/ui/AvatarUploader.jsx";
+import FormError from "../../shared/forms/FormError.jsx";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
-import { formatters } from "../../utils/helpers";
 
 export default function EditProfile() {
   const { userProfile, loading, updateUserProfile } = useUserProfile();
@@ -18,6 +19,7 @@ export default function EditProfile() {
   const [bioError, setBioError] = useState("");
   const [cityError, setCityError] = useState("");
   const [profilePictureError, setProfilePictureError] = useState("");
+  const [uploadingPicture, setUploadingPicture] = useState(false);
 
   const initialForm = useMemo(() => {
     if (!loading && userProfile) {
@@ -106,19 +108,15 @@ export default function EditProfile() {
   return (
     <form onSubmit={handleSubmit} className="edit-profile-form">
       <div className="avatar-section">
-        <img
-          src={formatters.avatar(form.profilePictureUrl, form.fullName, form.username)}
-          alt="Foto de perfil"
-          className="avatar-image"
+        <AvatarUploader
+          value={form.profilePictureUrl}
+          onChange={(url) => handleChange("profilePictureUrl", url)}
+          onUploadingChange={setUploadingPicture}
+          fullName={form.fullName}
+          username={form.username}
         />
+        <FormError message={profilePictureError} />
       </div>
-
-      <Input
-        label="URL de la foto de perfil"
-        value={form.profilePictureUrl}
-        onChange={(e) => handleChange("profilePictureUrl", e.target.value)}
-        error={profilePictureError}
-      />
 
       <Input
         label="Nombre completo"
@@ -155,7 +153,7 @@ export default function EditProfile() {
         onChange={(e) => handleChange("isPublicProfile", e.target.checked)}
       />
 
-      <Button type="submit">GUARDAR CAMBIOS</Button>
+      <Button type="submit" disabled={uploadingPicture}>GUARDAR CAMBIOS</Button>
     </form>
   );
 }

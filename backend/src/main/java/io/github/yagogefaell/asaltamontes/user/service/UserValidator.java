@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
+import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -74,7 +75,7 @@ public class UserValidator {
 
         if (dto.profilePictureUrl() != null) {
             String url = dto.profilePictureUrl().trim();
-            if (!url.matches("^(http|https)://.*$")) {
+            if (!MediaReferenceService.isInternal(url) && !url.matches("^(http|https)://.*$")) {
                 errors.put("profilePictureUrl", "Debe ser una URL válida con http o https");
             }
         }

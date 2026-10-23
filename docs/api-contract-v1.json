@@ -994,7 +994,7 @@
     },
     "/api/media": {
       "post": {
-        "summary": "Upload an image (T17a). Re-encoded as JPEG without EXIF/GPS in three sizes (longest side 128, 640, 1280 px; never enlarged)",
+        "summary": "Upload an image (T17a). Re-encoded as JPEG without EXIF/GPS in three sizes (longest side 128, 640, 1280 px; never enlarged). T17b: to use it, send its url (urls.medium) as profilePictureUrl (PATCH /api/users/me), imageUrl (POST /api/communities) or groupImage (POST /api/conversations/group); the media must belong to the caller and have the matching purpose (AVATAR, COMMUNITY_COVER, GROUP_IMAGE), otherwise 404 (not hers or missing) or 400 (wrong purpose)",
         "tags": ["Media"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {

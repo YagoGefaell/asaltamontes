@@ -1,6 +1,6 @@
 # T17 — Almacenamiento de imágenes
 
-- **Estado:** pendiente (T17a hecho en la PR de `feat/T17a-media-backend`; faltan T17b y T17c)
+- **Estado:** pendiente (T17a y T17b hechos; falta T17c)
 - **Fase:** Transversal
 - **Depende de:** T07 (hecho: nginx same-origin, `client_max_body_size 10m`), T05 (hecho)
 - **Rama sugerida:** `feat/T17a-media-backend`, `feat/T17b-media-frontend`, `refactor/T17c-media-references`
@@ -51,6 +51,12 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 - El backup de T07b **no** cubre `media_data` (documentado en el README, con un `tar` de ejemplo).
 
 ### T17b — Frontend: componente de subida
+
+**Cómo quedó T17b** (PR `feat/T17b-media-frontend`; se hizo backend de enlace + frontend en una sola PR, sin migración):
+- Sin columnas `*_media_id` (llegan en T17c), una URL guardada en `profilePictureUrl` / `Community.imageUrl` / `Conversation.groupImage` que apunta a nuestro almacén (`/media/<purpose>/<uuid>/...`, también con host delante) se trata como **referencia a una media**: `MediaReferenceService.checkLinkable` exige que `media.owner_id` sea la usuaria que enlaza (si no existe o es de otra → **404**, la misma respuesta para no poder sondear ids) y que el `purpose` coincida (si no → **400**). Las URLs externas no se tocan (T17c las retira).
+- "Puede modificar el recurso": hoy el único recurso editable con imagen es el perfil propio (`PATCH /api/users/me`), y comunidad y grupo solo aceptan imagen al **crearse** (la creadora es OWNER / administradora); no existen endpoints de edición de comunidad ni de grupo, ni el evento tiene imagen en la API (`Event.imageUrl` no se escribe). **Requisito de T17c y de los endpoints de edición futuros**: al añadirlos, comprobar también OWNER/MODERATOR (comunidad), administradora (grupo) y organizadora (evento) antes de llamar a `checkLinkable`.
+- Revisión independiente de #68: la comprobación es estricta (regex anclada con `$`, sensible a mayúsculas; se rechazan `..`, `%`, `\`, espacios/control; los valores relativos deben ser exactamente una URL interna; una URL absoluta que contenga `/media/` también). **BUG-057** (URLs externas libres en `imageUrl`/`groupImage` y sin `@Size`) sigue abierto y no se arregla aquí; T17c retira las URLs libres.
+- Frontend: `shared/ui/ImageUploader.jsx` (genérico) y `AvatarUploader` como envoltorio; servicio `features/media/services/media.service.js` (XHR con progreso, renueva el token una vez si da 401). Sin compresión previa en el cliente (el backend ya redimensiona; 10 MB es suficiente para fotos de móvil).
 - Convertir `shared/ui/AvatarUploader.jsx` en un `ImageUploader` genérico (manteniendo `AvatarUploader` como envoltorio para el avatar): `<input type="file" accept="image/*">` (en iOS abre cámara o galería y convierte HEIC a JPEG), vista previa local (`URL.createObjectURL`), validación previa de tamaño (≤ 10 MB) y tipo, barra de progreso (subida con `XMLHttpRequest`: `fetch` no da progreso), errores del backend y reintentar.
 - Usarlo en `EditProfile.jsx` (avatar), `CommunityCreatorPanel.jsx` (portada) y `GroupCreatorPanel.jsx` (imagen de grupo). En esta PR se sigue guardando la URL devuelta (`urls.medium`) en el campo actual, para no depender de T17c.
 - Tests (Vitest): rechaza > 10 MB y no-imágenes sin llamar a la API; muestra el progreso y el error del backend.

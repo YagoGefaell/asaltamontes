@@ -1,5 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.service;
 
+import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
+import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
@@ -39,6 +41,7 @@ public class MessageService {
     private final ConversationParticipantRepository participantRepository;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
+    private final MediaReferenceService mediaReferences;
     private final int maxGroupSize;
 
     public static final int MAX_CONTENT_LENGTH = 2000;
@@ -51,12 +54,14 @@ public class MessageService {
                           ConversationParticipantRepository participantRepository,
                           UserService userService,
                           ApplicationEventPublisher eventPublisher,
+                          MediaReferenceService mediaReferences,
                           @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
         this.userService = userService;
         this.eventPublisher = eventPublisher;
+        this.mediaReferences = mediaReferences;
         this.maxGroupSize = maxGroupSize;
     }
 
@@ -137,6 +142,8 @@ public class MessageService {
     @Transactional
     public ChatResponseDto createGroupConversation(String currentUsername, String groupName, String groupImage, List<String> users) {
         UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
+        // The creator administers the new group, so she may set its image; the image must be hers
+        mediaReferences.checkLinkable(groupImage, MediaPurpose.GROUP_IMAGE, creator.getId());
 
         if (users == null || users.isEmpty()) {
             throw new BadRequestException("Debes añadir al menos un usuario al grupo");

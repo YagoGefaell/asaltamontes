@@ -1,4 +1,6 @@
 import { useCallback, useState } from "react";
+import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
+import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 
 const CommunityCreatorPanel = ({
   isOpen,
@@ -10,6 +12,7 @@ const CommunityCreatorPanel = ({
   const [communityDescription, setCommunityDescription] = useState("");
   const [communityImageUrl, setCommunityImageUrl] = useState("");
   const [createCommunityError, setCreateCommunityError] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const resetState = () => {
     setCommunityName("");
@@ -28,7 +31,7 @@ const CommunityCreatorPanel = ({
     async (event) => {
       event.preventDefault();
 
-      if (creatingCommunity) return;
+      if (creatingCommunity || uploadingImage) return;
 
       if (!communityName.trim()) {
         setCreateCommunityError("El nombre de la comunidad es requerido.");
@@ -51,6 +54,7 @@ const CommunityCreatorPanel = ({
     },
     [
       creatingCommunity,
+      uploadingImage,
       communityName,
       communityDescription,
       communityImageUrl,
@@ -121,17 +125,17 @@ const CommunityCreatorPanel = ({
           rows="4"
         />
 
-        <label className="community-creator-label" htmlFor="community-image-input">
-          Imagen URL (opcional)
-        </label>
-        <input
-          id="community-image-input"
-          type="url"
-          className="community-creator-input"
+        <span className="community-creator-label">Imagen de portada (opcional)</span>
+        <ImageUploader
           value={communityImageUrl}
-          onChange={(event) => setCommunityImageUrl(event.target.value)}
+          onChange={setCommunityImageUrl}
+          onUploadingChange={setUploadingImage}
+          purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
+          label="Imagen de portada"
+          chooseLabel="Elegir imagen"
+          changeLabel="Cambiar imagen"
+          shape="wide"
           disabled={creatingCommunity}
-          placeholder="Ej: https://example.com/image.jpg"
         />
 
         {createCommunityError && (
@@ -150,7 +154,7 @@ const CommunityCreatorPanel = ({
           <button
             type="submit"
             className="community-creator-btn-submit"
-            disabled={creatingCommunity}
+            disabled={creatingCommunity || uploadingImage}
           >
             {creatingCommunity ? "Creando..." : "Crear comunidad"}
           </button>
