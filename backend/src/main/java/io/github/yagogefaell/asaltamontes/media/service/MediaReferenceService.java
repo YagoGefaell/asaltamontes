@@ -47,7 +47,6 @@ public class MediaReferenceService {
     private static final Pattern INTERNAL = Pattern.compile(
             "^(?:https?://[^/\\s?#@\\\\]+)?/media/(" + SEGMENTS + ")/"
                     + "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/(?:thumb|medium|large)\\.jpg$");
-    private static final Pattern ABSOLUTE = Pattern.compile("^https?://.*", Pattern.CASE_INSENSITIVE);
     private static final Pattern CONTROL = Pattern.compile("[\\p{Cntrl}\\s]");
 
     private final MediaRepository mediaRepository;
@@ -78,6 +77,11 @@ public class MediaReferenceService {
             return new Linked(null, null);
         }
         String value = url.trim();
+        if (legacyExternal != null && value.equals(legacyExternal) && !INTERNAL.matcher(value).matches()) {
+            // The resource already holds exactly this value (e.g. a Google picture URL, which may contain '%' or
+            // '..'): resending the field untouched must keep working. Nothing new is stored.
+            return new Linked(null, value);
+        }
         if (value.contains("..") || value.contains("%") || value.contains("\\") || CONTROL.matcher(value).find()) {
             throw invalid();
         }
@@ -90,10 +94,6 @@ public class MediaReferenceService {
                 throw invalid();
             }
             return linked;
-        }
-        if (ABSOLUTE.matcher(value).matches() && !value.toLowerCase().contains("/media/")
-                && value.equals(legacyExternal)) {
-            return new Linked(null, value);
         }
         throw new BadRequestException("Solo se pueden usar imágenes subidas a la aplicación");
     }

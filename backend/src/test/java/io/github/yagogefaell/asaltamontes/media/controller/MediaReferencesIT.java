@@ -106,6 +106,15 @@ class MediaReferencesIT extends AbstractIntegrationTest {
         patchProfile(ana, Map.of("profilePictureUrl", "https://lh3.googleusercontent.com/a/legacy"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.profilePictureUrl").value("https://lh3.googleusercontent.com/a/legacy"));
+        // A legacy value with characters the strict filter rejects is still accepted when resent unchanged
+        String awkward = "https://lh3.googleusercontent.com/a/x%3Dy..z=s96-c";
+        jdbc.update("UPDATE user_profiles SET profile_picture_url = ? WHERE user_id = ?", awkward, ana.getId());
+        patchProfile(ana, Map.of("profilePictureUrl", awkward))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.profilePictureUrl").value(awkward));
+        patchProfile(ana, Map.of("profilePictureUrl", awkward + "2")).andExpect(status().isBadRequest());
+        jdbc.update("UPDATE user_profiles SET profile_picture_url = ? WHERE user_id = ?",
+                "https://lh3.googleusercontent.com/a/legacy", ana.getId());
         // Other fields do not touch the picture
         patchProfile(ana, Map.of("bio", "Hola"))
                 .andExpect(status().isOk())

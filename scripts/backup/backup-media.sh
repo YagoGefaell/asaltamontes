@@ -25,6 +25,7 @@ set_status() {
 }
 
 mkdir -p "$OUT"
+rm -f "$OUT"/*.partial # left by a copy that was killed halfway
 
 case "$KEEP" in
   ''|*[!0-9]*|0) log "BACKUP_MEDIA_KEEP must be a number >= 1 (got '$KEEP')"; set_status failed "invalid BACKUP_MEDIA_KEEP"; exit 1 ;;

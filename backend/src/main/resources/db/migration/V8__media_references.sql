@@ -20,9 +20,12 @@ CREATE INDEX idx_communities_cover_media ON communities (cover_media_id) WHERE c
 CREATE INDEX idx_conversations_group_media ON conversations (group_media_id) WHERE group_media_id IS NOT NULL;
 
 -- Existing references: URLs that point to our own store become media ids when the media exists, belongs to the
--- user who owns the resource and has the right purpose. Anything else stays as an external URL.
+-- user who owns the resource and has the right purpose. The text column is rewritten to the relative URL of the
+-- medium variant, so a row that pointed to a foreign host with our path stops calling that host. Anything else
+-- stays as it was (legacy external URL).
 UPDATE user_profiles p
-   SET avatar_media_id = m.id
+   SET avatar_media_id = m.id,
+       profile_picture_url = '/media/avatar/' || m.id || '/medium.jpg'
   FROM media m
  WHERE p.profile_picture_url ~ '^(?:https?://[^/]+)?/media/avatar/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?:thumb|medium|large)\.jpg$'
    AND m.id = substring(p.profile_picture_url from '/media/avatar/([0-9a-f-]{36})/')::uuid
@@ -30,7 +33,8 @@ UPDATE user_profiles p
    AND m.owner_id = p.user_id;
 
 UPDATE communities c
-   SET cover_media_id = m.id
+   SET cover_media_id = m.id,
+       image_url = '/media/community-cover/' || m.id || '/medium.jpg'
   FROM media m
  WHERE c.image_url ~ '^(?:https?://[^/]+)?/media/community-cover/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?:thumb|medium|large)\.jpg$'
    AND m.id = substring(c.image_url from '/media/community-cover/([0-9a-f-]{36})/')::uuid
@@ -38,8 +42,12 @@ UPDATE communities c
    AND m.owner_id = c.created_by_id;
 
 UPDATE conversations v
-   SET group_media_id = m.id
+   SET group_media_id = m.id,
+       group_image = '/media/group-image/' || m.id || '/medium.jpg'
   FROM media m
  WHERE v.group_image ~ '^(?:https?://[^/]+)?/media/group-image/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/(?:thumb|medium|large)\.jpg$'
    AND m.id = substring(v.group_image from '/media/group-image/([0-9a-f-]{36})/')::uuid
-   AND m.purpose = 'GROUP_IMAGE';
+   AND m.purpose = 'GROUP_IMAGE'
+   -- conversations have no creator column: the image must belong to a member of the group
+   AND EXISTS (SELECT 1 FROM conversation_participants cp
+                WHERE cp.conversation_id = v.id AND cp.user_id = m.owner_id);

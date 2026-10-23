@@ -71,7 +71,8 @@ public class MediaService {
 
         ImageProcessor.Processed processed = processLimited(file);
         // Concurrent uploads of the same user can overshoot a little: the quota is a soft limit by design
-        checkQuota(used, processed.totalBytes());
+        // Read again: uploads of the same user that finished while this one was waiting or processing count
+        checkQuota(mediaRepository.sumBytesByOwner(owner.getId()), processed.totalBytes());
 
         UUID id = UUID.randomUUID();
         String prefix = purpose.pathSegment() + "/" + id + "/";
