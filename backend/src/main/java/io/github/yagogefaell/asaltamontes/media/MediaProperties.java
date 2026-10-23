@@ -20,10 +20,14 @@ public class MediaProperties {
     private long maxBytes = 10L * 1024 * 1024;
     private int minSide = 64;
     private int maxSide = 8000;
-    /** Decoded pixels (width x height). Decoding costs ~3 bytes per pixel, and the heap is small (-Xmx512m). */
-    private long maxPixels = 40_000_000L;
+    /**
+     * Decoded pixels (width x height). Decoding costs 3-4 bytes per pixel (a PNG is 4), on top of the 10 MB upload,
+     * and the heap is small (-Xmx512m). The largest size served is 1280 px, so phone photos (12-24 Mpx) are plenty.
+     */
+    private long maxPixels = 24_000_000L;
     private int uploadsPerHour = 30;
-    /** Images processed at the same time; the others wait. */
+    /** Images processed at the same time; the others wait (holding no upload bytes in memory). */
     private int maxConcurrentProcessing = 1;
-    private int processingWaitSeconds = 20;
+    /** How long a request waits for a processing slot before being rejected with 429. */
+    private int processingWaitSeconds = 3;
 }

@@ -65,14 +65,7 @@ public class MediaService {
                     + Math.max(1, retryAfter / 60) + " minutos", retryAfter);
         }
 
-        byte[] data;
-        try {
-            data = file.getBytes();
-        } catch (IOException e) {
-            throw new InvalidImageException("No se ha podido leer el archivo");
-        }
-
-        ImageProcessor.Processed processed = processLimited(data);
+        ImageProcessor.Processed processed = processLimited(file);
 
         UUID id = UUID.randomUUID();
         String prefix = purpose.pathSegment() + "/" + id + "/";
@@ -99,7 +92,8 @@ public class MediaService {
                 storage.publicUrl(keys[0]), storage.publicUrl(keys[1]), storage.publicUrl(keys[2])));
     }
 
-    private ImageProcessor.Processed processLimited(byte[] data) {
+    /** The slot is taken before the bytes are read, so waiting requests hold no copy of their upload. */
+    private ImageProcessor.Processed processLimited(MultipartFile file) {
         boolean acquired;
         try {
             acquired = processing.tryAcquire(properties.getProcessingWaitSeconds(), TimeUnit.SECONDS);
@@ -111,6 +105,16 @@ public class MediaService {
             throw new TooManyRequestsException("El servidor está ocupado; inténtalo de nuevo en unos segundos", 5);
         }
         try {
+            byte[] data;
+            try (var in = file.getInputStream()) {
+                data = in.readNBytes((int) properties.getMaxBytes() + 1);
+            } catch (IOException e) {
+                throw new InvalidImageException("No se ha podido leer el archivo");
+            }
+            if (data.length > properties.getMaxBytes()) {
+                throw new PayloadTooLargeException("La imagen es demasiado grande (máximo "
+                        + properties.getMaxBytes() / (1024 * 1024) + " MB)");
+            }
             return imageProcessor.process(data);
         } finally {
             processing.release();

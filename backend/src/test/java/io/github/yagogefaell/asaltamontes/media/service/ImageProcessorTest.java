@@ -29,6 +29,18 @@ class ImageProcessorTest {
         assertThat(ImageFixtures.decode(processed.large())).isNotNull();
     }
 
+    /** Surefire runs with -Xmx512m (pom.xml), the production heap: the largest accepted PNG must fit in it. */
+    @Test
+    void processesAPngAtThePixelLimit_withTheProductionHeap() {
+        assertThat(Runtime.getRuntime().maxMemory()).isLessThan(700L * 1024 * 1024);
+        byte[] png = ImageFixtures.png(6000, 4000, true); // 24 Mpx = the default limit, with alpha (4 bytes per pixel)
+
+        ImageProcessor.Processed processed = processor.process(png);
+
+        assertThat(processed.width()).isEqualTo(1280);
+        assertThat(processed.height()).isEqualTo(853);
+    }
+
     @Test
     void rejectsRiffFilesThatAreNotWebp() {
         byte[] wav = new byte[64];

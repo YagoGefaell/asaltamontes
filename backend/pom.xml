@@ -176,6 +176,14 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+            <!-- Unit tests run with the production heap, so the image memory limits (T17a) are really exercised -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Xmx512m</argLine>
+                </configuration>
+            </plugin>
             <!-- Runs *IT integration tests (Testcontainers) in the verify phase -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
