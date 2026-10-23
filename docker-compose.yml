@@ -80,6 +80,10 @@ services:
       DB_POOL_SIZE: ${DB_POOL_SIZE:-10}
       # Explicit heap: without the memory cgroup the JVM would size it from the whole host RAM
       JAVA_TOOL_OPTIONS: ${BACKEND_JAVA_OPTS:--Xms128m -Xmx512m}
+      # Uploaded images (T17a): written here, served by nginx from the same volume
+      MEDIA_DIR: ${MEDIA_DIR:-/data/media}
+    volumes:
+      - media_data:${MEDIA_DIR:-/data/media}
     # Not published on the LAN: browsers reach it through nginx (frontend). Localhost only, for debugging.
     ports:
       - "127.0.0.1:8080:8080"
@@ -106,6 +110,9 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    volumes:
+      # Read-only: nginx serves /media/ straight from the volume the backend writes (T17a)
+      - media_data:/var/media:ro
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
       interval: 30s
@@ -124,3 +131,5 @@ volumes:
   postgres_data:
   postgres17_data:
   postgres_backups:
+  # Uploaded images (T17a). NOT covered by the database backup service
+  media_data:
