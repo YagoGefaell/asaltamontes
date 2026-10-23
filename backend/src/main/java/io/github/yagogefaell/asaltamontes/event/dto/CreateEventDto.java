@@ -14,7 +14,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/** New event (T15a). Without visibility it is PUBLIC; COMMUNITY needs communityId. Without timezone, Europe/Madrid. */
+/** New event (T15a). Without visibility it is PUBLIC; COMMUNITY needs communityId. The timezone (IANA id) is required: the time belongs to the place (D-019). */
 public record CreateEventDto(
     @NotBlank(message = "El título es obligatorio")
     @Size(max = 120, message = "El título no puede superar los 120 caracteres")
@@ -31,6 +31,7 @@ public record CreateEventDto(
 
     Instant endsAt,
 
+    @NotBlank(message = "La zona horaria es obligatoria")
     @Size(max = 40, message = "Zona horaria no válida")
     String timezone,
 

@@ -7,7 +7,7 @@ import { useEventAttendance } from '../../features/events/hooks/useEventAttendan
 import { getEventAttendeesRequest } from '../../features/events/services/events.service.js'
 import AttendButton from '../../features/events/components/AttendButton.jsx'
 import {
-  EVENT_LEVELS, EVENT_TYPES, directionsUrl, formatDistance, formatEventDateTime, formatPlaces,
+  EVENT_LEVELS, EVENT_TYPES, directionsUrl, formatDistance, formatEventDateTime, formatPlaces, formatViewerDateTime,
 } from '../../features/events/utils/eventFormat.js'
 import Avatar from '../../shared/ui/Avatar.jsx'
 import EmptyState from '../../shared/ui/EmptyState.jsx'
@@ -140,6 +140,7 @@ export default function EventDetail() {
   }
 
   const hasPoint = event.latitude != null && event.longitude != null
+  const viewerTime = formatViewerDateTime(event.startsAt, event.timezone)
   const distance = formatDistance(event.distanceKm, event.elevationGainM)
   const isOrganizer = Boolean(username) && event.organizerUsername === username
 
@@ -163,6 +164,7 @@ export default function EventDetail() {
         )}
 
         <p className="event-detail__when">{formatEventDateTime(event.startsAt, event.timezone)}</p>
+        {viewerTime && <p className="event-detail__viewer-time">Tu hora: {viewerTime}</p>}
         <div className="event-detail__tags">
           <span>{EVENT_TYPES[event.type] ?? event.type}</span>
           {event.level && <span>{EVENT_LEVELS[event.level] ?? event.level}</span>}

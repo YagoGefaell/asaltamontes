@@ -7,6 +7,8 @@ import { EVENT_LEVELS, EVENT_TYPES } from '../utils/eventFormat.js'
 import {
   CITY_MAX, DESCRIPTION_MAX, MEETING_POINT_MAX, TITLE_MAX, browserTimeZone, validateEventForm,
 } from '../utils/eventForm.js'
+import { zoneLabel } from '../utils/timeZones.js'
+import TimeZoneSelect from './TimeZoneSelect.jsx'
 import './EventForm.css'
 
 // Leaflet only downloads when the form is opened
@@ -19,8 +21,9 @@ const LocationPicker = lazy(() => import('./LocationPicker.jsx'))
  */
 export default function EventForm({
   values, onChange, onSubmit, submitting = false, mode = 'create', communities = [], communityName = null,
-  timeZone = browserTimeZone(), original = null, serverErrors = {}, submitLabel,
+  original = null, serverErrors = {}, submitLabel,
 }) {
+  const timeZone = values.timezone || browserTimeZone()
   const [submitted, setSubmitted] = useState(false)
   const errors = submitted ? { ...serverErrors, ...validateEventForm(values, { timeZone, original }) } : serverErrors
   const set = (patch) => onChange({ ...values, ...patch })
@@ -58,8 +61,15 @@ export default function EventForm({
         <Input type="datetime-local" label="Termina (opcional)" aria-label="Termina" {...field('endsAt')} />
       </div>
       <p className="event-form__hint">
-        Hora local{otherZone ? ` de ${timeZone.replace(/_/g, ' ')} (la zona de la quedada)` : ` (${timeZone.replace(/_/g, ' ')})`}.
+        Hora local{otherZone ? ` de ${zoneLabel(timeZone)} (la zona de la quedada)` : ` (${zoneLabel(timeZone)})`}.
       </p>
+      <details className="event-form__advanced">
+        <summary>Avanzado</summary>
+        <TimeZoneSelect value={timeZone} onChange={(zone) => set({ timezone: zone })} error={errors.timezone} />
+        <p className="event-form__hint">
+          La hora pertenece al lugar de la quedada: elige su zona si no es la de tu dispositivo.
+        </p>
+      </details>
 
       <fieldset className="event-form__place">
         <legend>Punto de encuentro</legend>

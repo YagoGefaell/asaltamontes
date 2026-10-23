@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
-import { EVENT_LEVELS, EVENT_TYPES, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, isFull } from '../utils/eventFormat.js'
+import { EVENT_LEVELS, EVENT_TYPES, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, formatViewerDateTime, isFull } from '../utils/eventFormat.js'
 import './EventCard.css'
 
 /** Card of a listing: big date, title, place, distance, level and places. */
 export default function EventCard({ event }) {
   const { day, month } = formatDateBadge(event.startsAt, event.timezone)
+  const viewerTime = formatViewerDateTime(event.startsAt, event.timezone)
   const distance = formatDistance(event.distanceKm, event.elevationGainM)
   const place = [event.meetingPointName, event.city].filter(Boolean).join(' · ')
   const full = isFull(event)
@@ -18,6 +19,7 @@ export default function EventCard({ event }) {
       <div className="event-card__body">
         <h3 className="event-card__title">{event.title}</h3>
         <p className="event-card__when">{formatEventDateTime(event.startsAt, event.timezone)}</p>
+        {viewerTime && <p className="event-card__when event-card__when--viewer">Tu hora: {viewerTime}</p>}
         {place && <p className="event-card__place">{place}</p>}
         <div className="event-card__tags">
           <span className="event-card__tag">{EVENT_TYPES[event.type] ?? event.type}</span>

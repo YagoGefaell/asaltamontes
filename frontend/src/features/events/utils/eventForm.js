@@ -14,6 +14,8 @@ export const EMPTY_FORM = {
   type: 'MEETUP',
   startsAt: '',
   endsAt: '',
+  // IANA zone of the event (D-019): the browser's by default, changeable under "Avanzado"
+  timezone: browserTimeZone(),
   meetingPointName: '',
   latitude: null,
   longitude: null,
@@ -82,6 +84,7 @@ export function formFromEvent(event) {
     type: event.type ?? 'MEETUP',
     startsAt: isoToZonedLocal(event.startsAt, zone),
     endsAt: isoToZonedLocal(event.endsAt, zone),
+    timezone: zone,
     meetingPointName: event.meetingPointName ?? '',
     latitude: event.latitude ?? null,
     longitude: event.longitude ?? null,
@@ -103,7 +106,7 @@ const toNumber = (text) => (String(text).trim() === '' ? null : Number(String(te
  * Field errors (empty object = valid). `timeZone` is the event's; `original` is set when editing:
  * the API only demands a future start when the start changes.
  */
-export function validateEventForm(values, { timeZone = browserTimeZone(), now = new Date(), original = null } = {}) {
+export function validateEventForm(values, { timeZone = values.timezone || browserTimeZone(), now = new Date(), original = null } = {}) {
   const errors = {}
   const title = values.title.trim()
   if (!title) errors.title = 'El título es obligatorio'
@@ -115,7 +118,7 @@ export function validateEventForm(values, { timeZone = browserTimeZone(), now = 
   const startsIso = zonedLocalToIso(values.startsAt, timeZone)
   if (!values.startsAt) errors.startsAt = 'La fecha de inicio es obligatoria'
   else if (!startsIso) errors.startsAt = 'Fecha de inicio no válida'
-  else if (new Date(startsIso) <= now && (!original || values.startsAt !== original.startsAt)) {
+  else if (new Date(startsIso) <= now && (!original || values.startsAt !== original.startsAt || values.timezone !== original.timezone)) {
     errors.startsAt = 'El evento tiene que empezar en el futuro'
   }
 
@@ -155,7 +158,7 @@ export function validateEventForm(values, { timeZone = browserTimeZone(), now = 
 const orNull = (text) => (text.trim() === '' ? null : text.trim())
 
 /** Body of POST /api/events. Empty optional fields are left out. */
-export function toCreatePayload(values, timeZone = browserTimeZone()) {
+export function toCreatePayload(values, timeZone = values.timezone || browserTimeZone()) {
   const payload = {
     title: values.title.trim(),
     type: values.type,
@@ -180,18 +183,21 @@ export function toCreatePayload(values, timeZone = browserTimeZone()) {
   return payload
 }
 
+const KEPT_OUT_OF_PATCH = ['visibility', 'communityId']
+
 /**
- * Body of PATCH /api/events/{id}: only what changed (the API leaves null fields as they are).
- * Gap: the API cannot clear an optional field once set (e.g. remove the capacity), except the description.
+ * Body of PATCH /api/events/{id}: only what changed. A field she emptied goes out as an explicit null, which the
+ * API reads as "clear it" (D-020); a field that did not change is left out.
+ * The wall times are read in each side's own zone, so changing only the zone moves the instants (same clock time,
+ * another place).
  */
-export function toUpdatePayload(values, original, timeZone) {
+export function toUpdatePayload(values, original, timeZone = values.timezone || browserTimeZone()) {
   const full = toCreatePayload(values, timeZone)
-  const before = toCreatePayload(original, timeZone)
+  const before = toCreatePayload(original, original.timezone || timeZone)
   const payload = {}
-  for (const key of Object.keys(full)) {
-    if (key === 'visibility' || key === 'communityId' || key === 'timezone') continue
-    if (full[key] !== before[key]) payload[key] = full[key]
+  for (const key of new Set([...Object.keys(full), ...Object.keys(before)])) {
+    if (KEPT_OUT_OF_PATCH.includes(key)) continue
+    if (full[key] !== before[key]) payload[key] = full[key] ?? null
   }
-  if (values.description.trim() === '' && original.description.trim() !== '') payload.description = ''
   return payload
 }

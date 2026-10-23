@@ -17,7 +17,7 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 - **Detalle** `/events/:id`: datos, mapa con el punto de encuentro + "Cómo llegar" (enlace a Google/Apple Maps con lat/lng), organizadora, comunidad, asistentes (avatares + "ver todas"), botón principal con estados: Apuntarme · Estás dentro ✓ (salir) · En lista de espera (#3) · Completo (apuntarme a la lista) · Cancelado. Actualización optimista con rollback (reutilizar `useOptimisticToggle` si encaja).
 - **Crear/editar** `/events/new`, `/events/:id/edit`: formulario con validación espejo de la API, selector de punto en el mapa (click/drag del marcador) + campo de texto, selector de comunidad (solo aquellas donde puede organizar), fecha y hora en hora local.
 - Desde la página de comunidad: sección "Próximas quedadas" + botón "Crear quedada" para moderación.
-- Fechas en español con `Intl.DateTimeFormat('es-ES', …)`; mostrar la zona del evento si difiere de la del navegador.
+- Fechas con `Intl.DateTimeFormat` y el locale del navegador (D-019); mostrar la zona del evento si difiere de la del navegador.
 - Mobile first (la mayoría de uso será desde el móvil); comprobar a 360 px de ancho.
 
 ## Criterios de aceptación
@@ -40,7 +40,6 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 ## División T16b / T16c (2026-10-22)
 - **T16b (hecha, apilada sobre T16a):** `/events/new` y `/events/:id/edit` (`EventEditor`), `EventForm` con validación espejo de la API (`utils/eventForm.js`), selector de punto con Leaflet (`LocationPicker`: toque + marcador arrastrable), fechas en la zona del evento, selector de comunidad con `GET /api/communities/me` filtrado por rol OWNER/MODERATOR (no hizo falta backend), botón "Editar" en el detalle (`canEdit`), "Crear quedada" en la lista y sección "Próximas quedadas" + "Crear quedada" (OWNER/MODERATOR) en la comunidad.
 - **T16c (pendiente):** vista "Mapa" en `/events` con la API por bbox. `EventSummaryDto` no trae `latitude`/`longitude` (BUG-062): hay que añadirlos en backend antes. Después: `getEventsInBoundsRequest` (bbox de `moveend` con debounce, máx. 50 chinchetas, mismos filtros que la lista) y alternador Lista/Mapa.
-- Huecos conocidos de la API para el editor: `PATCH` no permite vaciar un campo opcional ya guardado (null = sin cambios; solo la descripción se vacía con `""`), y la zona horaria se fija al crear (la del navegador) sin selector.
 
 ## Registro T16c (2026-10-23)
 - Backend previo: BUG-062 (`latitude`/`longitude` en `EventSummaryDto`), resuelto en su propia PR.
@@ -49,3 +48,10 @@ Que las usuarias descubran quedadas cerca y se apunten en dos toques desde el m�
 - Servicio: `buildEventsQuery` acepta `bounds`; `getEventsInBoundsRequest` pide la primera página con `size=50` (`MAP_EVENTS_LIMIT`) con los mismos filtros que la lista y devuelve `total`; `toBounds` recorta el área a lat +-90 / lng +-180 (un mapa alejado da longitudes fuera de rango y la API respondería 400).
 - Si hay más de 50 en el área se avisa ("Mostrando las 50 primeras de N. Acerca el mapa..."). Las quedadas sin punto en el mapa no salen en esta vista (el bbox las excluye); siguen en la lista.
 - Sin agrupación (clustering) de chinchetas: con el tope de 50 no hace falta aún.
+
+- Huecos conocidos de la API para el editor (cerrados después en la PR `fix(events): time zone selector and clearing optional fields`, ver abajo): `PATCH` no permitía vaciar un campo opcional y la zona horaria se fijaba al crear sin selector.
+
+### Zona horaria y vaciado de campos: implementado
+- Zona por defecto = `Intl.DateTimeFormat().resolvedOptions().timeZone`; selector IANA con buscador (`Intl.supportedValuesOf('timeZone')` con respaldo) en el apartado "Avanzado" de `EventForm` (`TimeZoneSelect`, `utils/timeZones.js`). Cambiar solo la zona al editar mantiene la hora de reloj y mueve el instante.
+- La edición envía `null` en los campos opcionales que se vacían (`toUpdatePayload`).
+- Tarjeta y detalle muestran la hora del evento y, si la zona de quien lo ve difiere, "Tu hora: …". Fechas y números con el locale del navegador, no `es-ES` fijo; distancias y desnivel se guardan en SI y se formatean al mostrar.

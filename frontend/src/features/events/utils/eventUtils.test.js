@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { dateRange, hasActiveFilters, EMPTY_FILTERS } from './eventFilters.js'
-import { directionsUrl, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, isFull } from './eventFormat.js'
+import { directionsUrl, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, formatViewerDateTime, isFull } from './eventFormat.js'
 
 describe('formatting', () => {
   it('formats the date in Spanish in the event zone', () => {
     // 07:30 UTC is 09:30 in Madrid in October (CEST)
-    const text = formatEventDateTime('2026-10-24T07:30:00Z', 'Europe/Madrid')
+    const text = formatEventDateTime('2026-10-24T07:30:00Z', 'Europe/Madrid', 'es-ES')
     expect(text).toContain('sábado')
     expect(text).toContain('24 de octubre')
     expect(text).toContain('09:30')
@@ -18,16 +18,33 @@ describe('formatting', () => {
     expect(formatEventDateTime('2026-10-24T07:30:00Z', other)).toContain(`(${other})`)
   })
 
+  it('adds the viewer\'s own time only when her zone differs from the event\'s', () => {
+    // 07:30 UTC: 09:30 in Madrid (CEST), 02:30 in Bogota
+    const iso = '2026-10-24T07:30:00Z'
+    expect(formatViewerDateTime(iso, 'Europe/Madrid', 'es-ES', 'Europe/Madrid')).toBe('')
+    const mine = formatViewerDateTime(iso, 'Europe/Madrid', 'es-ES', 'America/Bogota')
+    expect(mine).toContain('02:30')
+    expect(mine).toContain('24')
+    // The event line names its zone when it is not the viewer's
+    expect(formatEventDateTime(iso, 'Europe/Madrid', 'es-ES', 'America/Bogota')).toContain('(Europe/Madrid)')
+    expect(formatEventDateTime(iso, 'Europe/Madrid', 'es-ES', 'Europe/Madrid')).not.toContain('(')
+  })
+
+  it('formats with the locale it is given (nothing fixed to Spain)', () => {
+    expect(formatEventDateTime('2026-10-24T07:30:00Z', 'Europe/Madrid', 'en-US', 'Europe/Madrid')).toContain('Saturday')
+    expect(formatDistance(12.5, 1800, 'en-US')).toBe('12.5 km · 1,800 m+')
+  })
+
   it('does not break with an unknown zone', () => {
     expect(() => formatEventDateTime('2026-10-24T07:30:00Z', 'Nope/Nowhere')).not.toThrow()
   })
 
   it('builds the date badge', () => {
-    expect(formatDateBadge('2026-10-24T07:30:00Z', 'Europe/Madrid')).toEqual({ day: '24', month: 'oct' })
+    expect(formatDateBadge('2026-10-24T07:30:00Z', 'Europe/Madrid', 'es-ES')).toEqual({ day: '24', month: 'oct' })
   })
 
   it('formats distance, places and fullness', () => {
-    expect(formatDistance(12.5, 800)).toBe('12,5 km · 800 m+')
+    expect(formatDistance(12.5, 800, 'es-ES')).toBe('12,5 km · 800 m+')
     expect(formatDistance(null, null)).toBe('')
     expect(formatPlaces(7, 12)).toBe('7/12')
     expect(formatPlaces(3, null)).toBe('3 apuntadas')

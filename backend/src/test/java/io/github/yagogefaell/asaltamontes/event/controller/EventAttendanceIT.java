@@ -202,7 +202,7 @@ class EventAttendanceIT extends AbstractIntegrationTest {
     private EventDetailsDto newEvent(UserAccount organizer, Integer capacity, EventVisibility visibility, Long communityId) {
         return eventService.create(new CreateEventDto(
                 testData.uniqueName("Quedada"), null, EventType.MEETUP, Instant.now().plus(3, ChronoUnit.DAYS), null,
-                null, "Parking", null, null, "Vigo", null, null, null, capacity, visibility, communityId), organizer);
+                "Europe/Madrid", "Parking", null, null, "Vigo", null, null, null, capacity, visibility, communityId), organizer);
     }
 
     private ResultActions join(UserAccount user, long id) throws Exception {
