@@ -60,6 +60,14 @@
 | T17 | [Almacenamiento de imágenes (sistema de archivos tras `MediaStorage`)](tasks/T17-media-storage.md) | T07 | T15, T16 | — |
 | T18 | 🔍 [Notificaciones en tiempo real](tasks/T18-notifications.md) | T09, T15 | T19 | — |
 
+## Seguridad de identificadores (D-021)
+
+| # | Tarea | Depende de | Paralelizable con | Cierra bugs |
+|---|---|---|---|---|
+| T30 | [Identificadores públicos (UUID v7) y cursores opacos](tasks/T30-public-ids.md) | — | T17 | — |
+
+**Cuándo:** lo antes posible y antes de T18, T12 y T22. Mientras tanto, todo recurso nuevo que se exponga nace ya con `public_id`.
+
 ## Fase 2b / 3b — Comunidades y eventos completos
 
 | # | Tarea | Depende de | Paralelizable con | Cierra bugs |

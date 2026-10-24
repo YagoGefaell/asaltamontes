@@ -97,3 +97,14 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 ## D-020 · PATCH: `null` explícito vacía, campo ausente no cambia (2026-10-23)
 - **Decisión (Yago):** en los `PATCH` de la API, un campo con `null` explícito **vacía** el valor (si es opcional) y un campo ausente significa **sin cambios**. Se documenta en `docs/api-contract-v1.json`.
 - **Consecuencias:** los DTO de actualización deben distinguir "ausente" de `null` (p. ej. `JsonNullable` o un mapa de campos presentes). Empieza por eventos; el resto de PATCH se alinea cuando se toquen.
+
+## D-021 · Identificadores: `bigint` interno + `public_id` UUID v7 hacia fuera (2026-10-24)
+- **Contexto (Yago):** se busca la mejor práctica en seguridad y rendimiento; perder los datos actuales no importa (D-014).
+- **Decisión:** la clave primaria de todas las tablas sigue siendo `bigint` (índices y FK pequeños, joins rápidos, menos escritura en la microSD, y se respeta la arquitectura de Yago, D-012). Todo recurso que se exponga en la API, en URLs o en eventos de WebSocket tiene además una columna **`public_id uuid` (v7, ordenado por tiempo) única y no nula**, y **solo ese id sale hacia fuera**. Usuarias por `username` y comunidades por `slug` siguen como están. No se migran las PK a UUID: cuesta rendimiento sin añadir seguridad.
+- **Consecuencias:**
+  - Nada se puede enumerar (`/events/124`, `/events/125`…) ni revela volúmenes de negocio (usuarias, eventos, mensajes), lo que importa de cara a las marcas.
+  - La defensa principal sigue siendo la **autorización por recurso** en cada petición; el UUID es una capa extra.
+  - Un **test de arquitectura en la CI** impide que un DTO de respuesta exponga el `Long id` interno.
+  - Los **cursores de paginación son opacos** (no se expone el id interno ni el orden real).
+  - Postgres 17 no genera UUID v7 de forma nativa: se generan en Java al crear la entidad (`@PrePersist` o generador de Hibernate si lo soporta la versión).
+  - **Todo recurso nuevo que se exponga nace con `public_id`.** Implementación de lo existente: **T30**.

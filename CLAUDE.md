@@ -67,6 +67,7 @@ docker compose --env-file .env up --build
 - Imitar el estilo del código vecino (records para DTOs, inyección por constructor/`@RequiredArgsConstructor`, proyecciones JPQL a DTO).
 - Backend: lanzar excepciones de dominio (`common/exceptions`), nunca `RuntimeException`/`IllegalArgumentException` genéricas para errores de negocio.
 - Paginar todo listado que pueda crecer. Nada de `findAll()` sin límite.
+- **Identificadores (D-021):** la PK es `bigint` interno y **nunca sale de la API**. Todo recurso que se exponga (API, URLs, WebSocket) lleva `public_id uuid` (v7) y solo ese se usa hacia fuera. Los cursores de paginación son opacos. Usuarias por `username`, comunidades por `slug`.
 - Toda funcionalidad nueva o bug arreglado lleva **tests** (ver Definition of Done).
 - Cambio de esquema: skill **`/new-migration`**. Un hook bloquea editar migraciones ya presentes en `origin/main`.
 - PRs que toquen autenticación, permisos o datos personales: pasa antes el agente **`security-reviewer`** (solo esas, no todas) y menciona sus hallazgos en la PR.
