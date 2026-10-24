@@ -136,6 +136,41 @@ class CommunityControllerIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void memberList_isOnlyForMembers_othersGetTheSame404AsForAMissingCommunity() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        UserAccount outsider = testData.createUser();
+        UserAccount banned = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        join(member, community).andExpect(status().isCreated());
+        join(banned, community).andExpect(status().isCreated());
+        transactionTemplate.executeWithoutResult(tx -> communityMemberRepository.findAll().stream()
+                .filter(m -> m.getUserAccount().getId().equals(banned.getId()))
+                .forEach(m -> m.setStatus(MemberStatus.BANNED)));
+
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").with(auth.bearer(member)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].username").value(hasItem(owner.getUsername())));
+
+        mockMvc.perform(get("/api/communities/" + UUID.randomUUID() + "/members").with(auth.bearer(member)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Comunidad no encontrada"));
+
+        // Same answer as for a missing community, so it does not reveal which ones exist
+        for (UserAccount denied : new UserAccount[] {outsider, banned}) {
+            mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").with(auth.bearer(denied)))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("Comunidad no encontrada"));
+        }
+
+        // The detail still gives everybody the count, with no role for those outside
+        mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(outsider)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.memberCount").value(3))
+                .andExpect(jsonPath("$.role").doesNotExist());
+    }
+
+    @Test
     void joining_aMissingCommunityIs404_twiceIs409_andBannedIs403() throws Exception {
         UserAccount owner = testData.createUser();
         UserAccount member = testData.createUser();

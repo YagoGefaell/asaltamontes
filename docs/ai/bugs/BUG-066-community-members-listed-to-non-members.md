@@ -1,6 +1,6 @@
 # BUG-066 — Cualquier usuaria autenticada puede listar los miembros de una comunidad
 
-- **Estado:** abierto
+- **Estado:** resuelto (fix/BUG-066-members-only)
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código; hallazgo del security-reviewer en T30a, anterior a esa PR)
 - **Área:** backend/community
@@ -18,3 +18,6 @@ Con una usuaria que no pertenece a la comunidad, llamar al endpoint: responde 20
 
 ## Arreglo propuesto
 Decisión de producto de Yago: ¿la lista de miembros es pública o solo para miembros? Si es solo para miembros, exigir membresía no baneada (403/404 si no) y añadir test.
+
+## Resolución
+Decisión de Yago: la lista de miembros es solo para miembros. `GET /api/communities/{id}/members` responde 404 (el mismo que para una comunidad inexistente) a quien no es miembro o está baneada. El detalle de comunidad ya expone `memberCount` y el `role` propio; el frontend no pide la lista si no eres miembro.

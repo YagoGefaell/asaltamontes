@@ -5,6 +5,7 @@ import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import Loading from "../../shared/components/Loading";
 import FormError from "../../shared/forms/FormError";
 import { formatters } from "../../utils/helpers";
+import { useCommunityMembers } from "../../features/communities/hooks/useCommunityMembers";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { communityPath } from "../../features/communities/utils/communityPath";
 import CommunityEvents from "../../features/events/components/CommunityEvents";
@@ -16,6 +17,9 @@ function CommunityProfile() {
   const { currentUser } = useAuth();
   const { community, setCommunity, loading, error } = useCommunityDetail(slug);
   
+  // Only members get the list; the others see just the count
+  const { members } = useCommunityMembers(community?.id, !!community?.role);
+
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
 
@@ -166,23 +170,23 @@ function CommunityProfile() {
         <CommunityEvents community={community} />
       </div>
 
-      {community.members && community.members.length > 0 && (
+      {members.length > 0 && (
         <div className="members-section">
-          <h3 className="members-title">Miembros ({community.members.length})</h3>
+          <h3 className="members-title">Miembros ({community.memberCount || members.length})</h3>
           
           <div className="members-grid">
-            {community.members.map((member) => {
+            {members.map((member) => {
               const memberAvatarUrl = formatters.avatar(member.profilePictureUrl, member.username, member.username);
-              const hasError = memberAvatarErrors[member.id];
+              const hasError = memberAvatarErrors[member.username];
               
               return (
-                <div key={member.id} className="member-card">
+                <div key={member.username} className="member-card">
                   <div className="member-avatar">
                     {!hasError ? (
                       <img 
                         src={memberAvatarUrl} 
                         alt={member.username}
-                        onError={() => setMemberAvatarErrors(prev => ({ ...prev, [member.id]: true }))}
+                        onError={() => setMemberAvatarErrors(prev => ({ ...prev, [member.username]: true }))}
                       />
                     ) : (
                       <div className="member-avatar-placeholder" aria-hidden="true">

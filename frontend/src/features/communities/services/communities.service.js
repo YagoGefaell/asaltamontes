@@ -30,6 +30,17 @@ export async function getCommunityRequest(slug) {
   }
 }
 
+// -------- GET MEMBERS --------
+// First page of the members other than her. Only members get it: others receive 404 (BUG-066)
+export async function getCommunityMembersRequest(communityId) {
+  try {
+    const response = await apiClient.get(`/api/communities/${communityId}/members?page=0&size=${COMMUNITIES_PAGE_SIZE}`)
+    return Array.isArray(response?.content) ? response.content : []
+  } catch (error) {
+    throw new Error(error.message || "Error obteniendo los miembros")
+  }
+}
+
 // -------- CREATE COMMUNITY --------
 export async function createCommunityRequest(communityData) {
   try {
