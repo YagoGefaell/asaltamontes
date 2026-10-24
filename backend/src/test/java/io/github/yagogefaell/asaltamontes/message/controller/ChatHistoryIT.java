@@ -93,15 +93,15 @@ class ChatHistoryIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void nonParticipant_isForbidden() throws Exception {
+    void nonParticipant_getsTheSame404AsAnUnknownChat() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount outsider = testData.createUser();
         UUID conversationId = testData.createPrivateConversation(ana, bea);
 
-        mockMvc.perform(history(conversationId).with(auth.bearer(outsider))).andExpect(status().isForbidden());
+        mockMvc.perform(history(conversationId).with(auth.bearer(outsider))).andExpect(status().isNotFound());
         mockMvc.perform(post("/api/conversations/" + conversationId + "/read").with(auth.bearer(outsider)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -146,26 +146,26 @@ class ChatHistoryIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void after_isForbiddenForNonParticipants_andCannotBeCombinedWithBefore() throws Exception {
+    void after_is404ForNonParticipants_andCannotBeCombinedWithBefore() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount outsider = testData.createUser();
         UUID conversationId = testData.createPrivateConversation(ana, bea);
 
         mockMvc.perform(history(conversationId).param("after", UUID.randomUUID().toString()).with(auth.bearer(outsider)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
         mockMvc.perform(history(conversationId).param("after", UUID.randomUUID().toString())
                 .param("before", UUID.randomUUID().toString()).with(auth.bearer(ana)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void invalidIdsAre400_unknownChatsLookLikeForeignOnes_neverAServerError() throws Exception {
+    void invalidIdsAre400_unknownChatsAre404_neverAServerError() throws Exception {
         UserAccount ana = testData.createUser();
 
         mockMvc.perform(get("/api/conversations/123/messages").with(auth.bearer(ana))).andExpect(status().isBadRequest());
         mockMvc.perform(get("/api/conversations/not-a-uuid/messages").with(auth.bearer(ana))).andExpect(status().isBadRequest());
-        mockMvc.perform(history(UUID.randomUUID()).with(auth.bearer(ana))).andExpect(status().isForbidden());
+        mockMvc.perform(history(UUID.randomUUID()).with(auth.bearer(ana))).andExpect(status().isNotFound());
         mockMvc.perform(post("/api/conversations/123/read").with(auth.bearer(ana))).andExpect(status().isBadRequest());
     }
 

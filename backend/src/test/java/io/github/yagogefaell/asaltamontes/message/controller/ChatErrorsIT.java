@@ -56,7 +56,7 @@ class ChatErrorsIT extends AbstractIntegrationTest {
 
         ChatErrorDto error = errors.poll(5, TimeUnit.SECONDS);
         assertThat(error).isNotNull();
-        assertThat(error.detail()).isEqualTo("No tienes permiso para escribir en este chat");
+        assertThat(error.detail()).isEqualTo("Chat no encontrado");
         session.disconnect();
     }
 

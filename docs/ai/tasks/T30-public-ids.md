@@ -14,8 +14,8 @@
 - **T30c (cursores opacos, pendiente):** en T30a los cursores (`before`, `after`, `beforeId` de la lista de chats, `nextBefore`/`nextBeforeId`) son el `public_id` del mensaje/chat, validado en servidor (debe ser de la misma conversación / de una conversación de la usuaria, si no 400). No revela ids internos ni permite saltar a otras conversaciones, pero **sí es un id público**, no un token opaco. T30c los sustituye por tokens firmados/codificados.
 
 ### Decisiones tomadas en T30a (revisables)
-- Se añade `public_id` también a `communities` (aunque se direccionan por `slug`) porque `join`, `leave`, `members` y `DELETE` seguían usando el id numérico; la alternativa (pasarlos a `slug`) cambiaría más API. Usuarias: sin `public_id` (por `username`); se eliminan `userId` de `GET /api/users/me` y `lastMessageSenderId` de la lista de chats (nadie los usaba para otra cosa que comparar con el usuario actual, que ya se hace por `username`).
-- Chats: inexistente y ajeno dan el mismo 403 (REST y STOMP), para que no se pueda sondear su existencia (revisión de seguridad). Eventos: inexistente y no visible → 404.
+- `public_id` también en `communities` (decidido por Yago): el `slug` es para URLs legibles y compartibles (`GET /api/communities/{slug}`, rutas del front); el UUID es para las acciones de la API (`join`, `leave`, `members`, `DELETE`), porque el slug puede cambiar si T19 permite renombrar la comunidad. Usuarias: sin `public_id` (por `username`); se eliminan `userId` de `GET /api/users/me` y `lastMessageSenderId` de la lista de chats (nadie los usaba para otra cosa que comparar con el usuario actual, que ya se hace por `username`).
+- Chats: inexistente y ajeno dan el mismo 404 (REST y STOMP), como los eventos, para que no se pueda sondear su existencia.
 
 ## Objetivo
 Aplicar D-021 a lo que ya existe: que ningún id interno `bigint` salga de la API, para que nada sea enumerable ni revele volúmenes, manteniendo la PK `bigint` por rendimiento.

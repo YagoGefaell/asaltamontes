@@ -3,7 +3,6 @@ package io.github.yagogefaell.asaltamontes.message.service;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
-import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
@@ -75,11 +74,11 @@ public class MessageService {
     public MessageDto processIncomingMessage(UUID conversationPublicId, Long senderId, String content) {
         String text = validateContent(content);
 
-        // Unknown and foreign chats look the same to the sender
+        // Unknown and foreign chats look the same (404), so nobody can probe which chats exist
         Long conversationId = conversationPublicId == null ? null
                 : conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
         if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, senderId)) {
-            throw new ForbiddenException("No tienes permiso para escribir en este chat");
+            throw new NotFoundException("Chat no encontrado");
         }
 
         UserAccount sender = userService.loadUserById(senderId);
@@ -228,15 +227,15 @@ public class MessageService {
         Long conversationId = conversationPublicId == null ? null
                 : conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
         if (conversationId == null || participantRepository.resetUnread(conversationId, userId) == 0) {
-            throw new ForbiddenException("No tienes permiso para acceder a este chat");
+            throw new NotFoundException("Chat no encontrado");
         }
     }
 
-    /** Internal id of a chat the user takes part in; unknown and foreign chats are the same 403 (no probing). */
+    /** Internal id of a chat the user takes part in; unknown and foreign chats are the same 404 (no probing). */
     private Long participantConversationId(UUID conversationPublicId, Long userId) {
         Long conversationId = conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
         if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
-            throw new ForbiddenException("No tienes permiso para acceder a este chat");
+            throw new NotFoundException("Chat no encontrado");
         }
         return conversationId;
     }

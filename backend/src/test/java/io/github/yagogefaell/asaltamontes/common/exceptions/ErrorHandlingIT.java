@@ -133,8 +133,8 @@ class ErrorHandlingIT extends AbstractIntegrationTest {
             UUID conversationId = testData.createPrivateConversation(ana, bea);
 
             mockMvc.perform(get("/api/conversations/" + conversationId + "/messages").with(auth.bearer(outsider)))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.title").value("Forbidden"));
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.title").value("Not Found"));
         }
 
         @Test

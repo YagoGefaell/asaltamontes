@@ -748,7 +748,7 @@
             "in": "path",
             "required": true,
             "schema": { "type": "string", "format": "uuid" },
-            "description": "Public id (UUID v7) of the conversation. Not a UUID: 400; unknown or not a participant: 403"
+            "description": "Public id (UUID v7) of the conversation. Not a UUID: 400; unknown or not a participant: 404"
           },
           {
             "name": "before",
@@ -794,8 +794,8 @@
           "401": {
             "description": "Not authenticated (missing, invalid or expired access token)"
           },
-          "403": {
-            "description": "The user is not a participant of the conversation"
+          "404": {
+            "description": "Unknown conversation, or the user is not a participant (same answer, no probing)"
           }
         }
       }
@@ -808,7 +808,7 @@
         "responses": {
           "204": { "description": "Marked as read" },
           "401": { "description": "Not authenticated" },
-          "403": { "description": "The user is not a participant of the conversation" }
+          "404": { "description": "Unknown conversation, or the user is not a participant" }
         }
       }
     },

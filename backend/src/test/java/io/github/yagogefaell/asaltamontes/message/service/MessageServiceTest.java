@@ -20,7 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
-import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
@@ -61,7 +61,7 @@ class MessageServiceTest {
         when(participantRepository.existsByConversationIdAndUserId(42L, 7L)).thenReturn(false);
 
         assertThatThrownBy(() -> messageService.processIncomingMessage(CHAT, 7L, "hola"))
-                .isInstanceOf(ForbiddenException.class);
+                .isInstanceOf(NotFoundException.class);
 
         verify(messageRepository, never()).save(any(Message.class));
         verifyNoInteractions(eventPublisher);
@@ -82,7 +82,7 @@ class MessageServiceTest {
         when(conversationRepository.findIdByPublicId(CHAT)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> messageService.processIncomingMessage(CHAT, 7L, "hola"))
-                .isInstanceOf(ForbiddenException.class);
+                .isInstanceOf(NotFoundException.class);
 
         verify(messageRepository, never()).save(any(Message.class));
     }

@@ -77,7 +77,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
         assertThat(intruderErrors.poll(5, TimeUnit.SECONDS)).isNotNull();
         assertThat(beaInbox.poll(1, TimeUnit.SECONDS)).isNull();
         mockMvc.perform(get("/api/conversations/" + conversationId + "/messages").with(auth.bearer(intruder)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
         intruderConnection.disconnect();
         beaConnection.disconnect();
     }
