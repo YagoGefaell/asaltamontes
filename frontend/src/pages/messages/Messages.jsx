@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, useContext, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { formatters } from "../../utils/helpers";
+import { formatMessageTime } from "../../features/messages/utils/messageDates";
+import { useToast } from "../../shared/ui/Toast";
 import ConversationsPane from "./components/ConversationsPanel";
 import ChatPane from "./components/ChatPanel";
 import GroupCreatorPanel from "./components/GroupCreatorPanel";
@@ -11,6 +13,7 @@ import { ConversationsContext } from "../../features/messages/hooks/conversation
 
 const Messages = () => {
   const navigate = useNavigate();
+  const toast = useToast();
   const location = useLocation();
   const { currentUser, sendMessage, websocketConnected, websocketStatus } = useAuth();
 
@@ -70,21 +73,6 @@ const Messages = () => {
   const historyStatus = !selectedChat?.id || historyPaging[selectedChat.id]
     ? "loaded"
     : historyError[selectedChat.id] ? "error" : "loading";
-
-  const formatMessageTime = useCallback((dateLike) => {
-    if (!dateLike) return "";
-
-    const rawValue = String(dateLike).trim();
-    const hasTimezone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(rawValue);
-    const normalizedValue = hasTimezone ? rawValue : `${rawValue}Z`;
-    const date = new Date(normalizedValue);
-    if (Number.isNaN(date.getTime())) return "";
-
-    return date.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }, []);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -304,6 +292,7 @@ const Messages = () => {
 
       if (createdChat?.id) {
         setIsGroupCreatorOpen(false);
+        toast.success("Grupo creado");
         await handleEnterChat(createdChat);
       }
     } finally {
@@ -313,6 +302,7 @@ const Messages = () => {
     creatingGroup,
     createGroupConversation,
     handleEnterChat,
+    toast,
   ]);
 
   return (
