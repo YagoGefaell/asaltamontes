@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ConversationParticipantRepository extends JpaRepository<ConversationParticipant, Long> {
@@ -17,8 +18,8 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
     Optional<ConversationParticipant> findByConversationIdAndUserUsername(Long conversationId, String username);
     boolean existsByConversationIdAndUserId(Long conversationId, Long userId);
 
-    @Query("SELECT p.user.id FROM ConversationParticipant p WHERE p.conversation.id = :conversationId")
-    List<Long> findUserIdsByConversationId(@Param("conversationId") Long conversationId);
+    @Query("SELECT p.user.id FROM ConversationParticipant p WHERE p.conversation.publicId = :conversationPublicId")
+    List<Long> findUserIdsByConversationPublicId(@Param("conversationPublicId") UUID conversationPublicId);
 
     // Single atomic statement: concurrent messages never lose an increment
     @Modifying

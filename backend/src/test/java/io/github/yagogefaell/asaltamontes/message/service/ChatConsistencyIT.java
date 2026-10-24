@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,6 +29,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
+import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
 import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
@@ -44,6 +46,9 @@ class ChatConsistencyIT extends AbstractIntegrationTest {
     private ConversationParticipantRepository participantRepository;
 
     @Autowired
+    private ConversationRepository conversationRepository;
+
+    @Autowired
     private TransactionTemplate transactionTemplate;
 
     @MockitoSpyBean
@@ -54,7 +59,7 @@ class ChatConsistencyIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount cris = testData.createUser();
-        Long groupId = messageService.createGroupConversation(ana.getUsername(), "Trail", null, null,
+        UUID groupId = messageService.createGroupConversation(ana.getUsername(), "Trail", null, null,
                 List.of(bea.getUsername(), cris.getUsername())).conversationId();
 
         ExecutorService pool = Executors.newFixedThreadPool(10);
@@ -77,7 +82,7 @@ class ChatConsistencyIT extends AbstractIntegrationTest {
     void aMessageWhoseTransactionRollsBack_isNeverBroadcast() {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
         clearInvocations(messagingTemplate);
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -92,7 +97,7 @@ class ChatConsistencyIT extends AbstractIntegrationTest {
     void aCommittedMessage_isBroadcastToEveryParticipantById() {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
         clearInvocations(messagingTemplate);
 
         messageService.processIncomingMessage(conversationId, ana.getId(), "hola");
@@ -125,9 +130,10 @@ class ChatConsistencyIT extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
-    private int unreadOf(Long conversationId, UserAccount user) {
+    private int unreadOf(UUID conversationId, UserAccount user) {
+        Long internalId = conversationRepository.findIdByPublicId(conversationId).orElseThrow();
         return transactionTemplate.execute(status -> participantRepository
-                .findByConversationIdAndUserUsername(conversationId, user.getUsername())
+                .findByConversationIdAndUserUsername(internalId, user.getUsername())
                 .orElseThrow()
                 .getUnreadCount());
     }

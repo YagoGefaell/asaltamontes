@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.event.repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -11,6 +12,9 @@ import io.github.yagogefaell.asaltamontes.event.domain.Event;
 
 // The filtered listing (T15c) is in EventSearchRepository
 public interface EventRepository extends JpaRepository<Event, Long>, EventSearchRepository {
+
+    // The API only knows public ids (D-021); served by the unique index on public_id
+    Optional<Event> findByPublicId(UUID publicId);
 
     // join/leave/promotion of one event run one after the other (T15b): positions and counters stay consistent
     @Query(value = "SELECT id FROM events WHERE id = :id FOR UPDATE", nativeQuery = true)

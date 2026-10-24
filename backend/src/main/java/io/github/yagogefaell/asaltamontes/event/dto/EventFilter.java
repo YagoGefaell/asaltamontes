@@ -2,6 +2,7 @@ package io.github.yagogefaell.asaltamontes.event.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.event.domain.EventType;
@@ -13,7 +14,7 @@ public record EventFilter(
     Instant to,
     EventType type,
     RunningLevel level,
-    Long communityId,
+    UUID communityId,
     String city,
     BigDecimal minDistance,
     BigDecimal maxDistance,
@@ -26,7 +27,7 @@ public record EventFilter(
 ) {
 
     /** From the raw query parameters: organizer and attending only accept "me". */
-    public static EventFilter of(Instant from, Instant to, EventType type, RunningLevel level, Long communityId,
+    public static EventFilter of(Instant from, Instant to, EventType type, RunningLevel level, UUID communityId,
             String city, BigDecimal minDistance, BigDecimal maxDistance, Double minLat, Double maxLat,
             Double minLng, Double maxLng, String organizer, String attending) {
         return new EventFilter(from, to, type, level, communityId, city, minDistance, maxDistance,

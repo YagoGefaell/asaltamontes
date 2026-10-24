@@ -1,6 +1,8 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
+import java.util.UUID;
+
 public record SendMessageCommandDto(
-    Long conversationId,
+    UUID conversationId,
     String content
 ) {}

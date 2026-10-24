@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Asaltamontes API",
-    "version": "0.6.0",
-    "description": "API contract between frontend and backend for data exchange"
+    "version": "0.7.0",
+    "description": "API contract between frontend and backend for data exchange. Identifiers (D-021, T30a): events, conversations, messages and communities are identified by a public UUID v7 (`id`, `conversationId`, `communityId`...); the internal numeric keys never appear in paths, bodies, query parameters or WebSocket payloads. Users go by username and communities also by slug (GET /api/communities/{slug}); join, leave, members and delete of a community take its public UUID. A path or query id that is not a UUID is a 400; an unknown one is a 404. Cursors are public ids for now (opaque tokens come with T30c)."
   },
   "servers": [
     {
@@ -295,7 +295,6 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "userId": { "type": "integer", "example": 1 },
                     "username": { "type": "string", "example": "runner123" },
                     "email": { "type": "string", "example": "runner@example.com" },
                     "isVerified": { "type": "boolean", "example": true },
@@ -699,8 +698,8 @@
             "name": "beforeId",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "format": "int64" },
-            "description": "conversationId of the last chat of the previous page (nextBeforeId)"
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "conversationId (public id, UUID v7) of the last chat of the previous page (nextBeforeId). Must be a chat of the caller, otherwise 400"
           },
           {
             "name": "limit",
@@ -721,7 +720,7 @@
                     "items": { "type": "array", "items": { "$ref": "#/components/schemas/ChatSummary" } },
                     "hasMore": { "type": "boolean" },
                     "nextBeforeAt": { "type": "string", "format": "date-time", "nullable": true },
-                    "nextBeforeId": { "type": "integer", "format": "int64", "nullable": true },
+                    "nextBeforeId": { "type": "string", "format": "uuid", "nullable": true },
                     "unreadChats": { "type": "integer", "format": "int64" }
                   }
                 }
@@ -748,22 +747,22 @@
             "name": "conversationId",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "format": "int64" },
-            "description": "Conversation ID"
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Public id (UUID v7) of the conversation. Not a UUID: 400; unknown: 404; not a participant: 403"
           },
           {
             "name": "before",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "format": "int64" },
-            "description": "Only messages with a smaller id (the nextBefore of the previous page)"
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Public id of a message of this conversation: only older messages (the nextBefore of the previous page). Any other value: 400"
           },
           {
             "name": "after",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "format": "int64" },
-            "description": "Only messages with a greater id (catching up after a reconnection). Cannot be combined with before"
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Public id of a message of this conversation: only newer messages (catching up after a reconnection). Any other value: 400. Cannot be combined with before"
           },
           {
             "name": "limit",
@@ -783,7 +782,7 @@
                   "properties": {
                     "items": { "type": "array", "items": { "$ref": "#/components/schemas/MessageDto" } },
                     "hasMore": { "type": "boolean" },
-                    "nextBefore": { "type": "integer", "format": "int64", "nullable": true }
+                    "nextBefore": { "type": "string", "format": "uuid", "nullable": true }
                   }
                 }
               }
@@ -821,7 +820,7 @@
         "security": [{ "bearerAuth": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateEvent" } } } },
         "responses": {
-          "201": { "description": "Created (Location: /api/events/{id})", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventDetails" } } } },
+          "201": { "description": "Created (Location: /api/events/{id}, id = public UUID)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventDetails" } } } },
           "400": { "description": "Invalid data (past start, end before start, half coordinates, unknown timezone, COMMUNITY without community…)" },
           "403": { "description": "Not staff of the community" },
           "404": { "description": "Community not found" }
@@ -837,7 +836,7 @@
           { "name": "to", "in": "query", "description": "ISO-8601 instant; must not be before from", "schema": { "type": "string", "format": "date-time" } },
           { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["MEETUP", "TRAINING", "RACE", "TRIP"] } },
           { "name": "level", "in": "query", "schema": { "type": "string", "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"] } },
-          { "name": "communityId", "in": "query", "schema": { "type": "integer", "format": "int64" } },
+          { "name": "communityId", "in": "query", "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID) of the community" },
           { "name": "city", "in": "query", "description": "Case-insensitive exact match", "schema": { "type": "string" } },
           { "name": "minDistance", "in": "query", "description": "km", "schema": { "type": "number" } },
           { "name": "maxDistance", "in": "query", "description": "km; not below minDistance", "schema": { "type": "number" } },
@@ -879,7 +878,7 @@
         "summary": "Event detail with myStatus (GOING, WAITLIST, CANCELLED or null) and canEdit",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
         "responses": {
           "200": { "description": "The event", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EventDetails" } } } },
           "404": { "description": "Not found, or a COMMUNITY event and the user is not an (unbanned) member" }
@@ -891,7 +890,7 @@
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UpdateEvent" } } } },
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
         "responses": {
           "200": { "description": "The updated event" },
           "400": { "description": "Invalid data" },
@@ -905,7 +904,7 @@
         "summary": "Cancel an event (idempotent). Optional body { \"reason\": string ≤ 500 }",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
         "responses": { "200": { "description": "The event, status CANCELLED" }, "403": { "description": "Not the organizer nor community staff" } }
       }
     },
@@ -914,7 +913,7 @@
         "summary": "Join an event (T15b): GOING if there is a place, otherwise WAITLIST at the end. Idempotent",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
         "responses": {
           "200": { "description": "The event, with myStatus GOING or WAITLIST" },
           "404": { "description": "Not found or not visible" },
@@ -927,7 +926,7 @@
         "summary": "Leave an event or its waitlist; the first on the waitlist takes the free place. Idempotent",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
         "responses": { "200": { "description": "The event, myStatus CANCELLED" }, "409": { "description": "The organizer cannot leave her own event" } }
       }
     },
@@ -937,7 +936,7 @@
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
-          { "name": "eventId", "in": "path", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" },
           { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["GOING", "WAITLIST", "CANCELLED"] } },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
@@ -968,7 +967,7 @@
               "type": "object",
               "required": ["conversationId", "content"],
               "properties": {
-                "conversationId": { "type": "integer" },
+                "conversationId": { "type": "string", "format": "uuid" },
                 "content": { "type": "string", "maxLength": 2000, "description": "Trimmed; empty or longer than 2000 characters is rejected on /user/queue/errors" }
               }
             }
@@ -1066,7 +1065,7 @@
           "level": { "type": "string", "enum": ["BEGINNER", "INTERMEDIATE", "ADVANCED", "EXPERT"] },
           "capacity": { "type": "integer", "minimum": 1, "maximum": 500, "nullable": true },
           "visibility": { "type": "string", "enum": ["PUBLIC", "COMMUNITY"] },
-          "communityId": { "type": "integer", "format": "int64" }
+          "communityId": { "type": "string", "format": "uuid", "description": "Public id of the community (the id of GET /api/communities)" }
         }
       },
       "UpdateEvent": {
@@ -1091,19 +1090,19 @@
       },
       "EventDetails": {
         "type": "object",
-        "description": "CreateEvent fields plus: id, status (SCHEDULED, CANCELLED, FINISHED), attendeeCount, communitySlug, communityName, organizerUsername, organizerFullName, organizerPictureUrl, imageUrl, cancelReason, cancelledAt, myStatus, canEdit"
+        "description": "CreateEvent fields plus: id (public UUID v7; the internal numeric id is never exposed, D-021), communityId (public UUID), status (SCHEDULED, CANCELLED, FINISHED), attendeeCount, communitySlug, communityName, organizerUsername, organizerFullName, organizerPictureUrl, imageUrl, cancelReason, cancelledAt, myStatus, canEdit"
       },
       "ChatResponse": {
         "type": "object",
         "properties": {
-          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
           "contactUsername": { "type": "string", "example": "runner123" }
         }
       },
       "ChatSummary": {
         "type": "object",
         "properties": {
-          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
           "contactUsername": { "type": "string", "example": "runner123" },
           "unreadCount": { "type": "integer", "example": 3 },
           "lastMessageAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:15:30" }
@@ -1112,8 +1111,8 @@
       "MessageDto": {
         "type": "object",
         "properties": {
-          "id": { "type": "integer", "format": "int64", "example": 5001 },
-          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "id": { "type": "string", "format": "uuid", "example": "0192f3a4-7c01-7000-8000-000000000002" },
+          "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
           "senderUsername": { "type": "string", "example": "runner123" },
           "content": { "type": "string", "example": "Nos vemos a las 7 en el parque" },
           "sentAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:16:00" }
@@ -1123,7 +1122,7 @@
         "type": "object",
         "required": ["conversationId", "senderUsername", "receiverUsername", "content"],
         "properties": {
-          "conversationId": { "type": "integer", "format": "int64", "example": 42 },
+          "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
           "senderUsername": { "type": "string", "example": "runner123" },
           "receiverUsername": { "type": "string", "example": "runner456" },
           "content": { "type": "string", "example": "Hola!" }

@@ -3,6 +3,7 @@ package io.github.yagogefaell.asaltamontes.infrastructure.seed;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -111,13 +112,13 @@ public class DevDataSeeder implements CommandLineRunner {
                     new CreateCommunityDto(COMMUNITIES[c][0], COMMUNITIES[c][1], null, null), owner);
             // demo is also a member of two more, so the demo account has something to browse
             if (c == 1 || c == 3) {
-                communityService.joinCommunity(community.getId(), users.get(0));
+                communityService.joinCommunity(community.getPublicId(), users.get(0));
             }
             int members = 4 + random.nextInt(9);
             for (int i = 0; i < members; i++) {
                 UserAccount member = users.get(random.nextInt(users.size()));
                 try {
-                    communityService.joinCommunity(community.getId(), member);
+                    communityService.joinCommunity(community.getPublicId(), member);
                 } catch (ConflictException alreadyMember) {
                     // Owner or picked twice: fine
                 }
@@ -137,12 +138,12 @@ public class DevDataSeeder implements CommandLineRunner {
             }
         }
         for (UserAccount[] pair : pairs) {
-            Long conversationId = messageService
+            UUID conversationId = messageService
                     .createOrGetPrivateConversation(pair[0].getUsername(), pair[1].getUsername()).conversationId();
             sendConversation(conversationId, List.of(pair), random);
         }
 
-        Long group = messageService.createGroupConversation(users.get(0).getUsername(), "Quedada del domingo", null, null,
+        UUID group = messageService.createGroupConversation(users.get(0).getUsername(), "Quedada del domingo", null, null,
                 users.subList(1, 7).stream().map(UserAccount::getUsername).toList()).conversationId();
         sendConversation(group, users.subList(0, 7), random);
 
@@ -150,7 +151,7 @@ public class DevDataSeeder implements CommandLineRunner {
                 users.size(), COMMUNITIES.length, pairs.size() + 1, DEMO_USERNAME, PASSWORD);
     }
 
-    private void sendConversation(Long conversationId, List<UserAccount> participants, Random random) {
+    private void sendConversation(UUID conversationId, List<UserAccount> participants, Random random) {
         int count = 3 + random.nextInt(12);
         for (int i = 0; i < count; i++) {
             UserAccount sender = participants.get(random.nextInt(participants.size()));

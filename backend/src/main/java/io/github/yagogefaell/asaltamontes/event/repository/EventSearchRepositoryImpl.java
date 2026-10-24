@@ -46,7 +46,7 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
         Join<Object, Object> organizer = e.join("organizer");
         Join<Object, Object> community = e.join("community", JoinType.LEFT);
         query.select(cb.construct(EventSummaryDto.class,
-                e.get("id"), e.get("title"), e.get("type"), e.get("startsAt"), e.get("timezone"),
+                e.get("publicId"), e.get("title"), e.get("type"), e.get("startsAt"), e.get("timezone"),
                 e.get("meetingPointName"), e.get("city"), e.get("distanceKm"), e.get("elevationGainM"),
                 e.get("level"), e.get("capacity"), e.get("attendeeCount"),
                 community.get("slug"), community.get("name"), organizer.get("username"), e.get("imageUrl"),
@@ -96,7 +96,7 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
             where.add(cb.equal(e.get("level"), f.level()));
         }
         if (f.communityId() != null) {
-            where.add(cb.equal(community.get("id"), f.communityId()));
+            where.add(cb.equal(community.get("publicId"), f.communityId()));
         }
         if (f.city() != null && !f.city().isBlank()) {
             where.add(cb.equal(cb.lower(e.get("city")), f.city().strip().toLowerCase()));

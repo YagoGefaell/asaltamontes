@@ -2,6 +2,7 @@ package io.github.yagogefaell.asaltamontes.event.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import io.github.yagogefaell.asaltamontes.event.domain.EventType;
 import io.github.yagogefaell.asaltamontes.event.domain.EventVisibility;
@@ -61,5 +62,5 @@ public record CreateEventDto(
 
     EventVisibility visibility,
 
-    Long communityId
+    UUID communityId
 ) {}

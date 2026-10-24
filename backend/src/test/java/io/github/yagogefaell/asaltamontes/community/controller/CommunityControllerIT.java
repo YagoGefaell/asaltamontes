@@ -12,6 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.HashSet;
 import java.util.Set;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -114,21 +116,21 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         join(member, community).andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/communities/me").with(auth.bearer(member))).andExpect(status().isOk());
-        mockMvc.perform(get("/api/communities/" + community.getId() + "/members").with(auth.bearer(member)))
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").with(auth.bearer(member)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].username").value(owner.getUsername()));
         mockMvc.perform(get("/api/communities").param("sort", "memberCount,desc").with(auth.bearer(member)))
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/communities/me").param("sort", "createdAt,desc").with(auth.bearer(member)))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/api/communities/" + community.getId() + "/members").param("sort", "joinedAt,desc")
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").param("sort", "joinedAt,desc")
                         .with(auth.bearer(member)))
                 .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/communities/me").param("sort", "role").with(auth.bearer(member)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Parámetro de ordenación no válido"));
-        mockMvc.perform(get("/api/communities/" + community.getId() + "/members").param("sort", "name")
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").param("sort", "name")
                         .with(auth.bearer(member)))
                 .andExpect(status().isBadRequest());
     }
@@ -140,7 +142,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         UserAccount banned = testData.createUser();
         Community community = testData.createCommunity(owner);
 
-        mockMvc.perform(post("/api/communities/999999999/join").with(auth.bearer(member)))
+        mockMvc.perform(post("/api/communities/" + UUID.randomUUID() + "/join").with(auth.bearer(member)))
                 .andExpect(status().isNotFound());
 
         join(member, community).andExpect(status().isCreated());
@@ -162,9 +164,12 @@ class CommunityControllerIT extends AbstractIntegrationTest {
     void leavingOrDeletingAMissingCommunity_is404() throws Exception {
         UserAccount user = testData.createUser();
 
+        // A numeric id is not an id of the API any more
         mockMvc.perform(post("/api/communities/999999999/leave").with(auth.bearer(user)))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(post("/api/communities/" + UUID.randomUUID() + "/leave").with(auth.bearer(user)))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(delete("/api/communities/999999999").with(auth.bearer(user)))
+        mockMvc.perform(delete("/api/communities/" + UUID.randomUUID()).with(auth.bearer(user)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Comunidad no encontrada"));
     }
@@ -206,6 +211,6 @@ class CommunityControllerIT extends AbstractIntegrationTest {
     }
 
     private org.springframework.test.web.servlet.ResultActions join(UserAccount user, Community community) throws Exception {
-        return mockMvc.perform(post("/api/communities/" + community.getId() + "/join").with(auth.bearer(user)));
+        return mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/join").with(auth.bearer(user)));
     }
 }

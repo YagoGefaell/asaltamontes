@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,9 +103,9 @@ class EventSearchIT extends AbstractIntegrationTest {
         UserAccount bea = testData.createUser();
         String city = testData.uniqueName("Ourense");
         create(ana, ev("de-ana", city, 0, Map.of()));
-        long beas = idOf(create(bea, ev("de-bea", city, 1, Map.of())));
-        long full = idOf(create(bea, ev("completo", city, 2, Map.of("capacity", 1))));
-        long cancelled = idOf(create(bea, ev("cancelado", city, 3, Map.of())));
+        UUID beas = idOf(create(bea, ev("de-bea", city, 1, Map.of())));
+        UUID full = idOf(create(bea, ev("completo", city, 2, Map.of("capacity", 1))));
+        UUID cancelled = idOf(create(bea, ev("cancelado", city, 3, Map.of())));
         act(bea, "/api/events/" + cancelled + "/cancel");
         act(ana, "/api/events/" + beas + "/join");
         act(ana, "/api/events/" + full + "/join"); // waitlist
@@ -130,14 +131,14 @@ class EventSearchIT extends AbstractIntegrationTest {
         UserAccount banned = testData.createUser();
         Community community = testData.createCommunity(owner);
         Community other = testData.createCommunity(owner);
-        communityService.joinCommunity(community.getId(), member);
-        communityService.joinCommunity(community.getId(), banned);
+        communityService.joinCommunity(community.getPublicId(), member);
+        communityService.joinCommunity(community.getPublicId(), banned);
         jdbcTemplate.update("UPDATE community_members SET status = 'BANNED' WHERE user_account_id = ?", banned.getId());
 
         String city = testData.uniqueName("Pontevedra");
-        create(owner, ev("publico", city, 0, Map.of("communityId", community.getId())));
-        create(owner, ev("privado", city, 1, Map.of("communityId", community.getId(), "visibility", "COMMUNITY")));
-        create(owner, ev("de-la-otra", city, 2, Map.of("communityId", other.getId())));
+        create(owner, ev("publico", city, 0, Map.of("communityId", community.getPublicId())));
+        create(owner, ev("privado", city, 1, Map.of("communityId", community.getPublicId(), "visibility", "COMMUNITY")));
+        create(owner, ev("de-la-otra", city, 2, Map.of("communityId", other.getPublicId())));
         create(owner, ev("sin-comunidad", city, 3, Map.of()));
 
         String url = "/api/communities/" + community.getSlug() + "/events";
@@ -158,9 +159,9 @@ class EventSearchIT extends AbstractIntegrationTest {
         // The COMMUNITY event never leaks through any filter of the general listing either
         titles(outsider, "city", city).andExpect(jsonPath("$.content[*].title")
                 .value(containsInAnyOrder(t(city, "publico"), t(city, "de-la-otra"), t(city, "sin-comunidad"))));
-        titles(outsider, "city", city, "communityId", String.valueOf(community.getId()))
+        titles(outsider, "city", city, "communityId", community.getPublicId().toString())
                 .andExpect(jsonPath("$.content[*].title").value(contains(t(city, "publico"))));
-        titles(member, "city", city, "communityId", String.valueOf(community.getId()))
+        titles(member, "city", city, "communityId", community.getPublicId().toString())
                 .andExpect(jsonPath("$.content[*].title").value(contains(t(city, "publico"), t(city, "privado"))));
     }
 
@@ -209,7 +210,7 @@ class EventSearchIT extends AbstractIntegrationTest {
         return mockMvc.perform(request);
     }
 
-    private long idOf(ResultActions result) throws Exception {
-        return objectMapper.readTree(result.andReturn().getResponse().getContentAsString()).get("id").asLong();
+    private UUID idOf(ResultActions result) throws Exception {
+        return UUID.fromString(objectMapper.readTree(result.andReturn().getResponse().getContentAsString()).get("id").asText());
     }
 }

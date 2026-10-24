@@ -12,7 +12,6 @@ import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 public class UserAssembler {
     public UserSelfDto toUserMe(UserAccount user, UserProfile profile) {
         return new UserSelfDto(
-                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getIsVerified(),

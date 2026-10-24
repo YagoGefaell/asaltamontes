@@ -2,6 +2,7 @@ package io.github.yagogefaell.asaltamontes.community.domain;
 
 import java.time.LocalDateTime;
 
+import io.github.yagogefaell.asaltamontes.common.identifier.PublicIdEntity;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 import jakarta.persistence.Column;
@@ -26,7 +27,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "communities")
-public class Community {
+public class Community extends PublicIdEntity {
 
     public Community(String name, String slug, String description, String imageUrl, UserAccount createdBy) {
         this.name = name;
