@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -48,4 +49,32 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
             from Media m where m.id = :id
             """)
     boolean isReferenced(@Param("id") UUID id);
+
+    @Query("select m.id from Media m where m.ownerId = :ownerId order by m.createdAt")
+    List<UUID> findIdsByOwner(@Param("ownerId") Long ownerId, Pageable pageable);
+
+    /**
+     * Account deletion: clears the references (id and URL text) to the owner's images from resources that stay.
+     * The FKs would null the ids on their own, but not the URL text columns.
+     */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update UserProfile p set p.avatarMediaId = null, p.profilePictureUrl = null
+            where p.avatarMediaId in (select m.id from Media m where m.ownerId = :ownerId)
+            """)
+    int detachAvatarsOf(@Param("ownerId") Long ownerId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update Community c set c.coverMediaId = null, c.imageUrl = null
+            where c.coverMediaId in (select m.id from Media m where m.ownerId = :ownerId)
+            """)
+    int detachCoversOf(@Param("ownerId") Long ownerId);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+            update Conversation v set v.groupMediaId = null, v.groupImage = null
+            where v.groupMediaId in (select m.id from Media m where m.ownerId = :ownerId)
+            """)
+    int detachGroupImagesOf(@Param("ownerId") Long ownerId);
 }
