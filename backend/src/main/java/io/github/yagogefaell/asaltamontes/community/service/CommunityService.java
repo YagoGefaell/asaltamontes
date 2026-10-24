@@ -114,8 +114,16 @@ public class CommunityService {
             .orElseThrow(() -> new NotFoundException("Comunidad no encontrada"));
     }
 
-    public Page<CommunityMemberDto> getCommunityMembersExcept(UUID communityPublicId, Long userId, Pageable pageable) {
-        return communityRepository.findMembersExcept(internalId(communityPublicId), userId, MEMBER_SORT.apply(pageable));
+    /**
+     * Members of the community other than the caller. Only members who are not banned may see them (BUG-066):
+     * anyone else gets the same 404 as for a community that does not exist, so it does not reveal which ones exist.
+     */
+    public Page<CommunityMemberDto> getCommunityMembersExcept(UUID communityPublicId, UserAccount currentUser, Pageable pageable) {
+        Long communityId = communityRepository.findIdByPublicId(communityPublicId)
+                .filter(id -> communityMemberRepository.findStatus(id, currentUser.getId())
+                        .filter(status -> status != MemberStatus.BANNED).isPresent())
+                .orElseThrow(() -> new NotFoundException("Comunidad no encontrada"));
+        return communityRepository.findMembersExcept(communityId, currentUser.getId(), MEMBER_SORT.apply(pageable));
     }
 
     /** Whether the user created the community; 404 if it does not exist (BUG-014). */

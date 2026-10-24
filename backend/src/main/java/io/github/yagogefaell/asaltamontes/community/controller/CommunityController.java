@@ -90,7 +90,7 @@ public class CommunityController {
             @PathVariable UUID communityId,
             @AuthenticationPrincipal UserAccount currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser.getId(), pageable);
+        Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser, pageable);
         return ResponseEntity.ok(members);
     }
 
