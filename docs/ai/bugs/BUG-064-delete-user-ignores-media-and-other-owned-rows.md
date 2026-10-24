@@ -5,6 +5,7 @@
 - **Confianza:** probable (lectura de código; `media.owner_id` es una FK a `users` sin `ON DELETE`)
 - **Área:** backend/user + backend/media
 - **Tarea que lo resuelve:** ninguna (PR `fix/` propia, junto con el borrado de cuenta de T23)
+- **Alcance resuelto:** solo las imágenes (filas y ficheros). El resto de filas de la cuenta se registra en BUG-065.
 - **Detectado:** 2026-10-23, al implementar T17c (Claude)
 
 ## Dónde
