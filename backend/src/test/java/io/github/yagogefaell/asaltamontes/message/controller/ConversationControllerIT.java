@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 
 import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
@@ -18,14 +20,14 @@ class ConversationControllerIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount outsider = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
 
         mockMvc.perform(get("/api/conversations").with(auth.bearer(bea)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[*].conversationId").value(hasItem(conversationId.intValue())));
+                .andExpect(jsonPath("$.items[*].conversationId").value(hasItem(conversationId.toString())));
 
         mockMvc.perform(get("/api/conversations").with(auth.bearer(outsider)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.items[*].conversationId").value(not(hasItem(conversationId.intValue()))));
+                .andExpect(jsonPath("$.items[*].conversationId").value(not(hasItem(conversationId.toString()))));
     }
 }

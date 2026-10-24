@@ -4,6 +4,8 @@ import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,11 +16,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
+    // A history cursor is the public id of a message of the same chat (D-021)
+    @Query("SELECT m.id FROM Message m WHERE m.publicId = :publicId AND m.conversation.id = :conversationId")
+    Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId, @Param("conversationId") Long conversationId);
+
     // Cursor pagination by id, newest first (index messages (conversation_id, id DESC), T05).
     // Two queries instead of "(:before IS NULL OR ...)" so PostgreSQL always gets a typed parameter.
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
-            m.id, m.conversation.id, m.sender.username, m.content, m.sentAt
+            m.publicId, m.conversation.publicId, m.sender.username, m.content, m.sentAt
         )
         FROM Message m
         WHERE m.conversation.id = :conversationId
@@ -28,7 +34,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
-            m.id, m.conversation.id, m.sender.username, m.content, m.sentAt
+            m.publicId, m.conversation.publicId, m.sender.username, m.content, m.sentAt
         )
         FROM Message m
         WHERE m.conversation.id = :conversationId AND m.id < :before
@@ -39,7 +45,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Messages newer than a known one, oldest first: catching up after a WebSocket reconnection (T11)
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
-            m.id, m.conversation.id, m.sender.username, m.content, m.sentAt
+            m.publicId, m.conversation.publicId, m.sender.username, m.content, m.sentAt
         )
         FROM Message m
         WHERE m.conversation.id = :conversationId AND m.id > :after

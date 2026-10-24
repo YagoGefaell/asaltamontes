@@ -15,8 +15,15 @@ import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface CommunityRepository extends JpaRepository<Community, Long> {
+
+    // The API only knows public ids (D-021); served by the unique index on public_id
+    Optional<Community> findByPublicId(UUID publicId);
+
+    @Query("SELECT c.id FROM Community c WHERE c.publicId = :publicId")
+    Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId);
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto(
             u.username, 
@@ -34,7 +41,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     Page<CommunityMemberDto> findMembersExcept(@Param("communityId") Long communityId, @Param("currentUserId") Long currentUserId, Pageable pageable);
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
-            c.id,
+            c.publicId,
             c.name,
             c.slug,
             c.imageUrl,
@@ -49,7 +56,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     // pattern: lowercase, with LIKE wildcards escaped and wrapped in % (CommunityService#search)
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
-            c.id,
+            c.publicId,
             c.name,
             c.slug,
             c.imageUrl,
@@ -68,7 +75,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto(
-            c.id,
+            c.publicId,
             c.name,
             c.slug,
             c.description,
@@ -85,7 +92,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     // Links shared before T14 use the name
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto(
-            c.id,
+            c.publicId,
             c.name,
             c.slug,
             c.description,

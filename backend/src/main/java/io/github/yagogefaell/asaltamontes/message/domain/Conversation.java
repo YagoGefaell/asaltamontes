@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.yagogefaell.asaltamontes.common.identifier.PublicIdEntity;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 @Entity
@@ -16,7 +17,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 @Setter
 @NoArgsConstructor
 @Table(name = "conversations")
-public class Conversation {
+public class Conversation extends PublicIdEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

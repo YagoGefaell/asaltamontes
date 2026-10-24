@@ -3,6 +3,7 @@ package io.github.yagogefaell.asaltamontes.message.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Type;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +34,7 @@ class ChatErrorsIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount intruder = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
 
         StompSession session = connectAs(intruder);
         BlockingQueue<ChatErrorDto> errors = new LinkedBlockingQueue<>();

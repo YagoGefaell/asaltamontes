@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.support;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.springframework.boot.test.context.TestComponent;
@@ -50,7 +51,7 @@ public class TestDataFactory {
         return communityService.create(new CreateCommunityDto(uniqueName("community"), "Test community", null, null), owner);
     }
 
-    public Long createPrivateConversation(UserAccount user1, UserAccount user2) {
+    public UUID createPrivateConversation(UserAccount user1, UserAccount user2) {
         return messageService.createOrGetPrivateConversation(user1.getUsername(), user2.getUsername()).conversationId();
     }
 }

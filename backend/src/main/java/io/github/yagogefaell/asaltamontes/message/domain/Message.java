@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.domain;
 
 import java.time.LocalDateTime;
+import io.github.yagogefaell.asaltamontes.common.identifier.PublicIdEntity;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -20,7 +21,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "messages")
-public class Message {
+public class Message extends PublicIdEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -8,6 +8,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
+import java.util.UUID;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,6 +45,8 @@ class MessageServiceTest {
     @Mock
     private io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService mediaReferences;
 
+    private static final UUID CHAT = UUID.fromString("0192f3a4-7c00-7000-8000-000000000001");
+
     private MessageService messageService;
 
     @BeforeEach
@@ -52,9 +57,10 @@ class MessageServiceTest {
 
     @Test
     void processIncomingMessage_rejectsSenderWhoIsNotParticipant() {
+        when(conversationRepository.findIdByPublicId(CHAT)).thenReturn(Optional.of(42L));
         when(participantRepository.existsByConversationIdAndUserId(42L, 7L)).thenReturn(false);
 
-        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, 7L, "hola"))
+        assertThatThrownBy(() -> messageService.processIncomingMessage(CHAT, 7L, "hola"))
                 .isInstanceOf(ForbiddenException.class);
 
         verify(messageRepository, never()).save(any(Message.class));
@@ -63,12 +69,22 @@ class MessageServiceTest {
 
     @Test
     void processIncomingMessage_rejectsBlankOrTooLongContentBeforeTouchingTheDatabase() {
-        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, 1L, "   "))
+        assertThatThrownBy(() -> messageService.processIncomingMessage(CHAT, 1L, "   "))
                 .isInstanceOf(BadRequestException.class);
-        assertThatThrownBy(() -> messageService.processIncomingMessage(42L, 1L, "x".repeat(2001)))
+        assertThatThrownBy(() -> messageService.processIncomingMessage(CHAT, 1L, "x".repeat(2001)))
                 .isInstanceOf(BadRequestException.class);
 
         verifyNoInteractions(participantRepository, messageRepository, eventPublisher);
+    }
+
+    @Test
+    void processIncomingMessage_rejectsAnUnknownChatLikeAForeignOne() {
+        when(conversationRepository.findIdByPublicId(CHAT)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> messageService.processIncomingMessage(CHAT, 7L, "hola"))
+                .isInstanceOf(ForbiddenException.class);
+
+        verify(messageRepository, never()).save(any(Message.class));
     }
 
     @Test
@@ -76,12 +92,13 @@ class MessageServiceTest {
         UserAccount ana = new UserAccount();
         ana.setId(1L);
         ana.setUsername("ana");
+        when(conversationRepository.findIdByPublicId(CHAT)).thenReturn(Optional.of(42L));
         when(participantRepository.existsByConversationIdAndUserId(42L, 1L)).thenReturn(true);
         when(userService.loadUserById(1L)).thenReturn(ana);
         when(conversationRepository.getReferenceById(42L)).thenReturn(new Conversation());
         when(messageRepository.save(any(Message.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        messageService.processIncomingMessage(42L, 1L, "  hola  ");
+        messageService.processIncomingMessage(CHAT, 1L, "  hola  ");
 
         verify(participantRepository).incrementUnreadExceptSender(42L, 1L);
         verify(conversationRepository).updateLastMessage(any(), any(), any(), any());

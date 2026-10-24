@@ -1,5 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
+import java.util.UUID;
+
 public record ChatResponseDto(
-    Long conversationId
+    UUID conversationId
 ) {}

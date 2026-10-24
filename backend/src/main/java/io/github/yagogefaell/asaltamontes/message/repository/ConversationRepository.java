@@ -14,9 +14,21 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
+
+    // The API only knows public ids (D-021); the unique index on public_id serves these lookups
+    @Query("SELECT c.id FROM Conversation c WHERE c.publicId = :publicId")
+    Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId);
+
+    // A chat of the list cursor: it must be one of hers, so a cursor cannot probe other people's chats
+    @Query("""
+        SELECT c.id FROM Conversation c JOIN c.participants p
+        WHERE c.publicId = :publicId AND p.user.username = :username
+    """)
+    Optional<Long> findIdByPublicIdAndParticipant(@Param("publicId") UUID publicId, @Param("username") String username);
     @Query("""
         SELECT DISTINCT c FROM Conversation c 
         JOIN c.participants p1 
@@ -32,8 +44,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // conversations helps here, and one on last_message_at would slow down every message (EXPLAIN in #44).
     // Three queries instead of optional parameters, so PostgreSQL always gets typed ones (as in MessageRepository).
     @Query("""
-        SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
-            c.id,
+        SELECT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
+            c.publicId,
             CASE 
                 WHEN c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.GROUP THEN c.groupName 
                 ELSE otherUser.username 
@@ -46,7 +58,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             me.unreadCount,
             c.lastMessage,
             lastSender.username,
-            lastSender.id,
             c.lastMessageAt
         )
         FROM Conversation c
@@ -63,8 +74,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     List<ChatSummaryDto> findChatsForUser(@Param("username") String username, Limit limit);
 
     @Query("""
-        SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
-            c.id,
+        SELECT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
+            c.publicId,
             CASE 
                 WHEN c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.GROUP THEN c.groupName 
                 ELSE otherUser.username 
@@ -77,7 +88,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             me.unreadCount,
             c.lastMessage,
             lastSender.username,
-            lastSender.id,
             c.lastMessageAt
         )
         FROM Conversation c
@@ -98,8 +108,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
                                                 @Param("beforeId") Long beforeId, Limit limit);
 
     @Query("""
-        SELECT DISTINCT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
-            c.id,
+        SELECT new io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto(
+            c.publicId,
             CASE 
                 WHEN c.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.GROUP THEN c.groupName 
                 ELSE otherUser.username 
@@ -112,7 +122,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             me.unreadCount,
             c.lastMessage,
             lastSender.username,
-            lastSender.id,
             c.lastMessageAt
         )
         FROM Conversation c
