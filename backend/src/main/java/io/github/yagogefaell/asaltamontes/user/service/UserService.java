@@ -149,6 +149,8 @@ public class UserService implements UserDetailsService {
             throw new UserNotFoundException(id);
         }
 
+        // Images first (rows and, after the commit, files): fk_media_owner would block the account otherwise
+        mediaCleanup.deleteAllOwnedBy(id);
         userProfileRepository.deleteById(id);
         userAccountRepository.deleteById(id);
     }

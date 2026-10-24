@@ -1,6 +1,6 @@
 # BUG-064 — Borrar una cuenta falla (o deja ficheros) si la usuaria tiene imágenes subidas
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja (ningún endpoint llama hoy a `UserService.deleteUser`)
 - **Confianza:** probable (lectura de código; `media.owner_id` es una FK a `users` sin `ON DELETE`)
 - **Área:** backend/user + backend/media

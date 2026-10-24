@@ -59,7 +59,11 @@ public class MediaCleanupService {
             return false;
         }
         mediaRepository.delete(media);
-        List<String> keys = media.storageKeys();
+        deleteFilesAfterCommit(media.storageKeys());
+        return true;
+    }
+
+    private void deleteFilesAfterCommit(List<String> keys) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
@@ -70,7 +74,34 @@ public class MediaCleanupService {
         } else {
             deleteFiles(keys);
         }
-        return true;
+    }
+
+    /**
+     * Account deletion: removes every image the user uploaded, whoever references it, and clears those references.
+     * Joins the caller's transaction (the files are removed after its commit, failures are only logged), so call it
+     * from inside the transaction that deletes the account.
+     */
+    public int deleteAllOwnedBy(Long ownerId) {
+        return transaction.execute(status -> {
+            mediaRepository.detachAvatarsOf(ownerId);
+            mediaRepository.detachCoversOf(ownerId);
+            mediaRepository.detachGroupImagesOf(ownerId);
+            int deleted = 0;
+            List<UUID> batch;
+            do {
+                batch = mediaRepository.findIdsByOwner(ownerId, PageRequest.of(0, properties.getCleanupBatchSize()));
+                for (UUID id : batch) {
+                    Media media = mediaRepository.findByIdForUpdate(id).orElse(null);
+                    if (media != null) {
+                        mediaRepository.delete(media);
+                        deleteFilesAfterCommit(media.storageKeys());
+                        deleted++;
+                    }
+                }
+                mediaRepository.flush(); // the next page must not return rows that are already deleted
+            } while (!batch.isEmpty());
+            return deleted;
+        });
     }
 
     /** One cleanup run: orphans older than the grace period, in batches. Returns how many were deleted. */
