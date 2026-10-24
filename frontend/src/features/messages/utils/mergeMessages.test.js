@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { mergeMessages } from './mergeMessages.js'
 
-const msg = (id, content = `m${id}`) => ({ id, content })
+const msg = (id, content = `m${id}`) => ({ id: `0192f3a4-${String(id).padStart(4, '0')}`, content })
+const ids = (list) => list.map((m) => Number(m.id.slice(9)))
 
 describe('mergeMessages', () => {
   it('prepends an older history page in order', () => {
-    expect(mergeMessages([msg(4), msg(5)], [msg(1), msg(2), msg(3)]).map((m) => m.id)).toEqual([1, 2, 3, 4, 5])
+    expect(ids(mergeMessages([msg(4), msg(5)], [msg(1), msg(2), msg(3)]))).toEqual([1, 2, 3, 4, 5])
   })
 
   it('drops duplicates when a WebSocket message is also in the page being loaded', () => {
@@ -14,16 +15,16 @@ describe('mergeMessages', () => {
 
     const merged = mergeMessages(live, page)
 
-    expect(merged.map((m) => m.id)).toEqual([8, 9, 10])
-    expect(merged.filter((m) => m.id === 10)).toHaveLength(1)
+    expect(ids(merged)).toEqual([8, 9, 10])
+    expect(merged.filter((m) => m.id === msg(10).id)).toHaveLength(1)
   })
 
   it('appends a real-time message after the history', () => {
-    expect(mergeMessages([msg(1), msg(2)], [msg(3)]).map((m) => m.id)).toEqual([1, 2, 3])
+    expect(ids(mergeMessages([msg(1), msg(2)], [msg(3)]))).toEqual([1, 2, 3])
   })
 
-  it('treats numeric and string ids as the same message', () => {
-    expect(mergeMessages([msg(7)], [{ id: '7', content: 'x' }])).toHaveLength(1)
+  it('keeps one entry per id', () => {
+    expect(mergeMessages([msg(7)], [{ id: msg(7).id, content: 'x' }])).toHaveLength(1)
   })
 
   it('handles empty inputs', () => {
