@@ -1,4 +1,4 @@
-# BUG-065 — Cualquier usuaria autenticada puede listar los miembros de una comunidad
+# BUG-066 — Cualquier usuaria autenticada puede listar los miembros de una comunidad
 
 - **Estado:** abierto
 - **Severidad:** media
