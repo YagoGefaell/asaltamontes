@@ -11,6 +11,15 @@
 ## Objetivo
 Que cada comunidad (grupo local de trail) pueda gestionarse sola: editar datos, nombrar moderadoras, silenciar o expulsar, y ser **privada**, con solicitudes de acceso.
 
+## Decisión de Yago sobre expulsadas y silenciadas (2026-10-24, BUG-067)
+- **Las baneadas no aparecen** en la lista normal de miembros **ni cuentan** en el recuento de miembros (`memberCount`; el contador denormalizado y `CommunityMemberCounterMaintenanceService` deben contar solo `ACTIVE` y `MUTED`).
+- **Sección aparte "Expulsadas"**: solo la ven la propietaria y las moderadoras. Muestra quién, cuándo, el motivo y quién la expulsó (sale del registro `community_moderation_log`) y un botón **Readmitir**, que queda también en el registro. Es un endpoint propio (p. ej. `GET /api/communities/{id}/banned`), paginado, con `size` máximo 50, y 404 uniforme para quien no modera.
+- **La baneada ve la comunidad como una no miembro**: no ve la lista de miembros, no tiene rol, no puede volver a unirse (ni por solicitud en comunidades privadas) y el intento de unirse devuelve un mensaje neutro (sin revelar el motivo ni la expulsión; p. ej. "No se puede completar esta acción"). La ficha pública sigue siendo la de un no miembro y `myRole`/`myStatus` no delatan el baneo.
+- **Las silenciadas (`MUTED`) siguen en la lista normal** y cuentan en el recuento. La marca de silenciada solo la ve la moderación: el DTO de miembros incluye `status` únicamente cuando quien consulta es propietaria o moderadora.
+- **Paginación**: todos los listados paginados de esta tarea (miembros, expulsadas, solicitudes, registro de moderación) tienen `size` máximo 50.
+- Encaja con BUG-066 (la lista de miembros exige ser miembro no baneada): la baneada recibe la misma respuesta que una no miembro.
+- Tests añadidos: baneada ausente de la lista y del recuento, `GET .../banned` solo para moderación (404 al resto), readmitir (vuelve a la lista y al recuento, queda en el registro), baneada no puede unirse y ve la comunidad como no miembro, silenciada visible en la lista y `status` solo para moderación, `size > 50` se recorta.
+
 ## Enfoque
 - **Identificadores (D-021, T30a):** el `slug` sirve para URLs legibles y compartibles (`GET /api/communities/{slug}`, rutas del front) y **puede cambiar** si se renombra la comunidad; las acciones de la API (`join`, `leave`, `members`, moderación, `DELETE`) usan el `public_id` UUID de la comunidad, que no cambia. `PATCH` por `{slug}` o por UUID; los enlaces antiguos por slug no se garantizan tras un renombrado salvo que se guarde el histórico de slugs.
 - Usar los campos ya existentes `CommunityRole.MODERATOR` y `MemberStatus.MUTED/BANNED`, que hoy no se usan.
