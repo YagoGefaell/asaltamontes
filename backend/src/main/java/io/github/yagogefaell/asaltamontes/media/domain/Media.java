@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.media.domain;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -49,6 +50,12 @@ public class Media {
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
+
+    /** Storage keys of the three stored variants: {@code <purpose>/<id>/{thumb,medium,large}.jpg}. */
+    public List<String> storageKeys() {
+        String prefix = purpose.pathSegment() + "/" + id + "/";
+        return List.of(prefix + "thumb.jpg", prefix + "medium.jpg", prefix + "large.jpg");
+    }
 
     @PrePersist
     void onCreate() {

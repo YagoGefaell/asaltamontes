@@ -24,7 +24,8 @@ services:
     networks:
       - asaltamontes-net
 
-  # Daily pg_dump with retention (7 daily + 4 weekly) into the postgres_backups volume (T07b).
+  # Daily pg_dump with retention (7 daily + 4 weekly) into the postgres_backups volume (T07b), plus a daily tar.gz
+  # of the uploaded images (media_data, mounted read-only) keeping the newest 3 and only if there is disk space (T17c).
   # Same image as `db` so pg_dump always matches the server version. Restore: see README, "Backups".
   backup:
     image: postgres:17
@@ -40,11 +41,15 @@ services:
       PGUSER: ${DATABASE_USERNAME}
       PGPASSWORD: ${DATABASE_PASSWORD}
       BACKUP_TIME: ${BACKUP_TIME:-03:30}
+      BACKUP_MEDIA_KEEP: ${BACKUP_MEDIA_KEEP:-3}
+      BACKUP_MIN_FREE_MB: ${BACKUP_MIN_FREE_MB:-1024}
       TZ: ${TZ:-Europe/Madrid}
     volumes:
       - ./scripts/backup:/scripts:ro
       - postgres_backups:/backups
-    # Unhealthy when the newest daily dump is older than 26 h
+      - media_data:/media:ro
+    # Unhealthy when the newest daily dump is older than 26 h. The media backup does NOT affect it (a skipped copy
+    # must not fail `up --wait` in the deploy): watch /backups/media/status instead (README, "Backups")
     healthcheck:
       test: ["CMD-SHELL", "find /backups/daily -name '*.dump' -mmin -1560 | grep -q ."]
       interval: 1h
@@ -131,5 +136,5 @@ volumes:
   postgres_data:
   postgres17_data:
   postgres_backups:
-  # Uploaded images (T17a). NOT covered by the database backup service
+  # Uploaded images (T17a). Backed up daily as a tar.gz by the `backup` service (T17c)
   media_data:

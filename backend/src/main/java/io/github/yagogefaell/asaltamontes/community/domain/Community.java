@@ -51,8 +51,12 @@ public class Community {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    /** URL of the "medium" variant of {@link #coverMediaId}, or a legacy external URL when that is null. */
     @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "cover_media_id")
+    private java.util.UUID coverMediaId;
 
     @Column(name = "member_count", nullable = false)
     private Long memberCount = 1L;

@@ -5,7 +5,9 @@
 #   right away on start if the newest backup is older than a day (e.g. after a long outage).
 # - Keeps the newest BACKUP_KEEP_DAILY daily dumps; the Sunday dump is also copied to weekly/,
 #   which keeps the newest BACKUP_KEEP_WEEKLY.
-# Restore: scripts/backup/restore.sh (see the README, "Backups").
+# - After each dump, backup-media.sh archives the uploaded images (media_data volume, mounted read-only) and
+#   keeps the newest 3 copies, but only if the disk has room (T17c).
+# Restore: scripts/backup/restore.sh and the README, "Backups".
 set -euo pipefail
 
 BACKUP_DIR=/backups
@@ -39,6 +41,11 @@ backup() {
   fi
 }
 
+# A failure of the media backup is logged and reflected in its status file (healthcheck); it never stops the loop
+backup_media() {
+  bash /scripts/backup-media.sh || log "media backup did not complete (see above)"
+}
+
 seconds_until() {
   local now target
   now=$(date +%s)
@@ -52,10 +59,14 @@ seconds_until() {
 if ! find "$BACKUP_DIR/daily" -name '*.dump' -mmin -1440 | grep -q .; then
   backup
 fi
+if ! find "$BACKUP_DIR/media" -name 'media-*.tar.gz' -mmin -1440 2>/dev/null | grep -q .; then
+  backup_media
+fi
 
 while true; do
   wait_seconds=$(seconds_until "$BACKUP_TIME")
   log "next backup in ${wait_seconds}s (at $BACKUP_TIME)"
   sleep "$wait_seconds"
   backup
+  backup_media
 done

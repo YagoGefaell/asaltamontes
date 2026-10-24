@@ -202,7 +202,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         return mockMvc.perform(post("/api/communities")
                 .with(auth.bearer(owner))
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json(new CreateCommunityDto(name, "Salidas los domingos", null))));
+                .content(json(new CreateCommunityDto(name, "Salidas los domingos", null, null))));
     }
 
     private org.springframework.test.web.servlet.ResultActions join(UserAccount user, Community community) throws Exception {

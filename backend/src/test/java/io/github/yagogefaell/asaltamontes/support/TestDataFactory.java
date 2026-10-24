@@ -47,7 +47,7 @@ public class TestDataFactory {
     }
 
     public Community createCommunity(UserAccount owner) {
-        return communityService.create(new CreateCommunityDto(uniqueName("community"), "Test community", null), owner);
+        return communityService.create(new CreateCommunityDto(uniqueName("community"), "Test community", null, null), owner);
     }
 
     public Long createPrivateConversation(UserAccount user1, UserAccount user2) {

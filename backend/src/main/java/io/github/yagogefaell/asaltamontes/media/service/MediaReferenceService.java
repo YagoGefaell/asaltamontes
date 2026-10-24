@@ -6,28 +6,39 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.media.domain.Media;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.repository.MediaRepository;
+import io.github.yagogefaell.asaltamontes.media.storage.MediaStorage;
 
 /**
- * Guards the places where a resource (profile, community, group...) stores an image URL (T17b).
- * Until T17c replaces URLs with media ids, a field that holds a URL of one of our own uploads
- * ({@code /media/<purpose>/<uuid>/<variant>.jpg}) is a reference to that media, so it is only accepted when
- * the media belongs to the user who is linking it and was uploaded for that kind of resource.
+ * Turns what a request sends as the image of a resource (profile, community, group...) into a reference to one of
+ * our own uploads (T17c). A request can carry the media id, or (what the first frontend sent) the URL of the
+ * "medium" variant returned by the upload; both are accepted only when the media belongs to the user who is
+ * linking it and was uploaded for that kind of resource. The caller has already checked that the user may modify
+ * the resource.
  * <p>
- * The check is strict on purpose, because what is stored is a string that a browser and nginx will normalize
- * later: relative values must be exactly an internal URL; absolute http(s) values are external unless they
- * contain {@code /media/}, in which case they must be exactly an internal URL with a host; and anything with
- * {@code ..}, {@code %}, backslashes or control characters is rejected, so no path trick can point at
- * somebody else's media after validation.
- * The caller has already checked that the user may modify the resource.
+ * External image URLs are no longer accepted (BUG-057: every member's browser would call a third party's
+ * server, which learns IPs and connection times). The one exception is a resource that already holds a legacy
+ * external URL (e.g. the Google profile picture) and receives that same value again, so editing other fields
+ * does not break it.
+ * <p>
+ * The check on URLs is strict on purpose, because what is stored is a string that a browser and nginx will
+ * normalize later: it must be exactly an internal URL, optionally with a host in front; and anything with
+ * {@code ..}, {@code %}, backslashes or control characters is rejected, so no path trick can point at somebody
+ * else's media after validation. The stored value is rebuilt from the media id, never the text received.
  */
 @Service
 public class MediaReferenceService {
+
+    /** What gets stored: the media (null when the image is removed or is a kept legacy external URL) and the URL. */
+    public record Linked(UUID mediaId, String url) {
+    }
 
     private static final String SEGMENTS = String.join("|",
             Arrays.stream(MediaPurpose.values()).map(MediaPurpose::pathSegment).toList());
@@ -36,48 +47,65 @@ public class MediaReferenceService {
     private static final Pattern INTERNAL = Pattern.compile(
             "^(?:https?://[^/\\s?#@\\\\]+)?/media/(" + SEGMENTS + ")/"
                     + "([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/(?:thumb|medium|large)\\.jpg$");
-    private static final Pattern ABSOLUTE = Pattern.compile("^https?://.*", Pattern.CASE_INSENSITIVE);
     private static final Pattern CONTROL = Pattern.compile("[\\p{Cntrl}\\s]");
 
     private final MediaRepository mediaRepository;
+    private final MediaStorage storage;
 
-    public MediaReferenceService(MediaRepository mediaRepository) {
+    public MediaReferenceService(MediaRepository mediaRepository, MediaStorage storage) {
         this.mediaRepository = mediaRepository;
-    }
-
-    /** True when the value is exactly a URL of our own media storage. */
-    public static boolean isInternal(String url) {
-        return url != null && INTERNAL.matcher(url.trim()).matches();
+        this.storage = storage;
     }
 
     /**
-     * Fails unless {@code url} is empty, a harmless external URL, or a media of {@code userId} with the expected
-     * purpose. A missing media and someone else's media get the same 404 so ids cannot be probed.
+     * Must run in the transaction that stores the reference: the media row stays share-locked until it commits,
+     * so the orphan cleanup cannot delete the image in between (see {@link MediaCleanupService}).
+     *
+     * @param mediaId         the media to link, or null
+     * @param url             used when {@code mediaId} is null: an internal URL, blank to remove the image, or null
+     *                        for "no change requested" (the caller should not call this then)
+     * @param legacyExternal  the external URL the resource holds today, if any; that same value is kept
+     * @throws NotFoundException   the media does not exist or is somebody else's (same answer, ids cannot be probed)
+     * @throws BadRequestException wrong purpose, malformed value or a new external URL
      */
-    public void checkLinkable(String url, MediaPurpose expected, Long userId) {
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Linked link(UUID mediaId, String url, MediaPurpose expected, Long userId, String legacyExternal) {
+        if (mediaId != null) {
+            return linkMedia(mediaId, expected, userId);
+        }
         if (url == null || url.isBlank()) {
-            return;
+            return new Linked(null, null);
         }
         String value = url.trim();
+        if (legacyExternal != null && value.equals(legacyExternal) && !INTERNAL.matcher(value).matches()) {
+            // The resource already holds exactly this value (e.g. a Google picture URL, which may contain '%' or
+            // '..'): resending the field untouched must keep working. Nothing new is stored.
+            return new Linked(null, value);
+        }
         if (value.contains("..") || value.contains("%") || value.contains("\\") || CONTROL.matcher(value).find()) {
             throw invalid();
         }
-        boolean absolute = ABSOLUTE.matcher(value).matches();
-        if (absolute && !value.toLowerCase().contains("/media/")) {
-            return; // external image
-        }
         Matcher m = INTERNAL.matcher(value);
-        if (!m.matches()) {
-            throw invalid(); // relative values must be an internal URL; absolute ones that mention /media/ too
+        if (m.matches()) {
+            MediaPurpose segmentPurpose = Arrays.stream(MediaPurpose.values())
+                    .filter(p -> p.pathSegment().equals(m.group(1))).findFirst().orElseThrow();
+            Linked linked = linkMedia(UUID.fromString(m.group(2)), expected, userId);
+            if (segmentPurpose != expected) {
+                throw invalid();
+            }
+            return linked;
         }
-        MediaPurpose segmentPurpose = Arrays.stream(MediaPurpose.values())
-                .filter(p -> p.pathSegment().equals(m.group(1))).findFirst().orElseThrow();
-        Media media = mediaRepository.findById(UUID.fromString(m.group(2)))
+        throw new BadRequestException("Solo se pueden usar imágenes subidas a la aplicación");
+    }
+
+    private Linked linkMedia(UUID mediaId, MediaPurpose expected, Long userId) {
+        Media media = mediaRepository.findByIdForShare(mediaId)
                 .filter(found -> found.getOwnerId().equals(userId))
                 .orElseThrow(() -> new NotFoundException("La imagen no existe"));
-        if (media.getPurpose() != expected || segmentPurpose != expected) {
+        if (media.getPurpose() != expected) {
             throw invalid();
         }
+        return new Linked(media.getId(), storage.publicUrl(media.getPurpose().pathSegment() + "/" + media.getId() + "/medium.jpg"));
     }
 
     private static BadRequestException invalid() {

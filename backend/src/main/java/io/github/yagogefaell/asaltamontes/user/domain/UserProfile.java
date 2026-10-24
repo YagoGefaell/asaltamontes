@@ -42,8 +42,12 @@ public class UserProfile {
     @Column(name = "city")
     private String city;
 
+    /** URL of the "medium" variant of {@link #avatarMediaId}, or a legacy external URL when that is null. */
     @Column(name = "profile_picture_url")
     private String profilePictureUrl;
+
+    @Column(name = "avatar_media_id")
+    private java.util.UUID avatarMediaId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "running_level")

@@ -28,6 +28,12 @@ public class MediaProperties {
     private int uploadsPerHour = 30;
     /** Images processed at the same time; the others wait (holding no upload bytes in memory). */
     private int maxConcurrentProcessing = 1;
+    /** Total size of the stored images one user may have (sum of the variants; orphans count until cleaned up). */
+    private org.springframework.util.unit.DataSize maxBytesPerUser = org.springframework.util.unit.DataSize.ofMegabytes(50);
+    /** Images that no resource references are deleted once they are older than this (must stay well above 0). */
+    private java.time.Duration orphanGracePeriod = java.time.Duration.ofHours(24);
+    /** Orphans handled per query in each cleanup run. */
+    private int cleanupBatchSize = 100;
     /** How long a request waits for a processing slot before being rejected with 429. */
     private int processingWaitSeconds = 3;
 }

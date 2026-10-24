@@ -29,8 +29,12 @@ public class Conversation {
     @Column(name = "group_name")
     private String groupName;
 
+    /** URL of the "medium" variant of {@link #groupMediaId}, or a legacy external URL when that is null. */
     @Column(name = "group_image")
     private String groupImage;
+
+    @Column(name = "group_media_id")
+    private java.util.UUID groupMediaId;
 
     @Column(name = "last_message")
     private String lastMessage;

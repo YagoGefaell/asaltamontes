@@ -1,6 +1,6 @@
 # T17 — Almacenamiento de imágenes
 
-- **Estado:** pendiente (T17a y T17b hechos; falta T17c)
+- **Estado:** pendiente (T17a, T17b, T17c1 y T17c2 hechos; falta T17c3, el frontend)
 - **Fase:** Transversal
 - **Depende de:** T07 (hecho: nginx same-origin, `client_max_body_size 10m`), T05 (hecho)
 - **Rama sugerida:** `feat/T17a-media-backend`, `feat/T17b-media-frontend`, `refactor/T17c-media-references`
@@ -66,6 +66,20 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 - Los DTO devuelven `avatar: { thumb, medium, large }` (o la URL externa como `medium`). Las peticiones de edición aceptan `avatarMediaId` y comprueban que la media es de la usuaria y del `purpose` correcto.
 - Quitar los campos de URL libre de los formularios.
 - Limpieza programada (patrón de `maintenance/`): medias con más de 24 h sin referenciar → borrar ficheros y filas. Al cambiar el avatar, borrar el anterior.
+
+**División de T17c** (2026-10-23): T17c1 (backend: referencias, limpieza y cuota) y T17c2 (backup) van en la misma PR `refactor/T17c-media-references`; T17c3 (frontend) queda pendiente y lo hace otro agente.
+
+**Cómo quedaron T17c1 y T17c2:**
+- Migración `V8__media_references.sql`: `user_profiles.avatar_media_id`, `communities.cover_media_id`, `conversations.group_media_id` (uuid, FK a `media` `ON DELETE SET NULL`, índice parcial). Convierte en referencia las URLs internas existentes cuando la media existe, es de la dueña del recurso y tiene el `purpose` correcto; el resto queda como URL externa heredada. Evento: **no** (`Event.imageUrl` no se escribe desde la API); cuando se pueda subir imagen de evento, se añade `event_image_media_id` y se incluye en `MediaRepository.isReferenced`/`findUnreferencedCreatedBefore`.
+- **Decisión de diseño**: las columnas de texto (`profile_picture_url`, `image_url`, `group_image`) se conservan y, para una referencia propia, guardan la URL de la variante `medium` (se rellena al enlazar). Así las ~15 consultas JPQL de listados y los DTO no cambian, no hay joins nuevos y el frontend actual sigue funcionando. La fuente de verdad de "a quién pertenece la imagen" y de la limpieza es el `*_media_id`. Las peticiones aceptan `avatarMediaId` / `coverMediaId` / `groupMediaId` y, por compatibilidad con el T17b del frontend, la URL interna (se normaliza a la variante `medium` reconstruida desde el id).
+- `MediaReferenceService.link(...)` sustituye a `checkLinkable`: mismo control (404 si no existe o es de otra, 400 si el `purpose` no coincide, rutas con `..`/`%`/`\` rechazadas) y toma un bloqueo compartido sobre la fila de `media` dentro de la transacción que guarda la referencia. **BUG-057 resuelto** (ver el bug): URLs externas nuevas rechazadas, `@Size(255)` y nombre de grupo `@Size(80)`.
+- Al cambiar o quitar el avatar (`profilePictureUrl: ""` lo quita) se borra la imagen anterior si nadie más la referencia.
+- Limpieza (`media/maintenance/MediaOrphanCleanupJob`, `@Scheduled`, `MEDIA_CLEANUP_CRON`, por defecto 04:15): borra de disco y BD las medias sin referencia con más de `MEDIA_ORPHAN_GRACE_PERIOD` (24 h). **Carrera subida/enlace**: el plazo evita casi todo, y el caso restante (enlazar una media justo cuando cumple el plazo) se cierra con bloqueos de fila: enlazar toma `FOR SHARE`; la limpieza toma `FOR UPDATE`, y solo después comprueba las referencias con una consulta nueva. O gana el enlace (la media queda referenciada) o gana la limpieza (el enlace da 404). Los ficheros se borran tras el commit.
+- Cuota (`MEDIA_MAX_BYTES_PER_USER`, 50 MB, suma de `media.bytes` de la usuaria): `POST /api/media` responde **409** con "Has alcanzado tu límite de almacenamiento de imágenes (50 MB)...". Se comprueba antes de procesar y de nuevo con el tamaño real; es un límite blando (subidas simultáneas de la misma usuaria pueden pasarse un poco, acotadas por el límite de 30/h y el semáforo).
+- Backup (T17c2): `scripts/backup/backup-media.sh`, llamado por `backup-loop.sh` tras cada volcado; `media_data` montado `ro` en el servicio `backup`. Conserva solo `BACKUP_MEDIA_KEEP` (3) copias en `/backups/media`; comprueba que hay sitio (tamaño de la carpeta + `BACKUP_MIN_FREE_MB`) y, si no, no copia, lo deja en el log y en `/backups/media/status` (NO afecta al healthcheck del servicio, para no romper `up --wait` del deploy; se vigila con el fichero `status`, ver README). Restauración en el README.
+- **Revisión independiente de #70**: V8 reescribe también la columna de texto (quita un host ajeno delante de nuestra ruta) y solo enlaza la imagen de un grupo si su dueña es participante del grupo (las conversaciones no tienen creadora); reenviar sin tocar el valor externo ya guardado se acepta antes de los filtros de caracteres; la cuota relee el total tras procesar; `backup-media.sh` borra `*.partial` al empezar; `MediaReferenceColumnsIT` falla si una columna `*_media_id` del esquema no está en las consultas de referencias.
+- **Requisito antes de producción**: no hay tope global de disco para `media_data` (solo cuota por usuaria): con muchas cuentas, 50 MB x usuarias puede llenar el disco. Definir un tope global o alertas de espacio (T23) antes de abrir el registro.
+- **Pendiente (T17c3, frontend)**: enviar `...MediaId` en vez de la URL, quitar de los formularios cualquier campo de URL libre que quede, y (opcional) cambiar los DTO de lectura a `avatar: { thumb, medium, large }` (hoy devuelven la URL `medium` en los campos de siempre). También el perfil ICC opcional.
 
 ## Fuera de alcance
 - Imágenes de posts (T22), moderación de imágenes, CDN (después de la demo).
