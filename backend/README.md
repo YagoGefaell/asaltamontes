@@ -147,6 +147,16 @@ The schema is versioned with **Flyway** (`src/main/resources/db/migration`). Hib
 - Test it on a database **with data**, not only on an empty one. `./mvnw verify` already runs every migration on an empty PostgreSQL (`FlywayMigrationIT`).
 - `V1__baseline.sql` is the schema that Hibernate used to create. On a database that already had those tables, Flyway records V1 as applied without running it (`baseline-on-migrate`).
 
+### 6. Public identifiers (D-021)
+
+The `bigint` primary key of every table is **internal and never leaves the API**. A resource that the API, a URL or a WebSocket payload shows also has `public_id uuid` (version 7), and only that id goes out. To add one to a new entity:
+
+1. Migration: `public_id uuid NOT NULL` plus a unique index `uk_<table>_public_id` (see `V9__public_ids.sql` for the backfill of existing rows).
+2. The entity extends `PublicIdEntity` (assigns a UUID v7 from `UuidV7` when the object is created).
+3. Repository: `Optional<X> findByPublicId(UUID)` (or a query returning the internal id). Controllers take `@PathVariable UUID` (a malformed id is a 400 for free), services translate it to the internal id once and keep working with it.
+4. DTOs and STOMP payloads use `UUID id`, never `Long`. `PublicIdArchitectureTest` fails the build if a DTO has a `Long` field called `id` or `*Id`, or a controller takes a `Long` path variable or request parameter.
+
+Users are addressed by `username`; communities by `slug` (and by their public UUID in join, leave, members and delete).
 
 ## API & WebSocket
 

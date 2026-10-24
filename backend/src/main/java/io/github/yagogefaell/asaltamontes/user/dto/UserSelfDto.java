@@ -3,7 +3,6 @@ package io.github.yagogefaell.asaltamontes.user.dto;
 import java.time.LocalDate;
 
 public record UserSelfDto(
-    Long userId,
     String username,
     String email,
     Boolean isVerified,

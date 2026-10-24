@@ -8,6 +8,15 @@
 - **Tamaño:** L
 - **Cuándo:** lo antes posible y **antes de T18 (notificaciones), T12 (grupos) y T22 (feed)**, que crean recursos nuevos expuestos. Si se hace después, esos recursos tienen que nacer ya con `public_id` (D-021).
 
+## División en PRs (refinado al implementar)
+- **T30a (backend, esta PR):** migración V9 (`public_id` + backfill UUID v7 con la hora de creación + índices únicos) en `events`, `conversations`, `messages` y `communities`; `PublicIdEntity` + `UuidV7` (Hibernate 6.6 de Spring Boot 3.5 no trae generador v7: `UuidGenerator.Style.VERSION_7` llega con Hibernate 7.0); controladores, servicios, DTOs y payloads STOMP con UUID; test de arquitectura `PublicIdArchitectureTest` (ArchUnit); IT de ids malformados (400) y desconocidos (404); docs.
+- **T30b (frontend, PR apilada sobre T30a):** el front trata los ids como números en varios sitios (orden de mensajes, último mensaje leído, `communityId` del formulario de eventos); migrarlo a UUID. Sin T30b el chat y la creación de eventos de comunidad se rompen, por eso se apila y no se mergea T30a sola.
+- **T30c (cursores opacos, pendiente):** en T30a los cursores (`before`, `after`, `beforeId` de la lista de chats, `nextBefore`/`nextBeforeId`) son el `public_id` del mensaje/chat, validado en servidor (debe ser de la misma conversación / de una conversación de la usuaria, si no 400). No revela ids internos ni permite saltar a otras conversaciones, pero **sí es un id público**, no un token opaco. T30c los sustituye por tokens firmados/codificados.
+
+### Decisiones tomadas en T30a (revisables)
+- `public_id` también en `communities` (decidido por Yago): el `slug` es para URLs legibles y compartibles (`GET /api/communities/{slug}`, rutas del front); el UUID es para las acciones de la API (`join`, `leave`, `members`, `DELETE`), porque el slug puede cambiar si T19 permite renombrar la comunidad. Usuarias: sin `public_id` (por `username`); se eliminan `userId` de `GET /api/users/me` y `lastMessageSenderId` de la lista de chats (nadie los usaba para otra cosa que comparar con el usuario actual, que ya se hace por `username`).
+- Chats: inexistente y ajeno dan el mismo 404 (REST y STOMP), como los eventos, para que no se pueda sondear su existencia.
+
 ## Objetivo
 Aplicar D-021 a lo que ya existe: que ningún id interno `bigint` salga de la API, para que nada sea enumerable ni revele volúmenes, manteniendo la PK `bigint` por rendimiento.
 

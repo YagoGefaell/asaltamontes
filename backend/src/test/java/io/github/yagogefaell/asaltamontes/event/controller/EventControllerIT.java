@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import org.springframework.test.web.servlet.ResultActions;
 
+import io.github.yagogefaell.asaltamontes.common.identifier.UuidV7;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
 import io.github.yagogefaell.asaltamontes.event.domain.Event;
@@ -44,11 +46,29 @@ class EventControllerIT extends AbstractIntegrationTest {
     private static final Instant NEXT_WEEK = Instant.now().plus(7, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
 
     @Test
+    void idsInTheApi_areUuidV7_numericOrMalformedOnesAre400_andUnknownOnesAre404() throws Exception {
+        UserAccount ana = testData.createUser();
+        UUID id = idOf(create(ana, event("Con id publico")).andExpect(status().isCreated()));
+
+        assertThat(UuidV7.isV7(id)).isTrue();
+        mockMvc.perform(get("/api/events/" + id).with(auth.bearer(ana))).andExpect(status().isOk());
+        for (String bad : new String[] {"123", "not-a-uuid"}) {
+            mockMvc.perform(get("/api/events/" + bad).with(auth.bearer(ana))).andExpect(status().isBadRequest());
+            mockMvc.perform(patch("/api/events/" + bad).with(auth.bearer(ana))
+                    .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isBadRequest());
+            mockMvc.perform(post("/api/events/" + bad + "/join").with(auth.bearer(ana))).andExpect(status().isBadRequest());
+            mockMvc.perform(get("/api/events/" + bad + "/attendees").with(auth.bearer(ana))).andExpect(status().isBadRequest());
+        }
+        mockMvc.perform(get("/api/events/" + UUID.randomUUID()).with(auth.bearer(ana))).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/events").param("communityId", "7").with(auth.bearer(ana))).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void create_makesTheOrganizerTheFirstAttendee_andOthersSeeItWithoutRights() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
 
-        long id = idOf(create(ana, event("Subida al Galiñeiro"))
+        UUID id = idOf(create(ana, event("Subida al Galiñeiro"))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
                 .andExpect(jsonPath("$.status").value("SCHEDULED"))
@@ -84,7 +104,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         create(ana, event("Solo socias", Map.of("visibility", "COMMUNITY")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Un evento solo para miembros necesita una comunidad"));
-        create(ana, event("Comunidad fantasma", Map.of("communityId", 999999999)))
+        create(ana, event("Comunidad fantasma", Map.of("communityId", UUID.randomUUID().toString())))
                 .andExpect(status().isNotFound());
     }
 
@@ -95,15 +115,15 @@ class EventControllerIT extends AbstractIntegrationTest {
         UserAccount outsider = testData.createUser();
         UserAccount banned = testData.createUser();
         Community community = testData.createCommunity(owner);
-        communityService.joinCommunity(community.getId(), member);
-        communityService.joinCommunity(community.getId(), banned);
+        communityService.joinCommunity(community.getPublicId(), member);
+        communityService.joinCommunity(community.getPublicId(), banned);
         jdbcTemplate.update("UPDATE community_members SET status = 'BANNED' WHERE user_account_id = ?", banned.getId());
 
-        create(member, event("Quedada de socia", Map.of("communityId", community.getId())))
+        create(member, event("Quedada de socia", Map.of("communityId", community.getPublicId())))
                 .andExpect(status().isForbidden());
 
         String title = testData.uniqueName("Solo socias");
-        long id = idOf(create(owner, event(title, Map.of("communityId", community.getId(), "visibility", "COMMUNITY")))
+        UUID id = idOf(create(owner, event(title, Map.of("communityId", community.getPublicId(), "visibility", "COMMUNITY")))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.communitySlug").value(community.getSlug())));
 
@@ -125,10 +145,10 @@ class EventControllerIT extends AbstractIntegrationTest {
         UserAccount moderator = testData.createUser();
         UserAccount other = testData.createUser();
         Community community = testData.createCommunity(owner);
-        communityService.joinCommunity(community.getId(), moderator);
+        communityService.joinCommunity(community.getPublicId(), moderator);
         jdbcTemplate.update("UPDATE community_members SET role = 'MODERATOR' WHERE user_account_id = ?", moderator.getId());
 
-        long id = idOf(create(moderator, event("Entreno", Map.of("communityId", community.getId(), "capacity", 10))));
+        UUID id = idOf(create(moderator, event("Entreno", Map.of("communityId", community.getPublicId(), "capacity", 10))));
 
         update(moderator, id, Map.of("title", "Entreno de series", "distanceKm", 12.5))
                 .andExpect(status().isOk())
@@ -137,7 +157,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         update(owner, id, Map.of("city", "Vigo")).andExpect(status().isOk()).andExpect(jsonPath("$.canEdit").value(true));
         update(other, id, Map.of("city", "Lugo")).andExpect(status().isForbidden());
 
-        jdbcTemplate.update("UPDATE events SET attendee_count = 4 WHERE id = ?", id);
+        jdbcTemplate.update("UPDATE events SET attendee_count = 4 WHERE public_id = ?", id);
         update(moderator, id, Map.of("capacity", 3)).andExpect(status().isConflict());
         update(moderator, id, Map.of("capacity", 4)).andExpect(status().isOk());
         update(moderator, id, Map.of("startsAt", Instant.now().minus(1, ChronoUnit.HOURS).toString()))
@@ -149,7 +169,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         String title = testData.uniqueName("Cancelada");
-        long id = idOf(create(ana, event(title)));
+        UUID id = idOf(create(ana, event(title)));
 
         mockMvc.perform(post("/api/events/" + id + "/cancel").with(auth.bearer(bea))).andExpect(status().isForbidden());
 
@@ -167,7 +187,7 @@ class EventControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.detail").value("No se puede editar un evento cancelado"));
         mockMvc.perform(get("/api/events").param("size", "50").with(auth.bearer(bea)))
                 .andExpect(jsonPath("$.content[*].title").value(not(hasItem(title))));
-        assertThat(applicationEvents.stream(EventCancelled.class).filter(e -> e.eventId() == id)).hasSize(1);
+        assertThat(applicationEvents.stream(EventCancelled.class).filter(e -> e.eventId().equals(internalId(id)))).hasSize(1);
     }
 
     @Test
@@ -176,13 +196,13 @@ class EventControllerIT extends AbstractIntegrationTest {
         String later = testData.uniqueName("Después");
         String sooner = testData.uniqueName("Antes");
         create(ana, event(later, Map.of("startsAt", NEXT_WEEK.plus(2, ChronoUnit.DAYS).toString())));
-        long soonerId = idOf(create(ana, event(sooner, Map.of("startsAt", NEXT_WEEK.minus(5, ChronoUnit.DAYS).toString()))));
+        UUID soonerId = idOf(create(ana, event(sooner, Map.of("startsAt", NEXT_WEEK.minus(5, ChronoUnit.DAYS).toString()))));
 
         String body = mockMvc.perform(get("/api/events").param("size", "50").with(auth.bearer(ana)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         assertThat(body.indexOf(sooner)).isGreaterThan(0).isLessThan(body.indexOf(later));
 
-        jdbcTemplate.update("UPDATE events SET starts_at = now() - interval '2 days' WHERE id = ?", soonerId);
+        jdbcTemplate.update("UPDATE events SET starts_at = now() - interval '2 days' WHERE public_id = ?", soonerId);
         mockMvc.perform(get("/api/events/" + soonerId).with(auth.bearer(ana)))
                 .andExpect(jsonPath("$.status").value("FINISHED"));
     }
@@ -190,11 +210,11 @@ class EventControllerIT extends AbstractIntegrationTest {
     @Test
     void concurrentEdits_theStaleOneFails() throws Exception {
         UserAccount ana = testData.createUser();
-        long id = idOf(create(ana, event("Dos a la vez")));
-        Event stale = eventRepository.findById(id).orElseThrow();
+        UUID id = idOf(create(ana, event("Dos a la vez")));
+        Event stale = eventRepository.findByPublicId(id).orElseThrow();
 
         // Someone else saved meanwhile
-        jdbcTemplate.update("UPDATE events SET title = 'Cambiado', version = version + 1 WHERE id = ?", id);
+        jdbcTemplate.update("UPDATE events SET title = 'Cambiado', version = version + 1 WHERE public_id = ?", id);
         stale.setTitle("Pisando el cambio");
 
         assertThatThrownBy(() -> eventRepository.save(stale)).isInstanceOf(ObjectOptimisticLockingFailureException.class);
@@ -219,7 +239,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         create(ana, event("Zona mala", Map.of("timezone", "CET")))
                 .andExpect(jsonPath("$.detail").value("Zona horaria no válida: usa un identificador como Europe/Madrid"));
 
-        long id = idOf(create(ana, event("Editar zona")));
+        UUID id = idOf(create(ana, event("Editar zona")));
         update(ana, id, Map.of("timezone", "Asia/Tokyo")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.timezone").value("Asia/Tokyo"));
         update(ana, id, Map.of("timezone", "+02:00")).andExpect(status().isBadRequest());
@@ -236,7 +256,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         full.putAll(Map.of("description", "Larga", "endsAt", NEXT_WEEK.plus(3, ChronoUnit.HOURS).toString(),
                 "latitude", 42.2, "longitude", -8.7, "city", "Vigo", "distanceKm", 12.5, "elevationGainM", 800,
                 "level", "INTERMEDIATE", "capacity", 10));
-        long id = idOf(create(ana, full).andExpect(status().isCreated()));
+        UUID id = idOf(create(ana, full).andExpect(status().isCreated()));
 
         // Absent = no change (also an empty body)
         update(ana, id, Map.of("title", "Completo 2")).andExpect(status().isOk())
@@ -265,13 +285,13 @@ class EventControllerIT extends AbstractIntegrationTest {
         update(ana, id, both).andExpect(status().isOk())
                 .andExpect(jsonPath("$.latitude").doesNotExist())
                 .andExpect(jsonPath("$.longitude").doesNotExist());
-        assertThat(eventRepository.findById(id).orElseThrow().getCapacity()).isNull();
+        assertThat(eventRepository.findByPublicId(id).orElseThrow().getCapacity()).isNull();
     }
 
     @Test
     void patch_nullInARequiredFieldIsRejected_andNothingChanges() throws Exception {
         UserAccount ana = testData.createUser();
-        long id = idOf(create(ana, event("Obligatorios")));
+        UUID id = idOf(create(ana, event("Obligatorios")));
 
         for (String field : new String[] {"title", "type", "startsAt", "timezone"}) {
             Map<String, Object> body = nullField(field);
@@ -291,7 +311,7 @@ class EventControllerIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount carla = testData.createUser();
-        long id = idOf(create(ana, event("Limitado", Map.of("capacity", 2))));
+        UUID id = idOf(create(ana, event("Limitado", Map.of("capacity", 2))));
         mockMvc.perform(post("/api/events/" + id + "/join").with(auth.bearer(bea))).andExpect(status().isOk());
         mockMvc.perform(post("/api/events/" + id + "/join").with(auth.bearer(carla)))
                 .andExpect(jsonPath("$.myStatus").value("WAITLIST"));
@@ -301,7 +321,7 @@ class EventControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.myStatus").value("GOING"));
 
         // A stale writer still loses after a PATCH (version bumped)
-        Event stale = eventRepository.findById(id).orElseThrow();
+        Event stale = eventRepository.findByPublicId(id).orElseThrow();
         update(ana, id, Map.of("city", "Lugo")).andExpect(status().isOk());
         stale.setTitle("Pisando");
         assertThatThrownBy(() -> eventRepository.saveAndFlush(stale))
@@ -334,12 +354,16 @@ class EventControllerIT extends AbstractIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON).content(json(body)));
     }
 
-    private ResultActions update(UserAccount user, long id, Map<String, Object> body) throws Exception {
+    private ResultActions update(UserAccount user, UUID id, Map<String, Object> body) throws Exception {
         return mockMvc.perform(patch("/api/events/" + id).with(auth.bearer(user))
                 .contentType(MediaType.APPLICATION_JSON).content(json(body)));
     }
 
-    private long idOf(ResultActions result) throws Exception {
-        return objectMapper.readTree(result.andReturn().getResponse().getContentAsString()).get("id").asLong();
+    private UUID idOf(ResultActions result) throws Exception {
+        return UUID.fromString(objectMapper.readTree(result.andReturn().getResponse().getContentAsString()).get("id").asText());
+    }
+
+    private Long internalId(UUID publicId) {
+        return jdbcTemplate.queryForObject("SELECT id FROM events WHERE public_id = ?", Long.class, publicId);
     }
 }

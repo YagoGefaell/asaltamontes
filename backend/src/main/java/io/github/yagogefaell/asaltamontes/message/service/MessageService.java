@@ -3,7 +3,6 @@ package io.github.yagogefaell.asaltamontes.message.service;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
-import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
@@ -72,11 +71,14 @@ public class MessageService {
      * messages never lose an update.
      */
     @Transactional
-    public MessageDto processIncomingMessage(Long conversationId, Long senderId, String content) {
+    public MessageDto processIncomingMessage(UUID conversationPublicId, Long senderId, String content) {
         String text = validateContent(content);
 
+        // Unknown and foreign chats look the same (404), so nobody can probe which chats exist
+        Long conversationId = conversationPublicId == null ? null
+                : conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
         if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, senderId)) {
-            throw new ForbiddenException("No tienes permiso para escribir en este chat");
+            throw new NotFoundException("Chat no encontrado");
         }
 
         UserAccount sender = userService.loadUserById(senderId);
@@ -93,8 +95,8 @@ public class MessageService {
         participantRepository.incrementUnreadExceptSender(conversationId, senderId);
 
         MessageDto dto = new MessageDto(
-                savedMessage.getId(),
-                conversationId,
+                savedMessage.getPublicId(),
+                conversationPublicId,
                 sender.getUsername(),
                 savedMessage.getContent(),
                 savedMessage.getSentAt()
@@ -118,7 +120,7 @@ public class MessageService {
     @Transactional(readOnly = true)
     public java.util.Optional<ChatResponseDto> getPrivateConversation(String currentUsername, String recipientUsername) {
         return conversationRepository.findPrivateConversation(currentUsername, recipientUsername)
-            .map(conv -> new ChatResponseDto(conv.getId()));
+            .map(conv -> new ChatResponseDto(conv.getPublicId()));
     }
 
     @Transactional
@@ -137,7 +139,7 @@ public class MessageService {
         UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
 
         Conversation newConv = createPrivateConversation(me, other);
-        return new ChatResponseDto(newConv.getId());
+        return new ChatResponseDto(newConv.getPublicId());
     }
 
     @Transactional
@@ -176,7 +178,7 @@ public class MessageService {
                 .toList();
 
         Conversation newConv = createGroupConversation(creator, members, groupName, image);
-        return new ChatResponseDto(newConv.getId());
+        return new ChatResponseDto(newConv.getPublicId());
     }
 
     /**
@@ -184,10 +186,9 @@ public class MessageService {
      * oldest first. Reading no longer marks the chat as read: that is chat.read or POST /read.
      */
     @Transactional(readOnly = true)
-    public MessagePageDto getConversationHistory(Long conversationId, Long userId, Long before, int limit) {
-        if (!participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
-            throw new ForbiddenException("No tienes permiso para acceder a este chat");
-        }
+    public MessagePageDto getConversationHistory(UUID conversationPublicId, Long userId, UUID beforePublicId, int limit) {
+        Long conversationId = participantConversationId(conversationPublicId, userId);
+        Long before = beforePublicId == null ? null : messageCursor(beforePublicId, conversationId);
 
         int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
         // One extra row tells whether there is a previous page
@@ -199,7 +200,7 @@ public class MessageService {
         boolean hasMore = newestFirst.size() > pageSize;
         List<MessageDto> page = new ArrayList<>(newestFirst.subList(0, Math.min(pageSize, newestFirst.size())));
         Collections.reverse(page);
-        Long nextBefore = hasMore ? page.get(0).id() : null;
+        UUID nextBefore = hasMore ? page.get(0).id() : null;
 
         return new MessagePageDto(page, hasMore, nextBefore);
     }
@@ -209,10 +210,9 @@ public class MessageService {
      * {@code hasMore} means there are newer ones: ask again with after = id of the last item.
      */
     @Transactional(readOnly = true)
-    public MessagePageDto getMessagesAfter(Long conversationId, Long userId, Long after, int limit) {
-        if (!participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
-            throw new ForbiddenException("No tienes permiso para acceder a este chat");
-        }
+    public MessagePageDto getMessagesAfter(UUID conversationPublicId, Long userId, UUID afterPublicId, int limit) {
+        Long conversationId = participantConversationId(conversationPublicId, userId);
+        Long after = messageCursor(afterPublicId, conversationId);
 
         int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
         List<MessageDto> oldestFirst = messageRepository.findAfter(conversationId, after, Limit.of(pageSize + 1));
@@ -223,10 +223,27 @@ public class MessageService {
     }
 
     @Transactional
-    public void markConversationAsRead(Long conversationId, Long userId) {
-        if (participantRepository.resetUnread(conversationId, userId) == 0) {
-            throw new ForbiddenException("No tienes permiso para acceder a este chat");
+    public void markConversationAsRead(UUID conversationPublicId, Long userId) {
+        Long conversationId = conversationPublicId == null ? null
+                : conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
+        if (conversationId == null || participantRepository.resetUnread(conversationId, userId) == 0) {
+            throw new NotFoundException("Chat no encontrado");
         }
+    }
+
+    /** Internal id of a chat the user takes part in; unknown and foreign chats are the same 404 (no probing). */
+    private Long participantConversationId(UUID conversationPublicId, Long userId) {
+        Long conversationId = conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
+        if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+            throw new NotFoundException("Chat no encontrado");
+        }
+        return conversationId;
+    }
+
+    /** A message cursor is the public id of a message of this very chat: any other value is a 400. */
+    private Long messageCursor(UUID messagePublicId, Long conversationId) {
+        return messageRepository.findIdByPublicId(messagePublicId, conversationId)
+                .orElseThrow(() -> new BadRequestException("Cursor no válido"));
     }
 
     private Conversation createPrivateConversation(UserAccount user1, UserAccount user2) {
@@ -286,10 +303,14 @@ public class MessageService {
 
     /** A page of the chat list (T10b): the {@code limit} chats after the cursor, most recent first. */
     @Transactional(readOnly = true)
-    public ChatPageDto getUserConversations(String username, LocalDateTime beforeAt, Long beforeId, int limit) {
-        if (beforeAt != null && beforeId == null) {
+    public ChatPageDto getUserConversations(String username, LocalDateTime beforeAt, UUID beforePublicId, int limit) {
+        if (beforeAt != null && beforePublicId == null) {
             throw new BadRequestException("beforeAt necesita beforeId");
         }
+        // The cursor chat has to be one of hers
+        Long beforeId = beforePublicId == null ? null
+                : conversationRepository.findIdByPublicIdAndParticipant(beforePublicId, username)
+                        .orElseThrow(() -> new BadRequestException("Cursor no válido"));
 
         int pageSize = Math.clamp(limit, 1, MAX_CHAT_PAGE);
         // One extra row tells whether there is another page

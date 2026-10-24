@@ -3,6 +3,7 @@ package io.github.yagogefaell.asaltamontes.message.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.Type;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +34,7 @@ class ChatErrorsIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount intruder = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
 
         StompSession session = connectAs(intruder);
         BlockingQueue<ChatErrorDto> errors = new LinkedBlockingQueue<>();
@@ -55,7 +56,33 @@ class ChatErrorsIT extends AbstractIntegrationTest {
 
         ChatErrorDto error = errors.poll(5, TimeUnit.SECONDS);
         assertThat(error).isNotNull();
-        assertThat(error.detail()).isEqualTo("No tienes permiso para escribir en este chat");
+        assertThat(error.detail()).isEqualTo("Chat no encontrado");
+        session.disconnect();
+    }
+
+    @Test
+    void aConversationIdThatIsNotAUuid_returnsAnErrorToTheSender() throws Exception {
+        UserAccount ana = testData.createUser();
+        StompSession session = connectAs(ana);
+        BlockingQueue<ChatErrorDto> errors = new LinkedBlockingQueue<>();
+        session.subscribe("/user/queue/errors", new StompFrameHandler() {
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return ChatErrorDto.class;
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                errors.add((ChatErrorDto) payload);
+            }
+        });
+        Thread.sleep(300);
+
+        session.send("/app/chat.send", java.util.Map.of("conversationId", "42", "content", "hola"));
+
+        ChatErrorDto error = errors.poll(5, TimeUnit.SECONDS);
+        assertThat(error).isNotNull();
+        assertThat(error.detail()).isEqualTo("Mensaje no válido");
         session.disconnect();
     }
 

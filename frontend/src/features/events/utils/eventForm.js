@@ -177,7 +177,7 @@ export function toCreatePayload(values, timeZone = values.timezone || browserTim
     elevationGainM: toNumber(values.elevationGainM),
     level: values.level || null,
     capacity: toNumber(values.capacity),
-    communityId: values.communityId ? Number(values.communityId) : null,
+    communityId: values.communityId || null,
   }
   for (const [key, value] of Object.entries(optional)) if (value != null) payload[key] = value
   return payload

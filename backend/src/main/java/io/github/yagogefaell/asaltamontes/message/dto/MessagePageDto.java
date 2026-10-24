@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * One page of a chat history, oldest first. To get the previous page, ask again with before = nextBefore.
@@ -9,5 +10,5 @@ import java.util.List;
 public record MessagePageDto(
     List<MessageDto> items,
     boolean hasMore,
-    Long nextBefore
+    UUID nextBefore
 ) {}

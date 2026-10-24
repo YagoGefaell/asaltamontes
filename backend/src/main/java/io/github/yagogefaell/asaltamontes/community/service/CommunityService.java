@@ -4,6 +4,7 @@ import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -113,19 +114,22 @@ public class CommunityService {
             .orElseThrow(() -> new NotFoundException("Comunidad no encontrada"));
     }
 
-    public Page<CommunityMemberDto> getCommunityMembersExcept(Long communityId, Long userId, Pageable pageable) {
-        return communityRepository.findMembersExcept(communityId, userId, MEMBER_SORT.apply(pageable));
+    public Page<CommunityMemberDto> getCommunityMembersExcept(UUID communityPublicId, Long userId, Pageable pageable) {
+        return communityRepository.findMembersExcept(internalId(communityPublicId), userId, MEMBER_SORT.apply(pageable));
     }
 
     /** Whether the user created the community; 404 if it does not exist (BUG-014). */
-    public boolean isOwner(Long communityId, UserAccount currentUser) {
-        requireExists(communityId);
+    public boolean isOwner(UUID communityPublicId, UserAccount currentUser) {
+        return isOwner(internalId(communityPublicId), currentUser);
+    }
+
+    private boolean isOwner(Long communityId, UserAccount currentUser) {
         return communityRepository.existsByIdAndCreatedById(communityId, currentUser.getId());
     }
 
     @Transactional
-    public void joinCommunity(Long communityId, UserAccount currentUser) {
-        requireExists(communityId);
+    public void joinCommunity(UUID communityPublicId, UserAccount currentUser) {
+        Long communityId = internalId(communityPublicId);
         communityMemberRepository.findStatus(communityId, currentUser.getId()).ifPresent(status -> {
             if (status == MemberStatus.BANNED) {
                 throw new ForbiddenException("No puedes unirte a esta comunidad");
@@ -140,7 +144,8 @@ public class CommunityService {
     }
 
     @Transactional
-    public void leaveCommunity(Long communityId, UserAccount currentUser) {
+    public void leaveCommunity(UUID communityPublicId, UserAccount currentUser) {
+        Long communityId = internalId(communityPublicId);
         long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {
@@ -150,7 +155,8 @@ public class CommunityService {
     }
 
     @Transactional
-    public void deleteCommunity(Long communityId, UserAccount currentUser) {
+    public void deleteCommunity(UUID communityPublicId, UserAccount currentUser) {
+        Long communityId = internalId(communityPublicId);
         if (!isOwner(communityId, currentUser)) {
             throw new ForbiddenException("Solo la propietaria puede borrar la comunidad");
         }
@@ -158,9 +164,9 @@ public class CommunityService {
         communityRepository.deleteById(communityId);
     }
 
-    private void requireExists(Long communityId) {
-        if (!communityRepository.existsById(communityId)) {
-            throw new NotFoundException("Comunidad no encontrada");
-        }
+    /** Internal id of a community given by its public id (D-021); 404 if it does not exist. */
+    private Long internalId(UUID communityPublicId) {
+        return communityRepository.findIdByPublicId(communityPublicId)
+                .orElseThrow(() -> new NotFoundException("Comunidad no encontrada"));
     }
 }

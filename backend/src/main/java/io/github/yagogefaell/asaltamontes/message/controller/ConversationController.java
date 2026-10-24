@@ -12,6 +12,7 @@ import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -82,7 +83,7 @@ public class ConversationController {
     public ResponseEntity<ChatPageDto> getMyConversations(
             @AuthenticationPrincipal UserDetails currentUser,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime beforeAt,
-            @RequestParam(required = false) Long beforeId,
+            @RequestParam(required = false) UUID beforeId,
             @RequestParam(defaultValue = "30") int limit) {
 
         ChatPageDto page = messageService.getUserConversations(currentUser.getUsername(), beforeAt, beforeId, limit);
@@ -92,9 +93,9 @@ public class ConversationController {
     @GetMapping("/{conversationId}/messages")
     public ResponseEntity<MessagePageDto> getChatHistory(
             @AuthenticationPrincipal UserAccount currentUser,
-            @PathVariable Long conversationId,
-            @RequestParam(required = false) Long before,
-            @RequestParam(required = false) Long after,
+            @PathVariable UUID conversationId,
+            @RequestParam(required = false) UUID before,
+            @RequestParam(required = false) UUID after,
             @RequestParam(defaultValue = "30") int limit) {
         if (after != null) {
             if (before != null) {
@@ -114,7 +115,7 @@ public class ConversationController {
     @PostMapping("/{conversationId}/read")
     public ResponseEntity<Void> markAsRead(
             @AuthenticationPrincipal UserAccount currentUser,
-            @PathVariable Long conversationId) {
+            @PathVariable UUID conversationId) {
         messageService.markConversationAsRead(conversationId, currentUser.getId());
         return ResponseEntity.noContent().build();
     }

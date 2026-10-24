@@ -64,9 +64,7 @@ export default function EditProfile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      id: userProfile.userId
-    };
+    const payload = {};
 
     if (form.fullName !== userProfile.fullName)
       payload.fullName = capitalizeWords(form.fullName);

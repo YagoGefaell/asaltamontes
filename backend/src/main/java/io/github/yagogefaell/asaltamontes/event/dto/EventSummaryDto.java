@@ -2,13 +2,14 @@ package io.github.yagogefaell.asaltamontes.event.dto;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import io.github.yagogefaell.asaltamontes.event.domain.EventType;
 import io.github.yagogefaell.asaltamontes.user.domain.RunningLevel;
 
 /** An event in a listing (T15a). */
 public record EventSummaryDto(
-    Long id,
+    UUID id,
     String title,
     EventType type,
     Instant startsAt,

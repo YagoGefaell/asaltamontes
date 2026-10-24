@@ -26,7 +26,7 @@ public class ChatMessageBroadcaster {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMessageSent(MessageSentEvent event) {
         // WebSocket sessions are identified by user id (WebSocketJwtInterceptor), not by username
-        for (Long userId : participantRepository.findUserIdsByConversationId(event.message().conversationId())) {
+        for (Long userId : participantRepository.findUserIdsByConversationPublicId(event.message().conversationId())) {
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/messages", event.message());
         }
     }

@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Limit;
@@ -74,7 +75,7 @@ public class EventService {
         EventVisibility visibility = request.visibility() == null ? EventVisibility.PUBLIC : request.visibility();
         Community community = null;
         if (request.communityId() != null) {
-            community = communityRepository.findById(request.communityId())
+            community = communityRepository.findByPublicId(request.communityId())
                     .orElseThrow(() -> new NotFoundException("Comunidad no encontrada"));
             if (!isCommunityStaff(community.getId(), organizer.getId())) {
                 throw new ForbiddenException("Solo la propietaria o la moderación pueden crear eventos de la comunidad");
@@ -111,9 +112,9 @@ public class EventService {
 
     /** 404 also when the user may not see it (COMMUNITY events for non-members), so it cannot be guessed. */
     @Transactional(readOnly = true)
-    public EventDetailsDto get(Long eventId, UserAccount user) {
-        Event event = findVisible(eventId, user);
-        return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
+    public EventDetailsDto get(UUID eventPublicId, UserAccount user) {
+        Event event = findVisible(eventPublicId, user);
+        return toDetails(event, user, attendeeRepository.findStatus(event.getId(), user.getId()).orElse(null));
     }
 
     @Transactional(readOnly = true)
@@ -127,7 +128,7 @@ public class EventService {
     /** Upcoming events of a community, with the same visibility rules as the general listing. */
     @Transactional(readOnly = true)
     public Page<EventSummaryDto> searchByCommunity(String slug, UserAccount user, EventFilter filter, Pageable pageable) {
-        Long communityId = communityRepository.findCommunityBySlug(slug, user.getId())
+        UUID communityId = communityRepository.findCommunityBySlug(slug, user.getId())
                 .orElseThrow(() -> new NotFoundException("Comunidad no encontrada")).id();
         EventFilter inCommunity = new EventFilter(filter.from(), filter.to(), filter.type(), filter.level(), communityId,
                 filter.city(), filter.minDistance(), filter.maxDistance(), filter.minLat(), filter.maxLat(),
@@ -161,13 +162,14 @@ public class EventService {
      * optional and is a 400 when it is required (title, type, startsAt, timezone).
      */
     @Transactional
-    public EventDetailsDto update(Long eventId, UpdateEventDto changes, UserAccount user) {
+    public EventDetailsDto update(UUID eventPublicId, UpdateEventDto changes, UserAccount user) {
         for (String required : REQUIRED_FIELDS) {
             if (changes.has(required) && valueOf(changes, required) == null) {
                 throw new BadRequestException("El campo " + required + " no puede quedar vacío");
             }
         }
-        Event event = findEditable(eventId, user);
+        Event event = findEditable(eventPublicId, user);
+        Long eventId = event.getId();
 
         Instant startsAt = changes.has("startsAt") ? changes.startsAt() : event.getStartsAt();
         Instant endsAt = changes.has("endsAt") ? changes.endsAt() : event.getEndsAt();
@@ -226,8 +228,9 @@ public class EventService {
 
     /** Idempotent: cancelling a cancelled event returns it as it is. */
     @Transactional
-    public EventDetailsDto cancel(Long eventId, String reason, UserAccount user) {
-        Event event = findVisible(eventId, user);
+    public EventDetailsDto cancel(UUID eventPublicId, String reason, UserAccount user) {
+        Event event = findVisible(eventPublicId, user);
+        Long eventId = event.getId();
         if (!canEdit(event, user)) {
             throw new ForbiddenException("Solo la organizadora o la moderación de la comunidad pueden cancelar el evento");
         }
@@ -247,8 +250,9 @@ public class EventService {
      * and waitlist positions stay 1..n without gaps, however many people join at once.
      */
     @Transactional
-    public EventDetailsDto join(Long eventId, UserAccount user) {
-        Event event = findVisible(eventId, user);
+    public EventDetailsDto join(UUID eventPublicId, UserAccount user) {
+        Event event = findVisible(eventPublicId, user);
+        Long eventId = event.getId();
         lockAndRefresh(event);
         requireOpen(event);
 
@@ -278,8 +282,9 @@ public class EventService {
      * The organizer cannot leave her own event: she cancels it.
      */
     @Transactional
-    public EventDetailsDto leave(Long eventId, UserAccount user) {
-        Event event = findVisible(eventId, user);
+    public EventDetailsDto leave(UUID eventPublicId, UserAccount user) {
+        Event event = findVisible(eventPublicId, user);
+        Long eventId = event.getId();
         lockAndRefresh(event);
 
         Optional<EventAttendee> current = attendeeRepository.findByEventIdAndUserId(eventId, user.getId())
@@ -314,8 +319,8 @@ public class EventService {
 
     /** Attendees by status (GOING by default): GOING in order of arrival, WAITLIST by position. */
     @Transactional(readOnly = true)
-    public Page<EventAttendeeDto> getAttendees(Long eventId, AttendeeStatus status, UserAccount user, Pageable pageable) {
-        findVisible(eventId, user);
+    public Page<EventAttendeeDto> getAttendees(UUID eventPublicId, AttendeeStatus status, UserAccount user, Pageable pageable) {
+        Long eventId = findVisible(eventPublicId, user).getId();
         Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), MAX_PAGE));
         return attendeeRepository.findAttendees(eventId, status == null ? AttendeeStatus.GOING : status, page);
     }
@@ -359,8 +364,8 @@ public class EventService {
         }
     }
 
-    private Event findVisible(Long eventId, UserAccount user) {
-        Event event = eventRepository.findById(eventId)
+    private Event findVisible(UUID eventPublicId, UserAccount user) {
+        Event event = eventRepository.findByPublicId(eventPublicId)
                 .orElseThrow(() -> new NotFoundException("Evento no encontrado"));
         if (!canView(event, user)) {
             throw new NotFoundException("Evento no encontrado");
@@ -368,8 +373,8 @@ public class EventService {
         return event;
     }
 
-    private Event findEditable(Long eventId, UserAccount user) {
-        Event event = findVisible(eventId, user);
+    private Event findEditable(UUID eventPublicId, UserAccount user) {
+        Event event = findVisible(eventPublicId, user);
         if (!canEdit(event, user)) {
             throw new ForbiddenException("Solo la organizadora o la moderación de la comunidad pueden editar el evento");
         }
@@ -425,7 +430,7 @@ public class EventService {
         UserAccount organizer = event.getOrganizer();
         UserProfile profile = organizer.getProfile();
         return new EventDetailsDto(
-            event.getId(),
+            event.getPublicId(),
             event.getTitle(),
             event.getDescription(),
             event.getType(),
@@ -443,7 +448,7 @@ public class EventService {
             event.getCapacity(),
             event.getAttendeeCount(),
             event.getVisibility(),
-            community != null ? community.getId() : null,
+            community != null ? community.getPublicId() : null,
             community != null ? community.getSlug() : null,
             community != null ? community.getName() : null,
             organizer.getUsername(),

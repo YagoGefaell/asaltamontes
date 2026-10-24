@@ -2,6 +2,7 @@ package io.github.yagogefaell.asaltamontes.message.dto;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * One page of the chat list, most recent first (T10b). For the next page, ask again with
@@ -12,6 +13,6 @@ public record ChatPageDto(
     List<ChatSummaryDto> items,
     boolean hasMore,
     LocalDateTime nextBeforeAt,
-    Long nextBeforeId,
+    UUID nextBeforeId,
     long unreadChats
 ) {}

@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.BlockingQueue;
@@ -45,7 +46,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
     void participantMessage_isDeliveredToTheOtherParticipant() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
         Connection beaConnection = stomp.connect("Bearer " + auth.loginAs(bea));
         BlockingQueue<MessageDto> beaInbox = beaConnection.subscribe("/user/queue/messages", MessageDto.class);
         Connection anaConnection = stomp.connect("Bearer " + auth.loginAs(ana));
@@ -65,7 +66,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UserAccount intruder = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
         Connection beaConnection = stomp.connect("Bearer " + auth.loginAs(bea));
         BlockingQueue<MessageDto> beaInbox = beaConnection.subscribe("/user/queue/messages", MessageDto.class);
         Connection intruderConnection = stomp.connect("Bearer " + auth.loginAs(intruder));
@@ -76,7 +77,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
         assertThat(intruderErrors.poll(5, TimeUnit.SECONDS)).isNotNull();
         assertThat(beaInbox.poll(1, TimeUnit.SECONDS)).isNull();
         mockMvc.perform(get("/api/conversations/" + conversationId + "/messages").with(auth.bearer(intruder)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
         intruderConnection.disconnect();
         beaConnection.disconnect();
     }
@@ -85,7 +86,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
     void emptyOrTooLongMessages_returnAnErrorAndAreNotSaved() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
         Connection anaConnection = stomp.connect("Bearer " + auth.loginAs(ana));
         BlockingQueue<ChatErrorDto> errors = anaConnection.subscribe("/user/queue/errors", ChatErrorDto.class);
 
@@ -126,7 +127,7 @@ class ChatWebSocketIT extends AbstractIntegrationTest {
     void afterChangingTheUsername_messagesStillArriveWithoutReconnecting() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
-        Long conversationId = testData.createPrivateConversation(ana, bea);
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
         Connection beaConnection = stomp.connect("Bearer " + auth.loginAs(bea));
         BlockingQueue<MessageDto> beaInbox = beaConnection.subscribe("/user/queue/messages", MessageDto.class);
 

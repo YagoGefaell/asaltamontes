@@ -13,6 +13,8 @@ import java.util.Date;
 
 import javax.crypto.SecretKey;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
@@ -128,11 +130,11 @@ class ErrorHandlingIT extends AbstractIntegrationTest {
             UserAccount ana = testData.createUser();
             UserAccount bea = testData.createUser();
             UserAccount outsider = testData.createUser();
-            Long conversationId = testData.createPrivateConversation(ana, bea);
+            UUID conversationId = testData.createPrivateConversation(ana, bea);
 
             mockMvc.perform(get("/api/conversations/" + conversationId + "/messages").with(auth.bearer(outsider)))
-                    .andExpect(status().isForbidden())
-                    .andExpect(jsonPath("$.title").value("Forbidden"));
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.title").value("Not Found"));
         }
 
         @Test
@@ -141,7 +143,7 @@ class ErrorHandlingIT extends AbstractIntegrationTest {
             UserAccount other = testData.createUser();
             Community community = testData.createCommunity(owner);
 
-            mockMvc.perform(delete("/api/communities/" + community.getId()).with(auth.bearer(other)))
+            mockMvc.perform(delete("/api/communities/" + community.getPublicId()).with(auth.bearer(other)))
                     .andExpect(status().isForbidden());
         }
     }
@@ -195,7 +197,7 @@ class ErrorHandlingIT extends AbstractIntegrationTest {
             UserAccount owner = testData.createUser();
             Community community = testData.createCommunity(owner);
 
-            mockMvc.perform(post("/api/communities/" + community.getId() + "/leave").with(auth.bearer(owner)))
+            mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/leave").with(auth.bearer(owner)))
                     .andExpect(status().isConflict());
         }
 

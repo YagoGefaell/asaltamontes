@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.UUID;
 
 import jakarta.validation.Valid;
 
@@ -67,7 +68,7 @@ public class CommunityController {
 
     @PostMapping("/{communityId}/join")
     public ResponseEntity<Void> joinCommunity(
-            @PathVariable Long communityId,
+            @PathVariable UUID communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
         communityService.joinCommunity(communityId, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -75,7 +76,7 @@ public class CommunityController {
 
     @PostMapping("/{communityId}/leave")
     public ResponseEntity<Void> leaveCommunity(
-            @PathVariable Long communityId,
+            @PathVariable UUID communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
         if (communityService.isOwner(communityId, currentUser)) {
             throw new ConflictException("La propietaria no puede salir de la comunidad");
@@ -86,7 +87,7 @@ public class CommunityController {
 
     @GetMapping("/{communityId}/members")
     public ResponseEntity<Page<CommunityMemberDto>> getCommunityMembers(
-            @PathVariable Long communityId,
+            @PathVariable UUID communityId,
             @AuthenticationPrincipal UserAccount currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
         Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser.getId(), pageable);
@@ -95,7 +96,7 @@ public class CommunityController {
 
     @DeleteMapping("/{communityId}")
     public ResponseEntity<Void> deleteCommunity(
-            @PathVariable Long communityId,
+            @PathVariable UUID communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
         communityService.deleteCommunity(communityId, currentUser);
         return ResponseEntity.noContent().build();

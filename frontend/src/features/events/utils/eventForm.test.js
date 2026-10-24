@@ -8,6 +8,8 @@ const ZONE = 'Europe/Madrid'
 const valid = { ...EMPTY_FORM, title: 'Rodaje', startsAt: '2026-11-02T09:30' }
 const check = (patch, opts = {}) => validateEventForm({ ...valid, ...patch }, { timeZone: ZONE, now: NOW, ...opts })
 
+const COMMUNITY = '0192f3a4-7c00-7000-8000-0000000000c1'
+
 describe('zones', () => {
   it('reads the wall time in the zone of the event (winter UTC+1, summer UTC+2)', () => {
     expect(zonedLocalToIso('2026-11-02T09:30', ZONE)).toBe('2026-11-02T08:30:00.000Z')
@@ -89,11 +91,11 @@ describe('payloads', () => {
     })
     const full = toCreatePayload({
       ...valid, title: ' Rodaje ', description: 'Suave', endsAt: '2026-11-02T11:30', latitude: 40.1, longitude: -3.7,
-      distanceKm: '12,5', elevationGainM: '300', capacity: '12', level: 'BEGINNER', communityId: '4', visibility: 'COMMUNITY',
+      distanceKm: '12,5', elevationGainM: '300', capacity: '12', level: 'BEGINNER', communityId: COMMUNITY, visibility: 'COMMUNITY',
     }, ZONE)
     expect(full).toMatchObject({
       title: 'Rodaje', description: 'Suave', endsAt: '2026-11-02T10:30:00.000Z', latitude: 40.1, longitude: -3.7,
-      distanceKm: 12.5, elevationGainM: 300, capacity: 12, level: 'BEGINNER', communityId: 4, visibility: 'COMMUNITY',
+      distanceKm: 12.5, elevationGainM: 300, capacity: 12, level: 'BEGINNER', communityId: COMMUNITY, visibility: 'COMMUNITY',
     })
   })
 
@@ -103,7 +105,7 @@ describe('payloads', () => {
 
   it('edit sends only what changed, and never community or visibility', () => {
     const event = {
-      title: 'Rodaje', type: 'MEETUP', startsAt: '2026-11-02T08:30:00Z', timezone: ZONE, visibility: 'COMMUNITY', communityId: 4,
+      title: 'Rodaje', type: 'MEETUP', startsAt: '2026-11-02T08:30:00Z', timezone: ZONE, visibility: 'COMMUNITY', communityId: COMMUNITY,
       capacity: 10, description: 'Suave',
     }
     const original = formFromEvent(event)

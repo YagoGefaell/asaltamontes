@@ -51,10 +51,8 @@ export const ConversationsProvider = ({ children }) => {
   const getLastMessageId = useCallback((messages) => {
     if (!Array.isArray(messages) || messages.length === 0) return null;
 
-    const rawLastId = messages[messages.length - 1]?.id;
-    const numericId = Number(rawLastId);
-
-    return Number.isInteger(numericId) ? numericId : null;
+    // Public id (UUID v7) of the message
+    return messages[messages.length - 1]?.id ?? null;
   }, []);
 
   const sendReadReceipt = useCallback((conversationId, lastMessageId = null) => {
@@ -79,16 +77,8 @@ export const ConversationsProvider = ({ children }) => {
     sendReadReceipt(conversationId, getLastMessageId(messages));
   }, [clearUnreadCount, sendReadReceipt, getLastMessageId]);
 
-  const buildPreviewPrefix = useCallback((chatType, senderId, senderName, senderUsername = null) => {
-    const rawCurrentUserId = currentUser?.userId;
-    const currentUserId = Number(rawCurrentUserId);
-    const normalizedSenderId = Number(senderId);
-
-    const isSenderIdValid = Number.isInteger(normalizedSenderId);
-    const isCurrentUserIdValid = Number.isInteger(currentUserId);
-    const senderIsCurrentUserById = isSenderIdValid && isCurrentUserIdValid && normalizedSenderId === currentUserId;
-    const senderIsCurrentUserByUsername = senderUsername && senderUsername === currentUser?.username;
-    const senderIsCurrentUser = senderIsCurrentUserById || senderIsCurrentUserByUsername;
+  const buildPreviewPrefix = useCallback((chatType, senderName, senderUsername = null) => {
+    const senderIsCurrentUser = Boolean(senderUsername) && senderUsername === currentUser?.username;
 
     if (chatType === "INDIVIDUAL") {
       return senderIsCurrentUser ? "Tu" : null;
@@ -103,7 +93,7 @@ export const ConversationsProvider = ({ children }) => {
     }
 
     return null;
-  }, [currentUser?.userId, currentUser?.username]);
+  }, [currentUser?.username]);
 
   const buildLastMessagePreview = useCallback((conversation, senderUsername = null, chatTypeOverride = null) => {
     const lastMessageText = (conversation?.lastMessage || conversation?.content || "").trim();
@@ -113,7 +103,6 @@ export const ConversationsProvider = ({ children }) => {
 
     const prefix = buildPreviewPrefix(
       chatType,
-      conversation?.lastMessageSenderId,
       conversation?.lastMessageSenderName,
       senderUsername
     );
@@ -505,7 +494,7 @@ export const ConversationsProvider = ({ children }) => {
 
     const isCurrentlyReading = String(activeChatId) === String(conversationId);
     if (isCurrentlyReading) {
-      const payloadMessageId = Number.isInteger(Number(payload?.id)) ? Number(payload.id) : null;
+      const payloadMessageId = payload?.id ?? null;
       sendReadReceipt(conversationId, payloadMessageId);
     }
 

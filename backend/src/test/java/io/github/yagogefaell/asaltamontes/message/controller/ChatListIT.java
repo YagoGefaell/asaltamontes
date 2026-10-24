@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +33,10 @@ class ChatListIT extends AbstractIntegrationTest {
     @Test
     void pagesCoverEveryChatOnce_recentFirst_tiesById_andChatsWithoutMessagesLast() throws Exception {
         UserAccount ana = testData.createUser();
-        List<Long> withMessages = new ArrayList<>();
-        List<Long> withoutMessages = new ArrayList<>();
+        List<UUID> withMessages = new ArrayList<>();
+        List<UUID> withoutMessages = new ArrayList<>();
         for (int i = 0; i < 15; i++) {
-            Long id = testData.createPrivateConversation(ana, testData.createUser());
+            UUID id = testData.createPrivateConversation(ana, testData.createUser());
             messageService.processIncomingMessage(id, ana.getId(), "hola " + i);
             withMessages.add(id);
         }
@@ -43,11 +44,11 @@ class ChatListIT extends AbstractIntegrationTest {
             withoutMessages.add(testData.createPrivateConversation(ana, testData.createUser()));
         }
         // Four chats with exactly the same time: the id breaks the tie
-        List<Long> tied = withMessages.subList(5, 9);
-        jdbcTemplate.update("UPDATE conversations SET last_message_at = (SELECT last_message_at FROM conversations WHERE id = ?)"
-                + " WHERE id IN (" + String.join(",", tied.stream().map(String::valueOf).toList()) + ")", tied.get(0));
+        List<UUID> tied = withMessages.subList(5, 9);
+        jdbcTemplate.update("UPDATE conversations SET last_message_at = (SELECT last_message_at FROM conversations WHERE public_id = ?)"
+                + " WHERE public_id IN (" + String.join(",", tied.stream().map(id -> "'" + id + "'").toList()) + ")", tied.get(0));
 
-        List<Long> seen = new ArrayList<>();
+        List<UUID> seen = new ArrayList<>();
         ChatPageDto page = fetch(chats().param("limit", "4"), ana);
         seen.addAll(page.items().stream().map(ChatSummaryDto::conversationId).toList());
         while (page.hasMore()) {
@@ -74,7 +75,7 @@ class ChatListIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         for (int i = 0; i < 5; i++) {
             UserAccount other = testData.createUser();
-            Long id = testData.createPrivateConversation(ana, other);
+            UUID id = testData.createPrivateConversation(ana, other);
             messageService.processIncomingMessage(id, other.getId(), "¿vienes el domingo?");
             messageService.processIncomingMessage(id, other.getId(), "salimos a las 8");
         }
@@ -98,6 +99,18 @@ class ChatListIT extends AbstractIntegrationTest {
 
         mockMvc.perform(chats().param("beforeAt", "2026-10-21T20:00:00").with(auth.bearer(ana)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void manipulatedCursor_isRejectedWith400_includingAChatOfSomeoneElse() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        testData.createPrivateConversation(ana, testData.createUser());
+        UUID foreign = testData.createPrivateConversation(bea, testData.createUser());
+
+        for (String cursor : List.of("7", "abc", UUID.randomUUID().toString(), foreign.toString())) {
+            mockMvc.perform(chats().param("beforeId", cursor).with(auth.bearer(ana))).andExpect(status().isBadRequest());
+        }
     }
 
     private static MockHttpServletRequestBuilder chats() {

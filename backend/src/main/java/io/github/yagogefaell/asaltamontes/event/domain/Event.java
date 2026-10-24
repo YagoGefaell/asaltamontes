@@ -3,6 +3,7 @@ package io.github.yagogefaell.asaltamontes.event.domain;
 import java.math.BigDecimal;
 import java.time.Instant;
 
+import io.github.yagogefaell.asaltamontes.common.identifier.PublicIdEntity;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.user.domain.RunningLevel;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -30,7 +31,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @Table(name = "events")
-public class Event {
+public class Event extends PublicIdEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
