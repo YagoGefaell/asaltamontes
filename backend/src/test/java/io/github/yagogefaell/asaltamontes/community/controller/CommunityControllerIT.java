@@ -148,9 +148,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         Community community = testData.createCommunity(owner);
         join(member, community).andExpect(status().isCreated());
         join(banned, community).andExpect(status().isCreated());
-        transactionTemplate.executeWithoutResult(tx -> communityMemberRepository.findAll().stream()
-                .filter(m -> m.getUserAccount().getId().equals(banned.getId()))
-                .forEach(m -> m.setStatus(MemberStatus.BANNED)));
+        setStatus(banned, MemberStatus.BANNED);
 
         mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").with(auth.bearer(member)))
                 .andExpect(status().isOk())
@@ -207,8 +205,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.detail").value("No puedes unirte a esta comunidad"));
         assertThat(communityMemberRepository.findStatus(community.getId(), banned.getId())).contains(MemberStatus.BANNED);
 
-        // The nightly recount does not count her either
-        transactionTemplate.executeWithoutResult(tx -> recountService.recountCountersInBatches());
+        // (setStatus recounted like the nightly job: it does not count her either)
         mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(owner)))
                 .andExpect(jsonPath("$.memberCount").value(2));
     }
@@ -281,9 +278,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.detail").value("Ya eres miembro de esta comunidad"));
 
         join(banned, community).andExpect(status().isCreated());
-        transactionTemplate.executeWithoutResult(tx -> communityMemberRepository.findAll().stream()
-                .filter(m -> m.getUserAccount().getId().equals(banned.getId()))
-                .forEach(m -> m.setStatus(MemberStatus.BANNED)));
+        setStatus(banned, MemberStatus.BANNED);
         join(banned, community).andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(owner)))
@@ -337,6 +332,8 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         transactionTemplate.executeWithoutResult(tx -> communityMemberRepository.findAll().stream()
                 .filter(m -> m.getUserAccount().getId().equals(user.getId()))
                 .forEach(m -> m.setStatus(status)));
+        // The ban endpoint does not exist yet (T19): the counter is brought in line the way the nightly job does
+        transactionTemplate.executeWithoutResult(tx -> recountService.recountCountersInBatches());
     }
 
     private org.springframework.test.web.servlet.ResultActions create(UserAccount owner, String name) throws Exception {
