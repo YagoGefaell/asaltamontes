@@ -748,7 +748,7 @@
             "in": "path",
             "required": true,
             "schema": { "type": "string", "format": "uuid" },
-            "description": "Public id (UUID v7) of the conversation. Not a UUID: 400; unknown: 404; not a participant: 403"
+            "description": "Public id (UUID v7) of the conversation. Not a UUID: 400; unknown or not a participant: 403"
           },
           {
             "name": "before",

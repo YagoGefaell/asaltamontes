@@ -11,7 +11,9 @@ import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 
 import java.security.Principal;
 
+import org.springframework.messaging.converter.MessageConversionException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
+import org.springframework.messaging.handler.invocation.MethodArgumentResolutionException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.annotation.SendToUser;
@@ -53,6 +55,13 @@ public class ChatController {
     @SendToUser(destinations = "/queue/errors", broadcast = false)
     public ChatErrorDto handleDomainError(RuntimeException ex) {
         return new ChatErrorDto(ex.getMessage());
+    }
+
+    /** A payload that does not parse (e.g. a conversationId that is not a UUID): the sender's mistake, not a server error. */
+    @MessageExceptionHandler({ MessageConversionException.class, MethodArgumentResolutionException.class })
+    @SendToUser(destinations = "/queue/errors", broadcast = false)
+    public ChatErrorDto handleMalformedPayload(Exception ex) {
+        return new ChatErrorDto("Mensaje no válido");
     }
 
     @MessageExceptionHandler

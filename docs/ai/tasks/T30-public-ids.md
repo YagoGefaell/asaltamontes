@@ -15,7 +15,7 @@
 
 ### Decisiones tomadas en T30a (revisables)
 - Se añade `public_id` también a `communities` (aunque se direccionan por `slug`) porque `join`, `leave`, `members` y `DELETE` seguían usando el id numérico; la alternativa (pasarlos a `slug`) cambiaría más API. Usuarias: sin `public_id` (por `username`); se eliminan `userId` de `GET /api/users/me` y `lastMessageSenderId` de la lista de chats (nadie los usaba para otra cosa que comparar con el usuario actual, que ya se hace por `username`).
-- Conversación inexistente → 404; de otra persona → 403 (como antes); por STOMP, inexistente y ajena dan el mismo error (no se puede sondear).
+- Chats: inexistente y ajeno dan el mismo 403 (REST y STOMP), para que no se pueda sondear su existencia (revisión de seguridad). Eventos: inexistente y no visible → 404.
 
 ## Objetivo
 Aplicar D-021 a lo que ya existe: que ningún id interno `bigint` salga de la API, para que nada sea enumerable ni revele volúmenes, manteniendo la PK `bigint` por rendimiento.
