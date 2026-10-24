@@ -45,8 +45,8 @@ public class MessageService {
     private final int maxGroupSize;
 
     public static final int MAX_CONTENT_LENGTH = 2000;
-    public static final int MAX_HISTORY_PAGE = 100;
-    public static final int MAX_CHAT_PAGE = 100;
+    public static final int MAX_HISTORY_PAGE = 50;
+    public static final int MAX_CHAT_PAGE = 50;
     private static final int PREVIEW_LENGTH = 30;
 
     public MessageService(MessageRepository messageRepository, 

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.MemberStatus;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
+import io.github.yagogefaell.asaltamontes.community.maintenance.CommunityMemberCounterMaintenanceService;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
 import io.github.yagogefaell.asaltamontes.community.service.SlugGenerator;
 import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
@@ -33,6 +34,9 @@ class CommunityControllerIT extends AbstractIntegrationTest {
 
     @Autowired
     private CommunityMemberRepository communityMemberRepository;
+
+    @Autowired
+    private CommunityMemberCounterMaintenanceService recountService;
 
     @Autowired
     private TransactionTemplate transactionTemplate;
@@ -166,8 +170,99 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         // The detail still gives everybody the count, with no role for those outside
         mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(outsider)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.memberCount").value(3))
+                .andExpect(jsonPath("$.memberCount").value(2))
                 .andExpect(jsonPath("$.role").doesNotExist());
+    }
+
+    @Test
+    void bannedMembers_areNotListedNorCounted_andSeeTheCommunityAsANonMember() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        UserAccount banned = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        join(member, community).andExpect(status().isCreated());
+        join(banned, community).andExpect(status().isCreated());
+        setStatus(banned, MemberStatus.BANNED);
+
+        // Not in the list (the count the list is built from excludes her too)
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").with(auth.bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[*].username").value(org.hamcrest.Matchers.not(hasItem(banned.getUsername()))));
+
+        // She sees what an outsider sees: 404 on the members, no role, not in "my communities", no way to leave
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").with(auth.bearer(banned)))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(banned)))
+                .andExpect(jsonPath("$.role").doesNotExist())
+                .andExpect(jsonPath("$.memberCount").value(2));
+        mockMvc.perform(get("/api/communities/me").with(auth.bearer(banned)))
+                .andExpect(jsonPath("$.totalElements").value(0));
+        mockMvc.perform(get("/api/communities").param("query", community.getName()).with(auth.bearer(banned)))
+                .andExpect(jsonPath("$.content[0].role").doesNotExist());
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/leave").with(auth.bearer(banned)))
+                .andExpect(status().isNotFound());
+        join(banned, community)
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail").value("No puedes unirte a esta comunidad"));
+        assertThat(communityMemberRepository.findStatus(community.getId(), banned.getId())).contains(MemberStatus.BANNED);
+
+        // The nightly recount does not count her either
+        transactionTemplate.executeWithoutResult(tx -> recountService.recountCountersInBatches());
+        mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(owner)))
+                .andExpect(jsonPath("$.memberCount").value(2));
+    }
+
+    @Test
+    void mutedMembers_stayInTheList_andOnlyTheModerationSeesTheMark() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        UserAccount muted = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        join(member, community).andExpect(status().isCreated());
+        join(muted, community).andExpect(status().isCreated());
+        setStatus(muted, MemberStatus.MUTED);
+        String url = "/api/communities/" + community.getPublicId() + "/members";
+
+        // Owner: she is listed with status
+        JsonNode forOwner = objectMapper.readTree(mockMvc.perform(get(url).with(auth.bearer(owner)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(forOwner.get("totalElements").asInt()).isEqualTo(2);
+        forOwner.get("content").forEach(m -> {
+            if (m.get("username").asText().equals(muted.getUsername())) {
+                assertThat(m.get("status").asText()).isEqualTo("MUTED");
+            }
+        });
+
+        // A plain member: she is listed, with no status field at all
+        JsonNode forMember = objectMapper.readTree(mockMvc.perform(get(url).with(auth.bearer(member)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(forMember.get("totalElements").asInt()).isEqualTo(2);
+        forMember.get("content").forEach(m -> assertThat(m.has("status")).isFalse());
+        assertThat(forMember.toString()).contains(muted.getUsername());
+
+        // She still counts
+        mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(member)))
+                .andExpect(jsonPath("$.memberCount").value(3));
+    }
+
+    @Test
+    void pageSize_isCappedAt50_inEveryPagedListing() throws Exception {
+        UserAccount owner = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        for (int i = 0; i < 55; i++) {
+            join(testData.createUser(), community).andExpect(status().isCreated());
+        }
+
+        mockMvc.perform(get("/api/communities/" + community.getPublicId() + "/members").param("size", "2000")
+                        .with(auth.bearer(owner)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.size").value(50))
+                .andExpect(jsonPath("$.content.length()").value(50));
+        mockMvc.perform(get("/api/communities").param("size", "2000").with(auth.bearer(owner)))
+                .andExpect(jsonPath("$.size").value(50));
+        mockMvc.perform(get("/api/users").param("size", "2000").with(auth.bearer(owner)))
+                .andExpect(jsonPath("$.size").value(50));
     }
 
     @Test
@@ -192,7 +287,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         join(banned, community).andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/communities/" + community.getSlug()).with(auth.bearer(owner)))
-                .andExpect(jsonPath("$.memberCount").value(3));
+                .andExpect(jsonPath("$.memberCount").value(2));
     }
 
     @Test
@@ -236,6 +331,12 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         // "_" is a literal underscore, not "any character"
         mockMvc.perform(get("/api/communities").param("query", prefix + " _").with(auth.bearer(owner)))
                 .andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    private void setStatus(UserAccount user, MemberStatus status) {
+        transactionTemplate.executeWithoutResult(tx -> communityMemberRepository.findAll().stream()
+                .filter(m -> m.getUserAccount().getId().equals(user.getId()))
+                .forEach(m -> m.setStatus(status)));
     }
 
     private org.springframework.test.web.servlet.ResultActions create(UserAccount owner, String name) throws Exception {

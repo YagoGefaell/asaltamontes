@@ -66,7 +66,7 @@ class ChatHistoryIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void defaultPageIs30AndTheLimitIsCappedAt100() throws Exception {
+    void defaultPageIs30AndTheLimitIsCappedAt50() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UUID conversationId = testData.createPrivateConversation(ana, bea);
@@ -76,7 +76,7 @@ class ChatHistoryIT extends AbstractIntegrationTest {
 
         assertThat(fetch(history(conversationId), ana).items()).hasSize(30);
         MessagePageDto capped = fetch(history(conversationId).param("limit", "1000"), ana);
-        assertThat(capped.items()).hasSize(100);
+        assertThat(capped.items()).hasSize(50);
         assertThat(capped.hasMore()).isTrue();
     }
 
