@@ -160,12 +160,12 @@ class ChatHistoryIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void invalidAndUnknownIds_are400And404_neverAServerError() throws Exception {
+    void invalidIdsAre400_unknownChatsLookLikeForeignOnes_neverAServerError() throws Exception {
         UserAccount ana = testData.createUser();
 
         mockMvc.perform(get("/api/conversations/123/messages").with(auth.bearer(ana))).andExpect(status().isBadRequest());
         mockMvc.perform(get("/api/conversations/not-a-uuid/messages").with(auth.bearer(ana))).andExpect(status().isBadRequest());
-        mockMvc.perform(history(UUID.randomUUID()).with(auth.bearer(ana))).andExpect(status().isNotFound());
+        mockMvc.perform(history(UUID.randomUUID()).with(auth.bearer(ana))).andExpect(status().isForbidden());
         mockMvc.perform(post("/api/conversations/123/read").with(auth.bearer(ana))).andExpect(status().isBadRequest());
     }
 

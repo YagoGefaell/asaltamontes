@@ -232,11 +232,10 @@ public class MessageService {
         }
     }
 
-    /** Internal id of a chat the user takes part in: 404 if it does not exist, 403 if it is not hers. */
+    /** Internal id of a chat the user takes part in; unknown and foreign chats are the same 403 (no probing). */
     private Long participantConversationId(UUID conversationPublicId, Long userId) {
-        Long conversationId = conversationRepository.findIdByPublicId(conversationPublicId)
-                .orElseThrow(() -> new NotFoundException("Chat no encontrado"));
-        if (!participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+        Long conversationId = conversationRepository.findIdByPublicId(conversationPublicId).orElse(null);
+        if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, userId)) {
             throw new ForbiddenException("No tienes permiso para acceder a este chat");
         }
         return conversationId;

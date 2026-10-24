@@ -60,6 +60,32 @@ class ChatErrorsIT extends AbstractIntegrationTest {
         session.disconnect();
     }
 
+    @Test
+    void aConversationIdThatIsNotAUuid_returnsAnErrorToTheSender() throws Exception {
+        UserAccount ana = testData.createUser();
+        StompSession session = connectAs(ana);
+        BlockingQueue<ChatErrorDto> errors = new LinkedBlockingQueue<>();
+        session.subscribe("/user/queue/errors", new StompFrameHandler() {
+            @Override
+            public Type getPayloadType(StompHeaders headers) {
+                return ChatErrorDto.class;
+            }
+
+            @Override
+            public void handleFrame(StompHeaders headers, Object payload) {
+                errors.add((ChatErrorDto) payload);
+            }
+        });
+        Thread.sleep(300);
+
+        session.send("/app/chat.send", java.util.Map.of("conversationId", "42", "content", "hola"));
+
+        ChatErrorDto error = errors.poll(5, TimeUnit.SECONDS);
+        assertThat(error).isNotNull();
+        assertThat(error.detail()).isEqualTo("Mensaje no válido");
+        session.disconnect();
+    }
+
     private StompSession connectAs(UserAccount user) throws Exception {
         WebSocketStompClient client = new WebSocketStompClient(new StandardWebSocketClient());
         client.setMessageConverter(new MappingJackson2MessageConverter());
