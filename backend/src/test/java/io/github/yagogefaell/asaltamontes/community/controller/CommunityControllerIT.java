@@ -258,7 +258,7 @@ class CommunityControllerIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.content.length()").value(50));
         mockMvc.perform(get("/api/communities").param("size", "2000").with(auth.bearer(owner)))
                 .andExpect(jsonPath("$.size").value(50));
-        mockMvc.perform(get("/api/users").param("size", "2000").with(auth.bearer(owner)))
+        mockMvc.perform(get("/api/users/search").param("size", "2000").with(auth.bearer(owner)))
                 .andExpect(jsonPath("$.size").value(50));
     }
 
