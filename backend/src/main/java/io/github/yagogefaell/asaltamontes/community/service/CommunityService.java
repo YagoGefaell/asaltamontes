@@ -144,7 +144,7 @@ public class CommunityService {
         Long communityId = internalId(communityPublicId);
         communityMemberRepository.findStatus(communityId, currentUser.getId()).ifPresent(status -> {
             if (status == MemberStatus.BANNED) {
-                // Neutral on purpose: it does not say whether she was expelled
+                // The message is neutral, but the 403 (vs 201/409) does tell her she is banned; accepted by Yago (BUG-067)
                 throw new ForbiddenException("No puedes unirte a esta comunidad");
             }
             throw new ConflictException("Ya eres miembro de esta comunidad");
