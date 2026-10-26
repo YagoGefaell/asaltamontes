@@ -279,14 +279,14 @@ const Messages = () => {
     setIsGroupCreatorOpen(true);
   }, []);
 
-  const handleCreateGroup = useCallback(async ({ groupName, groupImage, users }) => {
+  const handleCreateGroup = useCallback(async ({ groupName, groupMediaId, users }) => {
     if (creatingGroup) return;
     setCreatingGroup(true);
 
     try {
       const createdChat = await createGroupConversation({
         groupName,
-        groupImage,
+        groupMediaId,
         users,
       });
 

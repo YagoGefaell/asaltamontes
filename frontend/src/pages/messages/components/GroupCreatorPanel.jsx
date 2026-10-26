@@ -13,6 +13,7 @@ const GroupCreatorPanel = ({
 }) => {
   const [groupName, setGroupName] = useState("");
   const [groupImage, setGroupImage] = useState("");
+  const [groupMediaId, setGroupMediaId] = useState(null);
   const [participantsQuery, setParticipantsQuery] = useState("");
   const [participantResults, setParticipantResults] = useState([]);
   const [participantSearchLoading, setParticipantSearchLoading] = useState(false);
@@ -24,6 +25,7 @@ const GroupCreatorPanel = ({
   const resetState = useCallback(() => {
     setGroupName("");
     setGroupImage("");
+    setGroupMediaId(null);
     setParticipantsQuery("");
     setParticipantResults([]);
     setParticipantSearchLoading(false);
@@ -132,14 +134,14 @@ const GroupCreatorPanel = ({
     try {
       await onSubmitGroup({
         groupName: groupName.trim(),
-        groupImage: groupImage.trim() || null,
+        groupMediaId,
         users: selectedParticipants.map((participant) => participant.username),
       });
       onClose();
     } catch (error) {
       setCreateGroupError(error?.message || "No se pudo crear el grupo");
     }
-  }, [creatingGroup, uploadingImage, selectedParticipants, onSubmitGroup, groupName, groupImage, onClose]);
+  }, [creatingGroup, uploadingImage, selectedParticipants, onSubmitGroup, groupName, groupMediaId, onClose]);
 
   if (!isOpen) {
     return null;
@@ -183,7 +185,10 @@ const GroupCreatorPanel = ({
           <span className="group-creator-label">Imagen del grupo (opcional)</span>
           <ImageUploader
             value={groupImage}
-            onChange={setGroupImage}
+            onChange={(url, mediaId) => {
+              setGroupImage(url);
+              setGroupMediaId(mediaId || null);
+            }}
             onUploadingChange={setUploadingImage}
             purpose={MEDIA_PURPOSE.GROUP_IMAGE}
             label="Imagen del grupo"

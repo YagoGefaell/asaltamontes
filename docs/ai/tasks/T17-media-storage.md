@@ -1,6 +1,6 @@
 # T17 — Almacenamiento de imágenes
 
-- **Estado:** pendiente (T17a, T17b, T17c1 y T17c2 hechos; falta T17c3, el frontend)
+- **Estado:** hecho (T17a, T17b, T17c1, T17c2 y T17c3)
 - **Fase:** Transversal
 - **Depende de:** T07 (hecho: nginx same-origin, `client_max_body_size 10m`), T05 (hecho)
 - **Rama sugerida:** `feat/T17a-media-backend`, `feat/T17b-media-frontend`, `refactor/T17c-media-references`
@@ -80,6 +80,8 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 - **Revisión independiente de #70**: V8 reescribe también la columna de texto (quita un host ajeno delante de nuestra ruta) y solo enlaza la imagen de un grupo si su dueña es participante del grupo (las conversaciones no tienen creadora); reenviar sin tocar el valor externo ya guardado se acepta antes de los filtros de caracteres; la cuota relee el total tras procesar; `backup-media.sh` borra `*.partial` al empezar; `MediaReferenceColumnsIT` falla si una columna `*_media_id` del esquema no está en las consultas de referencias.
 - **Requisito antes de producción**: no hay tope global de disco para `media_data` (solo cuota por usuaria): con muchas cuentas, 50 MB x usuarias puede llenar el disco. Definir un tope global o alertas de espacio (T23) antes de abrir el registro.
 - **Pendiente (T17c3, frontend)**: enviar `...MediaId` en vez de la URL, quitar de los formularios cualquier campo de URL libre que quede, y (opcional) cambiar los DTO de lectura a `avatar: { thumb, medium, large }` (hoy devuelven la URL `medium` en los campos de siempre). También el perfil ICC opcional.
+- **Cómo quedó T17c3 (frontend)**: `ImageUploader.onChange(url, mediaId)` (o `("", null)` al quitar). Perfil envía `avatarMediaId` (y `profilePictureUrl: ""` solo para quitar la foto), comunidad `coverMediaId`, grupo `groupMediaId`; ningún formulario envía ya una URL de imagen, y no quedaba ningún campo de URL libre (todos usaban el uploader). Evento: la API no admite imagen aún, nada que cambiar.
+- **Fuera de T17c3 (decidido)**: los DTO de lectura siguen devolviendo la URL `medium` en `profilePictureUrl`/`imageUrl`/`groupImage`; cambiarlos a `avatar:{thumb,medium,large}` toca ~15 consultas JPQL y todos los consumidores del front (contrato grande), y no aporta hasta que se usen `thumb`/`large`. Se hará si se necesitan variantes por tamaño. Perfil ICC: sigue pendiente (opcional). El backend sigue aceptando la URL interna por compatibilidad; puede retirarse cuando no haya clientes antiguos.
 
 ## Fuera de alcance
 - Imágenes de posts (T22), moderación de imágenes, CDN (después de la demo).
@@ -90,7 +92,7 @@ D-004 eligió **MinIO**, pero MinIO dejó de publicar imágenes Docker de la edi
 - [ ] El archivo servido no contiene EXIF (en particular, nada de GPS).
 - [ ] Un archivo que no es imagen, o que pesa más de 10 MB, se rechaza con un mensaje claro.
 - [ ] Las imágenes se sirven desde nginx con caché larga; el backend no participa al servirlas.
-- [ ] (T17c) Los formularios ya no tienen campos de URL libre.
+- [x] (T17c) Los formularios ya no tienen campos de URL libre.
 
 ## Notas y riesgos
 - La RAM de la Pi: decodificar una foto de 48 Mpx ocupa ~200 MB de heap. El límite de dimensiones y procesar **una imagen a la vez** (semáforo de 1-2 permisos) evitan quedarse sin memoria con `-Xmx512m` (T07a).

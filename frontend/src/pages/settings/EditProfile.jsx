@@ -29,6 +29,7 @@ export default function EditProfile() {
         bio: userProfile.bio || "",
         city: userProfile.city || "",
         profilePictureUrl: userProfile.profilePictureUrl || "",
+        avatarMediaId: null,
         isPublicProfile: userProfile.isPublicProfile || false,
       };
     }
@@ -76,8 +77,10 @@ export default function EditProfile() {
 
     if (form.city !== userProfile.city) payload.city = form.city.trim();
 
-    if (form.profilePictureUrl !== userProfile.profilePictureUrl)
-      payload.profilePictureUrl = form.profilePictureUrl.trim();
+    // A new picture is sent by the id of the uploaded media; "" removes the current one
+    if (form.avatarMediaId) payload.avatarMediaId = form.avatarMediaId;
+    else if (!form.profilePictureUrl && userProfile.profilePictureUrl)
+      payload.profilePictureUrl = "";
 
     if (form.isPublicProfile !== userProfile.isPublicProfile)
       payload.isPublicProfile = form.isPublicProfile;
@@ -98,7 +101,7 @@ export default function EditProfile() {
       setUsernameError(parsed.username || "");
       setBioError(parsed.bio || "");
       setCityError(parsed.city || "");
-      setProfilePictureError(parsed.profilePictureUrl || "");
+      setProfilePictureError(parsed.avatarMediaId || parsed.profilePictureUrl || "");
     }
 
   };
@@ -108,7 +111,9 @@ export default function EditProfile() {
       <div className="avatar-section">
         <AvatarUploader
           value={form.profilePictureUrl}
-          onChange={(url) => handleChange("profilePictureUrl", url)}
+          onChange={(url, mediaId) =>
+            setForm((prev) => ({ ...prev, profilePictureUrl: url, avatarMediaId: mediaId || null }))
+          }
           onUploadingChange={setUploadingPicture}
           fullName={form.fullName}
           username={form.username}

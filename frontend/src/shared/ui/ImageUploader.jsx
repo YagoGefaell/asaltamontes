@@ -6,8 +6,8 @@ import "./ImageUploader.css";
 
 /**
  * Subida de una imagen (T17b): elegir archivo (en el móvil abre cámara o galería), vista previa local,
- * barra de progreso, errores en español y reintento. `onChange` recibe la URL de la imagen subida
- * (`urls.medium`) o "" si se quita. `onUploadingChange` permite al formulario bloquear el envío mientras sube.
+ * barra de progreso, errores en español y reintento. `onChange(url, mediaId)` recibe la URL de vista previa
+ * (`urls.medium`) y el id de la media subida (lo que hay que enviar al backend), o ("", null) si se quita. `onUploadingChange` permite al formulario bloquear el envío mientras sube.
  */
 export default function ImageUploader({
   value,
@@ -54,7 +54,7 @@ export default function ImageUploader({
     abortRef.current = controller;
     try {
       const media = await uploadImage(file, purpose, { onProgress: setProgress, signal: controller.signal });
-      onChange(media.urls.medium);
+      onChange(media.urls.medium, media.id);
       replacePreview(null);
       toast.success("Imagen subida");
     } catch (uploadError) {
@@ -83,7 +83,7 @@ export default function ImageUploader({
     replacePreview(null);
     setError("");
     setFailedFile(null);
-    onChange("");
+    onChange("", null);
   };
 
   const shown = localPreview || value || fallbackSrc;

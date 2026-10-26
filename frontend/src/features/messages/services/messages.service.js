@@ -44,11 +44,11 @@ export async function createPrivateConversationRequest(recipientUsername) {
   }
 }
 
-export async function createGroupConversationRequest({ groupName, groupImage = null, users }) {
+export async function createGroupConversationRequest({ groupName, groupMediaId = null, users }) {
   try {
     return await apiClient.post("/api/conversations/group", {
       groupName,
-      groupImage,
+      groupMediaId,
       users,
     });
   } catch (error) {
