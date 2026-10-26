@@ -3,7 +3,7 @@
   "info": {
     "title": "Asaltamontes API",
     "version": "0.7.0",
-    "description": "API contract between frontend and backend for data exchange. Identifiers (D-021, T30a): events, conversations, messages and communities are identified by a public UUID v7 (`id`, `conversationId`, `communityId`...); the internal numeric keys never appear in paths, bodies, query parameters or WebSocket payloads. Users go by username and communities also by slug (GET /api/communities/{slug}); join, leave, members and delete of a community take its public UUID. A path or query id that is not a UUID is a 400; an unknown one is a 404. Cursors are public ids for now (opaque tokens come with T30c)."
+    "description": "API contract between frontend and backend for data exchange. Identifiers (D-021, T30a): events, conversations, messages and communities are identified by a public UUID v7 (`id`, `conversationId`, `communityId`...); the internal numeric keys never appear in paths, bodies, query parameters or WebSocket payloads. Users go by username and communities also by slug (GET /api/communities/{slug}); join, leave, members and delete of a community take its public UUID. A path or query id that is not a UUID is a 400; an unknown one is a 404. Pagination cursors (`before`, `after`, `nextBefore`, `MessageDto.cursor`) are opaque tokens (T30c): treat them as strings and send back exactly what the server gave; a malformed, tampered or foreign token is a 400 ProblemDetail."
   },
   "servers": [
     {
@@ -683,23 +683,16 @@
     "/api/conversations": {
       "get": {
         "summary": "Get one page of the authenticated user's conversations (cursor)",
-        "description": "Most recent first: by lastMessageAt DESC (chats without messages last), then id DESC. For the next page, call again with beforeAt = nextBeforeAt (omit it when null) and beforeId = nextBeforeId. unreadChats counts every chat with unread messages, not only this page (navigation badge).",
+        "description": "Most recent first: by lastMessageAt DESC (chats without messages last), then id DESC. For the next page, call again with before = nextBefore (opaque token). unreadChats counts every chat with unread messages, not only this page (navigation badge).",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
           {
-            "name": "beforeAt",
+            "name": "before",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "format": "date-time" },
-            "description": "lastMessageAt of the last chat of the previous page (nextBeforeAt). Requires beforeId"
-          },
-          {
-            "name": "beforeId",
-            "in": "query",
-            "required": false,
-            "schema": { "type": "string", "format": "uuid" },
-            "description": "conversationId (public id, UUID v7) of the last chat of the previous page (nextBeforeId). Must be a chat of the caller, otherwise 400"
+            "schema": { "type": "string" },
+            "description": "Opaque token: the nextBefore of the previous page. It must name a chat of the caller; anything else (malformed, tampered, another list's token, someone else's chat): 400"
           },
           {
             "name": "limit",
@@ -719,8 +712,7 @@
                   "properties": {
                     "items": { "type": "array", "items": { "$ref": "#/components/schemas/ChatSummary" } },
                     "hasMore": { "type": "boolean" },
-                    "nextBeforeAt": { "type": "string", "format": "date-time", "nullable": true },
-                    "nextBeforeId": { "type": "string", "format": "uuid", "nullable": true },
+                    "nextBefore": { "type": "string", "nullable": true, "description": "Opaque token for the next page" },
                     "unreadChats": { "type": "integer", "format": "int64" }
                   }
                 }
@@ -728,7 +720,7 @@
             }
           },
           "400": {
-            "description": "beforeAt without beforeId"
+            "description": "Invalid cursor (ProblemDetail)"
           },
           "401": {
             "description": "Not authenticated"
@@ -738,8 +730,8 @@
     },
     "/api/conversations/{conversationId}/messages": {
       "get": {
-        "summary": "Get one page of the conversation history (cursor by message id)",
-        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame). With `after` instead (T11), returns the `limit` messages newer than that id, oldest first; hasMore then means there are newer ones (call again with after = id of the last item) and nextBefore is null.",
+        "summary": "Get one page of the conversation history (opaque cursor)",
+        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame). With `after` instead (T11), returns the `limit` messages newer than that message, oldest first; hasMore then means there are newer ones (call again with after = cursor of the last item) and nextBefore is null.",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -754,15 +746,15 @@
             "name": "before",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "format": "uuid" },
-            "description": "Public id of a message of this conversation: only older messages (the nextBefore of the previous page). Any other value: 400"
+            "schema": { "type": "string" },
+            "description": "Opaque token: only messages older than the one it names (the nextBefore of the previous page, or the `cursor` of a message). Must name a message of this conversation; anything else: 400"
           },
           {
             "name": "after",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "format": "uuid" },
-            "description": "Public id of a message of this conversation: only newer messages (catching up after a reconnection). Any other value: 400. Cannot be combined with before"
+            "schema": { "type": "string" },
+            "description": "Opaque token (the `cursor` of a message of this conversation): only newer messages (catching up after a reconnection). Anything else: 400. Cannot be combined with before"
           },
           {
             "name": "limit",
@@ -782,7 +774,7 @@
                   "properties": {
                     "items": { "type": "array", "items": { "$ref": "#/components/schemas/MessageDto" } },
                     "hasMore": { "type": "boolean" },
-                    "nextBefore": { "type": "string", "format": "uuid", "nullable": true }
+                    "nextBefore": { "type": "string", "nullable": true, "description": "Opaque token for the previous page" }
                   }
                 }
               }
@@ -1115,7 +1107,8 @@
           "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
           "senderUsername": { "type": "string", "example": "runner123" },
           "content": { "type": "string", "example": "Nos vemos a las 7 en el parque" },
-          "sentAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:16:00" }
+          "sentAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:16:00" },
+          "cursor": { "type": "string", "description": "Opaque token of this message, to use as `before` / `after` in the history", "example": "bXwxNzc0MzQ..." }
         }
       },
       "PrivateMessage": {

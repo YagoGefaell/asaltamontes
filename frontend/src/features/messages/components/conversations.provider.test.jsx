@@ -31,7 +31,7 @@ vi.mock('../services/messages.service.js', () => ({
 
 import { ConversationsProvider } from './conversations.provider.jsx'
 import { ConversationsContext } from '../hooks/conversations.context'
-import { getConversationMessagesRequest, markConversationReadRequest } from '../services/messages.service.js'
+import { getConversationMessagesRequest, getMyConversationsRequest, markConversationReadRequest } from '../services/messages.service.js'
 
 function renderProvider() {
   auth.isAuthenticated = true
@@ -60,7 +60,7 @@ describe('ConversationsProvider history loading (BUG-051)', () => {
     getConversationMessagesRequest.mockResolvedValue({
       items: [{ id: 1, content: 'antiguo', senderUsername: 'bea', sentAt: '2026-10-22T10:00:00Z' }],
       hasMore: true,
-      nextBefore: 1,
+      nextBefore: 'tok_1',
     })
     const ctx = renderProvider()
     await waitFor(() => expect(listener.onMessage).toBeTypeOf('function'))
@@ -167,5 +167,24 @@ describe('ConversationsProvider history failure (BUG-061)', () => {
     expect(ctx.current.historyError[7]).toBe(false)
     expect(ctx.current.historyPaging[7]).toBeDefined()
     expect(ctx.current.chats.find((c) => c.id === 7).unreadCount).toBe(0)
+  })
+})
+
+describe('ConversationsProvider chat list cursor (T30c)', () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it('asks for the next page of chats with the opaque nextBefore token it was given', async () => {
+    const chat = (id) => ({ conversationId: id, displayName: 'x', type: 'INDIVIDUAL', unreadCount: 0, lastMessageAt: null })
+    getMyConversationsRequest
+      .mockResolvedValueOnce({ items: [chat('a')], hasMore: true, nextBefore: 'tok_page2', unreadChats: 0 })
+      .mockResolvedValueOnce({ items: [chat('b')], hasMore: false, nextBefore: null, unreadChats: 0 })
+    const ctx = renderProvider()
+    await waitFor(() => expect(ctx.current?.chatsPaging?.nextBefore).toBe('tok_page2'))
+
+    await act(async () => {
+      await ctx.current.loadMoreChats()
+    })
+
+    expect(getMyConversationsRequest).toHaveBeenLastCalledWith({ before: 'tok_page2' })
   })
 })

@@ -16,9 +16,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
-    // A history cursor is the public id of a message of the same chat (D-021)
-    @Query("SELECT m.id FROM Message m WHERE m.publicId = :publicId AND m.conversation.id = :conversationId")
-    Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId, @Param("conversationId") Long conversationId);
+    // A history cursor names a message of the same chat with that exact sent_at (D-021, T30c)
+    @Query("""
+        SELECT m.id FROM Message m
+        WHERE m.publicId = :publicId AND m.conversation.id = :conversationId AND m.sentAt = :sentAt
+    """)
+    Optional<Long> findIdByPublicIdAndSentAt(@Param("publicId") UUID publicId, @Param("conversationId") Long conversationId,
+                                             @Param("sentAt") java.time.LocalDateTime sentAt);
 
     // Cursor pagination by id, newest first (index messages (conversation_id, id DESC), T05).
     // Two queries instead of "(:before IS NULL OR ...)" so PostgreSQL always gets a typed parameter.

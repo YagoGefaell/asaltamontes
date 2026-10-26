@@ -4,6 +4,7 @@ import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
+import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
@@ -87,7 +88,8 @@ public class MessageService {
         message.setConversation(conversationRepository.getReferenceById(conversationId));
         message.setSender(sender);
         message.setContent(text);
-        message.setSentAt(LocalDateTime.now());
+        // Microsecond precision, as stored: the message cursor carries sent_at and PostgreSQL rounds nanoseconds
+        message.setSentAt(OpaqueCursor.truncate(LocalDateTime.now()));
         Message savedMessage = messageRepository.save(message);
 
         String preview = text.length() > PREVIEW_LENGTH ? text.substring(0, PREVIEW_LENGTH).trim() + "..." : text;
@@ -186,9 +188,9 @@ public class MessageService {
      * oldest first. Reading no longer marks the chat as read: that is chat.read or POST /read.
      */
     @Transactional(readOnly = true)
-    public MessagePageDto getConversationHistory(UUID conversationPublicId, Long userId, UUID beforePublicId, int limit) {
+    public MessagePageDto getConversationHistory(UUID conversationPublicId, Long userId, String beforeToken, int limit) {
         Long conversationId = participantConversationId(conversationPublicId, userId);
-        Long before = beforePublicId == null ? null : messageCursor(beforePublicId, conversationId);
+        Long before = messageCursor(beforeToken, conversationId);
 
         int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
         // One extra row tells whether there is a previous page
@@ -200,19 +202,22 @@ public class MessageService {
         boolean hasMore = newestFirst.size() > pageSize;
         List<MessageDto> page = new ArrayList<>(newestFirst.subList(0, Math.min(pageSize, newestFirst.size())));
         Collections.reverse(page);
-        UUID nextBefore = hasMore ? page.get(0).id() : null;
+        String nextBefore = hasMore ? page.get(0).cursor() : null;
 
         return new MessagePageDto(page, hasMore, nextBefore);
     }
 
     /**
      * The {@code limit} messages after {@code after}, oldest first (T11: what arrived while the WebSocket was down).
-     * {@code hasMore} means there are newer ones: ask again with after = id of the last item.
+     * {@code hasMore} means there are newer ones: ask again with after = cursor of the last item.
      */
     @Transactional(readOnly = true)
-    public MessagePageDto getMessagesAfter(UUID conversationPublicId, Long userId, UUID afterPublicId, int limit) {
+    public MessagePageDto getMessagesAfter(UUID conversationPublicId, Long userId, String afterToken, int limit) {
         Long conversationId = participantConversationId(conversationPublicId, userId);
-        Long after = messageCursor(afterPublicId, conversationId);
+        Long after = messageCursor(afterToken, conversationId);
+        if (after == null) {
+            throw new BadRequestException("Cursor no válido");
+        }
 
         int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
         List<MessageDto> oldestFirst = messageRepository.findAfter(conversationId, after, Limit.of(pageSize + 1));
@@ -240,9 +245,19 @@ public class MessageService {
         return conversationId;
     }
 
-    /** A message cursor is the public id of a message of this very chat: any other value is a 400. */
-    private Long messageCursor(UUID messagePublicId, Long conversationId) {
-        return messageRepository.findIdByPublicId(messagePublicId, conversationId)
+    /**
+     * Internal id of the message a cursor points to (null when there is no cursor). The token must be well formed
+     * and name a message of this very chat with that exact sent_at, so it cannot point into other chats: 400.
+     */
+    private Long messageCursor(String token, Long conversationId) {
+        OpaqueCursor cursor = OpaqueCursor.decode(token, OpaqueCursor.MESSAGE);
+        if (cursor == null) {
+            return null;
+        }
+        if (cursor.order() == null) {
+            throw new BadRequestException("Cursor no válido");
+        }
+        return messageRepository.findIdByPublicIdAndSentAt(cursor.publicId(), conversationId, cursor.order())
                 .orElseThrow(() -> new BadRequestException("Cursor no válido"));
     }
 
@@ -303,14 +318,15 @@ public class MessageService {
 
     /** A page of the chat list (T10b): the {@code limit} chats after the cursor, most recent first. */
     @Transactional(readOnly = true)
-    public ChatPageDto getUserConversations(String username, LocalDateTime beforeAt, UUID beforePublicId, int limit) {
-        if (beforeAt != null && beforePublicId == null) {
-            throw new BadRequestException("beforeAt necesita beforeId");
-        }
-        // The cursor chat has to be one of hers
-        Long beforeId = beforePublicId == null ? null
-                : conversationRepository.findIdByPublicIdAndParticipant(beforePublicId, username)
+    public ChatPageDto getUserConversations(String username, String beforeToken, int limit) {
+        OpaqueCursor cursor = OpaqueCursor.decode(beforeToken, OpaqueCursor.CHAT);
+        // The cursor chat has to be one of hers. Its order value is only a keyset position in her own list
+        // (it may differ from the chat's current last_message_at if a message arrived meanwhile), so it is not
+        // checked against the row: the queries below only ever return her chats.
+        Long beforeId = cursor == null ? null
+                : conversationRepository.findIdByPublicIdAndParticipant(cursor.publicId(), username)
                         .orElseThrow(() -> new BadRequestException("Cursor no válido"));
+        LocalDateTime beforeAt = cursor == null ? null : cursor.order();
 
         int pageSize = Math.clamp(limit, 1, MAX_CHAT_PAGE);
         // One extra row tells whether there is another page
@@ -331,8 +347,7 @@ public class MessageService {
         return new ChatPageDto(
             page,
             hasMore,
-            last != null ? last.lastMessageAt() : null,
-            last != null ? last.conversationId() : null,
+            last != null ? OpaqueCursor.encode(OpaqueCursor.CHAT, last.lastMessageAt(), last.conversationId()) : null,
             participantRepository.countUnreadChats(username)
         );
     }

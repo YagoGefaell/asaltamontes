@@ -1,18 +1,17 @@
 import { apiClient } from "../../../lib/api-client.js";
 
 // One page of the chat list, most recent first (T10b). Without a cursor, the first page.
-export async function getMyConversationsRequest({ beforeAt = null, beforeId = null } = {}) {
+// `before` is the opaque nextBefore token of the previous page (T30c).
+export async function getMyConversationsRequest({ before = null } = {}) {
   const params = new URLSearchParams();
-  if (beforeId != null) params.set("beforeId", beforeId);
-  if (beforeAt != null) params.set("beforeAt", beforeAt);
+  if (before != null) params.set("before", before);
   const query = params.toString() ? `?${params}` : "";
   try {
     const page = await apiClient.get(`/api/conversations${query}`);
     return {
       items: Array.isArray(page?.items) ? page.items : [],
       hasMore: Boolean(page?.hasMore),
-      nextBeforeAt: page?.nextBeforeAt ?? null,
-      nextBeforeId: page?.nextBeforeId ?? null,
+      nextBefore: page?.nextBefore ?? null,
       unreadChats: Number(page?.unreadChats) || 0,
     };
   } catch (error) {
@@ -71,7 +70,7 @@ export async function getConversationMessagesRequest(conversationId, before = nu
   }
 }
 
-// Messages newer than `after`, oldest first, following the pages (T11: catching up after a reconnection).
+// Messages newer than `after` (the opaque `cursor` of a message, T30c), oldest first, following the pages (T11: catching up after a reconnection).
 // complete = false if there were more than maxPages pages: the caller should reload the chat instead.
 export async function getMessagesAfterRequest(conversationId, after, maxPages = 5) {
   const items = [];
@@ -86,7 +85,9 @@ export async function getMessagesAfterRequest(conversationId, after, maxPages = 
       if (!result?.hasMore || pageItems.length === 0) {
         return { items, complete: true };
       }
-      cursor = pageItems[pageItems.length - 1].id;
+      cursor = pageItems[pageItems.length - 1].cursor;
+      // Without a cursor we cannot follow the pages: the caller reloads the chat
+      if (!cursor) return { items, complete: false };
     }
     return { items, complete: false };
   } catch (error) {

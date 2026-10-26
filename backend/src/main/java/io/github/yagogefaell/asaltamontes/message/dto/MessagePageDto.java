@@ -1,14 +1,13 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
 import java.util.List;
-import java.util.UUID;
 
 /**
- * One page of a chat history, oldest first. To get the previous page, ask again with before = nextBefore.
- * With ?after= (T11), hasMore means there are newer messages and nextBefore is null.
+ * One page of a chat history, oldest first. To get the previous page, ask again with before = nextBefore
+ * (opaque token, T30c). With ?after= (T11), hasMore means there are newer messages and nextBefore is null.
  */
 public record MessagePageDto(
     List<MessageDto> items,
     boolean hasMore,
-    UUID nextBefore
+    String nextBefore
 ) {}
