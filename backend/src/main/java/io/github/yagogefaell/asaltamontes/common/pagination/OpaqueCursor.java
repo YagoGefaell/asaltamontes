@@ -43,6 +43,10 @@ public record OpaqueCursor(String kind, LocalDateTime order, UUID publicId) {
             }
             LocalDateTime order = parts[1].isEmpty() ? null : fromMicros(Long.parseLong(parts[1]));
             UUID id = UUID.fromString(parts[2]);
+            // A sane range, so an absurd value never reaches the database as a timestamp (would be a 500)
+            if (order != null && (order.getYear() < 2000 || order.getYear() > 2100)) {
+                throw new BadRequestException(INVALID);
+            }
             // Only the canonical form is accepted, so one cursor has a single spelling
             if (!encode(expectedKind, order, id).equals(token)) {
                 throw new BadRequestException(INVALID);

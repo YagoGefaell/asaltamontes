@@ -52,7 +52,13 @@ class OpaqueCursorTest {
         String badUuid = Base64.getUrlEncoder().withoutPadding().encodeToString("m||nope".getBytes(StandardCharsets.UTF_8));
         String tooMany = Base64.getUrlEncoder().withoutPadding().encodeToString(("m||" + id + "|x").getBytes(StandardCharsets.UTF_8));
 
-        for (String token : new String[] {"5", "!!!", id.toString(), chat, notCanonical, badUuid, tooMany, chat + "="}) {
+        String minMicros = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(("m|" + Long.MIN_VALUE + "|" + id).getBytes(StandardCharsets.UTF_8));
+        String maxMicros = Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(("m|" + Long.MAX_VALUE + "|" + id).getBytes(StandardCharsets.UTF_8));
+
+        for (String token : new String[] {"5", "!!!", id.toString(), chat, notCanonical, badUuid, tooMany, chat + "=",
+                minMicros, maxMicros}) {
             assertThatThrownBy(() -> OpaqueCursor.decode(token, OpaqueCursor.MESSAGE))
                     .as(token).isInstanceOf(BadRequestException.class);
         }
