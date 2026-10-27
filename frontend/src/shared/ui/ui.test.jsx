@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import Avatar from './Avatar.jsx'
 import EmptyState from './EmptyState.jsx'
 import Modal from './Modal.jsx'
+import SectionCard from './SectionCard.jsx'
 import { ToastProvider, useToast } from './Toast.jsx'
 import Button from '../forms/Button.jsx'
 
@@ -114,5 +115,15 @@ describe('Toast', () => {
     fireEvent.click(screen.getByText('lanzar'))
     fireEvent.click(screen.getByRole('button', { name: 'Cerrar aviso' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+})
+
+describe('SectionCard', () => {
+  it('renders an optional title above its content', () => {
+    const { rerender } = render(<SectionCard title="Imagen"><p>contenido</p></SectionCard>)
+    expect(screen.getByRole('heading', { name: 'Imagen' })).toBeInTheDocument()
+    expect(screen.getByText('contenido')).toBeInTheDocument()
+    rerender(<SectionCard><p>contenido</p></SectionCard>)
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument()
   })
 })

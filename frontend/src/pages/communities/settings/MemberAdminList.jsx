@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import Avatar from "../../../shared/ui/Avatar";
 import Button from "../../../shared/forms/Button";
 import EmptyState from "../../../shared/ui/EmptyState";
+import Input from "../../../shared/forms/Input";
 import Modal from "../../../shared/ui/Modal";
 import Skeleton from "../../../shared/ui/Skeleton";
 import FormError from "../../../shared/forms/FormError";
@@ -215,10 +216,10 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
         }
       >
         <p>Dejará de ver la comunidad como miembro y no podrá volver a unirse hasta que la readmitas.</p>
-        <label className="moderation-label" htmlFor="ban-reason">Motivo (opcional)</label>
-        <textarea
+        <Input
+          as="textarea"
           id="ban-reason"
-          className="moderation-input moderation-textarea"
+          label="Motivo (opcional)"
           rows="3"
           maxLength={REASON_MAX}
           value={reason}

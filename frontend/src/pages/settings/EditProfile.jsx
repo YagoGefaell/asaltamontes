@@ -156,7 +156,7 @@ export default function EditProfile() {
         onChange={(e) => handleChange("isPublicProfile", e.target.checked)}
       />
 
-      <Button type="submit" disabled={uploadingPicture}>GUARDAR CAMBIOS</Button>
+      <Button type="submit" disabled={uploadingPicture}>Guardar cambios</Button>
     </form>
   );
 }

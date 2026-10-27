@@ -44,7 +44,7 @@ describe('EventForm', () => {
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rodaje', latitude: 40.5, longitude: -3.7 }))
   })
 
-  it('defaults to the device zone and lets her pick another under "Avanzado" with a search box', async () => {
+  it('defaults to the device zone and lets her pick another under "Más opciones" with a search box', async () => {
     const onSubmit = await renderForm()
     const device = Intl.DateTimeFormat().resolvedOptions().timeZone
     const select = screen.getByLabelText('Zona horaria')
@@ -57,6 +57,13 @@ describe('EventForm', () => {
     fireEvent.change(screen.getByLabelText('Empieza'), { target: { value: '2999-01-02T09:30' } })
     fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ timezone: 'Asia/Tokyo' }))
+  })
+
+  it('opens "Más opciones" when a field hidden inside has an error', async () => {
+    await renderForm({ initial: { ...EMPTY_FORM, distanceKm: '-3' } })
+    expect(screen.getByText('Más opciones').closest('details')).not.toHaveAttribute('open')
+    fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
+    expect(screen.getByText('Más opciones').closest('details')).toHaveAttribute('open')
   })
 
   it('removes the point', async () => {

@@ -41,6 +41,7 @@ export default function EventForm({
 
   const hasPoint = values.latitude != null && values.longitude != null
   const otherZone = timeZone !== browserTimeZone()
+  const moreHasError = ['distanceKm', 'elevationGainM', 'capacity', 'timezone'].some((name) => errors[name])
 
   return (
     <form className="event-form" onSubmit={handleSubmit} noValidate>
@@ -63,14 +64,6 @@ export default function EventForm({
       <p className="event-form__hint">
         Hora local{otherZone ? ` de ${zoneLabel(timeZone)} (la zona de la quedada)` : ` (${zoneLabel(timeZone)})`}.
       </p>
-      <details className="event-form__advanced">
-        <summary>Avanzado</summary>
-        <TimeZoneSelect value={timeZone} onChange={(zone) => set({ timezone: zone })} error={errors.timezone} />
-        <p className="event-form__hint">
-          La hora pertenece al lugar de la quedada: elige su zona si no es la de tu dispositivo.
-        </p>
-      </details>
-
       <fieldset className="event-form__place">
         <legend>Punto de encuentro</legend>
         <Input label="Nombre del lugar" aria-label="Lugar" maxLength={MEETING_POINT_MAX} placeholder="Ej.: Parking del Teleférico" {...field('meetingPointName')} />
@@ -92,16 +85,25 @@ export default function EventForm({
         <FormError message={errors.location} />
       </fieldset>
 
-      <div className="event-form__row event-form__row--3">
-        <Input type="number" inputMode="decimal" step="0.1" min="0" label="Distancia (km)" aria-label="Distancia" {...field('distanceKm')} />
-        <Input type="number" inputMode="numeric" step="1" min="0" label="Desnivel (m+)" aria-label="Desnivel" {...field('elevationGainM')} />
-        <Input type="number" inputMode="numeric" step="1" min="1" label="Plazas" aria-label="Plazas" placeholder="Sin límite" {...field('capacity')} />
-      </div>
-
       <Input
         as="textarea" rows={5} label="Descripción" aria-label="Descripción" maxLength={DESCRIPTION_MAX}
         placeholder="Ritmo, material, qué esperar…" {...field('description')}
       />
+
+      <details className="event-form__advanced" open={moreHasError || undefined}>
+        <summary>Más opciones</summary>
+        <div className="event-form__more">
+          <div className="event-form__row">
+            <Input type="number" inputMode="decimal" step="0.1" min="0" label="Distancia (km)" aria-label="Distancia" {...field('distanceKm')} />
+            <Input type="number" inputMode="numeric" step="1" min="0" label="Desnivel (m+)" aria-label="Desnivel" {...field('elevationGainM')} />
+          </div>
+          <Input type="number" inputMode="numeric" step="1" min="1" label="Plazas" aria-label="Plazas" placeholder="Sin límite" {...field('capacity')} />
+          <TimeZoneSelect value={timeZone} onChange={(zone) => set({ timezone: zone })} error={errors.timezone} />
+          <p className="event-form__hint">
+            La hora pertenece al lugar de la quedada: elige su zona si no es la de tu dispositivo.
+          </p>
+        </div>
+      </details>
 
       {mode === 'create' && communities.length > 0 && (
         <fieldset className="event-form__place">

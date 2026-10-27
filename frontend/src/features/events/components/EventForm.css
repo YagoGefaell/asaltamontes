@@ -11,14 +11,9 @@
   gap: var(--space-2);
 }
 
-.event-form__row--3 {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-/* 360 px: three number fields side by side get too narrow */
+/* 360 px: two datetime fields side by side get too narrow */
 @media (max-width: 400px) {
-  .event-form__row,
-  .event-form__row--3 {
+  .event-form__row {
     grid-template-columns: 1fr;
   }
 }
@@ -36,6 +31,13 @@
 .event-form__advanced > summary {
   cursor: pointer;
   font-weight: 600;
+}
+
+.event-form__more {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
 }
 
 .event-form__zone {

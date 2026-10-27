@@ -94,111 +94,20 @@
 }
 
 .community-creator-form {
-  padding: 0.85rem;
+  padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: var(--space-3);
   background: var(--background);
-}
-
-.community-creator-label {
-  font-size: var(--text-sm);
-  color: var(--text-soft);
-  font-weight: 500;
-}
-
-.community-creator-input {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--input-bg);
-  color: var(--text-color);
-  font-size: var(--text-base);
-  padding: 0.65rem 0.75rem;
-  font-family: inherit;
-}
-
-.community-creator-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 10%, transparent);
-}
-
-.community-creator-textarea {
-  resize: vertical;
-  min-height: 100px;
-}
-
-.community-creator-error {
-  margin: 0;
-  font-size: var(--text-sm);
-  color: var(--error-text);
 }
 
 .community-creator-actions {
   display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: var(--space-3);
 }
 
-.community-creator-btn-cancel,
-.community-creator-btn-submit {
+.community-creator-actions > * {
   flex: 1;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  padding: 0.7rem 0.9rem;
-  font-size: var(--text-base);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: inherit;
-}
-
-.community-creator-btn-cancel {
-  background: var(--surface);
-  color: var(--text-color);
-  border-color: var(--border-soft);
-}
-
-.community-creator-btn-cancel:active {
-  transform: scale(0.98);
-}
-
-.community-creator-btn-cancel:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.community-creator-btn-submit {
-  background: linear-gradient(135deg, var(--primary), var(--primary-light));
-  color: var(--on-primary);
-  border: none;
-}
-
-.community-creator-btn-submit:active {
-  transform: scale(0.98);
-}
-
-.community-creator-btn-submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (min-width: 600px) {
-  .community-creator-form {
-    padding: 1rem;
-  }
-
-  .community-creator-btn-cancel:hover,
-  .community-creator-btn-submit:hover {
-    transform: translateY(-2px);
-  }
-
-  .community-creator-btn-cancel:active,
-  .community-creator-btn-submit:active {
-    transform: scale(0.98);
-  }
 }
 
 .communities-load-more {
