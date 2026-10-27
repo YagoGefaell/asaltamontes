@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +31,8 @@ import io.github.yagogefaell.asaltamontes.event.dto.EventDetailsDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
 import io.github.yagogefaell.asaltamontes.event.service.EventService;
 import io.github.yagogefaell.asaltamontes.event.service.UpdateEventReader;
+import io.github.yagogefaell.asaltamontes.message.dto.EventChatDto;
+import io.github.yagogefaell.asaltamontes.message.service.EventChatService;
 import io.github.yagogefaell.asaltamontes.user.domain.RunningLevel;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.validation.Valid;
@@ -42,6 +45,7 @@ public class EventController {
 
     private final EventService eventService;
     private final UpdateEventReader updateEventReader;
+    private final EventChatService eventChatService;
 
     @PostMapping
     public ResponseEntity<EventDetailsDto> createEvent(
@@ -80,6 +84,24 @@ public class EventController {
             @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable UUID eventId) {
         return ResponseEntity.ok(eventService.get(eventId, currentUser));
+    }
+
+    /** "Add to calendar" (T21): an iCalendar file the calendar apps open. Same visibility as the event itself. */
+    @GetMapping(value = "/{eventId}.ics", produces = "text/calendar;charset=UTF-8")
+    public ResponseEntity<String> getEventCalendar(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID eventId) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"quedada.ics\"")
+                .body(eventService.calendar(eventId, currentUser));
+    }
+
+    /** The chat of the quedada (T21): only for people who are going; 404 for everybody else. */
+    @GetMapping("/{eventId}/chat")
+    public ResponseEntity<EventChatDto> getEventChat(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID eventId) {
+        return ResponseEntity.ok(eventChatService.open(eventId, currentUser));
     }
 
     @PatchMapping("/{eventId}")

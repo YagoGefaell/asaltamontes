@@ -187,4 +187,33 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
         WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.COMMUNITY AND c.managedRefId = :communityId
     """)
     int updateCommunityChatProfile(@Param("communityId") Long communityId, @Param("name") String name, @Param("image") String image);
+
+    // --- Chats managed by an event (T21) ---
+
+    @Query("""
+        SELECT c.id FROM Conversation c
+        WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.EVENT AND c.managedRefId = :eventId
+    """)
+    Optional<Long> findEventChatId(@Param("eventId") Long eventId);
+
+    @Query("""
+        SELECT c.publicId FROM Conversation c
+        WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.EVENT AND c.managedRefId = :eventId
+    """)
+    Optional<UUID> findEventChatPublicId(@Param("eventId") Long eventId);
+
+    /** The event that manages this conversation; empty for any other chat. One cheap lookup per message sent. */
+    @Query("""
+        SELECT c.managedRefId FROM Conversation c
+        WHERE c.id = :conversationId AND c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.EVENT
+    """)
+    Optional<Long> findManagingEventId(@Param("conversationId") Long conversationId);
+
+    // The chat shows the title and the image of its event
+    @Modifying
+    @Query("""
+        UPDATE Conversation c SET c.groupName = :name, c.groupImage = :image
+        WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.EVENT AND c.managedRefId = :eventId
+    """)
+    int updateEventChatProfile(@Param("eventId") Long eventId, @Param("name") String name, @Param("image") String image);
 }

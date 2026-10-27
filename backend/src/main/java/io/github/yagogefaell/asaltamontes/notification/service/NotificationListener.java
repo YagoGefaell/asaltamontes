@@ -21,6 +21,7 @@ import io.github.yagogefaell.asaltamontes.event.service.AttendeePromoted;
 import io.github.yagogefaell.asaltamontes.event.service.EventAttendeeJoined;
 import io.github.yagogefaell.asaltamontes.event.service.EventCancelled;
 import io.github.yagogefaell.asaltamontes.event.service.EventNotificationSource;
+import io.github.yagogefaell.asaltamontes.event.service.EventReminder;
 import io.github.yagogefaell.asaltamontes.event.service.EventNotificationSource.EventInfo;
 import io.github.yagogefaell.asaltamontes.event.service.EventUpdated;
 import io.github.yagogefaell.asaltamontes.infrastructure.config.AsyncConfig;
@@ -112,6 +113,18 @@ public class NotificationListener {
         safely("WAITLIST_PROMOTED", () -> eventSource.find(event.eventId()).ifPresent(info ->
                 deliver(new NewNotification(NotificationType.WAITLIST_PROMOTED, null, NotificationTargetType.EVENT,
                         info.publicId().toString(), eventPayload(info)), List.of(event.userId()))));
+    }
+
+    /** 24 h or 2 h before the start (T21): to everybody who is going. No actor, so no block applies. */
+    @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onEventReminder(EventReminder event) {
+        safely("EVENT_REMINDER", () -> eventSource.find(event.eventId()).ifPresent(info -> {
+            Map<String, Object> payload = eventPayload(info);
+            payload.put("hoursBefore", event.hoursBefore());
+            deliver(new NewNotification(NotificationType.EVENT_REMINDER, null, NotificationTargetType.EVENT,
+                    info.publicId().toString(), payload), eventSource.attendeeUserIds(event.eventId(), Set.of(AttendeeStatus.GOING)));
+        }));
     }
 
     @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)

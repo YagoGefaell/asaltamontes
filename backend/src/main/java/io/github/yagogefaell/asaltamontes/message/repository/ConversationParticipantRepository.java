@@ -118,6 +118,32 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
     int addCommunityMembers(@Param("conversationId") Long conversationId, @Param("communityId") Long communityId,
                             @Param("joinedAt") java.time.LocalDateTime joinedAt);
 
+    // --- Chats managed by an event (T21): the participants are the GOING attendees ---
+
+    // Idempotent, and decided in the same statement: only if she is going right now (a leave committed a moment ago
+    // cannot be undone by a concurrent access)
+    @Modifying
+    @Query(value = """
+        INSERT INTO conversation_participants (conversation_id, user_id, role, unread_count, joined_at)
+        SELECT :conversationId, a.user_id, 'MEMBER', 0, :joinedAt
+        FROM event_attendees a
+        WHERE a.event_id = :eventId AND a.user_id = :userId AND a.status = 'GOING'
+        ON CONFLICT (conversation_id, user_id) DO NOTHING
+    """, nativeQuery = true)
+    int addEventAttendeeIfAbsent(@Param("conversationId") Long conversationId, @Param("eventId") Long eventId,
+                                 @Param("userId") Long userId, @Param("joinedAt") java.time.LocalDateTime joinedAt);
+
+    @Modifying
+    @Query(value = """
+        INSERT INTO conversation_participants (conversation_id, user_id, role, unread_count, joined_at)
+        SELECT :conversationId, a.user_id, 'MEMBER', 0, :joinedAt
+        FROM event_attendees a
+        WHERE a.event_id = :eventId AND a.status = 'GOING'
+        ON CONFLICT (conversation_id, user_id) DO NOTHING
+    """, nativeQuery = true)
+    int addEventAttendees(@Param("conversationId") Long conversationId, @Param("eventId") Long eventId,
+                          @Param("joinedAt") java.time.LocalDateTime joinedAt);
+
     @Modifying
     @Query("DELETE FROM ConversationParticipant p WHERE p.conversation.id = :conversationId AND p.user.id = :userId")
     int deleteByConversationIdAndUserId(@Param("conversationId") Long conversationId, @Param("userId") Long userId);

@@ -51,6 +51,7 @@ public class MessageService {
     private final MediaReferenceService mediaReferences;
     private final UserActionLimiter limiter;
     private final CommunityChatService communityChat;
+    private final EventChatService eventChat;
     private final int maxGroupSize;
 
     public static final int MAX_CONTENT_LENGTH = 2000;
@@ -68,6 +69,7 @@ public class MessageService {
                           MediaReferenceService mediaReferences,
                           UserActionLimiter limiter,
                           CommunityChatService communityChat,
+                          EventChatService eventChat,
                           @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
@@ -78,6 +80,7 @@ public class MessageService {
         this.mediaReferences = mediaReferences;
         this.limiter = limiter;
         this.communityChat = communityChat;
+        this.eventChat = eventChat;
         this.maxGroupSize = maxGroupSize;
     }
 
@@ -98,6 +101,8 @@ public class MessageService {
         }
         // Community chats: muted members only read, the moderation can switch the chat off (T20)
         communityChat.requireCanWrite(conversationId, senderId);
+        // Event chats: read only once the event is cancelled or archived (T21)
+        eventChat.requireCanWrite(conversationId, senderId);
         // A block closes the private chat in both directions; groups keep working (T13)
         participantRepository.findOtherUserIdInPrivateChat(conversationId, senderId)
                 .ifPresent(otherId -> blockService.requireNotBlocked(senderId, otherId));
