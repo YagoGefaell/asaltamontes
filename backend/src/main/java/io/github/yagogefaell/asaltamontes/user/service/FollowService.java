@@ -77,6 +77,7 @@ public class FollowService {
 
     /** Who blocked the requester looks like an unknown user; if the requester blocked her, she must unblock first. */
     private void requireNoBlock(Long requesterId, UserAccount other) {
+        blockService.lockPair(requesterId, other.getId());
         if (blockService.hasBlocked(other.getId(), requesterId)) {
             throw new UserNotFoundException(other.getUsername());
         }

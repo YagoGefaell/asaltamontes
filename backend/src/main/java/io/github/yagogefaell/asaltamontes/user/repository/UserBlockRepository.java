@@ -37,6 +37,14 @@ public interface UserBlockRepository extends JpaRepository<UserBlock, UserBlock.
     """)
     List<Long> findBlockedEitherWayAmong(@Param("userId") Long userId, @Param("others") Collection<Long> others);
 
+    /** The ids among {@code others} that blocked {@code userId} (one direction only). */
+    @Query("SELECT b.blocker.id FROM UserBlock b WHERE b.blocked.id = :userId AND b.blocker.id IN :others")
+    List<Long> findBlockersAmong(@Param("userId") Long userId, @Param("others") Collection<Long> others);
+
+    // Serialises block/follow/unblock of the same pair until the end of the transaction
+    @Query(value = "SELECT 1 FROM (SELECT pg_advisory_xact_lock(:key)) t", nativeQuery = true)
+    int lockPair(@Param("key") long key);
+
     // Native and conflict-tolerant: a concurrent identical request must not abort the transaction
     @Modifying
     @Query(value = "INSERT INTO user_blocks (blocker_id, blocked_id, created_at) VALUES (:blockerId, :blockedId, now()) ON CONFLICT DO NOTHING",

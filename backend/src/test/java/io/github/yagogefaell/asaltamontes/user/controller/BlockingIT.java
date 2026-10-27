@@ -86,14 +86,14 @@ class BlockingIT extends AbstractIntegrationTest {
 
         block(ana, bea);
 
-        assertThat(openPrivateChat(bea, ana)).isEqualTo(403);
+        assertThat(openPrivateChat(bea, ana)).isEqualTo(404);
         assertThat(openPrivateChat(ana, bea)).isEqualTo(403);
         // Blocks only affect the pair
         assertThat(openPrivateChat(bea, cris)).isEqualTo(200);
 
         // Also an already existing chat can no longer be "opened" through the create-or-get endpoint
         block(ana, cris);
-        assertThat(openPrivateChat(cris, ana)).isEqualTo(403);
+        assertThat(openPrivateChat(cris, ana)).isEqualTo(404);
     }
 
     @Test
@@ -226,7 +226,7 @@ class BlockingIT extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/conversations/{id}/participants", other).with(auth.bearer(ana))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of("usernames", List.of(dora.getUsername(), bea.getUsername())))))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
         mockMvc.perform(get("/api/conversations/{id}", other).with(auth.bearer(ana)))
                 .andExpect(jsonPath("$.participantCount").value(2));
         // Whom she blocked herself cannot be added either
@@ -250,7 +250,7 @@ class BlockingIT extends AbstractIntegrationTest {
 
         mockMvc.perform(post("/api/conversations/group").with(auth.bearer(ana)).contentType(MediaType.APPLICATION_JSON)
                         .content(json(Map.of("groupName", "g", "users", List.of(cris.getUsername(), bea.getUsername())))))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isNotFound());
     }
 
     @Test

@@ -5,6 +5,7 @@ import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
@@ -149,6 +150,11 @@ public class MessageService {
         UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
         UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
 
+        // Whoever blocked her looks like an unknown user, as in her profile
+        if (blockService.hasBlocked(other.getId(), me.getId())) {
+            throw new UserNotFoundException(recipientUsername);
+        }
+
         Optional<ChatResponseDto> existingChat = getPrivateConversation(currentUsername, recipientUsername);
 
         if (existingChat.isPresent()) {
@@ -198,7 +204,15 @@ public class MessageService {
                 .map(username -> (UserAccount) userService.loadUserByUsername(username))
                 .toList();
 
-        if (!blockService.blockedEitherWayAmong(creator.getId(), members.stream().map(UserAccount::getId).toList()).isEmpty()) {
+        List<Long> memberIds = members.stream().map(UserAccount::getId).toList();
+        // Whoever blocked the creator looks like a user that does not exist (nobody can probe who blocked her)
+        Set<Long> blockers = blockService.blockersAmong(creator.getId(), memberIds);
+        for (UserAccount member : members) {
+            if (blockers.contains(member.getId())) {
+                throw new NotFoundException("Usuaria no encontrada: " + member.getUsername());
+            }
+        }
+        if (!blockService.blockedEitherWayAmong(creator.getId(), memberIds).isEmpty()) {
             throw new ForbiddenException(BlockService.GROUP_ADD_MESSAGE);
         }
 

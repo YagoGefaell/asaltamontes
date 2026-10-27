@@ -179,7 +179,15 @@ public class GroupService {
             return details(access, 0, DEFAULT_PARTICIPANT_PAGE);
         }
         // T13: nothing is added if any of them blocked the caller or was blocked by her (neutral message, one query)
-        if (!blockService.blockedEitherWayAmong(user.getId(), toAdd.stream().map(UserAccount::getId).toList()).isEmpty()) {
+        List<Long> toAddIds = toAdd.stream().map(UserAccount::getId).toList();
+        // Whoever blocked the caller looks like a user that does not exist, so nobody can probe who blocked her
+        Set<Long> blockers = blockService.blockersAmong(user.getId(), toAddIds);
+        for (UserAccount account : toAdd) {
+            if (blockers.contains(account.getId())) {
+                throw new NotFoundException("Usuaria no encontrada: " + account.getUsername().toLowerCase(Locale.ROOT));
+            }
+        }
+        if (!blockService.blockedEitherWayAmong(user.getId(), toAddIds).isEmpty()) {
             throw new ForbiddenException(BlockService.GROUP_ADD_MESSAGE);
         }
         // The row is locked, so this count is the real one for the whole transaction

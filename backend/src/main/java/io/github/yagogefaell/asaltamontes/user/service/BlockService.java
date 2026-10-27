@@ -51,6 +51,7 @@ public class BlockService {
         if (blocked.getId().equals(blockerId)) {
             throw new BadRequestException("No puedes bloquearte a ti misma");
         }
+        lockPair(blockerId, blocked.getId());
 
         blockRepository.insertIfAbsent(blockerId, blocked.getId());
         removeFollow(blockerId, blocked.getId());
@@ -87,6 +88,22 @@ public class BlockService {
             return Set.of();
         }
         return new HashSet<>(blockRepository.findBlockedEitherWayAmong(userId, others));
+    }
+
+    /** The ids among {@code others} that blocked {@code userId}; to be answered as if they did not exist. */
+    @Transactional(readOnly = true)
+    public Set<Long> blockersAmong(Long userId, Collection<Long> others) {
+        if (others.isEmpty()) {
+            return Set.of();
+        }
+        return new HashSet<>(blockRepository.findBlockersAmong(userId, others));
+    }
+
+    /** Takes a transaction-scoped lock for the pair, so a block and a concurrent follow cannot interleave. */
+    public void lockPair(Long a, Long b) {
+        long low = Math.min(a, b);
+        long high = Math.max(a, b);
+        blockRepository.lockPair((low << 32) ^ high);
     }
 
     /** 403 with a neutral message when there is a block between both in either direction. */
