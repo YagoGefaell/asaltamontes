@@ -318,6 +318,27 @@ class EventChatIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void someoneExpelledFromTheCommunity_losesTheChatOfItsMembersOnlyEvent() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/join").with(auth.bearer(member))).andExpect(status().isCreated());
+        UUID event = eventService.create(new CreateEventDto("Solo socias", null, EventType.MEETUP,
+                Instant.now().plus(3, ChronoUnit.DAYS), null, "Europe/Madrid", null, null, null, null, null, null, null, null,
+                EventVisibility.COMMUNITY, community.getPublicId()), owner).id();
+        join(member, event).andExpect(status().isOk());
+        UUID chat = chatOf(member, event);
+        messageService.processIncomingMessage(chat, member.getId(), "hola");
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/members/" + member.getUsername() + "/ban")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isNoContent());
+
+        chatRequest(member, event).andExpect(status().isNotFound());
+        assertThatThrownBy(() -> messageService.processIncomingMessage(chat, member.getId(), "sigo aquí"))
+                .isInstanceOf(io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException.class);
+    }
+
+    @Test
     void aCancelledEventIsMarkedCancelledInTheCalendarFile() throws Exception {
         UserAccount organizer = testData.createUser();
         UUID event = newEvent(organizer, null);

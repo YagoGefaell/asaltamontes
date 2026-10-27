@@ -72,7 +72,8 @@ public class EventChatService {
     @Transactional
     public EventChatDto open(UUID eventPublicId, UserAccount user) {
         Long eventId = eventRepository.findIdByPublicId(eventPublicId).orElseThrow(() -> new NotFoundException(NOT_FOUND));
-        if (attendeeRepository.findStatus(eventId, user.getId()).orElse(null) != AttendeeStatus.GOING) {
+        if (attendeeRepository.findStatus(eventId, user.getId()).orElse(null) != AttendeeStatus.GOING
+                || !eventRepository.canView(eventId, user.getId())) {
             throw new NotFoundException(NOT_FOUND);
         }
         // Also repairs a missing participation (e.g. an event that predates the chat)
@@ -157,6 +158,10 @@ public class EventChatService {
         Long eventId = conversationRepository.findManagingEventId(conversationId).orElse(null);
         if (eventId == null) {
             return;
+        }
+        // Someone expelled from the community of a members-only event no longer writes (BUG-074 covers the rest)
+        if (!eventRepository.canView(eventId, userId)) {
+            throw new NotFoundException(NOT_FOUND);
         }
         String reason = readOnlyReason(eventRepository.findTiming(eventId).orElseThrow(() -> new NotFoundException(NOT_FOUND)), Instant.now());
         if (CANCELLED.equals(reason)) {
