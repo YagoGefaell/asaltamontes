@@ -12,7 +12,7 @@ Argumento: `Txx`, `Txxa` (sub-PR) o `BUG-xxx`. Sin argumento: elige con `/start-
 ROOT=$(git rev-parse --path-format=absolute --git-common-dir)/..; AI="$ROOT/.ai"
 git -C "$ROOT" fetch --prune
 ```
-- Lee la spec: `docs/ai/tasks/<ID>-*.md` o `docs/ai/bugs/<ID>-*.md`, y además `CLAUDE.md`, `docs/ai/WORKFLOW.md` y las decisiones aplicables de `docs/ai/DECISIONS.md`.
+- Lee la spec: `docs/ai/tasks/<ID>-*.md` o `docs/ai/bugs/<ID>-*.md`, y además `CLAUDE.md`, `docs/ai/WORKFLOW.md` y las decisiones aplicables de `docs/ai/DECISIONS.md`. Si la tarea toca lo que se ve (pantallas, componentes, CSS), también `docs/ai/DESIGN.md`.
 - Comprueba que las **dependencias** están mergeadas en `origin/main`. Si alguna está en PR abierta, apila (WORKFLOW §2). Si no existe, para y elige otra tarea.
 - Comprueba en STATUS y en las PRs abiertas que nadie (otro agente) la tiene ya en curso.
 - Rama y worktree (si no estás ya en un worktree aislado):
@@ -38,6 +38,7 @@ cd backend && ./mvnw -B verify
 cd frontend && npm ci && npm run lint && npm test && npm run build
 ```
 - Pruebas manuales que tengan sentido (p. ej. levantar el stack y probar el flujo); anota los pasos para la sección "Cómo probarlo".
+- Si cambia lo que se ve: **`/ui-review`** con las rutas tocadas (capturas antes/después en la PR). Sin capturas no está terminada.
 - Autorrevisión del diff (`git diff origin/main...HEAD`) y, si está disponible, `/code-review`.
 - Actualiza en el diff el `Estado` de la tarea a `hecho` y el de los bugs que cierra a `resuelto`, y también `docs/api-contract-v1.json`, `.env.example` y los READMEs si aplica.
 

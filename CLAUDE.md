@@ -19,6 +19,7 @@ Objetivo a largo plazo: producción con miles de usuarias concurrentes y monetiz
 | `docs/ai/ROADMAP.md` | Orden de implementación, fases y dependencias entre tareas | sí |
 | `docs/ai/tasks/Txx-*.md` | Especificación detallada de cada tarea (+ su `Estado`) | sí |
 | `docs/ai/bugs/BUG-xxx-*.md` | Registro de bugs, uno por archivo (+ su `Estado`) | sí |
+| `docs/ai/DESIGN.md` | Guía de diseño (mobile first, estilo Instagram, patrones obligatorios). **Obligatorio antes de tocar UI**; verificar con `/ui-review` | sí |
 | `docs/ai/DECISIONS.md` | Decisiones de arquitectura/producto ya tomadas. No se re-discuten sin motivo nuevo | sí |
 | `docs/ai/templates/` | Plantillas de tarea, bug y cuerpo de PR | sí |
 | `.ai/STATUS.md` | Estado vivo: PRs abiertas, en qué se trabaja, bloqueos, preguntas para Yago | **no** (local) |
