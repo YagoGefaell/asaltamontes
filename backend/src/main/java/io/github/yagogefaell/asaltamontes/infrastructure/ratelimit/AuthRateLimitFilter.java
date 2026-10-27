@@ -42,6 +42,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
 
     private static final Duration PERIOD = Duration.ofMinutes(1);
     private static final int MAX_LOGIN_BODY_BYTES = 4096;
+    // Marking notifications as read (T18) shares this filter; it is limited per IP like the refresh
+    private static final String NOTIFICATIONS_READ = "/api/notifications/read";
 
     private final RateLimiter rateLimiter;
     private final RateLimitProperties properties;
@@ -59,7 +61,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
         return !properties.isEnabled() || !"POST".equals(request.getMethod())
-                || !pathOf(request).startsWith("/auth/");
+                || !(pathOf(request).startsWith("/auth/") || pathOf(request).equals(NOTIFICATIONS_READ));
     }
 
     @Override
@@ -81,6 +83,8 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             }
             case "/auth/register" -> retryAfter = rateLimiter.tryAcquire("register:ip:" + ip, properties.getRegisterPerMinute(), PERIOD);
             case "/auth/refresh" -> retryAfter = rateLimiter.tryAcquire("refresh:ip:" + ip, properties.getRefreshPerMinute(), PERIOD);
+            case NOTIFICATIONS_READ -> retryAfter = rateLimiter.tryAcquire("notifications-read:ip:" + ip,
+                    properties.getNotificationsReadPerMinute(), PERIOD);
             default -> retryAfter = 0;
         }
 

@@ -728,6 +728,106 @@
         }
       }
     },
+    "/api/notifications": {
+      "get": {
+        "summary": "One page of the caller's notifications (T18)",
+        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, ADDED_TO_GROUP (groupName).",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "before", "in": "query", "required": false, "schema": { "type": "string" }, "description": "Opaque token: the nextBefore of the previous page. It must name a notification of the caller; anything else: 400 'Cursor no válido'" },
+          { "name": "limit", "in": "query", "required": false, "schema": { "type": "integer", "default": 20, "minimum": 1, "maximum": 50 }, "description": "Page size (values above 50 are capped)" }
+        ],
+        "responses": {
+          "200": {
+            "description": "One page",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationPage" } } }
+          },
+          "400": { "description": "Invalid cursor (ProblemDetail)" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "summary": "Number of unread notifications (badge)",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "The counter",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "count": { "type": "integer", "format": "int64" } } } } }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/notifications/read": {
+      "post": {
+        "summary": "Mark notifications as read",
+        "description": "Either ids (1 to 50) or all: true. Idempotent for already read ones. If any id does not exist or belongs to someone else the answer is the same 404 'Notificación no encontrada' and none is marked. Rate limited per IP (429).",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "ids": { "type": "array", "maxItems": 50, "items": { "type": "string", "format": "uuid" } },
+                  "all": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Marked" },
+          "400": { "description": "Neither or both of ids and all, empty or more than 50 ids" },
+          "401": { "description": "Not authenticated" },
+          "404": { "description": "Notificación no encontrada" },
+          "429": { "description": "Too many requests" }
+        }
+      }
+    },
+    "/api/notifications/preferences": {
+      "get": {
+        "summary": "Which notification types are enabled",
+        "description": "Every type, true unless switched off.",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "types: { NEW_FOLLOWER: true, ... }",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationPreferences" } } }
+          },
+          "401": { "description": "Not authenticated" }
+        }
+      },
+      "patch": {
+        "summary": "Switch notification types on or off",
+        "description": "D-020: only the types present change. Values are required booleans (null is a 400, it does not 'clear'). An unknown type is a 400 and nothing changes. A disabled type is not created nor sent.",
+        "tags": ["Notifications"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "properties": { "types": { "type": "object", "additionalProperties": { "type": "boolean" } } }, "required": ["types"] }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All the types after the change",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/NotificationPreferences" } } }
+          },
+          "400": { "description": "Unknown type, null value or missing types" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
     "/api/conversations": {
       "get": {
         "summary": "Get one page of the authenticated user's conversations (cursor)",
@@ -1119,6 +1219,11 @@
               "payload": { "type": "object", "properties": { "conversationId": { "type": "string", "format": "uuid" }, "reason": { "type": "string", "enum": ["REMOVED", "LEFT"] } } }
             },
             {
+              "destination": "/user/queue/notifications",
+              "description": "A new notification for the user (T18): same payload as one item of GET /api/notifications. On reconnect, ask again for the counter and the first page (what arrived in between is not replayed).",
+              "payload": { "$ref": "#/components/schemas/Notification" }
+            },
+            {
               "destination": "/user/queue/errors",
               "description": "Errors of the frames this session sent (e.g. writing to a conversation the user does not belong to). Only the sending session receives them.",
               "payload": {
@@ -1237,6 +1342,40 @@
           "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
           "contactUsername": { "type": "string", "example": "runner123" }
         }
+      },
+      "Notification": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "ADDED_TO_GROUP"] },
+          "actor": {
+            "type": "object",
+            "nullable": true,
+            "description": "Who did it; null for system notifications (WAITLIST_PROMOTED)",
+            "properties": { "username": { "type": "string" }, "fullName": { "type": "string", "nullable": true }, "profilePictureUrl": { "type": "string", "nullable": true } }
+          },
+          "target": {
+            "type": "object",
+            "nullable": true,
+            "description": "Where to go: EVENT and CONVERSATION carry the public UUID, COMMUNITY the slug, USER the username",
+            "properties": { "type": { "type": "string", "enum": ["EVENT", "COMMUNITY", "CONVERSATION", "USER"] }, "ref": { "type": "string" } }
+          },
+          "payload": { "type": "object", "additionalProperties": true },
+          "readAt": { "type": "string", "format": "date-time", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "NotificationPage": {
+        "type": "object",
+        "properties": {
+          "items": { "type": "array", "items": { "$ref": "#/components/schemas/Notification" } },
+          "hasMore": { "type": "boolean" },
+          "nextBefore": { "type": "string", "nullable": true, "description": "Opaque token for the next page" }
+        }
+      },
+      "NotificationPreferences": {
+        "type": "object",
+        "properties": { "types": { "type": "object", "additionalProperties": { "type": "boolean" } } }
       },
       "ChatSummary": {
         "type": "object",

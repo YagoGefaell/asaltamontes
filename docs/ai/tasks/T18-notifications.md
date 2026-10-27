@@ -1,6 +1,6 @@
 # T18 — Notificaciones en tiempo real
 
-- **Estado:** pendiente
+- **Estado:** pendiente (T18a backend hecho en su PR; falta T18b frontend, que lo pasa a `hecho`)
 - **Fase:** Transversal
 - **Depende de:** T09, T15, T30a (hecho en la rama `feat/T30a-public-ids`; ids públicos y 404 uniforme)
 - **Rama sugerida:** `feat/T18a-notifications-backend`, `feat/T18b-notifications-frontend`
@@ -88,3 +88,13 @@
 - Mantener `payload` pequeño y sin datos personales extra: solo lo necesario para pintar (título del evento, nombre del grupo); el nombre/foto de la actora salen del `actor` en el momento de leer.
 - Ya hay `Long eventId` en `EventCancelled`/`AttendeePromoted`: el listener resuelve el `public_id` al crear el `target_ref`; no cambiar esos records.
 - Si T12 aterriza antes, `AddedToGroup` se publica desde `addParticipants`; si no, desde `createGroupConversation` y T12 lo reutiliza.
+
+## Notas de implementación de T18a
+- Migración `V12__notifications.sql` (V11 es T13). La retención usa `created_at` para leídas (90 d) y no leídas (180 d), confirmado por Yago.
+- Cursor de `before`: `OpaqueCursor` (tipo `n`), ya existente por T30c; el token solo nombra una notificación suya y la posición sale de su fila.
+- `EventCancelled` ganó `actorId` (quién canceló): sin él no se puede evitar notificar a la organizadora de su propia acción ni avisarla si cancela la moderación.
+- Estados de asistente en el código: `GOING` (en la spec, "CONFIRMED") y `WAITLIST`.
+- Además del dedupe de `NEW_FOLLOWER`, `EVENT_JOINED` no leído de la misma persona al mismo evento también se deduplica (apuntarse/salir/apuntarse).
+- Altas en grupo: `AddedToGroup` se publica también al crear el grupo (`MessageService#createGroupConversation`), no solo desde `addParticipants`.
+- Las escrituras van por JDBC en lotes (el UUID v7 se genera en Java); `Notification` es la entidad de lectura y marcado.
+- Cola de notificaciones acotada (2-4 hilos, cola de 500, descarte con log si se llena).

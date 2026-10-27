@@ -82,6 +82,7 @@ class PublicIdsMigrationIT extends AbstractIntegrationTest {
             }
             try (ResultSet unique = statement.executeQuery("""
                     SELECT count(*) FROM pg_indexes WHERE indexname LIKE 'uk\\_%\\_public\\_id'
+                    AND tablename IN ('communities', 'conversations', 'messages', 'events')
                     """)) {
                 unique.next();
                 assertThat(unique.getInt(1)).isEqualTo(4);

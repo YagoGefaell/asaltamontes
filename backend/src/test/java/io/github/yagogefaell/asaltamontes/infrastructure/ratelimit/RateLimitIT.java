@@ -67,6 +67,19 @@ class RateLimitIT extends AbstractIntegrationTest {
         mockMvc.perform(register().with(from(ip))).andExpect(status().isTooManyRequests());
     }
 
+    @Test
+    void markingNotificationsAsRead_isLimitedPerIp() throws Exception {
+        UserAccount user = testData.createUser();
+        String ip = "10.0.4.1";
+        for (int i = 0; i < 60; i++) {
+            mockMvc.perform(post("/api/notifications/read").contentType(MediaType.APPLICATION_JSON).content("{\"all\":true}")
+                    .with(auth.bearer(user)).with(from(ip))).andExpect(status().isNoContent());
+        }
+
+        mockMvc.perform(post("/api/notifications/read").contentType(MediaType.APPLICATION_JSON).content("{\"all\":true}")
+                .with(auth.bearer(user)).with(from(ip))).andExpect(status().isTooManyRequests());
+    }
+
     private MockHttpServletRequestBuilder login(String username, String password) throws Exception {
         return post("/auth/login").contentType(MediaType.APPLICATION_JSON).content(json(new LoginRequest(username, password)));
     }
