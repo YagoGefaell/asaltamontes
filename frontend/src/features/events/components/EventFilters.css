@@ -1,65 +1,15 @@
-.event-filters {
+.filters-sheet__fields {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-soft);
+  gap: var(--space-3);
 }
 
-.event-filters__chips {
+.filters-sheet__actions {
   display: flex;
   gap: var(--space-2);
-  overflow-x: auto;
-  padding-bottom: var(--space-1);
+  justify-content: space-between;
 }
 
-.event-filters__chip {
-  flex: 0 0 auto;
-  min-height: var(--touch-min);
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-soft);
-  background: var(--background);
-  color: var(--text-color);
-  font-size: var(--text-sm);
-  cursor: pointer;
-}
-
-.event-filters__chip.is-active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--on-primary);
-}
-
-.event-filters__row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
-}
-
-.event-filters__row select,
-.event-filters__row input {
-  min-height: var(--touch-min);
-  min-width: 0;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border-soft);
-  background: var(--background);
-  color: var(--text-color);
-  font-size: var(--text-sm);
-}
-
-.event-filters__row input {
-  grid-column: 1 / -1;
-}
-
-.event-filters__clear {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  color: var(--primary);
-  font-size: var(--text-sm);
-  min-height: var(--touch-min);
-  cursor: pointer;
+.filters-sheet__actions .btn:last-child {
+  flex: 1;
 }

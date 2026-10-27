@@ -61,5 +61,5 @@ export function useEvents(filters, enabled = true) {
     if (enabled) fetchFirst()
   }, [fetchFirst, enabled])
 
-  return { events, loading, loadingMore, hasMore, loadMore, error, refetch: fetchFirst }
+  return { events, setEvents, loading, loadingMore, hasMore, loadMore, error, refetch: fetchFirst }
 }
