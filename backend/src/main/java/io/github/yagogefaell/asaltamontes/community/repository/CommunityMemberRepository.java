@@ -92,6 +92,20 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     """)
     int removeMember(@Param("communityId") Long communityId, @Param("userId") Long userId);
 
+    /** The silence follows user + community, not the membership: it survives leaving and joining again (T20c). */
+    @Modifying
+    @Query(value = "INSERT INTO community_mutes (community_id, user_id) VALUES (:communityId, :userId) ON CONFLICT DO NOTHING",
+           nativeQuery = true)
+    int addMute(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
+    @Modifying
+    @Query(value = "DELETE FROM community_mutes WHERE community_id = :communityId AND user_id = :userId", nativeQuery = true)
+    int removeMute(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
+    @Query(value = "SELECT EXISTS (SELECT 1 FROM community_mutes WHERE community_id = :communityId AND user_id = :userId)",
+           nativeQuery = true)
+    boolean hasMute(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
     @Modifying
     @Query("""
         DELETE FROM CommunityMember cm 

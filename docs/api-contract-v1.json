@@ -883,6 +883,24 @@
         }
       }
     },
+    "/api/conversations/{conversationId}/messages/{messageId}": {
+      "delete": {
+        "summary": "Delete a message of a community chat (T20c)",
+        "description": "Only the owner and the moderators of the community that manages the chat. Any other chat, or a plain member: 403. Not a participant or unknown chat/message: 404. System messages: 409. The message disappears for everybody, the chat list preview is recomputed, the participants receive {conversationId, messageId} on /user/queue/message-deletions and the moderation log records MESSAGE_DELETED.",
+        "tags": ["Messages"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "messageId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }
+        ],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "403": { "description": "Not a moderator of the community, or not a community chat" },
+          "404": { "description": "Chat or message not found" },
+          "409": { "description": "System message" }
+        }
+      }
+    },
     "/api/conversations/{conversationId}/messages": {
       "get": {
         "summary": "Get one page of the conversation history (opaque cursor)",
@@ -1157,7 +1175,7 @@
     "/api/communities/{ref}": {
       "patch": {
         "summary": "Edit a community (T19, D-020)",
-        "description": "ref is the slug or the public id. Absent field = unchanged; explicit null clears an optional one (description, city, province, image). name cannot be null or blank. Owner and moderators edit everything except visibility, which only the owner changes. The slug does not change on rename. Fields: name, description, city, province, visibility (PUBLIC|PRIVATE), chatEnabled (boolean, T20: switches the community chat off or on; history stays readable), coverMediaId / imageUrl (as in POST). Returns the community detail (id, name, slug, description, imageUrl, role, memberCount, visibility, city, province, joinRequested).",
+        "description": "ref is the slug or the public id. Absent field = unchanged; explicit null clears an optional one (description, city, province, image). name cannot be null or blank. Owner and moderators edit everything except visibility, which only the owner changes. The slug does not change on rename. Fields: name, description, city, province, visibility (PUBLIC|PRIVATE), chatEnabled (boolean, T20: switches the community chat off or on; history stays readable; only the owner, a moderator gets 403), coverMediaId / imageUrl (as in POST). Returns the community detail (id, name, slug, description, imageUrl, role, memberCount, visibility, city, province, joinRequested).",
         "tags": [
           "Communities"
         ],
@@ -1326,7 +1344,7 @@
     "/api/communities/{communityId}/members/{username}/mute": {
       "post": {
         "summary": "Mute a member (T19)",
-        "description": "Optional body {reason} (max 300). Muted members stay in the list and in the count; only the staff see status. A moderator cannot act on another moderator (403); nobody on the owner (409) or herself (400).",
+        "description": "Optional body {reason} (max 300). Muted members stay in the list and in the count; only the staff see status. The silence belongs to user + community: a muted member may leave (T20c) and is still muted if she joins again, until someone unmutes her. A moderator cannot act on another moderator (403); nobody on the owner (409) or herself (400).",
         "tags": [
           "Communities"
         ],

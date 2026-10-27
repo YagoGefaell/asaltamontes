@@ -23,6 +23,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("DELETE FROM Message m WHERE m.conversation.id = :conversationId")
     int deleteByConversationId(@Param("conversationId") Long conversationId);
 
+    @Query("SELECT m FROM Message m LEFT JOIN FETCH m.sender WHERE m.publicId = :publicId AND m.conversation.id = :conversationId")
+    Optional<Message> findByPublicIdAndConversationId(@Param("publicId") UUID publicId, @Param("conversationId") Long conversationId);
+
+    Optional<Message> findFirstByConversationIdOrderByIdDesc(Long conversationId);
+
     // A history cursor names a message of the same chat with that exact sent_at (D-021, T30c)
     @Query("""
         SELECT m.id FROM Message m

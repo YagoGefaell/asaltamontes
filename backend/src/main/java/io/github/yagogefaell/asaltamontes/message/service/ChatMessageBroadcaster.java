@@ -6,6 +6,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import io.github.yagogefaell.asaltamontes.message.dto.ConversationRemovedDto;
+import io.github.yagogefaell.asaltamontes.message.dto.MessageDeletedDto;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 
 /**
@@ -29,6 +30,14 @@ public class ChatMessageBroadcaster {
         // WebSocket sessions are identified by user id (WebSocketJwtInterceptor), not by username
         for (Long userId : participantRepository.findUserIdsByConversationPublicId(event.message().conversationId())) {
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/messages", event.message());
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMessageDeleted(MessageDeletedEvent event) {
+        MessageDeletedDto dto = new MessageDeletedDto(event.conversationId(), event.messageId());
+        for (Long userId : participantRepository.findUserIdsByConversationPublicId(event.conversationId())) {
+            messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/message-deletions", dto);
         }
     }
 

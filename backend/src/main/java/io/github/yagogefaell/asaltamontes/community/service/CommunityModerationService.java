@@ -130,6 +130,10 @@ public class CommunityModerationService {
             }
         }
         if (body.has("chatEnabled")) {
+            // Only the owner switches the chat (decision of Yago, 2026-10-29)
+            if (actor.getRole() != CommunityRole.OWNER) {
+                throw new ForbiddenException("Solo la propietaria puede activar o desactivar el chat");
+            }
             // The chat can be switched off (history stays readable) and on again
             if (!body.get("chatEnabled").isBoolean()) {
                 throw new BadRequestException("chatEnabled debe ser verdadero o falso");
@@ -221,9 +225,18 @@ public class CommunityModerationService {
         requireNotBanned(target);
         MemberStatus wanted = muted ? MemberStatus.MUTED : MemberStatus.ACTIVE;
         if (target.getStatus() == wanted) {
+            // Repairs the record of the silence if it was missing
+            if (muted) {
+                memberRepository.addMute(communityId, target.getUserAccount().getId());
+            }
             return;
         }
         target.setStatus(wanted);
+        if (muted) {
+            memberRepository.addMute(communityId, target.getUserAccount().getId());
+        } else {
+            memberRepository.removeMute(communityId, target.getUserAccount().getId());
+        }
         log(communityId, user.getId(), target.getUserAccount().getId(),
                 muted ? ModerationAction.MUTE : ModerationAction.UNMUTE, cleanReason(reason));
     }
@@ -267,7 +280,9 @@ public class CommunityModerationService {
         if (target.getBannedByRole() == CommunityRole.OWNER && acting.actor().getRole() != CommunityRole.OWNER) {
             throw new ForbiddenException("Solo la propietaria puede readmitir a quien ella expulsó");
         }
-        target.setStatus(MemberStatus.ACTIVE);
+        // Readmitted, but a silence she had before still applies
+        target.setStatus(memberRepository.hasMute(communityId, target.getUserAccount().getId())
+                ? MemberStatus.MUTED : MemberStatus.ACTIVE);
         target.setBannedBy(null);
         target.setBannedByRole(null);
         communityRepository.incrementMemberCount(communityId);
@@ -289,6 +304,7 @@ public class CommunityModerationService {
         requireNotBanned(target);
         target.setRole(CommunityRole.OWNER);
         target.setStatus(MemberStatus.ACTIVE);
+        memberRepository.removeMute(communityId, target.getUserAccount().getId());
         acting.actor().setRole(CommunityRole.MODERATOR);
         log(communityId, user.getId(), target.getUserAccount().getId(), ModerationAction.TRANSFER_OWNERSHIP, null);
     }
@@ -316,7 +332,11 @@ public class CommunityModerationService {
         }
         Community community = communityRepository.getReferenceById(communityId);
         if (approve && memberRepository.findByCommunityIdAndUserAccountId(communityId, requester.getId()).isEmpty()) {
-            memberRepository.saveAndFlush(new CommunityMember(community, requester));
+            CommunityMember joined = new CommunityMember(community, requester);
+            if (memberRepository.hasMute(communityId, requester.getId())) {
+                joined.setStatus(MemberStatus.MUTED);
+            }
+            memberRepository.saveAndFlush(joined);
             communityRepository.incrementMemberCount(communityId);
             communityChat.addMember(communityId, requester.getId());
         }

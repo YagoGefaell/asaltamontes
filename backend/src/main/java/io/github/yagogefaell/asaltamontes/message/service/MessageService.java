@@ -3,6 +3,7 @@ package io.github.yagogefaell.asaltamontes.message.service;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
@@ -11,6 +12,7 @@ import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
 import io.github.yagogefaell.asaltamontes.message.domain.ManagedBy;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
+import io.github.yagogefaell.asaltamontes.message.domain.MessageType;
 import io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatPageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
@@ -130,6 +132,34 @@ public class MessageService {
 
         eventPublisher.publishEvent(new MessageSentEvent(dto));
         return dto;
+    }
+
+    /**
+     * A moderator of a community deletes a message of its chat (T20c). Other chats answer 403; a chat the caller is not
+     * in, or a message that is not in it, answer 404. The list preview is recomputed and the participants are told.
+     */
+    @Transactional
+    public void deleteMessage(UUID conversationPublicId, UUID messagePublicId, Long userId) {
+        Long conversationId = participantConversationId(conversationPublicId, userId);
+        Long communityId = communityChat.requireModerator(conversationId, userId);
+        Message message = messageRepository.findByPublicIdAndConversationId(messagePublicId, conversationId)
+                .orElseThrow(() -> new NotFoundException("Mensaje no encontrado"));
+        if (message.getType() != MessageType.USER) {
+            throw new ConflictException("Solo se pueden borrar mensajes de usuarias");
+        }
+        Long authorId = message.getSender() == null ? null : message.getSender().getId();
+        messageRepository.delete(message);
+        messageRepository.flush();
+        Message last = messageRepository.findFirstByConversationIdOrderByIdDesc(conversationId).orElse(null);
+        if (last == null) {
+            conversationRepository.replaceLastMessage(conversationId, null, null, null);
+        } else if (last.getType() == MessageType.USER) {
+            conversationRepository.replaceLastMessage(conversationId, preview(last.getContent()), last.getSentAt(), last.getSender());
+        } else {
+            conversationRepository.replaceLastMessage(conversationId, last.getContent(), last.getSentAt(), null);
+        }
+        communityChat.logMessageDeleted(communityId, userId, authorId);
+        eventPublisher.publishEvent(new MessageDeletedEvent(conversationPublicId, messagePublicId));
     }
 
     /** The text shown in the chat list for the last message. */

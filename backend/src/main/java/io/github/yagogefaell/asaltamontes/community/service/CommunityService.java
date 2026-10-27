@@ -198,6 +198,9 @@ public class CommunityService {
             return JoinResult.REQUESTED;
         }
         CommunityMember communityMember = new CommunityMember(community, currentUser);
+        if (communityMemberRepository.hasMute(communityId, currentUser.getId())) {
+            communityMember.setStatus(MemberStatus.MUTED);
+        }
         communityMemberRepository.saveAndFlush(communityMember);
         communityRepository.incrementMemberCount(communityId);
         communityChat.addMember(communityId, currentUser.getId());
@@ -234,10 +237,7 @@ public class CommunityService {
     @Transactional
     public void leaveCommunity(UUID communityPublicId, UserAccount currentUser) {
         Long communityId = internalId(communityPublicId);
-        // Otherwise leaving and joining again would lift the mute
-        if (communityMemberRepository.findStatus(communityId, currentUser.getId()).filter(s -> s == MemberStatus.MUTED).isPresent()) {
-            throw new ConflictException("No puedes salir de la comunidad mientras estés silenciada");
-        }
+        // A muted member may leave; her silence stays in community_mutes and applies again if she returns (T20c)
         long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {
