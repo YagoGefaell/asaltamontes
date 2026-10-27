@@ -27,4 +27,27 @@ public interface EventRepository extends JpaRepository<Event, Long>, EventSearch
     @Modifying(flushAutomatically = true)
     @Query("UPDATE Event e SET e.attendeeCount = e.attendeeCount + :delta WHERE e.id = :id")
     int addToAttendeeCount(@Param("id") Long id, @Param("delta") int delta);
+
+    @Query("SELECT e.id FROM Event e WHERE e.publicId = :publicId")
+    Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId);
+
+    // What the chat needs to know to decide whether it is still open (T21)
+    @Query("SELECT new io.github.yagogefaell.asaltamontes.event.dto.EventTiming(e.status, e.startsAt, e.endsAt) FROM Event e WHERE e.id = :id")
+    Optional<io.github.yagogefaell.asaltamontes.event.dto.EventTiming> findTiming(@Param("id") Long id);
+
+    // Same rule as EventService.canView, in one query: public events, her own, or a community she belongs to unbanned
+    @Query("""
+        SELECT COUNT(e) > 0 FROM Event e
+        WHERE e.id = :id AND (e.visibility = io.github.yagogefaell.asaltamontes.event.domain.EventVisibility.PUBLIC
+            OR e.organizer.id = :userId
+            OR EXISTS (SELECT 1 FROM CommunityMember m WHERE m.community.id = e.community.id AND m.userAccount.id = :userId
+                       AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED))
+        """)
+    boolean canView(@Param("id") Long id, @Param("userId") Long userId);
+
+    // The start moved: the reminders of the new date are still to be sent (T21). Native: the columns are not mapped,
+    // so saving the entity never touches them and this does not bump @Version.
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE events SET reminder_24h_sent_at = NULL, reminder_2h_sent_at = NULL WHERE id = :id", nativeQuery = true)
+    int resetReminders(@Param("id") Long id);
 }

@@ -30,4 +30,6 @@ public class RateLimitProperties {
     private int followsPerHour = 100;
     /** Per user: messages in community chats, where each one reaches every member (T20). */
     private int communityMessagesPerMinute = 20;
+    /** Per user: messages in event chats, where each one reaches every attendee (T21). */
+    private int eventMessagesPerMinute = 20;
 }

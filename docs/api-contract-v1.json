@@ -737,7 +737,7 @@
     "/api/notifications": {
       "get": {
         "summary": "One page of the caller's notifications (T18)",
-        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Notifications whose actor was blocked by the caller are hidden when reading (list and unread-count) and come back if she unblocks (T18); nothing is deleted. Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor).",
+        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Notifications whose actor was blocked by the caller are hidden when reading (list and unread-count) and come back if she unblocks (T18); nothing is deleted. Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, EVENT_REMINDER (hoursBefore: 24 or 2; to the people going, no actor, created by a job every 5 minutes, once per event and kind; moving the start re-arms them), ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor).",
         "tags": ["Notifications"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -1808,6 +1808,32 @@
         }
       }
     },
+    "/api/events/{eventId}.ics": {
+      "get": {
+        "summary": "Calendar file (iCalendar) of the event, for 'Add to calendar' (T21)",
+        "description": "text/calendar with Content-Disposition attachment (quedada.ics). One VEVENT: UID <publicId>@asaltamontes, DTSTART/DTEND in UTC (the calendar app shows them in the person's zone), SUMMARY, DESCRIPTION, LOCATION, GEO, STATUS (CANCELLED once cancelled) and SEQUENCE (grows with each edit, so a calendar replaces the old copy). User text is escaped and lines are folded at 75 bytes. Needs the bearer token, so the client downloads it with fetch and saves the blob. Same visibility as the event: not visible or unknown, 404.",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
+        "responses": {
+          "200": { "description": "The iCalendar file", "content": { "text/calendar": { "schema": { "type": "string" } } } },
+          "404": { "description": "Not found, or not visible to the user" }
+        }
+      }
+    },
+    "/api/events/{eventId}/chat": {
+      "get": {
+        "summary": "Chat of an event for the people going to it (T21)",
+        "description": "The group chat (managed_by EVENT) of the quedada. Its participants are the GOING attendees: joining, leaving and being promoted from the waitlist add and remove her, with no manual management (adding, expelling, renaming and leaving through /api/conversations answer 403/409). Created with the event. conversationId is the public id of the conversation, usable with /api/conversations/{id}/messages, the WebSocket and /api/conversations/{id}. Whoever enters reads the whole history. The waitlist, strangers and unknown events get the same 404. A member who leaves the event receives {conversationId, reason: LEFT} on /user/queue/conversations. The chat is read only (canWrite false; writing answers 409) when the event is cancelled (readOnlyReason CANCELLED) and from 7 days after it ended (ARCHIVED); the history stays readable. Cancelling or changing the time or place leaves a SYSTEM message with systemPayload {action: EVENT_CANCELLED, reason} or {action: EVENT_UPDATED, changed: [startsAt | timezone | city | meetingPoint], startsAt (UTC instant), timeZone}. Writing is limited per user (asaltamontes.rate-limit.event-messages-per-minute, default 20): an error frame over WebSocket.",
+        "tags": ["Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "eventId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" }, "description": "Public id (UUID v7) of the event. Not a UUID: 400; unknown or not visible: 404" }],
+        "responses": {
+          "200": { "description": "{ conversationId (uuid), canWrite (boolean), readOnlyReason (null | CANCELLED | ARCHIVED) }" },
+          "404": { "description": "Event not found, or she is not going" }
+        }
+      }
+    },
     "/api/events/{eventId}": {
       "get": {
         "summary": "Event detail with myStatus (GOING, WAITLIST, CANCELLED or null) and canEdit",
@@ -2049,11 +2075,11 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "ADDED_TO_GROUP", "COMMUNITY_JOIN_REQUEST", "COMMUNITY_JOIN_APPROVED", "COMMUNITY_JOIN_REJECTED"] },
+          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "EVENT_REMINDER", "ADDED_TO_GROUP", "COMMUNITY_JOIN_REQUEST", "COMMUNITY_JOIN_APPROVED", "COMMUNITY_JOIN_REJECTED"] },
           "actor": {
             "type": "object",
             "nullable": true,
-            "description": "Who did it; null for system notifications (WAITLIST_PROMOTED)",
+            "description": "Who did it; null for system notifications (WAITLIST_PROMOTED, EVENT_REMINDER)",
             "properties": { "username": { "type": "string" }, "fullName": { "type": "string", "nullable": true }, "profilePictureUrl": { "type": "string", "nullable": true } }
           },
           "target": {

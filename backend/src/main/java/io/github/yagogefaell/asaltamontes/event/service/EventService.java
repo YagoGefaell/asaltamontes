@@ -44,6 +44,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import jakarta.persistence.EntityManager;
 import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
+import io.github.yagogefaell.asaltamontes.message.service.EventChatService;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -52,7 +53,7 @@ public class EventService {
 
     private static final List<String> REQUIRED_FIELDS = List.of("title", "type", "startsAt", "timezone");
     // Without an end time, an event counts as finished this long after it starts
-    static final Duration DEFAULT_DURATION = Duration.ofHours(12);
+    public static final Duration DEFAULT_DURATION = Duration.ofHours(12);
     private static final int MAX_PAGE = 50;
 
     private final EventRepository eventRepository;
@@ -63,6 +64,7 @@ public class EventService {
     private final ApplicationEventPublisher eventPublisher;
     private final EntityManager entityManager;
     private final UserActionLimiter limiter;
+    private final EventChatService eventChat;
 
     /** Creates the event; the organizer is its first attendee (GOING). */
     @Transactional
@@ -109,6 +111,7 @@ public class EventService {
         event = eventRepository.save(event);
 
         attendeeRepository.save(new EventAttendee(event, event.getOrganizer(), AttendeeStatus.GOING));
+        eventChat.ensureChat(event.getId());
         return toDetails(event, organizer, AttendeeStatus.GOING);
     }
 
@@ -117,6 +120,12 @@ public class EventService {
     public EventDetailsDto get(UUID eventPublicId, UserAccount user) {
         Event event = findVisible(eventPublicId, user);
         return toDetails(event, user, attendeeRepository.findStatus(event.getId(), user.getId()).orElse(null));
+    }
+
+    /** The event as an iCalendar file (T21); 404 also when the user may not see it, as in {@link #get}. */
+    @Transactional(readOnly = true)
+    public String calendar(UUID eventPublicId, UserAccount user) {
+        return EventCalendar.ics(findVisible(eventPublicId, user), Instant.now());
     }
 
     @Transactional(readOnly = true)
@@ -215,6 +224,14 @@ public class EventService {
         eventRepository.saveAndFlush(event);
         if (!changedFields.isEmpty()) {
             eventPublisher.publishEvent(new EventUpdated(eventId, user.getId(), changedFields));
+            eventChat.eventUpdated(event, user.getId(), changedFields);
+        }
+        if (changedFields.contains("startsAt")) {
+            // The reminders of the new date are still to be sent
+            eventRepository.resetReminders(eventId);
+        }
+        if (changes.has("title")) {
+            eventChat.syncProfile(event);
         }
         // More places, or no limit any more: the waitlist moves up
         if (capacityChanges && previousCapacity != null
@@ -261,6 +278,7 @@ public class EventService {
             event.setCancelReason(reason == null || reason.isBlank() ? null : reason.strip());
             eventRepository.saveAndFlush(event);
             eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason(), user.getId()));
+            eventChat.eventCancelled(event, user.getId());
         }
         return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
     }
@@ -294,6 +312,9 @@ public class EventService {
         }
         attendeeRepository.saveAndFlush(attendee);
         eventPublisher.publishEvent(new EventAttendeeJoined(eventId, user.getId(), attendee.getStatus() == AttendeeStatus.WAITLIST));
+        if (attendee.getStatus() == AttendeeStatus.GOING) {
+            eventChat.addAttendee(eventId, user.getId());
+        }
 
         entityManager.refresh(event);
         return toDetails(event, user, attendee.getStatus());
@@ -329,6 +350,7 @@ public class EventService {
             attendeeRepository.shiftWaitlistAfter(eventId, position);
         } else {
             eventRepository.addToAttendeeCount(eventId, -1);
+            eventChat.removeAttendee(eventId, user.getId(), "LEFT");
             entityManager.refresh(event);
             if (event.getStatus() == EventStatus.SCHEDULED) {
                 promoteFromWaitlist(event);
@@ -363,6 +385,7 @@ public class EventService {
             eventRepository.addToAttendeeCount(event.getId(), 1);
             entityManager.refresh(event);
             eventPublisher.publishEvent(new AttendeePromoted(event.getId(), promoted.getUser().getId()));
+            eventChat.addAttendee(event.getId(), promoted.getUser().getId());
         }
     }
 

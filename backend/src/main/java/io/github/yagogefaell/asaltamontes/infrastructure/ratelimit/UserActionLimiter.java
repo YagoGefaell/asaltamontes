@@ -39,6 +39,10 @@ public class UserActionLimiter {
         check("community-message", userId, properties.getCommunityMessagesPerMinute(), MINUTE);
     }
 
+    public void eventMessage(Long userId) {
+        check("event-message", userId, properties.getEventMessagesPerMinute(), MINUTE);
+    }
+
     private void check(String action, Long userId, int limit, Duration period) {
         if (!properties.isEnabled()) {
             return;
