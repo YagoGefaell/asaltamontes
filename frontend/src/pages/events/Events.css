@@ -54,3 +54,14 @@
   border-color: var(--primary);
   color: var(--on-primary);
 }
+
+.events-search-link {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  color: var(--text-color);
+  border-radius: var(--radius-pill);
+}

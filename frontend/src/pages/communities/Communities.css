@@ -385,3 +385,13 @@
 .communities-empty {
   grid-column: 1 / -1;
 }
+
+.communities-search-link {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-color);
+  border-radius: var(--radius-pill);
+}

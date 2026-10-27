@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { FaSearch } from 'react-icons/fa'
 import { useEvents } from '../../features/events/hooks/useEvents.js'
 import EventCard from '../../features/events/components/EventCard.jsx'
 import EventsMapSection from '../../features/events/components/EventsMapSection.jsx'
@@ -51,6 +52,9 @@ export default function Events() {
     <div className="events-page">
       <header className="events-header">
         <h2>Quedadas</h2>
+        <Link to="/search?tab=events" className="events-search-link" aria-label="Buscar quedadas">
+          <FaSearch aria-hidden="true" />
+        </Link>
         <Button size="small" onClick={() => navigate('/events/new')}>Crear quedada</Button>
       </header>
 

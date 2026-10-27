@@ -1,6 +1,7 @@
 import "./Communities.css";
 import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { FaSearch } from "react-icons/fa";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
 import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
@@ -18,27 +19,23 @@ const SKELETON_CARDS = 6;
 
 const Communities = () => {
   const toast = useToast();
-  const [searchText, setSearchText] = useState("");
-  const [query, setQuery] = useState("");
   const [cityText, setCityText] = useState("");
   const [provinceText, setProvinceText] = useState("");
   const [place, setPlace] = useState({ city: "", province: "" });
-  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities(query, place);
+  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities("", place);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
 
   // Search when the user stops typing
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      setQuery(searchText.trim());
       setPlace({ city: cityText.trim(), province: provinceText.trim() });
     }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeoutId);
-  }, [searchText, cityText, provinceText]);
+  }, [cityText, provinceText]);
 
-  const filtered = Boolean(query || place.city || place.province);
+  const filtered = Boolean(place.city || place.province);
   const clearFilters = () => {
-    setSearchText("");
     setCityText("");
     setProvinceText("");
   };
@@ -101,6 +98,9 @@ const Communities = () => {
       <div className="communities-header">
         <h2>Comunidades</h2>
         <div className="communities-header-actions">
+          <Link to="/search?tab=communities" className="communities-search-link" aria-label="Buscar comunidades">
+            <FaSearch aria-hidden="true" />
+          </Link>
           <Button
             variant="secondary"
             className="create-community-btn"
@@ -117,14 +117,6 @@ const Communities = () => {
       </div>
 
       <div className="communities-search">
-        <input
-          type="search"
-          className="communities-search-input"
-          placeholder="Buscar comunidades"
-          aria-label="Buscar comunidades"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
         <input
           type="search"
           className="communities-search-input"
