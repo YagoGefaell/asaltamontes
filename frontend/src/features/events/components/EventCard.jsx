@@ -61,7 +61,7 @@ export default function EventCard({ event, onChange }) {
           {preview.length > 0 && (
             <span className="event-card__avatars" aria-hidden="true">
               {preview.map((p) => (
-                <Avatar key={p.username} src={p.pictureUrl} name={p.fullName || p.username} size="sm" className="event-card__avatar" />
+                <Avatar key={p.username} src={p.avatar?.thumb} name={p.fullName || p.username} size="sm" className="event-card__avatar" />
               ))}
             </span>
           )}

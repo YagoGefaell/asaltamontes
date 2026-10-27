@@ -136,9 +136,8 @@ const Search = () => {
     query,
     wantsCommunities,
   );
-  // The events API has no free-text search yet: the text is matched against the city (see T29 notes)
   const events = useSearchSection(
-    (page) => getEventsRequest({ page, city: query, from: new Date().toISOString(), size: searching ? 20 : SUGGESTIONS }),
+    (page) => getEventsRequest({ page, q: query, from: new Date().toISOString(), size: searching ? 20 : SUGGESTIONS }),
     query,
     wantsEvents,
   );
@@ -296,13 +295,10 @@ const Search = () => {
                 {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
               />
             )}
-            {tab === "events" && !events.loading && !events.error && events.items.length > 0 && (
-              <p className="search-hint">Las quedadas se buscan por ciudad.</p>
-            )}
             {nothingFound && (
               <EmptyState
                 title={`No hay resultados para «${query}»`}
-                description={tab === "events" ? "Prueba con el nombre de otra ciudad." : "Prueba con otro nombre."}
+                description={tab === "events" ? "Prueba con otro título, ciudad o lugar." : "Prueba con otro nombre."}
                 action={<Button variant="outline" onClick={() => setText("")}>Borrar búsqueda</Button>}
               />
             )}

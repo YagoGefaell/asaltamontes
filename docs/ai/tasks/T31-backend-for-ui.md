@@ -1,6 +1,6 @@
 # T31 — Soporte de backend para la UI
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** Transversal (UI)
 - **Depende de:** T15 (eventos), T29d/T29e (mergeadas)
 - **Rama sugerida:** `feat/T31-backend-for-ui`

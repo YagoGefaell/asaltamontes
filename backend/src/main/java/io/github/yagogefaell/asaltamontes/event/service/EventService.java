@@ -55,6 +55,8 @@ public class EventService {
     // Without an end time, an event counts as finished this long after it starts
     public static final Duration DEFAULT_DURATION = Duration.ofHours(12);
     private static final int MAX_PAGE = 50;
+    private static final int Q_MIN = 2;
+    private static final int Q_MAX = 80;
 
     private final EventRepository eventRepository;
     private final EventAttendeeRepository attendeeRepository;
@@ -143,11 +145,14 @@ public class EventService {
                 .orElseThrow(() -> new NotFoundException("Comunidad no encontrada")).id();
         EventFilter inCommunity = new EventFilter(filter.from(), filter.to(), filter.type(), filter.level(), communityId,
                 filter.city(), filter.minDistance(), filter.maxDistance(), filter.minLat(), filter.maxLat(),
-                filter.minLng(), filter.maxLng(), filter.organizerMe(), filter.attendingMe());
+                filter.minLng(), filter.maxLng(), filter.organizerMe(), filter.attendingMe(), filter.q());
         return search(user, inCommunity, pageable);
     }
 
     private void validate(EventFilter f) {
+        if (f.q() != null && (f.q().length() < Q_MIN || f.q().length() > Q_MAX)) {
+            throw new BadRequestException("El texto de búsqueda debe tener entre " + Q_MIN + " y " + Q_MAX + " caracteres");
+        }
         if (f.from() != null && f.to() != null && f.to().isBefore(f.from())) {
             throw new BadRequestException("'to' no puede ser anterior a 'from'");
         }

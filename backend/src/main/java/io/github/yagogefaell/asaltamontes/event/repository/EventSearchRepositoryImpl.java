@@ -3,6 +3,10 @@ package io.github.yagogefaell.asaltamontes.event.repository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +19,7 @@ import io.github.yagogefaell.asaltamontes.event.domain.Event;
 import io.github.yagogefaell.asaltamontes.event.domain.EventAttendee;
 import io.github.yagogefaell.asaltamontes.event.domain.EventStatus;
 import io.github.yagogefaell.asaltamontes.event.domain.EventVisibility;
+import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeePreviewDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventFilter;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
 import jakarta.persistence.EntityManager;
@@ -22,6 +27,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -56,7 +62,7 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
         TypedQuery<EventSummaryDto> typed = entityManager.createQuery(query)
                 .setFirstResult((int) pageable.getOffset())
                 .setMaxResults(pageable.getPageSize());
-        List<EventSummaryDto> content = typed.getResultList();
+        List<EventSummaryDto> content = withAttendeePreviews(typed.getResultList(), userId);
 
         return PageableExecutionUtils.getPage(content, pageable, () -> {
             CriteriaQuery<Long> count = cb.createQuery(Long.class);
@@ -66,6 +72,67 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
             count.where(predicates(cb, count, ce, cc, userId, from, filter).toArray(Predicate[]::new));
             return entityManager.createQuery(count).getSingleResult();
         });
+    }
+
+    private static final String ACCENTED = "áàäâãåéèëêíìïîóòöôõúùüûñç";
+    private static final String PLAIN = "aaaaaaeeeeiiiiooooouuuunc";
+
+    // lower + translate stands in for unaccent, which would need an extension in the database
+    private static Expression<String> folded(CriteriaBuilder cb, Expression<String> text) {
+        return cb.function("translate", String.class, cb.lower(text), cb.literal(ACCENTED), cb.literal(PLAIN));
+    }
+
+    /** Same folding as {@link #folded} for the text typed by her. */
+    static String fold(String text) {
+        String lower = text.toLowerCase(Locale.ROOT);
+        StringBuilder out = new StringBuilder(lower.length());
+        for (char c : lower.toCharArray()) {
+            int i = ACCENTED.indexOf(c);
+            out.append(i >= 0 ? PLAIN.charAt(i) : c);
+        }
+        return out.toString();
+    }
+
+    /**
+     * Up to 3 people going per event of the page, in ONE extra query whatever the page size (no N+1). Blocked
+     * users in either direction are left out (D-022).
+     */
+    @SuppressWarnings("unchecked")
+    private List<EventSummaryDto> withAttendeePreviews(List<EventSummaryDto> page, Long userId) {
+        if (page.isEmpty()) {
+            return page;
+        }
+        List<Object[]> rows = entityManager.createNativeQuery("""
+                SELECT t.event_public_id, t.username, t.full_name, t.profile_picture_url, t.avatar_media_id
+                FROM (
+                    SELECT e.public_id AS event_public_id, u.username, p.full_name, p.profile_picture_url,
+                           p.avatar_media_id,
+                           row_number() OVER (PARTITION BY a.event_id ORDER BY a.joined_at, a.id) AS rn
+                    FROM event_attendees a
+                    JOIN events e ON e.id = a.event_id
+                    JOIN users u ON u.id = a.user_id
+                    LEFT JOIN user_profiles p ON p.user_id = u.id
+                    WHERE e.public_id IN (:ids) AND a.status = 'GOING'
+                      AND (u.id = :me OR NOT EXISTS (
+                          SELECT 1 FROM user_blocks bl
+                          WHERE (bl.blocker_id = :me AND bl.blocked_id = u.id)
+                             OR (bl.blocked_id = :me AND bl.blocker_id = u.id)))
+                ) t
+                WHERE t.rn <= 3
+                ORDER BY t.event_public_id, t.rn
+                """)
+                .setParameter("ids", page.stream().map(EventSummaryDto::id).toList())
+                .setParameter("me", userId)
+                .getResultList();
+        Map<UUID, List<EventAttendeePreviewDto>> byEvent = new LinkedHashMap<>();
+        for (Object[] r : rows) {
+            String picture = (String) r[3];
+            String thumb = picture == null || picture.isBlank() ? null
+                    : r[4] != null ? picture.replaceFirst("/medium\\.jpg$", "/thumb.jpg") : picture;
+            byEvent.computeIfAbsent((UUID) r[0], k -> new ArrayList<>()).add(new EventAttendeePreviewDto(
+                    (String) r[1], (String) r[2], thumb == null ? null : new EventAttendeePreviewDto.Avatar(thumb)));
+        }
+        return page.stream().map(s -> s.withAttendeePreview(byEvent.getOrDefault(s.id(), List.of()))).toList();
     }
 
     private List<Predicate> predicates(CriteriaBuilder cb, CriteriaQuery<?> query, Root<Event> e,
@@ -100,6 +167,14 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
         }
         if (f.city() != null && !f.city().isBlank()) {
             where.add(cb.equal(cb.lower(e.get("city")), f.city().strip().toLowerCase()));
+        }
+        if (f.q() != null) {
+            // Case and accent insensitive, % and _ typed by her are searched literally
+            String pattern = "%" + fold(f.q()).replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+            where.add(cb.or(
+                    cb.like(folded(cb, e.get("title")), pattern, '\\'),
+                    cb.like(folded(cb, e.get("city")), pattern, '\\'),
+                    cb.like(folded(cb, e.get("meetingPointName")), pattern, '\\')));
         }
         if (f.minDistance() != null) {
             where.add(cb.greaterThanOrEqualTo(e.get("distanceKm"), f.minDistance()));
