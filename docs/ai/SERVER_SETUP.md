@@ -26,7 +26,10 @@ node -v   # debe ser v24.x
 groups | grep -q docker || { sudo usermod -aG docker $USER; echo "cierra sesión y vuelve a entrar"; }
 # Claude Code
 curl -fsSL https://claude.ai/install.sh | bash
+# Capturas de /ui-review (Playwright + Chromium, una vez; desde un checkout con `npm ci` hecho en frontend/)
+cd ~/work/asaltamontes/frontend && npx playwright install chromium && sudo npx playwright install-deps chromium
 ```
+- Plugin de diseño recomendado para las sesiones de UI: dentro de Claude Code, `/plugin` → marketplace oficial de Anthropic → **`frontend-design`** (instalación de usuario). Complementa a `docs/ai/DESIGN.md`, que manda en caso de conflicto.
 
 ## 2. GitHub CLI (`gh`): igual en el portátil y en el servidor
 ```bash

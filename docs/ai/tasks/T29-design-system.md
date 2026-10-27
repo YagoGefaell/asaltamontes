@@ -1,6 +1,6 @@
 # T29 — Sistema de diseño y pulido de la interfaz
 
-- **Estado:** pendiente (T29a hecha; T29b-chat hecha; faltan Comunidades, Perfil, Ajustes y Acceso)
+- **Estado:** pendiente (T29a y T29b-chat hechas; siguen T29c–T29h, ver abajo)
 - **Fase:** Transversal (UI)
 - **Depende de:** T01 (tests de frontend)
 - **Rama sugerida:** `refactor/T29a-design-tokens`, `feat/T29b-ui-polish-<pantalla>`…
@@ -29,13 +29,28 @@
 - [x] Modo oscuro sin textos ilegibles en las pantallas existentes (por tokens; **sin verificar en navegador**, lo revisa Yago).
 - [x] Componentes base con tests y usados al menos en una pantalla cada uno.
 
+## Segunda ronda (2026-10-27, revisión de Yago)
+
+Yago revisó la interfaz y pide un estilo **tipo Instagram** con las quedadas como lo distintivo. Problemas que señala: filtros con muchas opciones que ocupan media pantalla, un buscador por pantalla en vez de uno único, y formularios que no se parecen entre sí. La guía completa está en [`docs/ai/DESIGN.md`](../DESIGN.md) y toda PR de UI pasa por `/ui-review` (capturas a 390/360 px, claro y oscuro, antes/después en la PR).
+
+Orden recomendado (una PR por punto, `feat(ui)` / `refactor(front)`, sin cambios de API salvo que se diga):
+
+| Sub-PR | Qué | Notas |
+|---|---|---|
+| **T29c — componentes de navegación** | `shared/ui`: `PageHeader` (título + acciones, atrás), `Tabs`, `Chip`/`ChipRow` deslizable, `BottomSheet` (foco atrapado, `Esc`, arrastre opcional), `Fab`. Con tests | Base del resto. Sustituye `window.confirm()` por `Modal` en `SettingsMenu`, `PrivacySettings` y `Profile` |
+| **T29d — buscador único** | `/search` con pestañas Todo · Personas · Comunidades · Quedadas (DESIGN §4 "Buscar"). Sin texto: recientes (en `localStorage`) y sugerencias. Comunidades y Quedadas pierden sus buscadores propios (lupa → `/search?tab=…`) | Usa los endpoints actuales (`getAllUsersRequest`, `getCommunitiesRequest`, listado de eventos con texto si existe; si no, solo Personas + Comunidades y anotar la necesidad de backend) |
+| **T29e — filtros de quedadas y comunidades** | Una fila de chips (Próximas/Hoy/Este finde/Mis quedadas…) + chip "Filtros · n" que abre `BottomSheet` con tipo, nivel y ciudad. Lista/Mapa como icono en la cabecera; "Crear quedada" como `+`/`Fab`. Comunidades: ciudad y provincia en la hoja; tarjetas en filas compactas | Criterio: primer resultado visible por encima de ~20 % de la pantalla a 390×844 |
+| **T29f — formularios unificados** | `CommunityCreatorPanel`, `CommunityEditForm` y formularios de moderación pasan a `Input`/`Button`/`SectionCard`, con el patrón de `EditProfile`. `EventForm`: una columna (máx. 2 campos cortos por fila), opcionales en "Más opciones". Botones sin mayúsculas ("Guardar cambios") | Sin cambios de comportamiento: los tests existentes deben seguir pasando |
+| **T29g — navegación de 5 pestañas** | Barra inferior: Inicio · Buscar · Quedadas · Comunidades · Perfil. Notificaciones y Mensajes como iconos con contador en la cabecera de Inicio | ⚠️ Cambio de estructura: **proponer en la PR con capturas y esperar el OK de Yago** |
+| **T29h — perfil e inicio** | Perfil tipo Instagram (avatar a la izquierda, contadores, bio, pestañas Quedadas · Comunidades), sin texto de relleno. Inicio: quitar las publicaciones e historias de mentira; mientras no haya publicaciones (fuera de alcance), mostrar próximas quedadas de mis comunidades y de quien sigo | El contenido real del feed depende de backend: si no hay endpoint, usar los listados existentes y anotarlo |
+
 ## Objetivo
 Yago da libertad para mejorar la interfaz (D-015). Antes de construir muchas pantallas nuevas (eventos, notificaciones, moderación), conviene tener una base visual coherente para que todo parezca la misma app.
 
 ## Enfoque
 - **T29a**: auditoría de `src/styles/global.css` y los CSS por componente → tokens en variables CSS (colores, tipografía, espaciado, radios, sombras), modo claro y oscuro si encaja, sin cambiar la identidad (logo y nombre). Componentes base en `src/shared/` (Button, Input, Card, Avatar, Modal, Toast, EmptyState, Skeleton) reutilizando los existentes.
 - **T29b…n**: una PR por pantalla aplicando la base y mejorando la UX (estados vacíos, cargando y error, feedback de acciones, accesibilidad: contraste, foco y tamaños táctiles). Orden sugerido: Chat → Comunidades → Perfil → Ajustes → Acceso.
-- Antes de cada PR visual: capturas antes/después en móvil (360 px) y escritorio, incluidas en la descripción.
+- Antes de cada PR visual: `/ui-review` (capturas antes/después a 390 y 360 px, claro y oscuro, publicadas en la PR).
 - Encaje en el roadmap: **T29a antes de T16** (frontend de eventos), para que las pantallas nuevas nazcan con la base. Las PRs T29b+ se intercalan cuando el límite WIP impide abrir PRs de backend, o después de cada fase.
 
 ## Notas de implementación de T29a
