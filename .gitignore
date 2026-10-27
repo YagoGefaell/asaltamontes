@@ -63,3 +63,6 @@ dist-ssr
 # Estado local de trabajo de Claude (ver CLAUDE.md)
 .ai/
 .claude/settings.local.json
+
+# Capturas de /ui-review (scripts/ui-shots.mjs)
+frontend/ui-shots/
