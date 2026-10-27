@@ -26,6 +26,7 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
         FROM CommunityMember m 
         JOIN m.community c
         WHERE m.userAccount.id = :userId
+          AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
     """)
     Page<CommunitySearchDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);
 
@@ -35,6 +36,16 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     """)
     Optional<MemberStatus> findStatus(@Param("communityId") Long communityId, @Param("userId") Long userId);
 
+    /** Whether the user is the owner or a moderator of the community (and not banned). */
+    @Query("""
+        SELECT COUNT(m) > 0 FROM CommunityMember m
+        WHERE m.community.id = :communityId AND m.userAccount.id = :userId
+          AND m.role IN (io.github.yagogefaell.asaltamontes.community.domain.CommunityRole.OWNER,
+                         io.github.yagogefaell.asaltamontes.community.domain.CommunityRole.MODERATOR)
+          AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+    """)
+    boolean isModerator(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
     Optional<CommunityMember> findByCommunityIdAndUserAccountId(Long communityId, Long userId);
 
     @Modifying
@@ -42,6 +53,7 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
         DELETE FROM CommunityMember cm 
         WHERE cm.community.id = :communityId 
           AND cm.userAccount.id = :userId
+          AND cm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
     """)
     int removeMember(@Param("communityId") Long communityId, @Param("userId") Long userId);
 

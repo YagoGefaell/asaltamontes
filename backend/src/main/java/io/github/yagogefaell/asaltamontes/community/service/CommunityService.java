@@ -123,7 +123,11 @@ public class CommunityService {
                 .filter(id -> communityMemberRepository.findStatus(id, currentUser.getId())
                         .filter(status -> status != MemberStatus.BANNED).isPresent())
                 .orElseThrow(() -> new NotFoundException("Comunidad no encontrada"));
-        return communityRepository.findMembersExcept(communityId, currentUser.getId(), MEMBER_SORT.apply(pageable));
+        Page<CommunityMemberDto> members = communityRepository.findMembersExcept(communityId, currentUser.getId(), MEMBER_SORT.apply(pageable));
+        // Banned members are not listed; the muted mark is only for the moderation (BUG-067)
+        return communityMemberRepository.isModerator(communityId, currentUser.getId())
+                ? members
+                : members.map(CommunityMemberDto::withoutStatus);
     }
 
     /** Whether the user created the community; 404 if it does not exist (BUG-014). */
@@ -140,6 +144,7 @@ public class CommunityService {
         Long communityId = internalId(communityPublicId);
         communityMemberRepository.findStatus(communityId, currentUser.getId()).ifPresent(status -> {
             if (status == MemberStatus.BANNED) {
+                // The message is neutral, but the 403 (vs 201/409) does tell her she is banned; accepted by Yago (BUG-067)
                 throw new ForbiddenException("No puedes unirte a esta comunidad");
             }
             throw new ConflictException("Ya eres miembro de esta comunidad");

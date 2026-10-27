@@ -386,8 +386,8 @@
             "name": "size",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "default": 20 },
-            "description": "Page size"
+            "schema": { "type": "integer", "default": 20, "maximum": 50 },
+            "description": "Page size (max 50; larger values are capped)"
           },
           {
             "name": "sort",
@@ -551,8 +551,8 @@
             "name": "size",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "default": 20 },
-            "description": "Page size"
+            "schema": { "type": "integer", "default": 20, "maximum": 50 },
+            "description": "Page size (max 50; larger values are capped)"
           }
         ],
         "responses": {
@@ -607,8 +607,8 @@
             "name": "size",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "default": 20 },
-            "description": "Page size"
+            "schema": { "type": "integer", "default": 20, "maximum": 50 },
+            "description": "Page size (max 50; larger values are capped)"
           }
         ],
         "responses": {
@@ -705,8 +705,8 @@
             "name": "limit",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "default": 30, "minimum": 1, "maximum": 100 },
-            "description": "Page size (values above 100 are capped)"
+            "schema": { "type": "integer", "default": 30, "minimum": 1, "maximum": 50 },
+            "description": "Page size (values above 50 are capped)"
           }
         ],
         "responses": {
@@ -768,8 +768,8 @@
             "name": "limit",
             "in": "query",
             "required": false,
-            "schema": { "type": "integer", "default": 30, "minimum": 1, "maximum": 100 },
-            "description": "Page size (values above 100 are capped)"
+            "schema": { "type": "integer", "default": 30, "minimum": 1, "maximum": 50 },
+            "description": "Page size (values above 50 are capped)"
           }
         ],
         "responses": {

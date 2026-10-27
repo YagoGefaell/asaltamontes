@@ -19,6 +19,7 @@ Que cada comunidad (grupo local de trail) pueda gestionarse sola: editar datos, 
 - **Paginación**: todos los listados paginados de esta tarea (miembros, expulsadas, solicitudes, registro de moderación) tienen `size` máximo 50.
 - Encaja con BUG-066 (la lista de miembros exige ser miembro no baneada): la baneada recibe la misma respuesta que una no miembro.
 - Tests añadidos: baneada ausente de la lista y del recuento, `GET .../banned` solo para moderación (404 al resto), readmitir (vuelve a la lista y al recuento, queda en el registro), baneada no puede unirse y ve la comunidad como no miembro, silenciada visible en la lista y `status` solo para moderación, `size > 50` se recorta.
+- Requisitos que salieron de la revisión de seguridad de BUG-067: expulsar debe decrementar `memberCount` y readmitir incrementarlo en la misma transacción (con test); no se puede expulsar a la propietaria; tests de moderadora (ve `status`) y de moderadora baneada (404 en `members`).
 
 ## Enfoque
 - **Identificadores (D-021, T30a):** el `slug` sirve para URLs legibles y compartibles (`GET /api/communities/{slug}`, rutas del front) y **puede cambiar** si se renombra la comunidad; las acciones de la API (`join`, `leave`, `members`, moderación, `DELETE`) usan el `public_id` UUID de la comunidad, que no cambia. `PATCH` por `{slug}` o por UUID; los enlaces antiguos por slug no se garantizan tras un renombrado salvo que se guarde el histórico de slugs.

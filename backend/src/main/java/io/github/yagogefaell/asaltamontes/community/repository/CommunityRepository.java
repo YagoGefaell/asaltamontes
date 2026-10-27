@@ -30,6 +30,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             u.profile.fullName, 
             u.profile.profilePictureUrl, 
             cm.role,
+            cm.status,
             (CASE WHEN f.id IS NOT NULL THEN true ELSE false END)
         )
         FROM CommunityMember cm 
@@ -37,6 +38,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
         LEFT JOIN UserFollow f ON f.following = u AND f.follower.id = :currentUserId
         WHERE cm.community.id = :communityId 
           AND u.id <> :currentUserId
+          AND cm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
     """)
     Page<CommunityMemberDto> findMembersExcept(@Param("communityId") Long communityId, @Param("currentUserId") Long currentUserId, Pageable pageable);
     @Query("""
@@ -49,7 +51,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             c.memberCount
         ) 
         FROM Community c
-        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :user
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :user AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
     """)
     Page<CommunitySearchDto> findAllCommunities(@Param("user") Long user, Pageable pageable);
 
@@ -64,7 +66,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             c.memberCount
         )
         FROM Community c
-        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :user
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :user AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
         WHERE LOWER(c.name) LIKE :pattern ESCAPE '\\'
     """)
     Page<CommunitySearchDto> searchCommunities(@Param("user") Long user, @Param("pattern") String pattern, Pageable pageable);
@@ -84,7 +86,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             c.memberCount
         ) 
         FROM Community c
-        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
         WHERE c.slug = :slug
     """)
     Optional<CommunityDetailsDto> findCommunityBySlug(@Param("slug") String slug, @Param("userId") Long userId);
@@ -101,7 +103,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
             c.memberCount
         ) 
         FROM Community c
-        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId
+        LEFT JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
         WHERE LOWER(c.name) = LOWER(:name)
     """)
     Optional<CommunityDetailsDto> findCommunityByName(@Param("name") String name, @Param("userId") Long userId);
@@ -125,6 +127,7 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
         SET c.memberCount = (
             SELECT COUNT(m) FROM CommunityMember m
             WHERE m.community = c
+              AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
         )
         WHERE c.id IN :ids
     """)
