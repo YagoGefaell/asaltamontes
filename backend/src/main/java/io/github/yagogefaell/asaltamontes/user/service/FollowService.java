@@ -63,10 +63,12 @@ public class FollowService {
                 .orElseThrow(() -> new UserNotFoundException(usernameToUnfollow))
                 .getId();
 
-        userFollowRepository.deleteByFollowerIdAndFollowingId(followerId, followingId);
-
-        userProfileRepository.decrementFollowing(followerId);
-        userProfileRepository.decrementFollowers(followingId);
+        // Only the transaction that really deletes the row (count > 0) touches the counters. Concurrent deletes of
+        // the same row (a second unfollow or BlockService.removeFollow) serialise on the row lock, so exactly one wins.
+        if (userFollowRepository.deleteByFollowerIdAndFollowingId(followerId, followingId) > 0) {
+            userProfileRepository.decrementFollowing(followerId);
+            userProfileRepository.decrementFollowers(followingId);
+        }
     }
 
     private UserAccount getUserToFollowOrThrow(Long followerId, String username) {

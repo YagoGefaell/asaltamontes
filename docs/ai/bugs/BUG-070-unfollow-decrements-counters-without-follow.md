@@ -1,6 +1,6 @@
 # BUG-070 — Dejar de seguir sin seguir antes descuenta los contadores
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable
 - **Área:** backend/user
