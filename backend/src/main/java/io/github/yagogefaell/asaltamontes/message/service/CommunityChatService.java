@@ -170,6 +170,21 @@ public class CommunityChatService {
         return communityId;
     }
 
+    /**
+     * Same hierarchy as muting: a moderator deletes messages of plain members (or of someone who left), not those of the
+     * owner or of other moderators; the owner deletes anyone's.
+     */
+    @Transactional(readOnly = true)
+    public void requireCanDeleteFrom(Long communityId, Long actorId, Long authorId) {
+        if (authorId == null || authorId.equals(actorId)) {
+            return;
+        }
+        boolean actorIsOwner = memberRepository.isOwner(communityId, actorId);
+        if (!actorIsOwner && memberRepository.isModerator(communityId, authorId)) {
+            throw new ForbiddenException("Solo la propietaria puede borrar mensajes de la moderación");
+        }
+    }
+
     /** Leaves a trace of a deleted message in the moderation log of the community. */
     @Transactional
     public void logMessageDeleted(Long communityId, Long actorId, Long authorId) {

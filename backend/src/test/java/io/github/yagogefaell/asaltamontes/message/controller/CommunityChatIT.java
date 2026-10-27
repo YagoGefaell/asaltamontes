@@ -321,6 +321,13 @@ class CommunityChatIT extends AbstractIntegrationTest {
         assertThat(event.conversationId()).isEqualTo(chat);
         otherConnection.disconnect();
 
+        // A moderator cannot delete what the owner or another moderator wrote; the owner can delete a moderator's
+        UUID ownerMsg = messageService.processIncomingMessage(chat, owner.getId(), "aviso").id();
+        UUID modMsg = messageService.processIncomingMessage(chat, mod.getId(), "aviso mod").id();
+        deleteMessage(mod, chat, ownerMsg).andExpect(status().isForbidden());
+        deleteMessage(owner, chat, modMsg).andExpect(status().isNoContent());
+        deleteMessage(owner, chat, ownerMsg).andExpect(status().isNoContent());
+
         deleteMessage(owner, chat, spam1).andExpect(status().isNoContent());
         // Gone, already gone, and unknown: 404
         deleteMessage(owner, chat, spam1).andExpect(status().isNotFound());
@@ -334,7 +341,7 @@ class CommunityChatIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.items[0].lastMessage").value("normas"));
         // The moderation log keeps who deleted whose message
         assertThat(jdbc.queryForObject("SELECT count(*) FROM community_moderation_log WHERE action = 'MESSAGE_DELETED' AND community_id = ?",
-                Integer.class, community.getId())).isEqualTo(2);
+                Integer.class, community.getId())).isEqualTo(4);
     }
 
     @Test

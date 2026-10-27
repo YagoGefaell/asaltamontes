@@ -225,9 +225,11 @@ public class CommunityModerationService {
         requireNotBanned(target);
         MemberStatus wanted = muted ? MemberStatus.MUTED : MemberStatus.ACTIVE;
         if (target.getStatus() == wanted) {
-            // Repairs the record of the silence if it was missing
+            // Keeps the record of the silence in line with the status
             if (muted) {
                 memberRepository.addMute(communityId, target.getUserAccount().getId());
+            } else {
+                memberRepository.removeMute(communityId, target.getUserAccount().getId());
             }
             return;
         }
