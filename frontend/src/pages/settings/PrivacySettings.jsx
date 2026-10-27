@@ -4,6 +4,7 @@ import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 import { getBlockedUsersRequest, unblockUserRequest } from "../../features/users/services/users.service";
 import Avatar from "../../shared/ui/Avatar";
 import { useToast } from "../../shared/ui/Toast";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 
 const DM_POLICY_OPTIONS = [
   { value: "EVERYONE", label: "Cualquier usuaria" },
@@ -15,6 +16,7 @@ const DM_POLICY_OPTIONS = [
 export default function PrivacySettings() {
   const { userProfile, updateUserProfile } = useUserProfile();
   const toast = useToast();
+  const [toUnblock, setToUnblock] = useState(null);
   const [blocked, setBlocked] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(0);
@@ -49,7 +51,7 @@ export default function PrivacySettings() {
   };
 
   const handleUnblock = async (username) => {
-    if (!window.confirm(`¿Desbloquear a @${username}?`)) return;
+    setToUnblock(null);
     try {
       await unblockUserRequest(username);
       setBlocked((current) => current.filter((user) => user.username !== username));
@@ -86,7 +88,7 @@ export default function PrivacySettings() {
             <li key={user.username}>
               <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="sm" />
               <span className="blocked-name">@{user.username}</span>
-              <button type="button" onClick={() => handleUnblock(user.username)}>Desbloquear</button>
+              <button type="button" onClick={() => setToUnblock(user.username)}>Desbloquear</button>
             </li>
           ))}
         </ul>
@@ -94,6 +96,15 @@ export default function PrivacySettings() {
           <button type="button" disabled={loading} onClick={() => load(page + 1)}>Ver más</button>
         )}
       </section>
+
+      <ConfirmModal
+        open={toUnblock !== null}
+        title="Desbloquear"
+        message={`¿Desbloquear a @${toUnblock}?`}
+        confirmLabel="Desbloquear"
+        onConfirm={() => handleUnblock(toUnblock)}
+        onCancel={() => setToUnblock(null)}
+      />
     </div>
   );
 }

@@ -1,0 +1,36 @@
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--surface);
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs__tab {
+  flex: 1 0 auto;
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tabs__tab--active {
+  border-bottom-color: var(--primary);
+  color: var(--primary);
+}
+
+.tabs__tab:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: -2px;
+}

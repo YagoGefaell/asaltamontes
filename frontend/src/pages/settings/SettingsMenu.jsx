@@ -1,36 +1,41 @@
 import "./SettingsMenu.css";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useToast } from "../../shared/ui/Toast";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { logoutEverywhereRequest } from "../../features/auth/services/auth.service";
 
 export default function SettingsMenu() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const toast = useToast();
+  const [pending, setPending] = useState(null); // "logout" | "everywhere" | null
 
   const handleLogout = async () => {
-    if (window.confirm("¿Estás segura de que quieres cerrar sesión?")) {
-      try {
-        await logout();
-        navigate("/access");
-      } catch (error) {
-        console.error("Error al cerrar sesión:", error);
-      }
+    try {
+      await logout();
+      navigate("/access");
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
     }
   };
 
   const handleLogoutEverywhere = async () => {
-    if (window.confirm("Se cerrará tu sesión en todos tus dispositivos, también en este. ¿Continuar?")) {
-      try {
-        await logoutEverywhereRequest();
-        await logout();
-        navigate("/access");
-      } catch (error) {
-        console.error("Error al cerrar las sesiones:", error);
-        toast.error(error.message);
-      }
+    try {
+      await logoutEverywhereRequest();
+      await logout();
+      navigate("/access");
+    } catch (error) {
+      console.error("Error al cerrar las sesiones:", error);
+      toast.error(error.message);
     }
+  };
+
+  const confirmPending = () => {
+    const action = pending === "everywhere" ? handleLogoutEverywhere : handleLogout;
+    setPending(null);
+    return action();
   };
 
   const sections = [
@@ -58,8 +63,8 @@ export default function SettingsMenu() {
     {
       title: "Sesión",
       items: [
-        { label: "Cerrar sesión", action: handleLogout, isAction: true },
-        { label: "Cerrar sesión en todos los dispositivos", action: handleLogoutEverywhere, isAction: true },
+        { label: "Cerrar sesión", action: () => setPending("logout"), isAction: true },
+        { label: "Cerrar sesión en todos los dispositivos", action: () => setPending("everywhere"), isAction: true },
       ],
     },
   ];
@@ -83,6 +88,17 @@ export default function SettingsMenu() {
           </ul>
         </div>
       ))}
+      <ConfirmModal
+        open={pending !== null}
+        title={pending === "everywhere" ? "Cerrar sesión en todos los dispositivos" : "Cerrar sesión"}
+        message={pending === "everywhere"
+          ? "Se cerrará tu sesión en todos tus dispositivos, también en este. ¿Continuar?"
+          : "¿Estás segura de que quieres cerrar sesión?"}
+        confirmLabel="Cerrar sesión"
+        destructive
+        onConfirm={confirmPending}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 }

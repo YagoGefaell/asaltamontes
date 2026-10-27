@@ -8,6 +8,7 @@ import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
 import { formatters } from "../../utils/helpers";
 import { useToast } from "../../shared/ui/Toast";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { blockUserRequest, unblockUserRequest } from "../../features/users/services/users.service";
 
 function Profile({ 
@@ -24,6 +25,7 @@ function Profile({
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [blockConfirm, setBlockConfirm] = useState(null); // isBlocked actual cuando se pide confirmar
   // Local override after (un)blocking; null = what the server said
   const [blockedOverride, setBlockedOverride] = useState(null);
 
@@ -61,14 +63,15 @@ function Profile({
     }
   };
   
-  const handleToggleBlock = async (isBlocked) => {
+  const askToggleBlock = (isBlocked) => {
     setMenuOpen(false);
+    setBlockConfirm({ isBlocked });
+  };
+
+  const handleToggleBlock = async (isBlocked) => {
+    setBlockConfirm(null);
     const username = profileData?.username;
     if (!username) return;
-    const question = isBlocked
-      ? `¿Desbloquear a @${username}?`
-      : `¿Bloquear a @${username}? Dejaréis de seguiros y no podréis escribiros mensajes privados.`;
-    if (!window.confirm(question)) return;
     try {
       if (isBlocked) {
         await unblockUserRequest(username);
@@ -191,7 +194,7 @@ function Profile({
             {menuOpen && (
               <ul className="profile-more-menu" role="menu">
                 <li role="none">
-                  <button role="menuitem" onClick={() => handleToggleBlock(isBlockedByMe)}>
+                  <button role="menuitem" onClick={() => askToggleBlock(isBlockedByMe)}>
                     {isBlockedByMe ? "Desbloquear" : "Bloquear"}
                   </button>
                 </li>
@@ -311,6 +314,18 @@ function Profile({
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={blockConfirm !== null}
+        title={blockConfirm?.isBlocked ? "Desbloquear" : "Bloquear"}
+        message={blockConfirm?.isBlocked
+          ? `¿Desbloquear a @${username}?`
+          : `¿Bloquear a @${username}? Dejaréis de seguiros y no podréis escribiros mensajes privados.`}
+        confirmLabel={blockConfirm?.isBlocked ? "Desbloquear" : "Bloquear"}
+        destructive={!blockConfirm?.isBlocked}
+        onConfirm={() => handleToggleBlock(blockConfirm.isBlocked)}
+        onCancel={() => setBlockConfirm(null)}
+      />
     </div>
   );
 }

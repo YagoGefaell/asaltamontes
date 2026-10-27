@@ -99,7 +99,8 @@ Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, 
 | `ui/SectionCard` | Bloque con título en ajustes y formularios |
 | `ui/ToggleSwitch` | Interruptor en ajustes |
 | `ui/EmptyState`, `ui/Skeleton` | Vacío y carga |
-| `ui/Modal`, `ui/Toast` | Confirmaciones y avisos |
+| `ui/Modal`, `ui/ConfirmModal`, `ui/Toast` | Confirmaciones (`ConfirmModal` sustituye a `confirm()`) y avisos |
+| `ui/PageHeader`, `ui/Tabs`, `ui/Chip` + `ChipRow`, `ui/BottomSheet`, `ui/Fab` | Cabecera de pantalla, pestañas, fila de chips, hoja inferior y botón flotante (T29c) |
 | `ui/ImageUploader`, `ui/AvatarUploader` | Subida de imágenes |
 | `ui/NavBar`, `layouts/MainLayout`, `layouts/SettingsLayout` | Estructura |
 
