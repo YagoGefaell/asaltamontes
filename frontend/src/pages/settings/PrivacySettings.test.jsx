@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PrivacySettings from './PrivacySettings.jsx'
 import { ToastProvider } from '../../shared/ui/Toast.jsx'
@@ -37,7 +37,6 @@ describe('PrivacySettings', () => {
   })
 
   it('lists the blocked users and unblocks one after confirming', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     getBlockedUsersRequest.mockResolvedValue({
       content: [{ username: 'marta', fullName: 'Marta', profilePictureUrl: null }],
       last: true,
@@ -47,6 +46,7 @@ describe('PrivacySettings', () => {
 
     expect(await screen.findByText('@marta')).toBeTruthy()
     fireEvent.click(screen.getByText('Desbloquear'))
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Desbloquear' }))
 
     await waitFor(() => expect(unblockUserRequest).toHaveBeenCalledWith('marta'))
     await waitFor(() => expect(screen.queryByText('@marta')).toBeNull())
