@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
+import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatPageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
@@ -52,11 +54,7 @@ class ChatListIT extends AbstractIntegrationTest {
         ChatPageDto page = fetch(chats().param("limit", "4"), ana);
         seen.addAll(page.items().stream().map(ChatSummaryDto::conversationId).toList());
         while (page.hasMore()) {
-            MockHttpServletRequestBuilder next = chats().param("limit", "4").param("beforeId", page.nextBeforeId().toString());
-            if (page.nextBeforeAt() != null) {
-                next.param("beforeAt", page.nextBeforeAt().toString());
-            }
-            page = fetch(next, ana);
+            page = fetch(chats().param("limit", "4").param("before", page.nextBefore()), ana);
             seen.addAll(page.items().stream().map(ChatSummaryDto::conversationId).toList());
         }
 
@@ -87,7 +85,7 @@ class ChatListIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void defaultPageIs30_andBeforeAtWithoutBeforeIdIsRejected() throws Exception {
+    void defaultPageIs30() throws Exception {
         UserAccount ana = testData.createUser();
         for (int i = 0; i < 31; i++) {
             testData.createPrivateConversation(ana, testData.createUser());
@@ -96,9 +94,6 @@ class ChatListIT extends AbstractIntegrationTest {
         ChatPageDto page = fetch(chats(), ana);
         assertThat(page.items()).hasSize(30);
         assertThat(page.hasMore()).isTrue();
-
-        mockMvc.perform(chats().param("beforeAt", "2026-10-21T20:00:00").with(auth.bearer(ana)))
-                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -108,8 +103,12 @@ class ChatListIT extends AbstractIntegrationTest {
         testData.createPrivateConversation(ana, testData.createUser());
         UUID foreign = testData.createPrivateConversation(bea, testData.createUser());
 
-        for (String cursor : List.of("7", "abc", UUID.randomUUID().toString(), foreign.toString())) {
-            mockMvc.perform(chats().param("beforeId", cursor).with(auth.bearer(ana))).andExpect(status().isBadRequest());
+        // Well-formed tokens naming a chat of someone else or an unknown one, a message cursor, raw ids, garbage
+        String messageCursor = OpaqueCursor.encode(OpaqueCursor.MESSAGE, LocalDateTime.now(), foreign);
+        for (String cursor : List.of("7", "abc", UUID.randomUUID().toString(), foreign.toString(), messageCursor,
+                OpaqueCursor.encode(OpaqueCursor.CHAT, LocalDateTime.now(), foreign),
+                OpaqueCursor.encode(OpaqueCursor.CHAT, null, UUID.randomUUID()))) {
+            mockMvc.perform(chats().param("before", cursor).with(auth.bearer(ana))).andExpect(status().isBadRequest());
         }
     }
 

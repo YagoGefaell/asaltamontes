@@ -11,10 +11,7 @@ import io.github.yagogefaell.asaltamontes.message.dto.MessagePageDto;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
-
-import org.springframework.format.annotation.DateTimeFormat;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -82,11 +79,10 @@ public class ConversationController {
     @GetMapping
     public ResponseEntity<ChatPageDto> getMyConversations(
             @AuthenticationPrincipal UserDetails currentUser,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime beforeAt,
-            @RequestParam(required = false) UUID beforeId,
+            @RequestParam(required = false) String before,
             @RequestParam(defaultValue = "30") int limit) {
 
-        ChatPageDto page = messageService.getUserConversations(currentUser.getUsername(), beforeAt, beforeId, limit);
+        ChatPageDto page = messageService.getUserConversations(currentUser.getUsername(), before, limit);
         return ResponseEntity.ok(page);
     }
 
@@ -94,11 +90,11 @@ public class ConversationController {
     public ResponseEntity<MessagePageDto> getChatHistory(
             @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable UUID conversationId,
-            @RequestParam(required = false) UUID before,
-            @RequestParam(required = false) UUID after,
+            @RequestParam(required = false) String before,
+            @RequestParam(required = false) String after,
             @RequestParam(defaultValue = "30") int limit) {
-        if (after != null) {
-            if (before != null) {
+        if (after != null && !after.isBlank()) {
+            if (before != null && !before.isBlank()) {
                 throw new BadRequestException("Usa before o after, no los dos");
             }
             return ResponseEntity.ok(messageService.getMessagesAfter(conversationId, currentUser.getId(), after, limit));

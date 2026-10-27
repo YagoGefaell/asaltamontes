@@ -14,7 +14,7 @@ import {
 import { mergeMessages } from "../utils/mergeMessages.js";
 import { countUnreadChats, mergeChatPages, unreadChatsElsewhere } from "../utils/mergeChats.js";
 
-const INITIAL_CHATS_PAGING = { hasMore: false, nextBeforeAt: null, nextBeforeId: null, loading: false, pages: 0 };
+const INITIAL_CHATS_PAGING = { hasMore: false, nextBefore: null, loading: false, pages: 0 };
 
 export const ConversationsProvider = ({ children }) => {
   const { websocketClient, websocketConnected, isAuthenticated, sendMessage, currentUser } = useAuth();
@@ -243,8 +243,7 @@ export const ConversationsProvider = ({ children }) => {
       if (mode === "fresh" && prev.pages > 1) return { ...prev, loading: false };
       return {
         hasMore: page.hasMore,
-        nextBeforeAt: page.nextBeforeAt,
-        nextBeforeId: page.nextBeforeId,
+        nextBefore: page.nextBefore,
         loading: false,
         pages: mode === "older" ? prev.pages + 1 : 1,
       };
@@ -262,10 +261,7 @@ export const ConversationsProvider = ({ children }) => {
 
     setChatsPaging((prev) => ({ ...prev, loading: true }));
     try {
-      const page = await getMyConversationsRequest({
-        beforeAt: chatsPaging.nextBeforeAt,
-        beforeId: chatsPaging.nextBeforeId,
-      });
+      const page = await getMyConversationsRequest({ before: chatsPaging.nextBefore });
       applyChatPage(page, "older");
     } catch {
       setChatsPaging((prev) => ({ ...prev, loading: false }));
@@ -446,11 +442,12 @@ export const ConversationsProvider = ({ children }) => {
       // What each chat holds after catching up, to mark the open one as read
       const caughtUp = {};
       for (const [conversationId, messages] of Object.entries(cached)) {
-        const lastId = getLastMessageId(messages);
-        if (lastId == null) continue;
+        // The opaque cursor of the last message (T30c), not its id
+        const lastCursor = Array.isArray(messages) ? messages[messages.length - 1]?.cursor ?? null : null;
+        if (lastCursor == null) continue;
 
         try {
-          const missed = await getMessagesAfterRequest(conversationId, lastId);
+          const missed = await getMessagesAfterRequest(conversationId, lastCursor);
           if (cancelled) return;
 
           if (!missed.complete) {
@@ -486,7 +483,7 @@ export const ConversationsProvider = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, websocketConnected, getLastMessageId]);
+  }, [isAuthenticated, websocketConnected]);
 
   const handleNewMessage = useCallback((payload) => {
     const conversationId = payload?.conversationId;
@@ -505,6 +502,7 @@ export const ConversationsProvider = ({ children }) => {
         content: payload.content,
         senderUsername: payload.senderUsername,
         sentAt: payload.sentAt,
+        cursor: payload.cursor,
       }]),
     }));
 

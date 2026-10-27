@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessagePageDto;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
@@ -55,7 +56,7 @@ class ChatHistoryIT extends AbstractIntegrationTest {
         all.addAll(0, page.items().stream().map(MessageDto::content).toList());
 
         while (page.hasMore()) {
-            page = fetch(history(conversationId).param("limit", "30").param("before", page.nextBefore().toString()), bea);
+            page = fetch(history(conversationId).param("limit", "30").param("before", page.nextBefore()), bea);
             all.addAll(0, page.items().stream().map(MessageDto::content).toList());
         }
 
@@ -124,22 +125,22 @@ class ChatHistoryIT extends AbstractIntegrationTest {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         UUID conversationId = testData.createPrivateConversation(ana, bea);
-        UUID lastSeen = null;
+        String lastSeen = null;
         for (int i = 1; i <= 25; i++) {
-            UUID id = messageService.processIncomingMessage(conversationId, ana.getId(), "mensaje " + i).id();
+            String cursor = messageService.processIncomingMessage(conversationId, ana.getId(), "mensaje " + i).cursor();
             if (i == 5) {
-                lastSeen = id;
+                lastSeen = cursor;
             }
         }
 
-        MessagePageDto first = fetch(history(conversationId).param("after", lastSeen.toString()).param("limit", "15"), bea);
+        MessagePageDto first = fetch(history(conversationId).param("after", lastSeen).param("limit", "15"), bea);
         assertThat(first.items()).extracting(MessageDto::content).first().isEqualTo("mensaje 6");
         assertThat(first.items()).hasSize(15);
         assertThat(first.hasMore()).isTrue();
         assertThat(first.nextBefore()).isNull();
 
-        UUID lastOfFirst = first.items().get(14).id();
-        MessagePageDto second = fetch(history(conversationId).param("after", lastOfFirst.toString()).param("limit", "15"), bea);
+        String lastOfFirst = first.items().get(14).cursor();
+        MessagePageDto second = fetch(history(conversationId).param("after", lastOfFirst).param("limit", "15"), bea);
         assertThat(second.items()).extracting(MessageDto::content).containsExactly(
                 "mensaje 21", "mensaje 22", "mensaje 23", "mensaje 24", "mensaje 25");
         assertThat(second.hasMore()).isFalse();
@@ -152,10 +153,10 @@ class ChatHistoryIT extends AbstractIntegrationTest {
         UserAccount outsider = testData.createUser();
         UUID conversationId = testData.createPrivateConversation(ana, bea);
 
-        mockMvc.perform(history(conversationId).param("after", UUID.randomUUID().toString()).with(auth.bearer(outsider)))
+        mockMvc.perform(history(conversationId).param("after", someCursor()).with(auth.bearer(outsider)))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(history(conversationId).param("after", UUID.randomUUID().toString())
-                .param("before", UUID.randomUUID().toString()).with(auth.bearer(ana)))
+        mockMvc.perform(history(conversationId).param("after", someCursor())
+                .param("before", someCursor()).with(auth.bearer(ana)))
                 .andExpect(status().isBadRequest());
     }
 
@@ -177,13 +178,24 @@ class ChatHistoryIT extends AbstractIntegrationTest {
         UUID chat = testData.createPrivateConversation(ana, bea);
         UUID otherChat = testData.createPrivateConversation(ana, cris);
         messageService.processIncomingMessage(chat, ana.getId(), "hola");
-        UUID foreignMessage = messageService.processIncomingMessage(otherChat, ana.getId(), "otro chat").id();
+        MessageDto foreign = messageService.processIncomingMessage(otherChat, ana.getId(), "otro chat");
+        MessageDto own = messageService.processIncomingMessage(chat, ana.getId(), "propio");
+        String chatCursor = OpaqueCursor.encode(OpaqueCursor.CHAT, null, chat);
+        String wrongOrder = OpaqueCursor.encode(OpaqueCursor.MESSAGE, own.sentAt().plusSeconds(1), own.id());
+        String noOrder = OpaqueCursor.encode(OpaqueCursor.MESSAGE, null, own.id());
+        String padded = own.cursor() + "=";
 
-        // Numeric, malformed, unknown, and a real message of ANOTHER chat: none can move the cursor
-        for (String cursor : List.of("5", "abc", UUID.randomUUID().toString(), foreignMessage.toString())) {
+        // Numeric, malformed, a raw public id, a made-up cursor, a real message of ANOTHER chat (well formed and
+        // with the right order), a chat cursor, a tampered order, no order, non-canonical: none can move the cursor
+        for (String cursor : List.of("5", "abc", own.id().toString(), someCursor(), foreign.cursor(), chatCursor,
+                wrongOrder, noOrder, padded, own.cursor().substring(1))) {
             mockMvc.perform(history(chat).param("before", cursor).with(auth.bearer(ana))).andExpect(status().isBadRequest());
             mockMvc.perform(history(chat).param("after", cursor).with(auth.bearer(ana))).andExpect(status().isBadRequest());
         }
+    }
+
+    private static String someCursor() {
+        return OpaqueCursor.encode(OpaqueCursor.MESSAGE, java.time.LocalDateTime.now(), UUID.randomUUID());
     }
 
     private static MockHttpServletRequestBuilder history(UUID conversationId) {
