@@ -38,6 +38,7 @@ import io.github.yagogefaell.asaltamontes.community.repository.CommunityModerati
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityRepository;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaCleanupService;
+import io.github.yagogefaell.asaltamontes.message.service.CommunityChatService;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
@@ -74,6 +75,7 @@ public class CommunityModerationService {
     private final MediaReferenceService mediaReferences;
     private final MediaCleanupService mediaCleanup;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityChatService communityChat;
 
     // ---- Edit the community ----
 
@@ -127,6 +129,16 @@ public class CommunityModerationService {
                 changed.add("visibility");
             }
         }
+        if (body.has("chatEnabled")) {
+            // The chat can be switched off (history stays readable) and on again
+            if (!body.get("chatEnabled").isBoolean()) {
+                throw new BadRequestException("chatEnabled debe ser verdadero o falso");
+            }
+            if (body.get("chatEnabled").asBoolean() != community.isChatEnabled()) {
+                community.setChatEnabled(body.get("chatEnabled").asBoolean());
+                changed.add("chatEnabled");
+            }
+        }
         if (body.has("coverMediaId") || body.has("imageUrl")) {
             linkCover(community, body, user);
             changed.add("image");
@@ -134,6 +146,7 @@ public class CommunityModerationService {
 
         if (!changed.isEmpty()) {
             communityRepository.save(community);
+            communityChat.syncProfile(community);
             log(communityId, user.getId(), null, ModerationAction.COMMUNITY_UPDATED, String.join(",", changed));
         }
         return details(community, actor);
@@ -234,6 +247,8 @@ public class CommunityModerationService {
         target.setBannedBy(user.getId());
         target.setBannedByRole(acting.actor().getRole());
         communityRepository.decrementMemberCount(communityId);
+        // Expelled: out of the chat too
+        communityChat.removeMember(communityId, target.getUserAccount().getId(), "REMOVED");
         log(communityId, user.getId(), target.getUserAccount().getId(), ModerationAction.BAN, cleanReason(reason));
     }
 
@@ -256,6 +271,8 @@ public class CommunityModerationService {
         target.setBannedBy(null);
         target.setBannedByRole(null);
         communityRepository.incrementMemberCount(communityId);
+        memberRepository.flush();
+        communityChat.addMember(communityId, target.getUserAccount().getId());
         log(communityId, user.getId(), target.getUserAccount().getId(), ModerationAction.UNBAN, null);
     }
 
@@ -301,6 +318,7 @@ public class CommunityModerationService {
         if (approve && memberRepository.findByCommunityIdAndUserAccountId(communityId, requester.getId()).isEmpty()) {
             memberRepository.saveAndFlush(new CommunityMember(community, requester));
             communityRepository.incrementMemberCount(communityId);
+            communityChat.addMember(communityId, requester.getId());
         }
         log(communityId, staff.getId(), requester.getId(),
                 approve ? ModerationAction.REQUEST_APPROVED : ModerationAction.REQUEST_REJECTED, null);

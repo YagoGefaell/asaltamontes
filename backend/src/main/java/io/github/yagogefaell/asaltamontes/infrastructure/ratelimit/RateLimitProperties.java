@@ -28,4 +28,6 @@ public class RateLimitProperties {
     private int groupsCreatedPerDay = 10;
     /** Per user: follows (T18). */
     private int followsPerHour = 100;
+    /** Per user: messages in community chats, where each one reaches every member (T20). */
+    private int communityMessagesPerMinute = 20;
 }

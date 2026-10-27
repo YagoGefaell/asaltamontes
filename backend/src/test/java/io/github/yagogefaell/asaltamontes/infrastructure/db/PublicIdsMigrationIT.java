@@ -57,7 +57,7 @@ class PublicIdsMigrationIT extends AbstractIntegrationTest {
                     """);
         }
 
-        Flyway.configure().dataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword()).load().migrate();
+        Flyway.configure().dataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword()).target("9").load().migrate();
 
         try (Connection connection = DriverManager.getConnection(url, POSTGRES.getUsername(), POSTGRES.getPassword());
              Statement statement = connection.createStatement()) {

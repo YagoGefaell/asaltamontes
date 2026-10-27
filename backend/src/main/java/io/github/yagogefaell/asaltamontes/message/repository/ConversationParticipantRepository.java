@@ -86,4 +86,39 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
     // Badge of the navigation bar: chats with something unread, including those not loaded yet (T10b)
     @Query("SELECT COUNT(p) FROM ConversationParticipant p WHERE p.user.username = :username AND p.unreadCount > 0")
     long countUnreadChats(@Param("username") String username);
+
+    // --- Chats managed by a community (T20) ---
+
+    @Query("SELECT p.user.id FROM ConversationParticipant p WHERE p.conversation.id = :conversationId")
+    List<Long> findUserIdsByConversationId(@Param("conversationId") Long conversationId);
+
+    // Idempotent: joining twice, or racing with the creation of the chat, leaves one participation
+    @Modifying
+    @Query(value = """
+        INSERT INTO conversation_participants (conversation_id, user_id, role, unread_count, joined_at)
+        VALUES (:conversationId, :userId, 'MEMBER', 0, :joinedAt)
+        ON CONFLICT (conversation_id, user_id) DO NOTHING
+    """, nativeQuery = true)
+    int addIfAbsent(@Param("conversationId") Long conversationId, @Param("userId") Long userId,
+                    @Param("joinedAt") java.time.LocalDateTime joinedAt);
+
+    // The whole membership in one statement (never one query per member): active and muted, not the expelled
+    @Modifying
+    @Query(value = """
+        INSERT INTO conversation_participants (conversation_id, user_id, role, unread_count, joined_at)
+        SELECT :conversationId, m.user_account_id, 'MEMBER', 0, :joinedAt
+        FROM community_members m
+        WHERE m.community_id = :communityId AND m.status <> 'BANNED'
+        ON CONFLICT (conversation_id, user_id) DO NOTHING
+    """, nativeQuery = true)
+    int addCommunityMembers(@Param("conversationId") Long conversationId, @Param("communityId") Long communityId,
+                            @Param("joinedAt") java.time.LocalDateTime joinedAt);
+
+    @Modifying
+    @Query("DELETE FROM ConversationParticipant p WHERE p.conversation.id = :conversationId AND p.user.id = :userId")
+    int deleteByConversationIdAndUserId(@Param("conversationId") Long conversationId, @Param("userId") Long userId);
+
+    @Modifying
+    @Query("DELETE FROM ConversationParticipant p WHERE p.conversation.id = :conversationId")
+    int deleteByConversationId(@Param("conversationId") Long conversationId);
 }

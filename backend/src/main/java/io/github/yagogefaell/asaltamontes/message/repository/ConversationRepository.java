@@ -158,4 +158,33 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     """)
     int updateLastMessage(@Param("conversationId") Long conversationId, @Param("preview") String preview,
                           @Param("sentAt") LocalDateTime sentAt, @Param("sender") UserAccount sender);
+
+    // --- Chats managed by a community (T20) ---
+
+    @Query("""
+        SELECT c.id FROM Conversation c
+        WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.COMMUNITY AND c.managedRefId = :communityId
+    """)
+    Optional<Long> findCommunityChatId(@Param("communityId") Long communityId);
+
+    @Query("""
+        SELECT c.publicId FROM Conversation c
+        WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.COMMUNITY AND c.managedRefId = :communityId
+    """)
+    Optional<UUID> findCommunityChatPublicId(@Param("communityId") Long communityId);
+
+    /** The community that manages this conversation; empty for any other chat. One cheap lookup per message sent. */
+    @Query("""
+        SELECT c.managedRefId FROM Conversation c
+        WHERE c.id = :conversationId AND c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.COMMUNITY
+    """)
+    Optional<Long> findManagingCommunityId(@Param("conversationId") Long conversationId);
+
+    // The chat shows the name and the image of its community
+    @Modifying
+    @Query("""
+        UPDATE Conversation c SET c.groupName = :name, c.groupImage = :image
+        WHERE c.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.COMMUNITY AND c.managedRefId = :communityId
+    """)
+    int updateCommunityChatProfile(@Param("communityId") Long communityId, @Param("name") String name, @Param("image") String image);
 }

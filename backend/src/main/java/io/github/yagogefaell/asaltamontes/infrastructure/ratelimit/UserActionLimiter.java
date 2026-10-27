@@ -8,7 +8,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsExcep
 import lombok.RequiredArgsConstructor;
 
 /**
- * Per-user limits on actions that can be abused once authenticated (T18): edits of events, groups created, follows.
+ * Per-user limits on actions that can be abused once authenticated (T18): edits of events, groups created, follows, messages in community chats.
  * Per user and not per IP (behind the proxy every request shares one address). The generous limits are properties;
  * going over answers 429 with {@code Retry-After}. Every attempt counts, also the ones that end in an error.
  */
@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserActionLimiter {
 
+    private static final Duration MINUTE = Duration.ofMinutes(1);
     private static final Duration HOUR = Duration.ofHours(1);
     private static final Duration DAY = Duration.ofDays(1);
 
@@ -32,6 +33,10 @@ public class UserActionLimiter {
 
     public void follow(Long userId) {
         check("follow", userId, properties.getFollowsPerHour(), HOUR);
+    }
+
+    public void communityMessage(Long userId) {
+        check("community-message", userId, properties.getCommunityMessagesPerMinute(), MINUTE);
     }
 
     private void check(String action, Long userId, int limit, Duration period) {
