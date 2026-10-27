@@ -187,9 +187,8 @@ public class GroupService {
                 throw new NotFoundException("Usuaria no encontrada: " + account.getUsername().toLowerCase(Locale.ROOT));
             }
         }
-        if (!blockService.blockedEitherWayAmong(user.getId(), toAddIds).isEmpty()) {
-            throw new ForbiddenException(BlockService.GROUP_ADD_MESSAGE);
-        }
+        // T13: no block either way and each one's dm_policy, with one neutral 403
+        blockService.requireCanAddToGroup(user.getId(), toAddIds);
         // The row is locked, so this count is the real one for the whole transaction
         if (participantRepository.countByConversationId(conversation.getId()) + toAdd.size() > maxGroupSize) {
             throw new BadRequestException("Un grupo puede tener como máximo " + maxGroupSize + " participantes");

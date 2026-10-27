@@ -88,3 +88,7 @@ Hoy un grupo se crea y ya no se puede modificar. Para organizar entrenos hace fa
 - **Decisión de Yago (2026-10-27) — historial para quien entra:** en los grupos creados a mano, la nueva participante ve solo los mensajes **desde que entra** (como WhatsApp): hay que filtrar por `joined_at` en `findLatest/findBefore/findAfter` y en el cursor (T30c). Opción de administradora del grupo **"historial visible para nuevas"** (por grupo, desactivada por defecto): si está activa, las que entren después ven el historial completo. Los chats gestionados de comunidad (T20) y de quedada (T21) **no** usan este filtro: historial completo. Implica una columna de grupo (p. ej. `conversations.history_visible_to_new boolean`) y que el filtro se aplique solo a conversaciones de tipo grupo manual. Tests: la nueva no ve lo anterior; con la opción activa sí; expulsada y readmitida (¿`joined_at` nuevo? sí, ve desde la readmisión).
 - `sender_id` nullable afecta a cualquier código que asuma remitente; buscar usos de `getSender()` antes de implementar.
 - No bloquear el broadcaster: la lista de destinatarias se calcula tras el commit.
+
+## Decisiones de Yago (2026-10-28)
+- **Jerarquía en grupos:** una administradora puede expulsar o degradar a **otra administradora**, salvo a la creadora del grupo (que sigue protegida, `requireNotCreator`). Sin cambios de código: es el comportamiento actual y queda fijado como decisión. Ver también D-022.
+- Añadir participantes (y crear el grupo con participantes) aplica el bloqueo y el `dm_policy` de cada persona añadida: ver T13.

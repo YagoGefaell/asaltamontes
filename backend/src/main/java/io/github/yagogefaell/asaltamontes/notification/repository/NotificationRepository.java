@@ -26,12 +26,18 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
         LEFT JOIN a.profile p
         """;
 
-    @Query(ROW + " WHERE n.recipientId = :recipientId ORDER BY n.createdAt DESC, n.id DESC")
+    /** T18: hidden at read time (nothing is deleted) when the recipient blocked the actor; unblocking brings them back. */
+    String NOT_FROM_BLOCKED = """
+          AND NOT EXISTS (SELECT 1 FROM UserBlock b WHERE b.blocker.id = n.recipientId AND b.blocked.id = n.actorId)
+        """;
+
+    @Query(ROW + " WHERE n.recipientId = :recipientId " + NOT_FROM_BLOCKED + " ORDER BY n.createdAt DESC, n.id DESC")
     List<NotificationRow> findFirstPage(@Param("recipientId") Long recipientId, Limit limit);
 
     @Query(ROW + """
         WHERE n.recipientId = :recipientId
           AND (n.createdAt < :beforeAt OR (n.createdAt = :beforeAt AND n.id < :beforeId))
+        """ + NOT_FROM_BLOCKED + """
         ORDER BY n.createdAt DESC, n.id DESC
         """)
     List<NotificationRow> findPageBefore(@Param("recipientId") Long recipientId, @Param("beforeAt") Instant beforeAt,
@@ -43,7 +49,8 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /** Only her own notifications: the cursor of someone else's, or a missing one, is simply not found. */
     Optional<Notification> findByPublicIdAndRecipientId(UUID publicId, Long recipientId);
 
-    long countByRecipientIdAndReadAtIsNull(Long recipientId);
+    @Query("SELECT COUNT(n) FROM Notification n WHERE n.recipientId = :recipientId AND n.readAt IS NULL " + NOT_FROM_BLOCKED)
+    long countUnread(@Param("recipientId") Long recipientId);
 
     long countByRecipientIdAndPublicIdIn(Long recipientId, Collection<UUID> publicIds);
 

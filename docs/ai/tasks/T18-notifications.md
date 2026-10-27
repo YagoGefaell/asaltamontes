@@ -98,3 +98,14 @@
 - Altas en grupo: `AddedToGroup` se publica también al crear el grupo (`MessageService#createGroupConversation`), no solo desde `addParticipants`.
 - Las escrituras van por JDBC en lotes (el UUID v7 se genera en Java); `Notification` es la entidad de lectura y marcado.
 - Cola de notificaciones acotada (2-4 hilos, cola de 500, descarte con log si se llena).
+
+## Decisiones de Yago (2026-10-28) — implementadas en `feat/yago-decisions-t12-t13-t18-t19`
+- **Límites por usuaria** (no por IP; detrás del proxy todas comparten dirección), generosos y configurables en `asaltamontes.rate-limit.*` (se desactivan con `enabled=false`, como en el perfil `test`). Al superarlos, `429` ProblemDetail con `Retry-After` (segundos). Cuentan todos los intentos, también los que acaban en error. Ventana fija en memoria (`RateLimiter`, D-007):
+  | Acción | Propiedad | Por defecto |
+  |---|---|---|
+  | Editar un evento (`PATCH /api/events/{id}`) | `event-edits-per-hour` | 30 / hora |
+  | Crear un grupo (`POST /api/conversations/group`) | `groups-created-per-day` | 10 / día |
+  | Seguir (`POST /api/users/follow/{username}`) | `follows-per-hour` | 100 / hora |
+  Componente: `UserActionLimiter` (en `infrastructure/ratelimit`), llamado desde los servicios. Tests: `RateLimitIT`.
+- **Notificaciones de una actora bloqueada:** se **ocultan al leer** (listado y contador de no leídas) en cuanto la destinataria bloquea a la actora; **no se borran** y reaparecen si desbloquea. Es en un solo sentido (destinataria → actora). Marcar todo como leído sigue marcando también las ocultas. Test: `NotificationsIT.whenTheRecipientBlocksTheActor_...`.
+- **Cooldown de 24 h de `NEW_FOLLOWER`:** aceptado tal como está.

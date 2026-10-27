@@ -173,7 +173,7 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public long unreadCount(Long userId) {
-        return notificationRepository.countByRecipientIdAndReadAtIsNull(userId);
+        return notificationRepository.countUnread(userId);
     }
 
     /**

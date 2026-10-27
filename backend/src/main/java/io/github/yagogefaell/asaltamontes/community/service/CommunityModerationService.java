@@ -222,26 +222,39 @@ public class CommunityModerationService {
     @Transactional
     public void ban(UUID communityPublicId, String username, String reason, UserAccount user) {
         Long communityId = internalId(communityPublicId);
-        CommunityMember target = lockActingPair(communityId, user, username).target();
+        Acting acting = lockActingPair(communityId, user, username);
+        CommunityMember target = acting.target();
         authorize(communityId, user, target, "No se puede expulsar a la propietaria");
         if (target.getStatus() == MemberStatus.BANNED) {
             return;
         }
         target.setStatus(MemberStatus.BANNED);
         target.setRole(CommunityRole.MEMBER);
+        // Kept for the hierarchy: whoever the owner expels, a moderator cannot readmit
+        target.setBannedBy(user.getId());
+        target.setBannedByRole(acting.actor().getRole());
         communityRepository.decrementMemberCount(communityId);
         log(communityId, user.getId(), target.getUserAccount().getId(), ModerationAction.BAN, cleanReason(reason));
     }
 
-    /** Readmits an expelled member as an active one (back in the count, same transaction). Not banned: 404. */
+    /**
+     * Readmits an expelled member as an active one (back in the count, same transaction). Not banned: 404. Whoever the
+     * owner expelled can only be readmitted by the owner; the owner can readmit anyone.
+     */
     @Transactional
     public void unban(UUID communityPublicId, String username, UserAccount user) {
         Long communityId = internalId(communityPublicId);
-        CommunityMember target = lockActingPair(communityId, user, username).target();
+        Acting acting = lockActingPair(communityId, user, username);
+        CommunityMember target = acting.target();
         if (target.getStatus() != MemberStatus.BANNED) {
             throw new NotFoundException(NO_MEMBER);
         }
+        if (target.getBannedByRole() == CommunityRole.OWNER && acting.actor().getRole() != CommunityRole.OWNER) {
+            throw new ForbiddenException("Solo la propietaria puede readmitir a quien ella expulsó");
+        }
         target.setStatus(MemberStatus.ACTIVE);
+        target.setBannedBy(null);
+        target.setBannedByRole(null);
         communityRepository.incrementMemberCount(communityId);
         log(communityId, user.getId(), target.getUserAccount().getId(), ModerationAction.UNBAN, null);
     }

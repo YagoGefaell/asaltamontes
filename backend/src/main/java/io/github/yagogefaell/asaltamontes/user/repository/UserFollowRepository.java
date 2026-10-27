@@ -1,5 +1,8 @@
 package io.github.yagogefaell.asaltamontes.user.repository;
 
+import java.util.Collection;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +18,14 @@ import jakarta.transaction.Transactional;
 public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
 
     boolean existsByFollowerIdAndFollowingId(Long followerId, Long followingId);
+
+    /** Among {@code ids}, those who follow {@code userId} (one query). */
+    @Query("SELECT f.follower.id FROM UserFollow f WHERE f.following.id = :userId AND f.follower.id IN :ids")
+    List<Long> findFollowerIdsAmong(Long userId, Collection<Long> ids);
+
+    /** Among {@code ids}, those {@code userId} follows (one query). */
+    @Query("SELECT f.following.id FROM UserFollow f WHERE f.follower.id = :userId AND f.following.id IN :ids")
+    List<Long> findFollowingIdsAmong(Long userId, Collection<Long> ids);
 
     @Modifying
     @Transactional

@@ -80,6 +80,10 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     @Query("select p.dmPolicy from UserProfile p where p.user.id = :userId")
     Optional<io.github.yagogefaell.asaltamontes.user.domain.DmPolicy> findDmPolicy(@Param("userId") Long userId);
 
+    /** {@code [userId, dmPolicy]} of each of {@code userIds} (one query). */
+    @Query("select p.user.id, p.dmPolicy from UserProfile p where p.user.id in :userIds")
+    List<Object[]> findDmPolicies(@Param("userIds") java.util.Collection<Long> userIds);
+
     Optional<UserProfile> findByUserId(long userId);
     boolean existsByUserId(long userId);
     Optional<UserProfile> findByUser(io.github.yagogefaell.asaltamontes.user.domain.UserAccount user);

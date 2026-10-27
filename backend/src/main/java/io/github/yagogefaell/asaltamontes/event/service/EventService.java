@@ -43,6 +43,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import jakarta.persistence.EntityManager;
+import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -61,6 +62,7 @@ public class EventService {
     private final UserAccountRepository userAccountRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final EntityManager entityManager;
+    private final UserActionLimiter limiter;
 
     /** Creates the event; the organizer is its first attendee (GOING). */
     @Transactional
@@ -163,6 +165,7 @@ public class EventService {
      */
     @Transactional
     public EventDetailsDto update(UUID eventPublicId, UpdateEventDto changes, UserAccount user) {
+        limiter.eventEdit(user.getId());
         for (String required : REQUIRED_FIELDS) {
             if (changes.has(required) && valueOf(changes, required) == null) {
                 throw new BadRequestException("El campo " + required + " no puede quedar vacío");

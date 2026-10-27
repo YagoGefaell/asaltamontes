@@ -73,6 +73,14 @@ public class CommunityMember {
     @Column(nullable = false, length = 20)
     private MemberStatus status = MemberStatus.ACTIVE;
 
+    /** Who expelled her and with which role at that moment (T19); empty unless BANNED. */
+    @Column(name = "banned_by")
+    private Long bannedBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "banned_by_role", length = 20)
+    private CommunityRole bannedByRole;
+
     @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt;
 

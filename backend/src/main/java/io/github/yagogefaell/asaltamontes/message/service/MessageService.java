@@ -3,7 +3,6 @@ package io.github.yagogefaell.asaltamontes.message.service;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
-import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
@@ -22,6 +21,7 @@ import io.github.yagogefaell.asaltamontes.message.repository.ConversationPartici
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import io.github.yagogefaell.asaltamontes.user.service.BlockService;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
@@ -49,6 +49,7 @@ public class MessageService {
     private final BlockService blockService;
     private final ApplicationEventPublisher eventPublisher;
     private final MediaReferenceService mediaReferences;
+    private final UserActionLimiter limiter;
     private final int maxGroupSize;
 
     public static final int MAX_CONTENT_LENGTH = 2000;
@@ -64,6 +65,7 @@ public class MessageService {
                           BlockService blockService,
                           ApplicationEventPublisher eventPublisher,
                           MediaReferenceService mediaReferences,
+                          UserActionLimiter limiter,
                           @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.messageRepository = messageRepository;
         this.conversationRepository = conversationRepository;
@@ -72,6 +74,7 @@ public class MessageService {
         this.blockService = blockService;
         this.eventPublisher = eventPublisher;
         this.mediaReferences = mediaReferences;
+        this.limiter = limiter;
         this.maxGroupSize = maxGroupSize;
     }
 
@@ -173,6 +176,7 @@ public class MessageService {
     public ChatResponseDto createGroupConversation(String currentUsername, String groupName, String groupImage,
                                                    UUID groupMediaId, List<String> users) {
         UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
+        limiter.groupCreate(creator.getId());
         // The creator administers the new group, so she may set its image; the image must be hers
         MediaReferenceService.Linked image = mediaReferences.link(groupMediaId, groupImage, MediaPurpose.GROUP_IMAGE,
                 creator.getId(), null);
@@ -212,9 +216,8 @@ public class MessageService {
                 throw new NotFoundException("Usuaria no encontrada: " + member.getUsername());
             }
         }
-        if (!blockService.blockedEitherWayAmong(creator.getId(), memberIds).isEmpty()) {
-            throw new ForbiddenException(BlockService.GROUP_ADD_MESSAGE);
-        }
+        // T13: no block either way and each one's dm_policy, with one neutral 403
+        blockService.requireCanAddToGroup(creator.getId(), memberIds);
 
         Conversation newConv = createGroupConversation(creator, members, groupName, image);
         // T18: the members are told they were added (the creator is not notified of her own action)

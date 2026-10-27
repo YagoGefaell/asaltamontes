@@ -19,6 +19,14 @@ public interface CommunityModerationLogRepository extends JpaRepository<Communit
     /** Only entries of that community: the cursor of another community's entry is simply not found. */
     Optional<CommunityModerationLog> findByPublicIdAndCommunityId(UUID publicId, Long communityId);
 
+    /** When her latest request to join was rejected, if ever (cooldown before she can ask again). */
+    @Query("""
+        SELECT MAX(l.createdAt) FROM CommunityModerationLog l
+        WHERE l.communityId = :communityId AND l.targetId = :userId
+          AND l.action = io.github.yagogefaell.asaltamontes.community.domain.ModerationAction.REQUEST_REJECTED
+        """)
+    Optional<Instant> findLastRejection(@Param("communityId") Long communityId, @Param("userId") Long userId);
+
     String LOG = """
         SELECT new io.github.yagogefaell.asaltamontes.community.dto.ModerationLogEntryDto(
             l.publicId, l.action, a.username, t.username, l.reason, l.createdAt)
