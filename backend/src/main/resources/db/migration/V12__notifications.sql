@@ -31,6 +31,9 @@ CREATE UNIQUE INDEX uk_notifications_new_follower_unread ON notifications (recip
 -- Same for someone who joins, leaves and joins the same event again
 CREATE UNIQUE INDEX uk_notifications_event_joined_unread ON notifications (recipient_id, actor_id, target_ref)
     WHERE type = 'EVENT_JOINED' AND read_at IS NULL;
+-- Same for being added to the same group again and again
+CREATE UNIQUE INDEX uk_notifications_added_to_group_unread ON notifications (recipient_id, actor_id, target_ref)
+    WHERE type = 'ADDED_TO_GROUP' AND read_at IS NULL;
 
 -- A missing row means the type is enabled
 CREATE TABLE notification_preferences (

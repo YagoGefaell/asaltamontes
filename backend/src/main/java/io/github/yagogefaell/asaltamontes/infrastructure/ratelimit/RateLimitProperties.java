@@ -20,6 +20,6 @@ public class RateLimitProperties {
     private int registerPerMinute = 3;
     /** Per IP. */
     private int refreshPerMinute = 30;
-    /** Per IP, for POST /api/notifications/read. */
+    /** Per user (not per IP: behind the proxy every IP looks the same), for POST /api/notifications/read. */
     private int notificationsReadPerMinute = 60;
 }

@@ -58,6 +58,7 @@ public class NotificationService {
 
     static final String NOT_FOUND = "Notificación no encontrada";
     private static final int INSERT_BATCH = 500;
+    private static final java.time.Duration FOLLOW_COOLDOWN = java.time.Duration.ofHours(24);
 
     /** One notification to send to many recipients. */
     public record NewNotification(NotificationType type, Long actorId, NotificationTargetType targetType,
@@ -93,8 +94,17 @@ public class NotificationService {
         if (!recipients.isEmpty()) {
             recipients.removeAll(preferenceRepository.findUserIdsWithTypeDisabled(notification.type(), recipients));
         }
+        if (notification.type() == NotificationType.NEW_FOLLOWER && notification.actorId() != null && !recipients.isEmpty()) {
+            // Follow, read, unfollow, follow again must not become a way to ping someone over and over
+            recipients.removeAll(notificationRepository.findRecipientsNotifiedBy(notification.actorId(),
+                    NotificationType.NEW_FOLLOWER, recipients, Instant.now().minus(FOLLOW_COOLDOWN)));
+        }
         if (recipients.isEmpty()) {
             return List.of();
+        }
+        if (notification.type() == NotificationType.EVENT_UPDATED) {
+            // One unread "this event changed" per person and event: the newest replaces the previous
+            notificationRepository.deleteUnread(notification.type(), notification.targetRef(), recipients);
         }
 
         String payload = json(notification.payload());

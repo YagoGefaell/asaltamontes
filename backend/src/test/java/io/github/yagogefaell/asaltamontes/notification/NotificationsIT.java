@@ -63,7 +63,7 @@ class NotificationsIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void followUnfollowFollow_doesNotPileUpUnreadNotifications_butAReadOneAllowsAnother() throws Exception {
+    void followUnfollowFollow_doesNotPileUpUnreadNotifications_norPingAgainAfterReadingIt() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
         follow(ana, bea);
@@ -80,6 +80,9 @@ class NotificationsIT extends AbstractIntegrationTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"all\":true}")).andExpect(status().isNoContent());
         unfollow(ana, bea);
         follow(ana, bea);
+        // Within the cooldown it does not ping her again; a different follower still does
+        UserAccount dora = testData.createUser();
+        follow(dora, bea);
         assertThat(awaitItems(bea, 3)).hasSize(3);
     }
 
@@ -200,6 +203,24 @@ class NotificationsIT extends AbstractIntegrationTest {
             assertThat(item.get("payload").get("groupName").asText()).startsWith("group_");
         }
         assertThat(items(ana)).isEmpty();
+    }
+
+    @Test
+    void editingAgainWhileUnread_replacesThePreviousNotification() throws Exception {
+        UserAccount organizer = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UUID event = newEvent(organizer, 5);
+        join(bea, event);
+        patchEvent(organizer, event, Map.of("startsAt", Instant.now().plus(5, ChronoUnit.DAYS).toString()));
+        awaitItems(bea, 1);
+        Instant latest = Instant.now().plus(6, ChronoUnit.DAYS).truncatedTo(ChronoUnit.MICROS);
+        patchEvent(organizer, event, Map.of("startsAt", latest.toString()));
+
+        await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+            List<JsonNode> items = items(bea);
+            assertThat(items).hasSize(1);
+            assertThat(Instant.parse(items.get(0).get("payload").get("startsAt").asText())).isEqualTo(latest);
+        });
     }
 
     // ---- rules when creating ----

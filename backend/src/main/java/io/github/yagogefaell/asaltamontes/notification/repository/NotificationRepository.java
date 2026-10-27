@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import io.github.yagogefaell.asaltamontes.notification.domain.Notification;
+import io.github.yagogefaell.asaltamontes.notification.domain.NotificationType;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
@@ -53,6 +54,15 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("UPDATE Notification n SET n.readAt = :now WHERE n.recipientId = :recipientId AND n.readAt IS NULL")
     int markAllRead(@Param("recipientId") Long recipientId, @Param("now") Instant now);
+
+    /** Among {@code recipientIds}, those who already got a notification of this type from the actor since {@code since}. */
+    @Query("SELECT DISTINCT n.recipientId FROM Notification n WHERE n.actorId = :actorId AND n.type = :type AND n.recipientId IN :recipientIds AND n.createdAt > :since")
+    List<Long> findRecipientsNotifiedBy(@Param("actorId") Long actorId, @Param("type") NotificationType type,
+                                        @Param("recipientIds") Collection<Long> recipientIds, @Param("since") Instant since);
+
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.type = :type AND n.targetRef = :targetRef AND n.readAt IS NULL AND n.recipientId IN :recipientIds")
+    int deleteUnread(@Param("type") NotificationType type, @Param("targetRef") String targetRef, @Param("recipientIds") Collection<Long> recipientIds);
 
     /** Deletes up to {@code batch} notifications older than the cutoff, read or not as asked; returns how many. */
     @Modifying
