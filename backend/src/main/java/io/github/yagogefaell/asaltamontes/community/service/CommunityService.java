@@ -2,10 +2,12 @@ package io.github.yagogefaell.asaltamontes.community.service;
 
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,12 +20,15 @@ import io.github.yagogefaell.asaltamontes.common.pagination.SortWhitelist;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityVisibility;
 import io.github.yagogefaell.asaltamontes.community.domain.MemberStatus;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
+import io.github.yagogefaell.asaltamontes.community.repository.CommunityJoinRequestRepository;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
+import io.github.yagogefaell.asaltamontes.common.identifier.UuidV7;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
@@ -39,12 +44,20 @@ public class CommunityService {
     private final CommunityRepository communityRepository;
     private final CommunityMemberRepository communityMemberRepository;
     private final MediaReferenceService mediaReferences;
+    private final CommunityJoinRequestRepository joinRequestRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    /** What joining did: she is a member now, or her request waits for the moderation (private communities). */
+    public enum JoinResult { JOINED, REQUESTED }
 
     public CommunityService(CommunityRepository communityRepository, CommunityMemberRepository communityMemberRepository,
-                            MediaReferenceService mediaReferences) {
+                            MediaReferenceService mediaReferences, CommunityJoinRequestRepository joinRequestRepository,
+                            ApplicationEventPublisher eventPublisher) {
         this.communityRepository = communityRepository;
         this.communityMemberRepository = communityMemberRepository;
         this.mediaReferences = mediaReferences;
+        this.joinRequestRepository = joinRequestRepository;
+        this.eventPublisher = eventPublisher;
     }
     
     @Transactional
@@ -66,6 +79,11 @@ public class CommunityService {
             currentUser
         );
         community.setCoverMediaId(cover.mediaId());
+        if (request.visibility() != null) {
+            community.setVisibility(request.visibility());
+        }
+        community.setCity(blankToNull(request.city()));
+        community.setProvince(blankToNull(request.province()));
 
         community = communityRepository.save(community);
 
@@ -73,6 +91,10 @@ public class CommunityService {
         communityMemberRepository.save(communityMember);
         
         return community;
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 
     /** "trail-vigo", or "trail-vigo-2", "-3"… if taken (the unique constraint is the last word on races). */
@@ -90,12 +112,16 @@ public class CommunityService {
     }
 
     /** All communities, or those whose name contains {@code query} (case-insensitive). */
-    public Page<CommunitySearchDto> getAllCommunities(UserAccount currentUser, String query, Pageable pageable) {
-        Pageable sorted = COMMUNITY_SORT.apply(pageable);
-        if (query == null || query.isBlank()) {
-            return communityRepository.findAllCommunities(currentUser.getId(), sorted);
-        }
-        return communityRepository.searchCommunities(currentUser.getId(), likePattern(query), sorted);
+    public Page<CommunitySearchDto> getAllCommunities(UserAccount currentUser, String query, String city, String province,
+                                                      Pageable pageable) {
+        String pattern = query == null || query.isBlank() ? "%" : likePattern(query);
+        return communityRepository.searchCommunities(currentUser.getId(), pattern, lowerOrEmpty(city), lowerOrEmpty(province),
+                COMMUNITY_SORT.apply(pageable));
+    }
+
+    // "" means "any" (a null parameter would have no type for PostgreSQL)
+    private static String lowerOrEmpty(String value) {
+        return value == null ? "" : SlugGenerator.normalizeName(value).toLowerCase(Locale.ROOT);
     }
 
     // %, _ and \ typed by the user are searched literally
@@ -136,11 +162,12 @@ public class CommunityService {
     }
 
     private boolean isOwner(Long communityId, UserAccount currentUser) {
-        return communityRepository.existsByIdAndCreatedById(communityId, currentUser.getId());
+        // By role, not by creator: the ownership can be transferred (T19)
+        return communityMemberRepository.isOwner(communityId, currentUser.getId());
     }
 
     @Transactional
-    public void joinCommunity(UUID communityPublicId, UserAccount currentUser) {
+    public JoinResult joinCommunity(UUID communityPublicId, UserAccount currentUser) {
         Long communityId = internalId(communityPublicId);
         communityMemberRepository.findStatus(communityId, currentUser.getId()).ifPresent(status -> {
             if (status == MemberStatus.BANNED) {
@@ -150,10 +177,24 @@ public class CommunityService {
             throw new ConflictException("Ya eres miembro de esta comunidad");
         });
 
-        Community communityRef = communityRepository.getReferenceById(communityId);
-        CommunityMember communityMember = new CommunityMember(communityRef, currentUser);
+        Community community = communityRepository.getReferenceById(communityId);
+        if (community.getVisibility() == CommunityVisibility.PRIVATE) {
+            requestToJoin(community, currentUser);
+            return JoinResult.REQUESTED;
+        }
+        CommunityMember communityMember = new CommunityMember(community, currentUser);
         communityMemberRepository.saveAndFlush(communityMember);
         communityRepository.incrementMemberCount(communityId);
+        return JoinResult.JOINED;
+    }
+
+    /** Idempotent: asking twice leaves one request and notifies the staff once. */
+    private void requestToJoin(Community community, UserAccount requester) {
+        int inserted = joinRequestRepository.insertIfAbsent(UuidV7.next(), community.getId(), requester.getId(), Instant.now());
+        if (inserted > 0) {
+            eventPublisher.publishEvent(new JoinRequested(community.getSlug(), community.getName(), requester.getId(),
+                    communityMemberRepository.findStaffUserIds(community.getId())));
+        }
     }
 
     @Transactional
@@ -162,6 +203,10 @@ public class CommunityService {
         long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {
+            // Not a member: leaving withdraws a pending request, if she has one
+            if (joinRequestRepository.deleteRequest(communityId, currentUser.getId()) > 0) {
+                return;
+            }
             throw new NotFoundException("No eres miembro de esta comunidad");
         }
         communityRepository.decrementMemberCount(communityId);

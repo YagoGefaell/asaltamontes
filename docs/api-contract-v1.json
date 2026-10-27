@@ -731,7 +731,7 @@
     "/api/notifications": {
       "get": {
         "summary": "One page of the caller's notifications (T18)",
-        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, ADDED_TO_GROUP (groupName).",
+        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor).",
         "tags": ["Notifications"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -1089,6 +1089,661 @@
         }
       }
     },
+    "/api/communities": {
+      "get": {
+        "summary": "Search communities (T19)",
+        "description": "Filters combine with AND. city and province are case-insensitive exact matches. Items: id, name, slug, imageUrl, role (null unless an unbanned member), memberCount (ACTIVE+MUTED only), visibility PUBLIC|PRIVATE, city, province.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "province",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spring Page of CommunitySearch"
+          }
+        }
+      }
+    },
+    "/api/communities/{ref}": {
+      "patch": {
+        "summary": "Edit a community (T19, D-020)",
+        "description": "ref is the slug or the public id. Absent field = unchanged; explicit null clears an optional one (description, city, province, image). name cannot be null or blank. Owner and moderators edit everything except visibility, which only the owner changes. The slug does not change on rename. Fields: name, description, city, province, visibility (PUBLIC|PRIVATE), coverMediaId / imageUrl (as in POST). Returns the community detail (id, name, slug, description, imageUrl, role, memberCount, visibility, city, province, joinRequested).",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ref",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CommunityDetails"
+          },
+          "400": {
+            "description": "Invalid data"
+          },
+          "403": {
+            "description": "A moderator tried to change the visibility"
+          },
+          "404": {
+            "description": "Not found, or not owner/moderator"
+          },
+          "409": {
+            "description": "Name already taken"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/join": {
+      "post": {
+        "summary": "Join a community, or ask to join a private one (T19)",
+        "description": "PUBLIC: becomes a member (201). PRIVATE: creates a pending request (202, idempotent) that the staff accept or reject; the staff are notified. A banned user gets 403 with a neutral message in both cases, and never sees she is banned in role/joinRequested. Leaving (POST .../leave) also withdraws a pending request.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Member now"
+          },
+          "202": {
+            "description": "Request pending"
+          },
+          "403": {
+            "description": "No puedes unirte a esta comunidad"
+          },
+          "404": {
+            "description": "Community not found"
+          },
+          "409": {
+            "description": "Already a member"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/members/{username}/role": {
+      "put": {
+        "summary": "Make a member moderator or plain member (T19)",
+        "description": "Owner only (a moderator gets 403, others 404). Body {role: MODERATOR|MEMBER}. 409 on the owner or an expelled member.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done (or already that role)"
+          },
+          "400": {
+            "description": "Invalid role or herself"
+          },
+          "403": {
+            "description": "Not the owner"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          },
+          "409": {
+            "description": "Target is the owner or expelled"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/members/{username}/mute": {
+      "post": {
+        "summary": "Mute a member (T19)",
+        "description": "Optional body {reason} (max 300). Muted members stay in the list and in the count; only the staff see status. A moderator cannot act on another moderator (403); nobody on the owner (409) or herself (400).",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Moderator on a moderator"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          },
+          "409": {
+            "description": "Owner or expelled"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/members/{username}/unmute": {
+      "post": {
+        "summary": "Unmute a member (T19)",
+        "description": "Same rules as mute.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/members/{username}/ban": {
+      "post": {
+        "summary": "Expel a member (T19)",
+        "description": "Optional body {reason} (max 300). The member leaves the list and memberCount decreases in the same transaction; she loses any moderator role; it is logged. Idempotent. The owner cannot be expelled (409); a moderator cannot expel another moderator (403).",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Moderator on a moderator"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          },
+          "409": {
+            "description": "Target is the owner"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/members/{username}/unban": {
+      "post": {
+        "summary": "Readmit an expelled member (T19)",
+        "description": "Owner or moderators. She becomes ACTIVE, memberCount increases in the same transaction, it is logged. 404 if she is not expelled.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/transfer-ownership/{username}": {
+      "post": {
+        "summary": "Transfer the ownership (T19)",
+        "description": "Owner only. The target (a non-expelled member) becomes OWNER and the caller a MODERATOR.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "403": {
+            "description": "Not the owner"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          },
+          "409": {
+            "description": "Target expelled"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/banned": {
+      "get": {
+        "summary": "Expulsadas (T19)",
+        "description": "Owner and moderators only. Newest first. Items: id, username, fullName, profilePictureUrl, bannedAt, reason, bannedBy (from the moderation log). Returns {items, nextBefore}.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque cursor: the nextBefore of the previous page (400 if malformed or from another list)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CursorPage of BannedMember"
+          },
+          "400": {
+            "description": "Invalid cursor"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/requests": {
+      "get": {
+        "summary": "Pending requests to join a private community (T19)",
+        "description": "Owner and moderators only. Newest first. Items: id, username, fullName, profilePictureUrl, requestedAt. Returns {items, nextBefore}.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque cursor: the nextBefore of the previous page (400 if malformed or from another list)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CursorPage of JoinRequest"
+          },
+          "400": {
+            "description": "Invalid cursor"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/requests/{username}/approve": {
+      "post": {
+        "summary": "Accept a request (T19)",
+        "description": "She becomes a member, memberCount increases, it is logged and she is notified (COMMUNITY_JOIN_APPROVED). 404 if there is no pending request (also if someone decided first).",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "404": {
+            "description": "No such request, or not owner/moderator"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/requests/{username}/reject": {
+      "post": {
+        "summary": "Reject a request (T19)",
+        "description": "Logged; she is notified (COMMUNITY_JOIN_REJECTED, without the moderator) and may ask again.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Done"
+          },
+          "404": {
+            "description": "No such request, or not owner/moderator"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/moderation-log": {
+      "get": {
+        "summary": "Moderation log (T19)",
+        "description": "Owner and moderators only. Newest first. Items: id, action (PROMOTE, DEMOTE, MUTE, UNMUTE, BAN, UNBAN, TRANSFER_OWNERSHIP, REQUEST_APPROVED, REQUEST_REJECTED, COMMUNITY_UPDATED), actorUsername, targetUsername (null if the account was deleted), reason, createdAt. Returns {items, nextBefore}.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Opaque cursor: the nextBefore of the previous page (400 if malformed or from another list)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "CursorPage of ModerationLogEntry"
+          },
+          "400": {
+            "description": "Invalid cursor"
+          },
+          "404": {
+            "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
+          }
+        }
+      }
+    },
     "/api/communities/{slug}/events": {
       "get": {
         "summary": "Events of a community the user can see, soonest first; upcoming by default (T15c)",
@@ -1347,7 +2002,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "ADDED_TO_GROUP"] },
+          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "ADDED_TO_GROUP", "COMMUNITY_JOIN_REQUEST", "COMMUNITY_JOIN_APPROVED", "COMMUNITY_JOIN_REJECTED"] },
           "actor": {
             "type": "object",
             "nullable": true,

@@ -332,7 +332,8 @@ class CommunityControllerIT extends AbstractIntegrationTest {
         transactionTemplate.executeWithoutResult(tx -> communityMemberRepository.findAll().stream()
                 .filter(m -> m.getUserAccount().getId().equals(user.getId()))
                 .forEach(m -> m.setStatus(status)));
-        // The ban endpoint does not exist yet (T19): the counter is brought in line the way the nightly job does
+        // Forces a status directly (the real ban endpoint is covered in CommunityModerationIT): the counter is
+        // brought in line the way the nightly job does
         transactionTemplate.executeWithoutResult(tx -> recountService.recountCountersInBatches());
     }
 

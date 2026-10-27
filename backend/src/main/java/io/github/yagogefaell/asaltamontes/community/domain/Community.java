@@ -59,6 +59,16 @@ public class Community extends PublicIdEntity {
     @Column(name = "cover_media_id")
     private java.util.UUID coverMediaId;
 
+    @jakarta.persistence.Enumerated(jakarta.persistence.EnumType.STRING)
+    @Column(nullable = false, length = 10)
+    private CommunityVisibility visibility = CommunityVisibility.PUBLIC;
+
+    @Column(length = 80)
+    private String city;
+
+    @Column(length = 80)
+    private String province;
+
     @Column(name = "member_count", nullable = false)
     private Long memberCount = 1L;
 

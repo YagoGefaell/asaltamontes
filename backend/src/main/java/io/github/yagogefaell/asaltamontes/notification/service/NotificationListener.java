@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import io.github.yagogefaell.asaltamontes.community.service.JoinRequestDecided;
+import io.github.yagogefaell.asaltamontes.community.service.JoinRequested;
 import io.github.yagogefaell.asaltamontes.event.domain.AttendeeStatus;
 import io.github.yagogefaell.asaltamontes.event.service.AttendeePromoted;
 import io.github.yagogefaell.asaltamontes.event.service.EventAttendeeJoined;
@@ -121,6 +123,30 @@ public class NotificationListener {
             deliver(new NewNotification(NotificationType.ADDED_TO_GROUP, event.actorId(), NotificationTargetType.CONVERSATION,
                     event.conversationId().toString(), payload), event.recipientIds());
         });
+    }
+
+    @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onJoinRequested(JoinRequested event) {
+        safely("COMMUNITY_JOIN_REQUEST", () -> deliver(new NewNotification(NotificationType.COMMUNITY_JOIN_REQUEST,
+                event.requesterId(), NotificationTargetType.COMMUNITY, event.communitySlug(),
+                communityPayload(event.communityName())), event.staffIds()));
+    }
+
+    @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onJoinRequestDecided(JoinRequestDecided event) {
+        NotificationType type = event.approved() ? NotificationType.COMMUNITY_JOIN_APPROVED : NotificationType.COMMUNITY_JOIN_REJECTED;
+        // A rejection does not say which moderator decided
+        Long actor = event.approved() ? event.actorId() : null;
+        safely(type.name(), () -> deliver(new NewNotification(type, actor, NotificationTargetType.COMMUNITY,
+                event.communitySlug(), communityPayload(event.communityName())), List.of(event.requesterId())));
+    }
+
+    private static Map<String, Object> communityPayload(String communityName) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("communityName", communityName);
+        return payload;
     }
 
     /** Title, start as a UTC instant and the event's own IANA zone: the client formats the time (D-019). */

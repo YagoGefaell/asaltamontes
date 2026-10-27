@@ -19,7 +19,9 @@ import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
+import io.github.yagogefaell.asaltamontes.community.service.CommunityModerationService;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 @RestController
@@ -27,9 +29,11 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 public class CommunityController {
 
     private final CommunityService communityService;
+    private final CommunityModerationService moderationService;
 
-    public CommunityController(CommunityService communityService) {
+    public CommunityController(CommunityService communityService, CommunityModerationService moderationService) {
         this.communityService = communityService;
+        this.moderationService = moderationService;
     }
 
     @PostMapping
@@ -46,9 +50,11 @@ public class CommunityController {
     public ResponseEntity<Page<CommunitySearchDto>> getAllCommunities(
             @AuthenticationPrincipal UserAccount currentUser,
             @RequestParam(required = false) String query,
+            @RequestParam(required = false) String city,
+            @RequestParam(required = false) String province,
             @PageableDefault(size = 20) Pageable pageable
         ) {
-        Page<CommunitySearchDto> communities = communityService.getAllCommunities(currentUser, query, pageable);
+        Page<CommunitySearchDto> communities = communityService.getAllCommunities(currentUser, query, city, province, pageable);
         return ResponseEntity.ok(communities);
     }
 
@@ -70,8 +76,9 @@ public class CommunityController {
     public ResponseEntity<Void> joinCommunity(
             @PathVariable UUID communityId,
             @AuthenticationPrincipal UserAccount currentUser) {
-        communityService.joinCommunity(communityId, currentUser);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        // 201: she is a member; 202: a private community, her request waits for the moderation
+        CommunityService.JoinResult result = communityService.joinCommunity(communityId, currentUser);
+        return ResponseEntity.status(result == CommunityService.JoinResult.JOINED ? HttpStatus.CREATED : HttpStatus.ACCEPTED).build();
     }
 
     @PostMapping("/{communityId}/leave")
@@ -92,6 +99,15 @@ public class CommunityController {
             @PageableDefault(size = 20) Pageable pageable) {
         Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser, pageable);
         return ResponseEntity.ok(members);
+    }
+
+    /** By slug or by public id; absent field = unchanged, explicit null = clears (D-020). */
+    @PatchMapping("/{ref}")
+    public ResponseEntity<CommunityDetailsDto> updateCommunity(
+            @PathVariable String ref,
+            @AuthenticationPrincipal UserAccount currentUser,
+            @RequestBody JsonNode body) {
+        return ResponseEntity.ok(moderationService.update(ref, body, currentUser));
     }
 
     @DeleteMapping("/{communityId}")
