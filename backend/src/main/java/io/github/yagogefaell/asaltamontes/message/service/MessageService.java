@@ -148,8 +148,11 @@ public class MessageService {
             throw new ConflictException("Solo se pueden borrar mensajes de usuarias");
         }
         Long authorId = message.getSender() == null ? null : message.getSender().getId();
-        messageRepository.delete(message);
-        messageRepository.flush();
+        communityChat.requireCanDeleteFrom(communityId, userId, authorId);
+        // One statement: two moderators deleting the same message at once get 204 and 404, never a 500
+        if (messageRepository.deleteByIdReturningCount(message.getId()) == 0) {
+            throw new NotFoundException("Mensaje no encontrado");
+        }
         Message last = messageRepository.findFirstByConversationIdOrderByIdDesc(conversationId).orElse(null);
         if (last == null) {
             conversationRepository.replaceLastMessage(conversationId, null, null, null);

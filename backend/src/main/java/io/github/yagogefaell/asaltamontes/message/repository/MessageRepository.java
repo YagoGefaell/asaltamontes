@@ -28,6 +28,10 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Optional<Message> findFirstByConversationIdOrderByIdDesc(Long conversationId);
 
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM Message m WHERE m.id = :id")
+    int deleteByIdReturningCount(@Param("id") Long id);
+
     // A history cursor names a message of the same chat with that exact sent_at (D-021, T30c)
     @Query("""
         SELECT m.id FROM Message m
