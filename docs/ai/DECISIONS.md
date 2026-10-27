@@ -105,6 +105,6 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
   - Nada se puede enumerar (`/events/124`, `/events/125`…) ni revela volúmenes de negocio (usuarias, eventos, mensajes), lo que importa de cara a las marcas.
   - La defensa principal sigue siendo la **autorización por recurso** en cada petición; el UUID es una capa extra.
   - Un **test de arquitectura en la CI** impide que un DTO de respuesta exponga el `Long id` interno.
-  - Los **cursores de paginación son opacos** (no se expone el id interno ni el orden real).
+  - Los **cursores de paginación son opacos** (no se expone el id interno ni el orden real). T30c los codifica (base64url) y los valida contra la BD y los permisos; **no van firmados** (Yago, 2026-10-27: no por ahora). Si algún día un cursor lleva filtros o permisos dentro, habrá que firmarlos (HMAC con secreto en `.env`).
   - Postgres 17 no genera UUID v7 de forma nativa: se generan en Java al crear la entidad (`@PrePersist` o generador de Hibernate si lo soporta la versión).
   - **Todo recurso nuevo que se exponga nace con `public_id`.** Implementación de lo existente: **T30**.

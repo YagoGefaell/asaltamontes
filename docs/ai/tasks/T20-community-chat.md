@@ -17,3 +17,6 @@ Cada comunidad tiene un chat de grupo propio, sincronizado con su lista de miemb
 - Las silenciadas (`MUTED`) pueden leer pero no escribir; las baneadas pierden el acceso.
 - Posibilidad de que la moderación desactive el chat. Mensajes fijados (opcional).
 - Para comunidades grandes: la entrega por WS a N miembros no debe hacer N consultas (resolver ids en una sola consulta; vigilar con T28).
+
+## Historial para quien entra (decisión de Yago, 2026-10-27)
+En el chat gestionado de comunidad las nuevas participantes ven el **historial completo**; no se aplica el filtro por `joined_at` de los grupos manuales ni la opción "historial visible para nuevas" (ver T12). Test: una usuaria que entra después ve los mensajes anteriores.
