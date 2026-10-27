@@ -32,6 +32,16 @@ describe('useGlobalMessageListener', () => {
     expect(onError).toHaveBeenCalledWith({ detail: 'No tienes permiso' })
   })
 
+  it('tells when a chat has to leave the list (T12)', () => {
+    const client = fakeStompClient()
+    const onRemoved = vi.fn()
+
+    renderHook(() => useGlobalMessageListener(client, true, vi.fn(), vi.fn(), onRemoved))
+    client.handlers['/user/queue/conversations']({ body: JSON.stringify({ conversationId: 'c1', reason: 'REMOVED' }) })
+
+    expect(onRemoved).toHaveBeenCalledWith({ conversationId: 'c1', reason: 'REMOVED' })
+  })
+
   it('does not subscribe until the socket is connected and unsubscribes on unmount', () => {
     const client = fakeStompClient()
 
@@ -42,7 +52,7 @@ describe('useGlobalMessageListener', () => {
     expect(client.subscribe).not.toHaveBeenCalled()
 
     rerender({ connected: true })
-    expect(client.subscribe).toHaveBeenCalledTimes(2)
+    expect(client.subscribe).toHaveBeenCalledTimes(3)
 
     unmount()
     client.unsubscribes.forEach((unsubscribe) => expect(unsubscribe).toHaveBeenCalled())
