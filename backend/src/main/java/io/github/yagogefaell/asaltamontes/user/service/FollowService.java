@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.user.service;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,7 @@ public class FollowService {
     private final UserProfileRepository userProfileRepository;
     private final UserFollowRepository userFollowRepository;
     private final BlockService blockService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void followUser(Long followerId, String usernameToFollow) {
@@ -49,6 +51,7 @@ public class FollowService {
 
         userProfileRepository.incrementFollowing(followerId);
         userProfileRepository.incrementFollowers(following.getId());
+        eventPublisher.publishEvent(new UserFollowed(followerId, following.getId()));
     }
 
     @Transactional

@@ -21,6 +21,9 @@ public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Lo
     @Query("SELECT a.status FROM EventAttendee a WHERE a.event.id = :eventId AND a.user.id = :userId")
     Optional<AttendeeStatus> findStatus(@Param("eventId") Long eventId, @Param("userId") Long userId);
 
+    @Query("SELECT a.user.id FROM EventAttendee a WHERE a.event.id = :eventId AND a.status IN :statuses")
+    List<Long> findUserIdsByStatuses(@Param("eventId") Long eventId, @Param("statuses") java.util.Collection<AttendeeStatus> statuses);
+
     Optional<EventAttendee> findByEventIdAndUserId(Long eventId, Long userId);
 
     @Query("SELECT COALESCE(MAX(a.waitlistPosition), 0) FROM EventAttendee a WHERE a.event.id = :eventId AND a.status = :status")

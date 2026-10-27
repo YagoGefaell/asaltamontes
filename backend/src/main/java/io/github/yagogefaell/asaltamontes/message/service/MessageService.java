@@ -217,6 +217,9 @@ public class MessageService {
         }
 
         Conversation newConv = createGroupConversation(creator, members, groupName, image);
+        // T18: the members are told they were added (the creator is not notified of her own action)
+        eventPublisher.publishEvent(new AddedToGroup(newConv.getPublicId(), newConv.getGroupName(), creator.getId(),
+                creator.getUsername(), memberIds));
         return new ChatResponseDto(newConv.getPublicId());
     }
 

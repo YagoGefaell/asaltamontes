@@ -191,6 +191,8 @@ public class EventService {
             throw new ConflictException("Ya hay " + event.getAttendeeCount() + " personas apuntadas: no puedes dejar menos plazas");
         }
 
+        List<String> changedFields = changedNotifiableFields(event, startsAt, timezone, changes);
+
         if (changes.has("title")) event.setTitle(changes.title().strip());
         if (changes.has("description")) event.setDescription(changes.description());
         if (changes.has("type")) event.setType(changes.type());
@@ -208,6 +210,9 @@ public class EventService {
 
         // Flush here so a concurrent edit fails as a 409 inside this request (@Version)
         eventRepository.saveAndFlush(event);
+        if (!changedFields.isEmpty()) {
+            eventPublisher.publishEvent(new EventUpdated(eventId, user.getId(), changedFields));
+        }
         // More places, or no limit any more: the waitlist moves up
         if (capacityChanges && previousCapacity != null
                 && (changes.capacity() == null || changes.capacity() > previousCapacity)) {
@@ -215,6 +220,19 @@ public class EventService {
             entityManager.refresh(event);
         }
         return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
+    }
+
+    /** What an attendee plans around (T18): when and where. Everything else changing does not notify anyone. */
+    private static List<String> changedNotifiableFields(Event event, Instant startsAt, String timezone, UpdateEventDto changes) {
+        List<String> changed = new java.util.ArrayList<>();
+        if (!Objects.equals(event.getStartsAt(), startsAt)) changed.add("startsAt");
+        if (!Objects.equals(event.getTimezone(), timezone)) changed.add("timezone");
+        if (changes.has("city") && !Objects.equals(event.getCity(), changes.city())) changed.add("city");
+        boolean meetingPointChanged = (changes.has("meetingPointName") && !Objects.equals(event.getMeetingPointName(), changes.meetingPointName()))
+                || (changes.has("latitude") && !Objects.equals(event.getLatitude(), changes.latitude()))
+                || (changes.has("longitude") && !Objects.equals(event.getLongitude(), changes.longitude()));
+        if (meetingPointChanged) changed.add("meetingPoint");
+        return changed;
     }
 
     private static Object valueOf(UpdateEventDto changes, String field) {
@@ -239,7 +257,7 @@ public class EventService {
             event.setCancelledAt(Instant.now());
             event.setCancelReason(reason == null || reason.isBlank() ? null : reason.strip());
             eventRepository.saveAndFlush(event);
-            eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason()));
+            eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason(), user.getId()));
         }
         return toDetails(event, user, attendeeRepository.findStatus(eventId, user.getId()).orElse(null));
     }
@@ -272,6 +290,7 @@ public class EventService {
             attendee.setWaitlistPosition(attendeeRepository.maxWaitlistPosition(eventId, AttendeeStatus.WAITLIST) + 1);
         }
         attendeeRepository.saveAndFlush(attendee);
+        eventPublisher.publishEvent(new EventAttendeeJoined(eventId, user.getId(), attendee.getStatus() == AttendeeStatus.WAITLIST));
 
         entityManager.refresh(event);
         return toDetails(event, user, attendee.getStatus());
