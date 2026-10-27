@@ -71,7 +71,21 @@ describe('Communities (T29b)', () => {
     const link = screen.getByRole('link', { name: /Trail Madrid/ })
     expect(link).toHaveAttribute('href', '/communities/trail-madrid')
     expect(link).toHaveTextContent('1 miembro')
+    expect(link).toHaveTextContent('Trail Madrid')
     expect(link.querySelector('button')).toBeNull()
+  })
+
+  it('puts city and province in a sheet and counts them', () => {
+    renderPage()
+    expect(screen.queryByLabelText('Ciudad')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: 'Madrid' } })
+    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: 'Madrid' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }))
+    expect(screen.getByRole('button', { name: 'Filtros · 2' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros · 2' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar filtros' }))
+    expect(screen.getByRole('button', { name: 'Filtros' })).toBeInTheDocument()
   })
 
   it('disables load more while loading the next page', () => {

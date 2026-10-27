@@ -1,143 +1,312 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import UserCard from "../../shared/ui/UserCard";
-import Loading from "../../shared/components/Loading";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { FaSearch, FaTimes, FaHistory } from "react-icons/fa";
 import "./Search.css";
 import { getAllUsersRequest } from "../../features/users/services/users.service";
+import { getCommunitiesRequest } from "../../features/communities/services/communities.service";
+import { getEventsRequest } from "../../features/events/services/events.service";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useRecentSearches } from "../../features/search/hooks/useRecentSearches";
+import { useSearchSection } from "../../features/search/hooks/useSearchSection";
+import CommunityRow from "../../features/search/components/CommunityRow";
+import EventCard from "../../features/events/components/EventCard";
+import UserCard from "../../shared/ui/UserCard";
+import Tabs from "../../shared/ui/Tabs";
+import EmptyState from "../../shared/ui/EmptyState";
+import Skeleton from "../../shared/ui/Skeleton";
+import Button from "../../shared/forms/Button";
+
+const DEBOUNCE_MS = 300;
+const ALL_PREVIEW = 3;
+const SUGGESTIONS = 5;
+
+const SEARCH_TABS = [
+  { id: "all", label: "Todo" },
+  { id: "users", label: "Personas" },
+  { id: "communities", label: "Comunidades" },
+  { id: "events", label: "Quedadas" },
+];
+const TAB_IDS = SEARCH_TABS.map((tab) => tab.id);
+
+function UserRowSkeleton() {
+  return (
+    <div className="search-skeleton-row" data-testid="search-skeleton">
+      <Skeleton width="48px" height="48px" circle />
+      <div className="search-skeleton-row__lines">
+        <Skeleton width="55%" height="1rem" />
+        <Skeleton width="35%" height="0.75rem" />
+      </div>
+    </div>
+  );
+}
+
+function EventSkeleton() {
+  return (
+    <div className="search-skeleton-event" data-testid="search-skeleton">
+      <Skeleton height="104px" />
+    </div>
+  );
+}
+
+/** A block of results: title, rows (skeleton / error / items) and "Ver todas" or "Cargar más". */
+function ResultSection({ title, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
+  const { items, loading, loadingMore, hasMore, error, loadMore, retry } = section;
+  if (hideWhenEmpty && !loading && !error && items.length === 0) return null;
+  const shown = preview ? items.slice(0, preview) : items;
+
+  return (
+    <section className="search-section" aria-label={title} aria-busy={loading || undefined}>
+      <h2 className="search-section__title">{title}</h2>
+      {loading && [0, 1, 2].slice(0, preview || 3).map((i) => <div key={i}>{skeleton}</div>)}
+      {!loading && error && (
+        <div className="search-error" role="alert">
+          <p>{error}</p>
+          <Button variant="outline" size="small" onClick={retry}>Reintentar</Button>
+        </div>
+      )}
+      {!loading && !error && shown.map(render)}
+      {!loading && !error && preview && (items.length > preview || hasMore) && (
+        <Button variant="ghost" className="search-section__more" onClick={onSeeAll}>Ver todas</Button>
+      )}
+      {!loading && !error && !preview && hasMore && (
+        <Button variant="ghost" className="search-section__more" onClick={loadMore} loading={loadingMore}>
+          Cargar más
+        </Button>
+      )}
+    </section>
+  );
+}
 
 const Search = () => {
   const { currentUser } = useAuth();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState(null);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [searchTimeout, setSearchTimeout] = useState(null);
-  const initializedRef = useRef(false);
+  const [params, setParams] = useSearchParams();
+  const tabParam = params.get("tab");
+  const tab = TAB_IDS.includes(tabParam) ? tabParam : "all";
+  const qParam = params.get("q") ?? "";
 
-  const fetchUsers = useCallback(async (page = 0, query = "", reset = false) => {
-    if (page === 0) {
-      setLoading(true);
-    } else {
-      setLoadingMore(true);
-    }
-    setError(null);
+  const [text, setText] = useState(qParam);
+  const [query, setQuery] = useState(qParam.trim());
+  const { recents, add: addRecent, remove: removeRecent, clear: clearRecents } = useRecentSearches();
 
-    try {
-      const pageData = await getAllUsersRequest(page, 20, query);
-      const newUsers = pageData.content || [];
-
-      if (reset || page === 0) {
-        setUsers(newUsers);
-      } else {
-        setUsers((prev) => [...prev, ...newUsers]);
-      }
-
-      setHasMore(!pageData.last);
-      setCurrentPage(page);
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setError(err.message || "Error al cargar usuarios");
-      if (reset || page === 0) {
-        setUsers([]);
-      }
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
-  }, []);
-
+  // Search when she stops typing; the term lives in the URL so a reload or a shared link keeps it
   useEffect(() => {
-    if (initializedRef.current) {
-      return;
-    }
+    const id = setTimeout(() => {
+      const clean = text.trim();
+      setQuery(clean);
+      setParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (clean) next.set("q", clean);
+          else next.delete("q");
+          return next;
+        },
+        { replace: true },
+      );
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [text, setParams]);
 
-    initializedRef.current = true;
-    fetchUsers(0, "", true);
-  }, [fetchUsers]);
+  const setTab = (id) =>
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id === "all") next.delete("tab");
+        else next.set("tab", id);
+        return next;
+      },
+      { replace: true },
+    );
 
-  const handleSearch = (e) => {
-    const query = e.target.value;
-    setSearchTerm(query);
+  const searching = query.length > 0;
+  const wantsUsers = tab === "all" || tab === "users";
+  const wantsCommunities = tab === "all" || tab === "communities";
+  const wantsEvents = tab === "all" || tab === "events";
 
-    if (searchTimeout) {
-      clearTimeout(searchTimeout);
-    }
+  const users = useSearchSection(
+    async (page) => {
+      const result = await getAllUsersRequest(page, 20, query);
+      return { items: result?.content ?? [], hasMore: result?.last === false };
+    },
+    query,
+    searching && wantsUsers,
+  );
+  // Both of these also feed the suggestions when there is no text
+  const communities = useSearchSection(
+    (page) => getCommunitiesRequest({ page, query }),
+    query,
+    wantsCommunities,
+  );
+  // The events API has no free-text search yet: the text is matched against the city (see T29 notes)
+  const events = useSearchSection(
+    (page) => getEventsRequest({ page, city: query, from: new Date().toISOString(), size: searching ? 20 : SUGGESTIONS }),
+    query,
+    wantsEvents,
+  );
 
-    const timeout = setTimeout(() => {
-      fetchUsers(0, query, true);
-    }, 300);
+  const myUsername = currentUser?.username;
 
-    setSearchTimeout(timeout);
+  const renderUser = (user) => (
+    <UserCard
+      key={user.username}
+      fullName={user.fullName}
+      username={user.username}
+      profilePictureUrl={user.profilePictureUrl}
+      showFollowButton={myUsername !== user.username}
+      isFollowing={Boolean(user.isFollowing)}
+    />
+  );
+  const renderCommunity = (community) => <CommunityRow key={community.id} community={community} />;
+  const renderEvent = (event) => (
+    <div className="search-event" key={event.id}>
+      <EventCard event={event} />
+    </div>
+  );
+
+  const onSubmit = (e) => {
+    e.preventDefault();
+    setQuery(text.trim());
+    addRecent(text);
   };
 
-  const handleLoadMore = () => {
-    if (!loadingMore && hasMore) {
-      fetchUsers(currentPage + 1, searchTerm);
-    }
+  const pickRecent = (term) => {
+    setText(term);
+    setQuery(term);
   };
+
+  // Tapping any result keeps the term in her recents
+  const rememberOnResultClick = () => addRecent(query);
+
+  const settledEmpty = (s) => !s.loading && !s.error && s.items.length === 0;
+  const nothingFound =
+    searching && (tab === "all" ? [users, communities, events].every(settledEmpty) : settledEmpty({ users, communities, events }[tab]));
+
+  const sectionProps = (preview) => ({ preview, hideWhenEmpty: tab === "all" });
 
   return (
     <div className="search-page">
-      <div className="search-input-container">
-        <input
-          type="text"
-          placeholder="Buscar usuarios..."
-          value={searchTerm}
-          onChange={handleSearch}
-        />
+      <div className="search-top">
+        <form className="search-field" role="search" onSubmit={onSubmit}>
+          <FaSearch className="search-field__icon" aria-hidden="true" />
+          <input
+            type="search"
+            enterKeyHint="search"
+            placeholder="Buscar personas, comunidades, quedadas"
+            aria-label="Buscar"
+            autoComplete="off"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          {text && (
+            <button type="button" className="search-field__clear" aria-label="Borrar búsqueda" onClick={() => setText("")}>
+              <FaTimes aria-hidden="true" />
+            </button>
+          )}
+        </form>
+        <Tabs tabs={SEARCH_TABS} value={tab} onChange={setTab} label="Tipo de resultado" idPrefix="search-tab" />
       </div>
 
-      <div className="search-results">
-        {loading && (
-          <div className="search-loading">
-            <Loading />
-          </div>
-        )}
-
-        {error && <p className="search-error">{error}</p>}
-
-        {!loading && !error && (
+      <div className="search-results" id={`search-tab-panel-${tab}`} role="tabpanel" aria-labelledby={`search-tab-${tab}`}
+        onClick={searching ? rememberOnResultClick : undefined}>
+        {!searching && (
           <>
-            {users.length > 0 ? (
-              <>
-                {users.map((user, index) => (
-                  <UserCard
-                    key={user.username || index}
-                    fullName={user.fullName}
-                    username={user.username}
-                    profilePictureUrl={user.profilePictureUrl}
-                    showFollowButton={currentUser?.username !== user.username}
-                    isFollowing={Boolean(user.isFollowing)}
-                  />
-                ))}
+            {recents.length > 0 && (
+              <section className="search-section" aria-label="Búsquedas recientes">
+                <div className="search-section__head">
+                  <h2 className="search-section__title">Recientes</h2>
+                  <Button variant="ghost" size="small" onClick={clearRecents}>Borrar todo</Button>
+                </div>
+                <ul className="search-recents">
+                  {recents.map((term) => (
+                    <li key={term} className="search-recents__item">
+                      <button type="button" className="search-recents__term" onClick={() => pickRecent(term)}>
+                        <FaHistory aria-hidden="true" />
+                        <span>{term}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="search-recents__remove"
+                        aria-label={`Quitar ${term} de recientes`}
+                        onClick={() => removeRecent(term)}
+                      >
+                        <FaTimes aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
 
-                {hasMore && (
-                  <div className="load-more-container">
-                    <button
-                      className="load-more-btn"
-                      onClick={handleLoadMore}
-                      disabled={loadingMore}
-                    >
-                      {loadingMore ? "Cargando..." : "Cargar más"}
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <p className="no-results">
-                {searchTerm ? "No se encontraron usuarios" : "No hay usuarios disponibles"}
-              </p>
+            {tab === "users" && recents.length === 0 && (
+              <EmptyState title="Busca a otras corredoras" description="Escribe un nombre o un @usuario." />
+            )}
+            {tab === "users" && recents.length > 0 && (
+              <p className="search-hint">Escribe un nombre o un @usuario para buscar personas.</p>
+            )}
+
+            {wantsCommunities && (
+              <ResultSection
+                title="Comunidades para ti"
+                section={{ ...communities, items: communities.items.slice(0, SUGGESTIONS), hasMore: false }}
+                render={renderCommunity}
+                skeleton={<UserRowSkeleton />}
+                hideWhenEmpty
+              />
+            )}
+            {wantsEvents && (
+              <ResultSection
+                title="Próximas quedadas"
+                section={{ ...events, hasMore: false }}
+                render={renderEvent}
+                skeleton={<EventSkeleton />}
+                hideWhenEmpty
+              />
             )}
           </>
         )}
 
-        {loadingMore && (
-          <div className="loading-more">
-            <Loading />
-          </div>
+        {searching && (
+          <>
+            {wantsUsers && (
+              <ResultSection
+                title="Personas"
+                section={users}
+                render={renderUser}
+                skeleton={<UserRowSkeleton />}
+                onSeeAll={() => setTab("users")}
+                {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
+              />
+            )}
+            {wantsCommunities && (
+              <ResultSection
+                title="Comunidades"
+                section={communities}
+                render={renderCommunity}
+                skeleton={<UserRowSkeleton />}
+                onSeeAll={() => setTab("communities")}
+                {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
+              />
+            )}
+            {wantsEvents && (
+              <ResultSection
+                title="Quedadas"
+                section={events}
+                render={renderEvent}
+                skeleton={<EventSkeleton />}
+                onSeeAll={() => setTab("events")}
+                {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
+              />
+            )}
+            {tab === "events" && !events.loading && !events.error && events.items.length > 0 && (
+              <p className="search-hint">Las quedadas se buscan por ciudad.</p>
+            )}
+            {nothingFound && (
+              <EmptyState
+                title={`No hay resultados para «${query}»`}
+                description={tab === "events" ? "Prueba con el nombre de otra ciudad." : "Prueba con otro nombre."}
+                action={<Button variant="outline" onClick={() => setText("")}>Borrar búsqueda</Button>}
+              />
+            )}
+          </>
         )}
       </div>
     </div>

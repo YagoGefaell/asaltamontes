@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { FaList, FaMapMarkedAlt, FaPlus, FaSearch } from 'react-icons/fa'
 import { useEvents } from '../../features/events/hooks/useEvents.js'
 import EventCard from '../../features/events/components/EventCard.jsx'
 import EventsMapSection from '../../features/events/components/EventsMapSection.jsx'
@@ -7,33 +8,25 @@ import EventFilters from '../../features/events/components/EventFilters.jsx'
 import { EMPTY_FILTERS, hasActiveFilters, toQueryFilters } from '../../features/events/utils/eventFilters.js'
 import EmptyState from '../../shared/ui/EmptyState.jsx'
 import Skeleton from '../../shared/ui/Skeleton.jsx'
+import PageHeader from '../../shared/ui/PageHeader.jsx'
+import Fab from '../../shared/ui/Fab.jsx'
 import Button from '../../shared/forms/Button.jsx'
 import './Events.css'
 
-const CITY_DEBOUNCE_MS = 300
-const VIEWS = [
-  { value: 'list', label: 'Lista' },
-  { value: 'map', label: 'Mapa' },
-]
 
 export default function Events() {
   const navigate = useNavigate()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
-  const [debouncedCity, setDebouncedCity] = useState('')
   const [view, setView] = useState('list')
   const mapView = view === 'map'
 
-  // Search by city when she stops typing
-  useEffect(() => {
-    const timeoutId = setTimeout(() => setDebouncedCity(filters.city.trim()), CITY_DEBOUNCE_MS)
-    return () => clearTimeout(timeoutId)
-  }, [filters.city])
+  const queryFilters = useMemo(() => toQueryFilters(filters), [filters])
+  const { events, setEvents, loading, loadingMore, hasMore, loadMore, error, refetch } = useEvents(queryFilters, !mapView)
 
-  const queryFilters = useMemo(
-    () => toQueryFilters({ ...filters, city: debouncedCity }),
-    [filters, debouncedCity],
+  const replaceEvent = useCallback(
+    (updated) => setEvents((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e))),
+    [setEvents],
   )
-  const { events, loading, loadingMore, hasMore, loadMore, error, refetch } = useEvents(queryFilters, !mapView)
 
   // Infinite scroll: load the next page when the sentinel comes into view
   const sentinelRef = useRef(null)
@@ -49,24 +42,21 @@ export default function Events() {
 
   return (
     <div className="events-page">
-      <header className="events-header">
-        <h2>Quedadas</h2>
-        <Button size="small" onClick={() => navigate('/events/new')}>Crear quedada</Button>
-      </header>
-
-      <div className="events-view-toggle" role="group" aria-label="Vista">
-        {VIEWS.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            className={`events-view-toggle__option${view === value ? ' is-active' : ''}`}
-            aria-pressed={view === value}
-            onClick={() => setView(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <PageHeader
+        title="Quedadas"
+        actions={
+          <>
+            <Link to="/search?tab=events" aria-label="Buscar quedadas"><FaSearch aria-hidden="true" /></Link>
+            <button
+              type="button"
+              aria-label={mapView ? 'Ver lista' : 'Ver mapa'}
+              onClick={() => setView(mapView ? 'list' : 'map')}
+            >
+              {mapView ? <FaList aria-hidden="true" /> : <FaMapMarkedAlt aria-hidden="true" />}
+            </button>
+          </>
+        }
+      />
 
       <EventFilters filters={filters} onChange={setFilters} />
 
@@ -91,7 +81,7 @@ export default function Events() {
           />
         )}
 
-        {!loading && events.map((event) => <EventCard key={event.id} event={event} />)}
+        {!loading && events.map((event) => <EventCard key={event.id} event={event} onChange={(updated) => replaceEvent(updated)} />)}
 
         {!loading && hasMore && (
           <>
@@ -100,6 +90,7 @@ export default function Events() {
           </>
         )}
       </div>}
+      <Fab icon={<FaPlus aria-hidden="true" />} label="Crear quedada" onClick={() => navigate('/events/new')} />
     </div>
   )
 }

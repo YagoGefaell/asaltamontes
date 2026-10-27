@@ -45,6 +45,11 @@ export function toQueryFilters(filters, now = new Date()) {
   return { ...dateRange(filters.date, now), type: filters.type, level: filters.level, city: filters.city, mine: filters.mine }
 }
 
+/** How many filters live in the bottom sheet (type, level, city): the "n" of "Filtros · n". */
+export function countSheetFilters(filters) {
+  return [filters.type, filters.level, filters.city.trim()].filter(Boolean).length
+}
+
 export function hasActiveFilters(filters) {
   return filters.date !== 'all' || Boolean(filters.type || filters.level || filters.city.trim() || filters.mine)
 }

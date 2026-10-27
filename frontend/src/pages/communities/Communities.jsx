@@ -1,11 +1,16 @@
 import "./Communities.css";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { FaPlus, FaSearch, FaSlidersH } from "react-icons/fa";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
 import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import Button from "../../shared/forms/Button";
+import PageHeader from "../../shared/ui/PageHeader";
+import BottomSheet from "../../shared/ui/BottomSheet";
+import { Chip, ChipRow } from "../../shared/ui/Chip";
+import Input from "../../shared/forms/Input";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
 import Skeleton from "../../shared/ui/Skeleton";
@@ -13,34 +18,30 @@ import { useToast } from "../../shared/ui/Toast";
 import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 import { communityPath } from "../../features/communities/utils/communityPath.js";
 
-const SEARCH_DEBOUNCE_MS = 300;
 const SKELETON_CARDS = 6;
 
 const Communities = () => {
   const toast = useToast();
-  const [searchText, setSearchText] = useState("");
-  const [query, setQuery] = useState("");
-  const [cityText, setCityText] = useState("");
-  const [provinceText, setProvinceText] = useState("");
   const [place, setPlace] = useState({ city: "", province: "" });
-  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities(query, place);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [draft, setDraft] = useState(place);
+  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities("", place);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
 
-  // Search when the user stops typing
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      setQuery(searchText.trim());
-      setPlace({ city: cityText.trim(), province: provinceText.trim() });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => clearTimeout(timeoutId);
-  }, [searchText, cityText, provinceText]);
-
-  const filtered = Boolean(query || place.city || place.province);
+  const count = [place.city, place.province].filter(Boolean).length;
+  const filtered = count > 0;
   const clearFilters = () => {
-    setSearchText("");
-    setCityText("");
-    setProvinceText("");
+    setPlace({ city: "", province: "" });
+    setSheetOpen(false);
+  };
+  const openSheet = () => {
+    setDraft(place);
+    setSheetOpen(true);
+  };
+  const applyFilters = () => {
+    setPlace({ city: draft.city.trim(), province: draft.province.trim() });
+    setSheetOpen(false);
   };
 
   const openCreator = useCallback(() => {
@@ -98,58 +99,50 @@ const Communities = () => {
 
   return (
     <div className="communities-page">
-      <div className="communities-header">
-        <h2>Comunidades</h2>
-        <div className="communities-header-actions">
-          <Button
-            variant="secondary"
-            className="create-community-btn"
-            aria-label="Crear comunidad"
-            title="Crear comunidad"
-            onClick={openCreator}
-            disabled={creatingCommunity}
-          >
-            <svg className="create-community-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Button>
+      <PageHeader
+        title="Comunidades"
+        actions={
+          <>
+            <Link to="/search?tab=communities" aria-label="Buscar comunidades"><FaSearch aria-hidden="true" /></Link>
+            <button type="button" aria-label="Crear comunidad" title="Crear comunidad" onClick={openCreator} disabled={creatingCommunity}>
+              <FaPlus aria-hidden="true" />
+            </button>
+          </>
+        }
+      />
+
+      <ChipRow label="Filtros de comunidades">
+        <Chip selected={filtered} onClick={openSheet} aria-haspopup="dialog">
+          <FaSlidersH aria-hidden="true" /> {filtered ? `Filtros · ${count}` : "Filtros"}
+        </Chip>
+      </ChipRow>
+
+      <BottomSheet
+        open={sheetOpen}
+        title="Filtros"
+        onClose={() => setSheetOpen(false)}
+        footer={
+          <div className="communities-sheet__actions">
+            <Button variant="ghost" onClick={clearFilters}>Quitar filtros</Button>
+            <Button onClick={applyFilters}>Aplicar</Button>
+          </div>
+        }
+      >
+        <div className="communities-sheet__fields">
+          <Input id="cf-city" label="Ciudad" value={draft.city} autoComplete="off" onChange={(e) => setDraft({ ...draft, city: e.target.value })} />
+          <Input id="cf-province" label="Provincia" value={draft.province} autoComplete="off" onChange={(e) => setDraft({ ...draft, province: e.target.value })} />
         </div>
-      </div>
+      </BottomSheet>
 
-      <div className="communities-search">
-        <input
-          type="search"
-          className="communities-search-input"
-          placeholder="Buscar comunidades"
-          aria-label="Buscar comunidades"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-        />
-        <input
-          type="search"
-          className="communities-search-input"
-          placeholder="Ciudad"
-          aria-label="Filtrar por ciudad"
-          value={cityText}
-          onChange={(e) => setCityText(e.target.value)}
-        />
-        <input
-          type="search"
-          className="communities-search-input"
-          placeholder="Provincia"
-          aria-label="Filtrar por provincia"
-          value={provinceText}
-          onChange={(e) => setProvinceText(e.target.value)}
-        />
-      </div>
-
-      <div className="communities-grid" aria-busy={loading || undefined}>
+      <div className="communities-list" aria-busy={loading || undefined}>
         {loading &&
           Array.from({ length: SKELETON_CARDS }, (_, i) => (
-            <div key={i} className="community-card community-card--skeleton" data-testid="community-skeleton">
-              <Skeleton width="80px" height="80px" circle />
-              <Skeleton width="70%" height="1rem" />
-              <Skeleton width="40%" height="0.75rem" />
+            <div key={i} className="community-row community-row--skeleton" data-testid="community-skeleton">
+              <Skeleton width="56px" height="56px" circle />
+              <div className="community-row__text">
+                <Skeleton width="60%" height="1rem" />
+                <Skeleton width="35%" height="0.75rem" />
+              </div>
             </div>
           ))}
 
@@ -162,15 +155,17 @@ const Communities = () => {
 
         {!loading && !error && communities.length > 0 &&
           communities.map((community) => (
-            <div key={community.id} className="community-card">
-              <Link to={communityPath(community)} className="community-card-link">
-                <Avatar src={community.imageUrl} name={community.name} size="xl" />
-                <h3>{community.name}</h3>
-                <span className="community-members">
-                  {community.memberCount} {community.memberCount === 1 ? "miembro" : "miembros"}
+            <div key={community.id} className="community-row">
+              <Link to={communityPath(community)} className="community-row__link">
+                <Avatar src={community.imageUrl} name={community.name} size="lg" />
+                <span className="community-row__text">
+                  <span className="community-row__name">{community.name}</span>
+                  <span className="community-members">
+                    {[community.city, `${community.memberCount} ${community.memberCount === 1 ? "miembro" : "miembros"}`].filter(Boolean).join(" · ")}
+                  </span>
                 </span>
               </Link>
-              <div className="community-card-actions">
+              <div className="community-row__action">
                 {community.visibility === "PRIVATE" && !community.role ? (
                   <CommunityRequestButton communityId={community.id} />
                 ) : (
@@ -190,7 +185,7 @@ const Communities = () => {
           <EmptyState
             className="communities-empty"
             title={filtered ? "No hay comunidades que coincidan con tu búsqueda" : "Todavía no hay comunidades"}
-            description={filtered ? "Prueba con otro nombre o lugar." : "Crea la primera y reúne a tu grupo."}
+            description={filtered ? "Prueba con otro lugar." : "Crea la primera y reúne a tu grupo."}
             action={
               filtered ? (
                 <Button variant="secondary" onClick={clearFilters}>Limpiar búsqueda</Button>
