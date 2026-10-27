@@ -1,12 +1,12 @@
 # T19 — Gestión y moderación de comunidades + comunidades privadas
 
-- **Estado:** pendiente
+- **Estado:** pendiente (T19a backend hecho en esta PR; queda T19b frontend)
 - **Fase:** 2b — Comunidades
 - **Depende de:** T14, T18
 - **Rama sugerida:** `feat/T19-community-moderation`
 - **Cierra bugs:** —
-- **Tamaño:** L
-- **Spec:** 🔍 alto nivel — **refinar antes de implementar** (completar con la plantilla `docs/ai/templates/TASK.md` mirando el código de ese momento).
+- **Tamaño:** L → dividida en **T19a** (backend) y **T19b** (frontend)
+- **Spec:** refinada el 2026-10-27 (ver al final).
 
 ## Objetivo
 Que cada comunidad (grupo local de trail) pueda gestionarse sola: editar datos, nombrar moderadoras, silenciar o expulsar, y ser **privada**, con solicitudes de acceso.
@@ -30,3 +30,21 @@ Que cada comunidad (grupo local de trail) pueda gestionarse sola: editar datos, 
 - Registro de moderación (`community_moderation_log`) con quién, qué y cuándo.
 - Ubicación de la comunidad (ciudad/provincia) y búsqueda por ubicación.
 - Frontend: completar `CommunitySettingsMenu.jsx` (las rutas de ajustes de comunidad ya existen).
+
+## Refinamiento (2026-10-27) — división y decisiones
+
+### T19a — backend (hecho)
+- Migración `V13__community_moderation.sql`: `communities.visibility|city|province`, tablas `community_moderation_log` y `community_join_requests` (la fila existe solo mientras está pendiente), índice único parcial de dedupe para la notificación `COMMUNITY_JOIN_REQUEST`.
+- API (todo en `docs/api-contract-v1.json`): `PATCH /api/communities/{slug|uuid}`; `PUT .../members/{username}/role`; `POST .../members/{username}/{mute|unmute|ban|unban}`; `POST .../transfer-ownership/{username}`; `GET .../banned`, `GET .../requests`, `GET .../moderation-log`; `POST .../requests/{username}/{approve|reject}`; `join` devuelve 202 en comunidades privadas; `GET /api/communities?city=&province=`.
+- Los tres listados nuevos (expulsadas, solicitudes, registro) usan **cursores opacos** (`before`/`nextBefore`, `limit` ≤ 50) que apuntan a una fila de esa comunidad (400 si no).
+- Reglas: solo propietaria y moderadoras actúan; el resto (también una moderadora baneada) recibe el 404 de "comunidad inexistente". La propietaria cambia roles y transfiere; una moderadora solo modera a miembros; nadie expulsa o silencia a la propietaria (409) ni a sí misma (400). Expulsar quita el rol de moderadora. Expulsar/readmitir/aceptar mueven `memberCount` en la misma transacción, con la fila del miembro bloqueada (dos moderadoras a la vez cuentan una sola vez).
+- La propiedad se determina por rol `OWNER` (no por `created_by`), para poder transferirla.
+- El slug **no cambia** al renombrar (los enlaces compartidos siguen funcionando).
+- Notificaciones: `COMMUNITY_JOIN_REQUEST` (a propietaria y moderadoras), `COMMUNITY_JOIN_APPROVED` y `COMMUNITY_JOIN_REJECTED` (la de rechazo no lleva actor). Los bloqueos se respetan a través de `NotificationService`.
+- Silenciar solo marca a la usuaria (visible para la moderación); su efecto en el chat de comunidad llega con T20.
+- Fuera de alcance: expulsar no la saca de eventos/chats de la comunidad (T20); las imágenes de comunidades privadas se sirven por URL pública (T23); la ubicación es texto libre (ciudad/provincia), sin geocodificar.
+
+### T19b — frontend (pendiente)
+- Completar `CommunitySettingsMenu.jsx`: editar datos, visibilidad, ubicación; miembros con roles/silenciar/expulsar (con motivo); sección "Expulsadas" con "Readmitir"; solicitudes pendientes (aceptar/rechazar); registro de moderación; transferir propiedad.
+- Texto de las notificaciones `COMMUNITY_JOIN_*` (payload `communityName`, target `COMMUNITY` con el slug).
+- Botón "Solicitar unirse" / "Solicitud enviada" según `visibility` y `joinRequested`; buscador por ciudad/provincia.
