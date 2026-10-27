@@ -133,6 +133,7 @@
               }
             }
           },
+          "403": { "description": "T13 (POST /api/conversations/private, same path): neutral 403 when there is a block between both, or when the recipient's dmPolicy does not allow a NEW chat. Sending in an existing chat after a block also gives 403 (WebSocket error queue)" },
           "404": { "description": "Conversation not found" }
         }
       }
@@ -306,6 +307,7 @@
                     "birthDate": { "type": "string", "format": "date", "example": "1990-05-15" },
                     "phoneNumber": { "type": "string", "example": "+34600000000" },
                     "isPublicProfile": { "type": "boolean", "example": true },
+                    "dmPolicy": { "type": "string", "enum": ["EVERYONE", "FOLLOWING", "MUTUALS", "NOBODY"], "description": "T13: who can start a NEW private chat with her (existing chats are not affected). Default EVERYONE (D-018)" },
                     "followersCount": { "type": "integer", "example": 150 },
                     "followingCount": { "type": "integer", "example": 200 }
                   }
@@ -336,7 +338,8 @@
                   "city": { "type": "string", "example": "Barcelona" },
                   "profilePictureUrl": { "type": "string", "maxLength": 255, "description": "T17c: URL of one of your own uploads (urls.medium), or an empty string to remove the picture; a new external URL gives 400 (the value already stored, e.g. Google's, is accepted unchanged). Prefer avatarMediaId", "example": "/media/avatar/0b1c.../medium.jpg" },
                   "avatarMediaId": { "type": "string", "format": "uuid", "description": "T17c: id of an AVATAR media of the caller (404 if missing or not hers, 400 if wrong purpose). The previous picture is deleted" },
-                  "isPublicProfile": { "type": "boolean", "example": false }
+                  "isPublicProfile": { "type": "boolean", "example": false },
+                  "dmPolicy": { "type": "string", "enum": ["EVERYONE", "FOLLOWING", "MUTUALS", "NOBODY"], "description": "T13: who can start a NEW private chat with her (existing chats are not affected). Default EVERYONE (D-018)" }
                 }
               }
             }
@@ -463,6 +466,7 @@
                     "runningLevel": { "type": "string", "example": "INTERMEDIATE" },
                     "isPublicProfile": { "type": "boolean", "example": true },
                     "isFollowing": { "type": "boolean", "example": false },
+                    "isBlockedByMe": { "type": "boolean", "description": "T13: the caller has blocked this user", "example": false },
                     "followersCount": { "type": "integer", "example": 150 },
                     "followingCount": { "type": "integer", "example": 200 }
                   }
@@ -474,8 +478,52 @@
             "description": "Not authenticated"
           },
           "404": {
-            "description": "User not found"
+            "description": "User not found, or she has blocked the caller (T13: indistinguishable)"
           }
+        }
+      }
+    },
+    "/api/users/{username}/block": {
+      "post": {
+        "summary": "Block a user (T13)",
+        "description": "Idempotent. Works in both directions: no private chat can be created or used between both, the follows between them are removed (counters fixed), the blocked user gets 404 for the blocker's profile and does not see her in searches or follower lists, and neither can add the other to a group (403 with a neutral message). Shared groups are not touched: nobody is expelled and the messages stay visible. The other user is never notified.",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "username", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "204": { "description": "Blocked (or already blocked)" },
+          "400": { "description": "Cannot block yourself" },
+          "401": { "description": "Not authenticated" },
+          "404": { "description": "User not found" }
+        }
+      },
+      "delete": {
+        "summary": "Unblock a user (T13)",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "username", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "204": { "description": "Unblocked (or was not blocked)" },
+          "401": { "description": "Not authenticated" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/users/me/blocks": {
+      "get": {
+        "summary": "Users I have blocked, most recent first (T13)",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Spring page of { username, fullName, profilePictureUrl, blockedAt }",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          },
+          "401": { "description": "Not authenticated" }
         }
       }
     },
@@ -852,7 +900,7 @@
         "responses": {
           "200": { "description": "GroupDetailsDto" },
           "400": { "description": "No valid usernames, or the group would exceed its maximum size" },
-          "403": { "description": "Not an admin" },
+          "403": { "description": "Not an admin; or (T13) one of the new members blocked the caller or was blocked by her: nothing is added and the message does not say who. Up to 50 per request is kept: the block check is a single query" },
           "404": { "description": "Chat not found, or a username does not exist" },
           "409": { "description": "Este grupo se gestiona automáticamente" }
         }

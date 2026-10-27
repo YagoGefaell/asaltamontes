@@ -1,0 +1,59 @@
+.privacy-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  color: var(--text-color);
+}
+
+.privacy-settings h3 {
+  margin: 0 0 0.5rem;
+}
+
+.privacy-settings select {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--text-color);
+}
+
+.privacy-hint {
+  margin: 0 0 0.5rem;
+  opacity: 0.8;
+}
+
+.blocked-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.blocked-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.blocked-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.privacy-settings button {
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: none;
+  color: var(--text-color);
+  cursor: pointer;
+}

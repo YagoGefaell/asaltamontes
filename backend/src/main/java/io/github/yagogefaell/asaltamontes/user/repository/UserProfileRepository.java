@@ -77,6 +77,9 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     """)
     Page<Long> findUserIds(Pageable pageable);
 
+    @Query("select p.dmPolicy from UserProfile p where p.user.id = :userId")
+    Optional<io.github.yagogefaell.asaltamontes.user.domain.DmPolicy> findDmPolicy(@Param("userId") Long userId);
+
     Optional<UserProfile> findByUserId(long userId);
     boolean existsByUserId(long userId);
     Optional<UserProfile> findByUser(io.github.yagogefaell.asaltamontes.user.domain.UserAccount user);

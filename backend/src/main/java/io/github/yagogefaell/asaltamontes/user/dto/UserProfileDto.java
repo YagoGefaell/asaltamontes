@@ -13,6 +13,8 @@ public record UserProfileDto(
 
     Boolean isPublicProfile,
     Boolean isFollowing,
+    // True when the requester has blocked this user (so the client offers "Desbloquear")
+    Boolean isBlockedByMe,
 
     Long followersCount,
     Long followingCount

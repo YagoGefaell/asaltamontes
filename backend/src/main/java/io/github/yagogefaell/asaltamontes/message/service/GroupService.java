@@ -41,6 +41,7 @@ import io.github.yagogefaell.asaltamontes.message.repository.ConversationPartici
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.BlockService;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 
 /**
@@ -64,6 +65,7 @@ public class GroupService {
     private final ConversationParticipantRepository participantRepository;
     private final MessageRepository messageRepository;
     private final UserService userService;
+    private final BlockService blockService;
     private final MediaReferenceService mediaReferences;
     private final ApplicationEventPublisher eventPublisher;
     private final int maxGroupSize;
@@ -72,6 +74,7 @@ public class GroupService {
                         ConversationParticipantRepository participantRepository,
                         MessageRepository messageRepository,
                         UserService userService,
+                        BlockService blockService,
                         MediaReferenceService mediaReferences,
                         ApplicationEventPublisher eventPublisher,
                         @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
@@ -79,6 +82,7 @@ public class GroupService {
         this.participantRepository = participantRepository;
         this.messageRepository = messageRepository;
         this.userService = userService;
+        this.blockService = blockService;
         this.mediaReferences = mediaReferences;
         this.eventPublisher = eventPublisher;
         this.maxGroupSize = maxGroupSize;
@@ -170,10 +174,13 @@ public class GroupService {
 
         List<Long> already = participantRepository.findParticipantUserIds(conversation.getId(),
                 found.values().stream().map(UserAccount::getId).toList());
-        // T13 extension point: skip (or reject) the users who blocked the caller or whom she blocked
         List<UserAccount> toAdd = wanted.stream().map(found::get).filter(u -> !already.contains(u.getId())).toList();
         if (toAdd.isEmpty()) {
             return details(access, 0, DEFAULT_PARTICIPANT_PAGE);
+        }
+        // T13: nothing is added if any of them blocked the caller or was blocked by her (neutral message, one query)
+        if (!blockService.blockedEitherWayAmong(user.getId(), toAdd.stream().map(UserAccount::getId).toList()).isEmpty()) {
+            throw new ForbiddenException(BlockService.GROUP_ADD_MESSAGE);
         }
         // The row is locked, so this count is the real one for the whole transaction
         if (participantRepository.countByConversationId(conversation.getId()) + toAdd.size() > maxGroupSize) {

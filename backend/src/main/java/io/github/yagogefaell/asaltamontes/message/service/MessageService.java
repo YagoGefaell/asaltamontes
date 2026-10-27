@@ -3,6 +3,7 @@ package io.github.yagogefaell.asaltamontes.message.service;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
@@ -20,6 +21,7 @@ import io.github.yagogefaell.asaltamontes.message.repository.ConversationPartici
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationRepository;
 import io.github.yagogefaell.asaltamontes.message.repository.MessageRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.BlockService;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -43,6 +45,7 @@ public class MessageService {
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository participantRepository;
     private final UserService userService;
+    private final BlockService blockService;
     private final ApplicationEventPublisher eventPublisher;
     private final MediaReferenceService mediaReferences;
     private final int maxGroupSize;
@@ -57,6 +60,7 @@ public class MessageService {
                           ConversationRepository conversationRepository,
                           ConversationParticipantRepository participantRepository,
                           UserService userService,
+                          BlockService blockService,
                           ApplicationEventPublisher eventPublisher,
                           MediaReferenceService mediaReferences,
                           @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
@@ -64,6 +68,7 @@ public class MessageService {
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
         this.userService = userService;
+        this.blockService = blockService;
         this.eventPublisher = eventPublisher;
         this.mediaReferences = mediaReferences;
         this.maxGroupSize = maxGroupSize;
@@ -84,6 +89,9 @@ public class MessageService {
         if (conversationId == null || !participantRepository.existsByConversationIdAndUserId(conversationId, senderId)) {
             throw new NotFoundException("Chat no encontrado");
         }
+        // A block closes the private chat in both directions; groups keep working (T13)
+        participantRepository.findOtherUserIdInPrivateChat(conversationId, senderId)
+                .ifPresent(otherId -> blockService.requireNotBlocked(senderId, otherId));
 
         UserAccount sender = userService.loadUserById(senderId);
 
@@ -138,14 +146,18 @@ public class MessageService {
             throw new BadRequestException("No puedes abrir un chat contigo misma");
         }
 
+        UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
+        UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
+
         Optional<ChatResponseDto> existingChat = getPrivateConversation(currentUsername, recipientUsername);
 
         if (existingChat.isPresent()) {
+            // An existing chat survives dm_policy but not a block
+            blockService.requireNotBlocked(me.getId(), other.getId());
             return existingChat.get();
         }
 
-        UserAccount me = (UserAccount) userService.loadUserByUsername(currentUsername);
-        UserAccount other = (UserAccount) userService.loadUserByUsername(recipientUsername);
+        blockService.requireCanStartPrivateChat(me.getId(), other.getId());
 
         Conversation newConv = createPrivateConversation(me, other);
         return new ChatResponseDto(newConv.getPublicId());
@@ -185,6 +197,10 @@ public class MessageService {
         List<UserAccount> members = normalizedUsernames.stream()
                 .map(username -> (UserAccount) userService.loadUserByUsername(username))
                 .toList();
+
+        if (!blockService.blockedEitherWayAmong(creator.getId(), members.stream().map(UserAccount::getId).toList()).isEmpty()) {
+            throw new ForbiddenException(BlockService.GROUP_ADD_MESSAGE);
+        }
 
         Conversation newConv = createGroupConversation(creator, members, groupName, image);
         return new ChatResponseDto(newConv.getPublicId());

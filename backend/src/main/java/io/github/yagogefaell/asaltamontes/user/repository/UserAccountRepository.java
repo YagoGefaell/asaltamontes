@@ -26,6 +26,10 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
         LEFT JOIN u.profile p
         LEFT JOIN UserFollow f ON f.following = u AND f.follower.id = :userId
         WHERE u.id <> :userId
+        AND NOT EXISTS (
+            SELECT 1 FROM UserBlock bl
+            WHERE (bl.blocker.id = :userId AND bl.blocked.id = u.id) OR (bl.blocked.id = :userId AND bl.blocker.id = u.id)
+        )
         AND (:query IS NULL OR LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')))
     """)
     Page<UserSearchDto> searchUsersByUsername(
@@ -45,6 +49,10 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
         LEFT JOIN u.profile p
         LEFT JOIN UserFollow f ON f.following = u AND f.follower.id = :userId
         WHERE u.id <> :userId
+        AND NOT EXISTS (
+            SELECT 1 FROM UserBlock bl
+            WHERE (bl.blocker.id = :userId AND bl.blocked.id = u.id) OR (bl.blocked.id = :userId AND bl.blocker.id = u.id)
+        )
     """)
     Page<UserSearchDto> searchAllUsers(@Param("userId") Long userId, Pageable pageable);
     
