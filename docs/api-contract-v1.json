@@ -731,7 +731,7 @@
     "/api/conversations/{conversationId}/messages": {
       "get": {
         "summary": "Get one page of the conversation history (opaque cursor)",
-        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame). With `after` instead (T11), returns the `limit` messages newer than that message, oldest first; hasMore then means there are newer ones (call again with after = cursor of the last item) and nextBefore is null.",
+        "description": "Returns the `limit` messages before `before` (or the latest ones), oldest first. To load older messages, call again with before = nextBefore. In manual groups, a member who joined later sees only the messages sent since she joined (T12), unless an admin enabled historyVisibleToNew; private chats and chats managed by a community or event show everything. Does not mark the conversation as read (use POST .../read or the chat.read STOMP frame). With `after` instead (T11), returns the `limit` messages newer than that message, oldest first; hasMore then means there are newer ones (call again with after = cursor of the last item) and nextBefore is null.",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -801,6 +801,100 @@
           "204": { "description": "Marked as read" },
           "401": { "description": "Not authenticated" },
           "404": { "description": "Unknown conversation, or the user is not a participant" }
+        }
+      }
+    },
+    "/api/conversations/{conversationId}": {
+      "get": {
+        "summary": "Group details and a page of its participants (T12)",
+        "description": "Participants: admins first, then by joined_at. `size` default 20, maximum 50 (capped). Only groups: a private chat, an unknown chat and a chat the caller is not in all answer the same 404 `Chat no encontrado`.",
+        "tags": ["Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "conversationId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "GroupDetailsDto { id, name, imageUrl, imageMediaId, participantCount, myRole (ADMIN|MEMBER), historyVisibleToNew, managed, participants: Spring Page of { username, fullName, profilePictureUrl, role, joinedAt } }" },
+          "404": { "description": "Unknown, foreign or not a group" }
+        }
+      },
+      "patch": {
+        "summary": "Rename the group, change or remove its image, toggle the history for new members (admins only, T12)",
+        "description": "D-020: an absent field changes nothing; `groupImage: null` / `groupMediaId: null` remove the image; `groupName` is required, so null or blank is a 400. `groupMediaId` (preferred) or `groupImage` (URL of an own upload) must be the caller's GROUP_IMAGE media. `historyVisibleToNew` (boolean, manual groups only): when true, people who join later can read the history sent before; by default (false) they see only what is sent since they join. Every change leaves a SYSTEM message in the chat.",
+        "tags": ["Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "type": "object", "properties": {
+            "groupName": { "type": "string", "maxLength": 80 },
+            "groupImage": { "type": "string", "nullable": true },
+            "groupMediaId": { "type": "string", "format": "uuid", "nullable": true },
+            "historyVisibleToNew": { "type": "boolean" }
+          } } } }
+        },
+        "responses": {
+          "200": { "description": "GroupDetailsDto" },
+          "400": { "description": "Empty name, invalid image" },
+          "403": { "description": "The caller is not an admin" },
+          "404": { "description": "Unknown, foreign or not a group" },
+          "409": { "description": "Este grupo se gestiona automáticamente (historyVisibleToNew in a managed group)" }
+        }
+      }
+    },
+    "/api/conversations/{conversationId}/participants": {
+      "post": {
+        "summary": "Add participants (admins only, T12)",
+        "description": "`usernames` (1 to 50) are normalised and deduplicated; people who are already in are ignored; if any username does not exist nothing is added (404). Respects max-group-size (400). Leaves a MEMBER_ADDED system message. New members see the history from the moment they join (unless historyVisibleToNew).",
+        "tags": ["Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["usernames"], "properties": { "usernames": { "type": "array", "items": { "type": "string" }, "maxItems": 50 } } } } } },
+        "responses": {
+          "200": { "description": "GroupDetailsDto" },
+          "400": { "description": "No valid usernames, or the group would exceed its maximum size" },
+          "403": { "description": "Not an admin" },
+          "404": { "description": "Chat not found, or a username does not exist" },
+          "409": { "description": "Este grupo se gestiona automáticamente" }
+        }
+      }
+    },
+    "/api/conversations/{conversationId}/participants/{username}": {
+      "delete": {
+        "summary": "Expel a participant (admins only, T12)",
+        "description": "Not herself (400: use leave). She stops receiving messages, loses the history and gets `{conversationId, reason: \"REMOVED\"}` on /user/queue/conversations.",
+        "tags": ["Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Expelled" },
+          "400": { "description": "The caller targeted herself" },
+          "403": { "description": "Not an admin" },
+          "404": { "description": "Chat not found, or `Participante no encontrada`" },
+          "409": { "description": "Este grupo se gestiona automáticamente" }
+        }
+      },
+      "patch": {
+        "summary": "Promote to admin or demote to member (admins only, T12)",
+        "tags": ["Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["role"], "properties": { "role": { "type": "string", "enum": ["ADMIN", "MEMBER"] } } } } } },
+        "responses": {
+          "204": { "description": "Role changed (or already that role)" },
+          "400": { "description": "Invalid role" },
+          "403": { "description": "Not an admin" },
+          "404": { "description": "Chat not found, or `Participante no encontrada`" },
+          "409": { "description": "The group would be left without admin, or it is managed automatically" }
+        }
+      }
+    },
+    "/api/conversations/{conversationId}/leave": {
+      "post": {
+        "summary": "Leave a group (T12)",
+        "description": "If she was the last admin, the member who joined first becomes admin; if she was the last participant the conversation is deleted with its messages. Her sessions get `{conversationId, reason: \"LEFT\"}` on /user/queue/conversations.",
+        "tags": ["Groups"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Left" },
+          "404": { "description": "Unknown, foreign or not a group" }
         }
       }
     },
@@ -972,6 +1066,11 @@
               }
             },
             {
+              "destination": "/user/queue/conversations",
+              "description": "A chat has to leave the list (T12): { conversationId, reason: REMOVED (expelled) | LEFT (she left, other sessions) }",
+              "payload": { "type": "object", "properties": { "conversationId": { "type": "string", "format": "uuid" }, "reason": { "type": "string", "enum": ["REMOVED", "LEFT"] } } }
+            },
+            {
               "destination": "/user/queue/errors",
               "description": "Errors of the frames this session sent (e.g. writing to a conversation the user does not belong to). Only the sending session receives them.",
               "payload": {
@@ -1105,9 +1204,11 @@
         "properties": {
           "id": { "type": "string", "format": "uuid", "example": "0192f3a4-7c01-7000-8000-000000000002" },
           "conversationId": { "type": "string", "format": "uuid", "example": "0192f3a4-7c00-7000-8000-000000000001" },
-          "senderUsername": { "type": "string", "example": "runner123" },
+          "senderUsername": { "type": "string", "nullable": true, "example": "runner123", "description": "Null in SYSTEM messages" },
           "content": { "type": "string", "example": "Nos vemos a las 7 en el parque" },
           "sentAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:16:00" },
+          "type": { "type": "string", "enum": ["USER", "SYSTEM"] },
+          "systemPayload": { "type": "object", "nullable": true, "description": "SYSTEM messages (T12): { action: MEMBER_ADDED | MEMBER_REMOVED | MEMBER_LEFT | ROLE_CHANGED | ADMIN_ASSIGNED | GROUP_RENAMED | GROUP_IMAGE_CHANGED | HISTORY_VISIBILITY_CHANGED, actor?, targets?: [username], name?, role?, removed?, visible? }. Clients compose the text from it; `content` is a Spanish fallback.", "example": { "action": "MEMBER_ADDED", "actor": "ana", "targets": ["marta"] } },
           "cursor": { "type": "string", "description": "Opaque token of this message, to use as `before` / `after` in the history", "example": "bXwxNzc0MzQ..." }
         }
       },

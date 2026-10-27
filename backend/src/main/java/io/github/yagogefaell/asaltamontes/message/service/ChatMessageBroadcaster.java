@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import io.github.yagogefaell.asaltamontes.message.dto.ConversationRemovedDto;
 import io.github.yagogefaell.asaltamontes.message.repository.ConversationParticipantRepository;
 
 /**
@@ -29,5 +30,12 @@ public class ChatMessageBroadcaster {
         for (Long userId : participantRepository.findUserIdsByConversationPublicId(event.message().conversationId())) {
             messagingTemplate.convertAndSendToUser(String.valueOf(userId), "/queue/messages", event.message());
         }
+    }
+
+    /** The chat disappears from the list of the expelled (or the one who left, in her other sessions). */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onConversationRemoved(ConversationRemovedEvent event) {
+        messagingTemplate.convertAndSendToUser(String.valueOf(event.userId()), "/queue/conversations",
+                new ConversationRemovedDto(event.conversationId(), event.reason()));
     }
 }

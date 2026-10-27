@@ -13,6 +13,8 @@ import io.github.yagogefaell.asaltamontes.common.identifier.PublicIdEntity;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 @Entity
+// Bulk statements (last message, unread counters) change columns behind the entity: write only what it changed
+@org.hibernate.annotations.DynamicUpdate
 @Getter
 @Setter
 @NoArgsConstructor
@@ -46,6 +48,22 @@ public class Conversation extends PublicIdEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "last_sender_id")
     private UserAccount lastSender;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private UserAccount createdBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "managed_by", nullable = false)
+    private ManagedBy managedBy = ManagedBy.NONE;
+
+    /** Internal reference of the community/event that manages the group (T20/T21); never exposed. */
+    @Column(name = "managed_ref_id")
+    private Long managedRefId;
+
+    /** Manual groups only: whether people who join later can read what was sent before. */
+    @Column(name = "history_visible_to_new", nullable = false)
+    private boolean historyVisibleToNew = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

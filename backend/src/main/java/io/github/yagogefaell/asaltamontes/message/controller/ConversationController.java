@@ -13,6 +13,17 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import io.github.yagogefaell.asaltamontes.message.dto.AddParticipantsDto;
+import io.github.yagogefaell.asaltamontes.message.dto.GroupDetailsDto;
+import io.github.yagogefaell.asaltamontes.message.dto.UpdateRoleDto;
+import io.github.yagogefaell.asaltamontes.message.service.GroupService;
+import io.github.yagogefaell.asaltamontes.message.service.UpdateGroupReader;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -30,9 +41,14 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 public class ConversationController {
 
     private final MessageService messageService;
+    private final GroupService groupService;
+    private final UpdateGroupReader updateGroupReader;
 
-    public ConversationController(MessageService messageService) {
+    public ConversationController(MessageService messageService, GroupService groupService,
+                                  UpdateGroupReader updateGroupReader) {
         this.messageService = messageService;
+        this.groupService = groupService;
+        this.updateGroupReader = updateGroupReader;
     }
 
     @GetMapping("/private/{recipientUsername}")
@@ -113,6 +129,61 @@ public class ConversationController {
             @AuthenticationPrincipal UserAccount currentUser,
             @PathVariable UUID conversationId) {
         messageService.markConversationAsRead(conversationId, currentUser.getId());
+        return ResponseEntity.noContent().build();
+    }
+
+    // --- Group management (T12): all of them answer 404 for chats that are not groups the caller is in ---
+
+    @GetMapping("/{conversationId}")
+    public ResponseEntity<GroupDetailsDto> getGroup(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(groupService.getDetails(conversationId, currentUser, page, size));
+    }
+
+    @PatchMapping("/{conversationId}")
+    public ResponseEntity<GroupDetailsDto> updateGroup(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId,
+            @RequestBody JsonNode body) {
+        // The raw JSON tells an absent field (no change) from an explicit null (clears it), D-020
+        return ResponseEntity.ok(groupService.update(conversationId, updateGroupReader.read(body), currentUser));
+    }
+
+    @PostMapping("/{conversationId}/participants")
+    public ResponseEntity<GroupDetailsDto> addParticipants(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId,
+            @Valid @RequestBody AddParticipantsDto request) {
+        return ResponseEntity.ok(groupService.addParticipants(conversationId, request.usernames(), currentUser));
+    }
+
+    @DeleteMapping("/{conversationId}/participants/{username}")
+    public ResponseEntity<Void> removeParticipant(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId,
+            @PathVariable String username) {
+        groupService.removeParticipant(conversationId, username, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{conversationId}/participants/{username}")
+    public ResponseEntity<Void> changeRole(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId,
+            @PathVariable String username,
+            @Valid @RequestBody UpdateRoleDto request) {
+        groupService.changeRole(conversationId, username, request.role(), currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{conversationId}/leave")
+    public ResponseEntity<Void> leave(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId) {
+        groupService.leave(conversationId, currentUser);
         return ResponseEntity.noContent().build();
     }
 }

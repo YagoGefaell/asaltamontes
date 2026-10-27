@@ -67,5 +67,7 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     boolean existsByEmailIgnoreCase(String email);
     boolean existsByUsernameIgnoreCase(String username);
     Optional<UserAccount> findByUsernameIgnoreCase(String username);
+    @Query("SELECT u FROM UserAccount u WHERE LOWER(u.username) IN :usernames")
+    java.util.List<UserAccount> findByLowerUsernameIn(@Param("usernames") java.util.Collection<String> usernames);
     Optional<UserAccount> findByEmailIgnoreCase(String email);
 }

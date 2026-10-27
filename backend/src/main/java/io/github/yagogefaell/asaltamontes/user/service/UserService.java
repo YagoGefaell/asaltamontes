@@ -168,6 +168,11 @@ public class UserService implements UserDetailsService {
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
+    /** The accounts whose lower-cased username is in the collection; the ones that do not exist are simply missing. */
+    public java.util.List<UserAccount> loadUsersByUsernames(java.util.Collection<String> usernames) {
+        return userAccountRepository.findByLowerUsernameIn(usernames);
+    }
+
     public UserProfileDto getUserByUsername(String username, Long requesterId) {
         UserAccount user = userAccountRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UserNotFoundException(username));

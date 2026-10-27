@@ -51,6 +51,12 @@ public class TestDataFactory {
         return communityService.create(new CreateCommunityDto(uniqueName("community"), "Test community", null, null), owner);
     }
 
+    /** A manual group: {@code creator} (its admin) and the given members. */
+    public UUID createGroup(UserAccount creator, UserAccount... members) {
+        return messageService.createGroupConversation(creator.getUsername(), uniqueName("group"), null, null,
+                java.util.Arrays.stream(members).map(UserAccount::getUsername).toList()).conversationId();
+    }
+
     public UUID createPrivateConversation(UserAccount user1, UserAccount user2) {
         return messageService.createOrGetPrivateConversation(user1.getUsername(), user2.getUsername()).conversationId();
     }
