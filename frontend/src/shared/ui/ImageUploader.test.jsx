@@ -72,7 +72,7 @@ describe('ImageUploader', () => {
 
     await act(async () => finish({ id: 'abc', urls: { medium: '/media/avatar/abc/medium.jpg' } }))
 
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith('/media/avatar/abc/medium.jpg'))
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('/media/avatar/abc/medium.jpg', 'abc'))
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
     expect(onUploadingChange).toHaveBeenLastCalledWith(false)
   })
@@ -90,7 +90,7 @@ describe('ImageUploader', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
 
-    await waitFor(() => expect(onChange).toHaveBeenCalledWith('/media/avatar/abc/medium.jpg'))
+    await waitFor(() => expect(onChange).toHaveBeenCalledWith('/media/avatar/abc/medium.jpg', 'abc'))
     expect(uploadImage).toHaveBeenCalledTimes(2)
     expect(screen.queryByRole('alert')).toBeNull()
   })
@@ -98,6 +98,6 @@ describe('ImageUploader', () => {
   it('removes the current image', () => {
     const { onChange } = setup({ value: '/media/avatar/abc/medium.jpg' })
     fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
-    expect(onChange).toHaveBeenCalledWith('')
+    expect(onChange).toHaveBeenCalledWith('', null)
   })
 })

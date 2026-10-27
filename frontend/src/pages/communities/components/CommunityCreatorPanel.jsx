@@ -11,6 +11,7 @@ const CommunityCreatorPanel = ({
   const [communityName, setCommunityName] = useState("");
   const [communityDescription, setCommunityDescription] = useState("");
   const [communityImageUrl, setCommunityImageUrl] = useState("");
+  const [coverMediaId, setCoverMediaId] = useState(null);
   const [createCommunityError, setCreateCommunityError] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -18,6 +19,7 @@ const CommunityCreatorPanel = ({
     setCommunityName("");
     setCommunityDescription("");
     setCommunityImageUrl("");
+    setCoverMediaId(null);
     setCreateCommunityError(null);
   };
 
@@ -44,7 +46,7 @@ const CommunityCreatorPanel = ({
         await onSubmitCommunity({
           name: communityName.trim(),
           description: communityDescription.trim() || null,
-          imageUrl: communityImageUrl.trim() || null,
+          coverMediaId,
         });
         resetState();
         onClose();
@@ -57,7 +59,7 @@ const CommunityCreatorPanel = ({
       uploadingImage,
       communityName,
       communityDescription,
-      communityImageUrl,
+      coverMediaId,
       onSubmitCommunity,
       onClose,
     ]
@@ -128,7 +130,10 @@ const CommunityCreatorPanel = ({
         <span className="community-creator-label">Imagen de portada (opcional)</span>
         <ImageUploader
           value={communityImageUrl}
-          onChange={setCommunityImageUrl}
+          onChange={(url, mediaId) => {
+            setCommunityImageUrl(url);
+            setCoverMediaId(mediaId || null);
+          }}
           onUploadingChange={setUploadingImage}
           purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
           label="Imagen de portada"

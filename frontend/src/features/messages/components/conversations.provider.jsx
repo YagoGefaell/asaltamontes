@@ -272,7 +272,7 @@ export const ConversationsProvider = ({ children }) => {
     }
   }, [chatsPaging, applyChatPage]);
 
-  const createGroupConversation = useCallback(async ({ groupName, groupImage = null, users = [] }) => {
+  const createGroupConversation = useCallback(async ({ groupName, groupMediaId = null, users = [] }) => {
     const normalizedUsers = Array.isArray(users)
       ? users.map((username) => String(username || "").trim()).filter(Boolean)
       : [];
@@ -283,7 +283,7 @@ export const ConversationsProvider = ({ children }) => {
 
     const createdConversation = await createGroupConversationRequest({
       groupName,
-      groupImage,
+      groupMediaId,
       users: normalizedUsers,
     });
 
@@ -310,7 +310,7 @@ export const ConversationsProvider = ({ children }) => {
       type: "GROUP",
       name: safeGroupName,
       avatar: safeGroupName.charAt(0).toUpperCase() || "?",
-      avatarUrl: groupImage,
+      avatarUrl: createdConversation?.groupImage ?? null,
       unreadCount: 0,
       lastMsg: "Abre la conversacion",
       lastMessageAt: null,
