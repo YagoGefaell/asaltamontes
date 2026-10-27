@@ -98,4 +98,13 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
         WHERE cm.community.id = :communityId
     """)
     void deleteAllByCommunityId(@Param("communityId") Long communityId);
+
+    /** What decides whether she may write in the community chat: her status and whether the chat is on (T20). */
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.ChatAccess(m.status, c.chatEnabled)
+        FROM CommunityMember m JOIN m.community c
+        WHERE c.id = :communityId AND m.userAccount.id = :userId
+    """)
+    Optional<io.github.yagogefaell.asaltamontes.community.dto.ChatAccess> findChatAccess(
+            @Param("communityId") Long communityId, @Param("userId") Long userId);
 }

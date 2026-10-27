@@ -2,7 +2,7 @@ import "./CommunitySettingsMenu.css";
 import { useParams, useNavigate } from "react-router-dom";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { communityPath } from "../../features/communities/utils/communityPath";
-import { deleteCommunityRequest } from "../../features/communities/services/communities.service";
+import { deleteCommunityRequest, getCommunityChatRequest, setCommunityChatEnabledRequest } from "../../features/communities/services/communities.service";
 import { useEffect, useState } from "react";
 import Modal from "../../shared/ui/Modal";
 import Button from "../../shared/forms/Button";
@@ -19,6 +19,28 @@ export default function CommunitySettingsMenu() {
   const toast = useToast();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  // null until known: the chat of the community can be switched off by the moderation (T20)
+  const [chatEnabled, setChatEnabled] = useState(null);
+
+  useEffect(() => {
+    if (!community?.id || community.role !== 'OWNER') return;
+    let cancelled = false;
+    getCommunityChatRequest(community.id)
+      .then((chat) => { if (!cancelled) setChatEnabled(Boolean(chat.enabled)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [community?.id, community?.role]);
+
+  const handleToggleChat = async () => {
+    const next = !chatEnabled;
+    try {
+      await setCommunityChatEnabledRequest(community.id, next);
+      setChatEnabled(next);
+      toast.success(next ? "Chat activado" : "Chat desactivado");
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const isOwner = community?.role === 'OWNER';
 
@@ -54,6 +76,11 @@ export default function CommunitySettingsMenu() {
       : []),
     { label: "Expulsadas", action: go("banned"), isAction: true },
     { label: "Registro de moderación", action: go("log"), isAction: true },
+    ...(chatEnabled === null ? [] : [{
+      label: chatEnabled ? "Desactivar el chat de la comunidad" : "Activar el chat de la comunidad",
+      action: handleToggleChat,
+      isAction: true,
+    }]),
   ];
 
   const sections = [

@@ -34,6 +34,7 @@ import io.github.yagogefaell.asaltamontes.community.repository.CommunityJoinRequ
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
 import io.github.yagogefaell.asaltamontes.common.identifier.UuidV7;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityRepository;
+import io.github.yagogefaell.asaltamontes.message.service.CommunityChatService;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 @Service
@@ -52,6 +53,7 @@ public class CommunityService {
     private final ApplicationEventPublisher eventPublisher;
     private final CommunityModerationLogRepository moderationLogRepository;
     private final Duration joinRequestCooldown;
+    private final CommunityChatService communityChat;
 
     /** What joining did: she is a member now, or her request waits for the moderation (private communities). */
     public enum JoinResult { JOINED, REQUESTED }
@@ -60,6 +62,7 @@ public class CommunityService {
                             MediaReferenceService mediaReferences, CommunityJoinRequestRepository joinRequestRepository,
                             ApplicationEventPublisher eventPublisher,
                             CommunityModerationLogRepository moderationLogRepository,
+                            CommunityChatService communityChat,
                             @Value("${asaltamontes.community.join-request-cooldown:7d}") Duration joinRequestCooldown) {
         this.communityRepository = communityRepository;
         this.communityMemberRepository = communityMemberRepository;
@@ -67,6 +70,7 @@ public class CommunityService {
         this.joinRequestRepository = joinRequestRepository;
         this.eventPublisher = eventPublisher;
         this.moderationLogRepository = moderationLogRepository;
+        this.communityChat = communityChat;
         this.joinRequestCooldown = joinRequestCooldown;
     }
     
@@ -98,8 +102,9 @@ public class CommunityService {
         community = communityRepository.save(community);
 
         CommunityMember communityMember = new CommunityMember(community, currentUser, CommunityRole.OWNER);
-        communityMemberRepository.save(communityMember);
-        
+        communityMemberRepository.saveAndFlush(communityMember);
+        communityChat.ensureChat(community.getId());
+
         return community;
     }
 
@@ -195,6 +200,7 @@ public class CommunityService {
         CommunityMember communityMember = new CommunityMember(community, currentUser);
         communityMemberRepository.saveAndFlush(communityMember);
         communityRepository.incrementMemberCount(communityId);
+        communityChat.addMember(communityId, currentUser.getId());
         return JoinResult.JOINED;
     }
 
@@ -228,6 +234,10 @@ public class CommunityService {
     @Transactional
     public void leaveCommunity(UUID communityPublicId, UserAccount currentUser) {
         Long communityId = internalId(communityPublicId);
+        // Otherwise leaving and joining again would lift the mute
+        if (communityMemberRepository.findStatus(communityId, currentUser.getId()).filter(s -> s == MemberStatus.MUTED).isPresent()) {
+            throw new ConflictException("No puedes salir de la comunidad mientras estés silenciada");
+        }
         long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {
@@ -238,6 +248,7 @@ public class CommunityService {
             throw new NotFoundException("No eres miembro de esta comunidad");
         }
         communityRepository.decrementMemberCount(communityId);
+        communityChat.removeMember(communityId, currentUser.getId(), "LEFT");
     }
 
     @Transactional
@@ -246,6 +257,7 @@ public class CommunityService {
         if (!isOwner(communityId, currentUser)) {
             throw new ForbiddenException("Solo la propietaria puede borrar la comunidad");
         }
+        communityChat.deleteChat(communityId);
         communityMemberRepository.deleteAllByCommunityId(communityId);
         communityRepository.deleteById(communityId);
     }

@@ -15,7 +15,9 @@ import jakarta.validation.Valid;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
+import io.github.yagogefaell.asaltamontes.community.dto.CommunityChatDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityDetailsDto;
+import io.github.yagogefaell.asaltamontes.message.service.CommunityChatService;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityMemberDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
@@ -30,10 +32,13 @@ public class CommunityController {
 
     private final CommunityService communityService;
     private final CommunityModerationService moderationService;
+    private final CommunityChatService communityChat;
 
-    public CommunityController(CommunityService communityService, CommunityModerationService moderationService) {
+    public CommunityController(CommunityService communityService, CommunityModerationService moderationService,
+                               CommunityChatService communityChat) {
         this.communityService = communityService;
         this.moderationService = moderationService;
+        this.communityChat = communityChat;
     }
 
     @PostMapping
@@ -99,6 +104,14 @@ public class CommunityController {
             @PageableDefault(size = 20) Pageable pageable) {
         Page<CommunityMemberDto> members = communityService.getCommunityMembersExcept(communityId, currentUser, pageable);
         return ResponseEntity.ok(members);
+    }
+
+    /** The community's chat for a member (created on first access); anyone else gets the 404 of a missing community. */
+    @GetMapping("/{communityId}/chat")
+    public ResponseEntity<CommunityChatDto> getChat(
+            @PathVariable UUID communityId,
+            @AuthenticationPrincipal UserAccount currentUser) {
+        return ResponseEntity.ok(communityChat.open(communityId, currentUser));
     }
 
     /** By slug or by public id; absent field = unchanged, explicit null = clears (D-020). */

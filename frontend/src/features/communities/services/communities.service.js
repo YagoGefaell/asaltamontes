@@ -89,6 +89,25 @@ export async function leaveCommunityRequest(communityId) {
   }
 }
 
+// -------- COMMUNITY CHAT (T20) --------
+// { conversationId, enabled, canWrite } for a member (muted members read only); 404 for anyone else
+export async function getCommunityChatRequest(communityId) {
+  try {
+    return await apiClient.get(`/api/communities/${communityId}/chat`)
+  } catch (error) {
+    throw new Error(error.message || "Error abriendo el chat de la comunidad")
+  }
+}
+
+// Owner and moderators switch the chat off (history stays readable) or on again
+export async function setCommunityChatEnabledRequest(communityId, enabled) {
+  try {
+    return await apiClient.patch(`/api/communities/${communityId}`, { chatEnabled: enabled })
+  } catch (error) {
+    throw new Error(error.message || "Error cambiando el chat de la comunidad")
+  }
+}
+
 // -------- DELETE COMMUNITY --------
 export async function deleteCommunityRequest(communityId) {
   try {

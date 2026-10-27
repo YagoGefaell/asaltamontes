@@ -11,6 +11,7 @@ import { communityPath } from "../../features/communities/utils/communityPath";
 import CommunityEvents from "../../features/events/components/CommunityEvents";
 import { isStaff } from "../../features/communities/utils/communityErrors";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
+import CommunityChatButton from "../../features/communities/components/CommunityChatButton";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 function CommunityProfile() {
@@ -182,6 +183,7 @@ function CommunityProfile() {
               onToggle={handleToggleCommunity}
             />
           )}
+          {community.role && <CommunityChatButton community={community} />}
         </div>
       </div>
 

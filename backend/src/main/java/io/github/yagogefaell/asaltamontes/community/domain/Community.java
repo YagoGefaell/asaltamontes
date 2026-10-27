@@ -72,6 +72,10 @@ public class Community extends PublicIdEntity {
     @Column(name = "member_count", nullable = false)
     private Long memberCount = 1L;
 
+    /** The moderation can switch the community chat off (T20): its history stays readable, nobody writes. */
+    @Column(name = "chat_enabled", nullable = false)
+    private boolean chatEnabled = true;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id", nullable = false)
     private UserAccount createdBy;

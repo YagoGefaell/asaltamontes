@@ -1157,7 +1157,7 @@
     "/api/communities/{ref}": {
       "patch": {
         "summary": "Edit a community (T19, D-020)",
-        "description": "ref is the slug or the public id. Absent field = unchanged; explicit null clears an optional one (description, city, province, image). name cannot be null or blank. Owner and moderators edit everything except visibility, which only the owner changes. The slug does not change on rename. Fields: name, description, city, province, visibility (PUBLIC|PRIVATE), coverMediaId / imageUrl (as in POST). Returns the community detail (id, name, slug, description, imageUrl, role, memberCount, visibility, city, province, joinRequested).",
+        "description": "ref is the slug or the public id. Absent field = unchanged; explicit null clears an optional one (description, city, province, image). name cannot be null or blank. Owner and moderators edit everything except visibility, which only the owner changes. The slug does not change on rename. Fields: name, description, city, province, visibility (PUBLIC|PRIVATE), chatEnabled (boolean, T20: switches the community chat off or on; history stays readable), coverMediaId / imageUrl (as in POST). Returns the community detail (id, name, slug, description, imageUrl, role, memberCount, visibility, city, province, joinRequested).",
         "tags": [
           "Communities"
         ],
@@ -1236,6 +1236,39 @@
           },
           "429": {
             "description": "T19: her previous request to this private community was rejected less than asaltamontes.community.join-request-cooldown (7 days) ago. Retry-After in seconds"
+          }
+        }
+      }
+    },
+    "/api/communities/{communityId}/chat": {
+      "get": {
+        "summary": "Chat of a community for one of its members (T20)",
+        "description": "The group chat (managed_by COMMUNITY) that follows the members: joining, leaving, being expelled or readmitted add and remove her from it, with no manual management (adding, expelling, renaming and leaving through /api/conversations answer 403/409). It is created on first access if missing. conversationId is the public id of the conversation, usable with /api/conversations/{id}/messages, the WebSocket and /api/conversations/{id}. New members read the whole history. canWrite is false when the chat is switched off or she is muted (muted members read only; writing answers 403 'Estás silenciada…' and, with the chat off, 409). Expelled members and non-members get the 404 of a missing community; an expelled member also receives {conversationId, reason: REMOVED} on /user/queue/conversations. Writing in a community chat is limited per user (asaltamontes.rate-limit.community-messages-per-minute, default 20): an error frame over WebSocket.",
+        "tags": [
+          "Communities"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "communityId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ conversationId (uuid), enabled (boolean), canWrite (boolean) }"
+          },
+          "404": {
+            "description": "Community not found, or she is not an unbanned member"
           }
         }
       }

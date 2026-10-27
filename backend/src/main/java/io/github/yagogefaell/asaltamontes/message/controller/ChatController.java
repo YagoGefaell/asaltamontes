@@ -4,6 +4,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsException;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatErrorDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatReadEventDto;
 import io.github.yagogefaell.asaltamontes.message.dto.SendMessageCommandDto;
@@ -51,7 +52,8 @@ public class ChatController {
     }
 
     /** Errors in the handlers above go back to the sender's session instead of being lost. */
-    @MessageExceptionHandler({ BadRequestException.class, ForbiddenException.class, NotFoundException.class, ConflictException.class })
+    @MessageExceptionHandler({ BadRequestException.class, ForbiddenException.class, NotFoundException.class, ConflictException.class,
+            TooManyRequestsException.class })
     @SendToUser(destinations = "/queue/errors", broadcast = false)
     public ChatErrorDto handleDomainError(RuntimeException ex) {
         return new ChatErrorDto(ex.getMessage());

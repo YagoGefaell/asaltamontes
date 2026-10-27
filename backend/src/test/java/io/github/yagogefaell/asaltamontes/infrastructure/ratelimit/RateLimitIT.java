@@ -24,8 +24,12 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
         "asaltamontes.rate-limit.enabled=true",
         "asaltamontes.rate-limit.event-edits-per-hour=2",
         "asaltamontes.rate-limit.groups-created-per-day=2",
-        "asaltamontes.rate-limit.follows-per-hour=3"})
+        "asaltamontes.rate-limit.follows-per-hour=3",
+        "asaltamontes.rate-limit.community-messages-per-minute=2"})
 class RateLimitIT extends AbstractIntegrationTest {
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private io.github.yagogefaell.asaltamontes.message.service.MessageService messageService;
 
     @Test
     void sixthLoginInAMinuteFromTheSameIp_isRejectedWith429() throws Exception {
@@ -127,6 +131,29 @@ class RateLimitIT extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/users/follow/{u}", testData.createUser().getUsername()).with(auth.bearer(ana)))
                 .andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+    }
+
+    @Test
+    void writingInACommunityChat_isLimitedPerUser() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        var community = testData.createCommunity(ana);
+        mockMvc.perform(post("/api/communities/{id}/join", community.getPublicId()).with(auth.bearer(bea))).andExpect(status().isCreated());
+        String body = mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .get("/api/communities/{id}/chat", community.getPublicId()).with(auth.bearer(ana)))
+                .andReturn().getResponse().getContentAsString();
+        java.util.UUID chat = java.util.UUID.fromString(objectMapper.readTree(body).get("conversationId").asText());
+        messageService.processIncomingMessage(chat, ana.getId(), "uno");
+        messageService.processIncomingMessage(chat, ana.getId(), "dos");
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> messageService.processIncomingMessage(chat, ana.getId(), "tres"))
+                .isInstanceOf(io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsException.class);
+        // Another member is not affected, and manual groups are not limited
+        messageService.processIncomingMessage(chat, bea.getId(), "hola");
+        java.util.UUID group = testData.createGroup(ana, bea);
+        for (int i = 0; i < 4; i++) {
+            messageService.processIncomingMessage(group, ana.getId(), "m" + i);
+        }
     }
 
     private org.springframework.test.web.servlet.ResultActions createGroup(UserAccount by, UserAccount member) throws Exception {

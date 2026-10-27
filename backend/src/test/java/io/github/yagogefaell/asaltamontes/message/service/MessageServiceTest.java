@@ -48,6 +48,8 @@ class MessageServiceTest {
     private io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService mediaReferences;
     @Mock
     private io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter limiter;
+    @Mock
+    private CommunityChatService communityChat;
 
     private static final UUID CHAT = UUID.fromString("0192f3a4-7c00-7000-8000-000000000001");
 
@@ -56,7 +58,7 @@ class MessageServiceTest {
     @BeforeEach
     void setUp() {
         messageService = new MessageService(messageRepository, conversationRepository, participantRepository,
-                userService, blockService, eventPublisher, mediaReferences, limiter, 100);
+                userService, blockService, eventPublisher, mediaReferences, limiter, communityChat, 100);
     }
 
     @Test

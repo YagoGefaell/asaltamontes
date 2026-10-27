@@ -102,6 +102,8 @@ public class GroupService {
     public GroupDetailsDto update(UUID conversationId, UpdateGroupDto changes, UserAccount user) {
         Access access = access(conversationId, user.getId(), true, true);
         Conversation conversation = access.conversation();
+        // A community chat takes its name and image from the community
+        requireManual(conversation);
         LocalDateTime now = now();
         String actor = user.getUsername();
 
@@ -261,6 +263,8 @@ public class GroupService {
         Access access = access(conversationId, user.getId(), true, false);
         Conversation conversation = access.conversation();
         ConversationParticipant me = access.me();
+        // The chat of a community follows the membership: she leaves the community instead (T20)
+        requireManual(conversation);
 
         String promoted = null;
         if (me.getRole() == ParticipantRole.ADMIN && participantRepository.countAdmins(conversation.getId()) <= 1) {

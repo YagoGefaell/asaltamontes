@@ -61,7 +61,7 @@ class ModerationHierarchyMigrationIT extends AbstractIntegrationTest {
                         ('30000000-0000-7000-8000-000000000004', 1, 2, 4, 'BAN', now())
                     """);
 
-            Flyway.configure().dataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword()).load().migrate();
+            Flyway.configure().dataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword()).target("14").load().migrate();
 
             assertThat(single(statement, "SELECT banned_by || '/' || banned_by_role FROM community_members WHERE id = 3")).isEqualTo("1/OWNER");
             assertThat(single(statement, "SELECT banned_by || '/' || banned_by_role FROM community_members WHERE id = 4")).isEqualTo("2/MODERATOR");
