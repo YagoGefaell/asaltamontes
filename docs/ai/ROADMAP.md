@@ -103,6 +103,8 @@
 
 T29b+ (una PR por pantalla, ver [T29](tasks/T29-design-system.md)): se hacen cuando el límite WIP bloquea PRs de backend o al cerrar cada fase.
 
+**Segunda ronda (2026-10-27)**: T29c → T29d → T29e → T29f → T29g → T29h, siguiendo [`DESIGN.md`](DESIGN.md). Prioridad alta, por delante de nuevas pantallas: las pantallas nuevas (T19b+, T20, T21) se hacen ya con la guía. T29g (navegación) espera el OK de Yago.
+
 ## Bugs sueltos (no cubiertos por ninguna tarea)
 
 Se arreglan en PRs `fix/BUG-xxx-*` independientes, intercaladas según severidad (ver `WORKFLOW.md` §8):
