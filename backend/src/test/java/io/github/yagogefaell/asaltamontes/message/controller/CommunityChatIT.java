@@ -179,6 +179,20 @@ class CommunityChatIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void aMutedMember_cannotLiftTheMuteByLeavingAndJoiningAgain() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount muted = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        join(muted, community).andExpect(status().isCreated());
+        moderate(owner, community, muted, "mute").andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/leave").with(auth.bearer(muted)))
+                .andExpect(status().isConflict());
+
+        assertThat(json(chatRequest(muted, community).andExpect(status().isOk())).get("canWrite").asBoolean()).isFalse();
+    }
+
+    @Test
     void aMutedMemberTryingToWriteOverWebSocket_getsTheErrorAndNothingIsDelivered() throws Exception {
         UserAccount owner = testData.createUser();
         UserAccount muted = testData.createUser();

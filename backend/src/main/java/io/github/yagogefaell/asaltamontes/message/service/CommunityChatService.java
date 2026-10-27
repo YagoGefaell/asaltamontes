@@ -93,7 +93,7 @@ public class CommunityChatService {
     @Transactional
     public Long addMember(Long communityId, Long userId) {
         Long chatId = ensureChat(communityId);
-        participantRepository.addIfAbsent(chatId, userId, now());
+        participantRepository.addCommunityMemberIfAbsent(chatId, communityId, userId, now());
         return chatId;
     }
 

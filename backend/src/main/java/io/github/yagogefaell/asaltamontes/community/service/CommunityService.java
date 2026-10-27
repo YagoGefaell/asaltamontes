@@ -234,6 +234,10 @@ public class CommunityService {
     @Transactional
     public void leaveCommunity(UUID communityPublicId, UserAccount currentUser) {
         Long communityId = internalId(communityPublicId);
+        // Otherwise leaving and joining again would lift the mute
+        if (communityMemberRepository.findStatus(communityId, currentUser.getId()).filter(s -> s == MemberStatus.MUTED).isPresent()) {
+            throw new ConflictException("No puedes salir de la comunidad mientras estés silenciada");
+        }
         long rowsDeleted = communityMemberRepository.removeMember(communityId, currentUser.getId());
 
         if (rowsDeleted == 0) {

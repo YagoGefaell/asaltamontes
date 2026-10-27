@@ -94,13 +94,17 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
 
     // Idempotent: joining twice, or racing with the creation of the chat, leaves one participation
     @Modifying
+    // Only if she is a member of the community and not expelled, decided in the same statement (an expulsion
+    // committed a moment ago cannot be undone by a concurrent access)
     @Query(value = """
         INSERT INTO conversation_participants (conversation_id, user_id, role, unread_count, joined_at)
-        VALUES (:conversationId, :userId, 'MEMBER', 0, :joinedAt)
+        SELECT :conversationId, m.user_account_id, 'MEMBER', 0, :joinedAt
+        FROM community_members m
+        WHERE m.community_id = :communityId AND m.user_account_id = :userId AND m.status <> 'BANNED'
         ON CONFLICT (conversation_id, user_id) DO NOTHING
     """, nativeQuery = true)
-    int addIfAbsent(@Param("conversationId") Long conversationId, @Param("userId") Long userId,
-                    @Param("joinedAt") java.time.LocalDateTime joinedAt);
+    int addCommunityMemberIfAbsent(@Param("conversationId") Long conversationId, @Param("communityId") Long communityId,
+                                   @Param("userId") Long userId, @Param("joinedAt") java.time.LocalDateTime joinedAt);
 
     // The whole membership in one statement (never one query per member): active and muted, not the expelled
     @Modifying
