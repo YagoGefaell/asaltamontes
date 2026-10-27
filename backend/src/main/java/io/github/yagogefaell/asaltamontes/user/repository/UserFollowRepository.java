@@ -23,7 +23,7 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         WHERE uf.follower.id = :followerId
         AND uf.following.id = :followingId
     """)
-    void deleteByFollowerIdAndFollowingId(Long followerId, Long followingId);
+    int deleteByFollowerIdAndFollowingId(Long followerId, Long followingId);
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
@@ -41,6 +41,10 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         FROM UserFollow f
         JOIN f.following u
         WHERE LOWER(f.follower.username) = LOWER(:username)
+        AND NOT EXISTS (
+            SELECT 1 FROM UserBlock bl
+            WHERE (bl.blocker.id = :currentUserId AND bl.blocked.id = u.id) OR (bl.blocked.id = :currentUserId AND bl.blocker.id = u.id)
+        )
         ORDER BY u.username ASC
     """)
     Page<UserSearchDto> findFollowingByUsername(String username, Long currentUserId, Pageable pageable);
@@ -61,6 +65,10 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
         FROM UserFollow f
         JOIN f.follower u
         WHERE LOWER(f.following.username) = LOWER(:username)
+        AND NOT EXISTS (
+            SELECT 1 FROM UserBlock bl
+            WHERE (bl.blocker.id = :currentUserId AND bl.blocked.id = u.id) OR (bl.blocked.id = :currentUserId AND bl.blocker.id = u.id)
+        )
         ORDER BY u.username ASC
     """)
     Page<UserSearchDto> findFollowersByUsername(String username, Long currentUserId, Pageable pageable);

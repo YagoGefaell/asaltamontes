@@ -1,6 +1,6 @@
 # T13 — Bloqueos y control de quién puede escribirte
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 1 — Chat
 - **Depende de:** T09
 - **Rama sugerida:** `feat/T13-blocking`

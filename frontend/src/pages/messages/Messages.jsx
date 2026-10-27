@@ -255,7 +255,9 @@ const Messages = () => {
 
         setSelectedChat(ensuredChat);
         setActiveChatId(ensuredChat.id);
-      } catch {
+      } catch (error) {
+        // E.g. a block or the other user's privacy setting (403 with a neutral message)
+        setSendError(error.message || "No se ha podido abrir el chat");
         return;
       }
     }

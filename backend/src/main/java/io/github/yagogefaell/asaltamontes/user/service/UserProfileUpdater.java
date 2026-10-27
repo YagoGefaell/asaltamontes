@@ -39,6 +39,10 @@ public class UserProfileUpdater {
         Optional.ofNullable(dto.isPublicProfile())
                 .ifPresent(profile::setIsPublicProfile);
 
+        // WHO CAN START A PRIVATE CHAT
+        Optional.ofNullable(dto.dmPolicy())
+                .ifPresent(profile::setDmPolicy);
+
         // EMAIL (si decides permitirlo)
         Optional.ofNullable(dto.email())
                 .map(String::trim)

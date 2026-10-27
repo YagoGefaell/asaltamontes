@@ -7,6 +7,8 @@ import FollowUserButton from "../../shared/components/FollowUserButton";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
 import { formatters } from "../../utils/helpers";
+import { useToast } from "../../shared/ui/Toast";
+import { blockUserRequest, unblockUserRequest } from "../../features/users/services/users.service";
 
 function Profile({ 
   userData = null, 
@@ -20,6 +22,10 @@ function Profile({
   const navigate = useNavigate();
   const [openChatLoading, setOpenChatLoading] = useState(false);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
+  const toast = useToast();
+  const [menuOpen, setMenuOpen] = useState(false);
+  // Local override after (un)blocking; null = what the server said
+  const [blockedOverride, setBlockedOverride] = useState(null);
 
   // Use props data if provided, otherwise use context data
   const profileData = userData || userProfile;
@@ -55,6 +61,27 @@ function Profile({
     }
   };
   
+  const handleToggleBlock = async (isBlocked) => {
+    setMenuOpen(false);
+    const username = profileData?.username;
+    if (!username) return;
+    const question = isBlocked
+      ? `¿Desbloquear a @${username}?`
+      : `¿Bloquear a @${username}? Dejaréis de seguiros y no podréis escribiros mensajes privados.`;
+    if (!window.confirm(question)) return;
+    try {
+      if (isBlocked) {
+        await unblockUserRequest(username);
+      } else {
+        await blockUserRequest(username);
+      }
+      setBlockedOverride(!isBlocked);
+      toast.success(isBlocked ? "Usuaria desbloqueada" : "Usuaria bloqueada");
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
   if (isLoading) return <Loading />;
   
   if (error) {
@@ -123,6 +150,7 @@ function Profile({
     EXPERT: "Experto"
   };
 
+  const isBlockedByMe = blockedOverride ?? Boolean(profileData.isBlockedByMe);
   const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
   const avatarInitial = formatters.getInitial(fullName, username);
   return (
@@ -149,6 +177,28 @@ function Profile({
           </button>
         )}
         {isOwnProfile && <h2 className="profile-title">Perfil</h2>}
+        {!isOwnProfile && (
+          <div className="profile-more">
+            <button
+              className="back-btn"
+              onClick={() => setMenuOpen((open) => !open)}
+              aria-label="Más opciones"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <ul className="profile-more-menu" role="menu">
+                <li role="none">
+                  <button role="menuitem" onClick={() => handleToggleBlock(isBlockedByMe)}>
+                    {isBlockedByMe ? "Desbloquear" : "Bloquear"}
+                  </button>
+                </li>
+              </ul>
+            )}
+          </div>
+        )}
         {isOwnProfile && (
           <button
             className="settings-icon-btn"
@@ -231,7 +281,11 @@ function Profile({
           </button>
         </div>
 
-        {!isOwnProfile && (
+        {!isOwnProfile && isBlockedByMe && (
+          <p className="blocked-note">Has bloqueado a esta usuaria.</p>
+        )}
+
+        {!isOwnProfile && !isBlockedByMe && (
           <div className="profile-actions">
             <FollowUserButton
               userId={profileData.username}

@@ -38,6 +38,14 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
 
     long countByConversationId(Long conversationId);
 
+    // The other member of a private chat (empty for groups), to apply blocks when sending (T13)
+    @Query("""
+        SELECT p.user.id FROM ConversationParticipant p
+        WHERE p.conversation.id = :conversationId AND p.user.id <> :userId
+          AND p.conversation.type = io.github.yagogefaell.asaltamontes.message.domain.ChatType.INDIVIDUAL
+    """)
+    Optional<Long> findOtherUserIdInPrivateChat(@Param("conversationId") Long conversationId, @Param("userId") Long userId);
+
     // The group's members, admins first, then by seniority (T12). One page of at most 50 (the controller clamps it).
     @Query(value = """
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.ParticipantDto(

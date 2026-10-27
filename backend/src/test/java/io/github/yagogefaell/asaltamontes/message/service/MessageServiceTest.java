@@ -41,6 +41,8 @@ class MessageServiceTest {
     @Mock
     private UserService userService;
     @Mock
+    private io.github.yagogefaell.asaltamontes.user.service.BlockService blockService;
+    @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService mediaReferences;
@@ -52,7 +54,7 @@ class MessageServiceTest {
     @BeforeEach
     void setUp() {
         messageService = new MessageService(messageRepository, conversationRepository, participantRepository,
-                userService, eventPublisher, mediaReferences, 100);
+                userService, blockService, eventPublisher, mediaReferences, 100);
     }
 
     @Test

@@ -68,6 +68,10 @@ public class UserProfile {
     @Column(name = "is_public_profile", nullable = false)
     private Boolean isPublicProfile;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "dm_policy", nullable = false)
+    private DmPolicy dmPolicy = DmPolicy.EVERYONE;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 

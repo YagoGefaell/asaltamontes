@@ -104,3 +104,29 @@ export async function getFollowersRequest(username = null, page = 0, size = 20) 
     throw new Error(error.message || "Error obteniendo lista de seguidores")
   }
 }
+
+// ---------------- BLOCKS (T13) ----------------
+export async function blockUserRequest(username) {
+  try {
+    await apiClient.post(`/api/users/${encodeURIComponent(username)}/block`)
+  } catch (error) {
+    throw new Error(error.message || "Error al bloquear a la usuaria")
+  }
+}
+
+export async function unblockUserRequest(username) {
+  try {
+    await apiClient.delete(`/api/users/${encodeURIComponent(username)}/block`)
+  } catch (error) {
+    throw new Error(error.message || "Error al desbloquear a la usuaria")
+  }
+}
+
+// One page of the users I blocked (Spring page: { content, last, ... })
+export async function getBlockedUsersRequest(page = 0, size = 20) {
+  try {
+    return await apiClient.get(`/api/users/me/blocks?page=${page}&size=${size}`)
+  } catch (error) {
+    throw new Error(error.message || "Error obteniendo las usuarias bloqueadas")
+  }
+}

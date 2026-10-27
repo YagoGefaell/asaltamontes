@@ -34,6 +34,7 @@ public class UserService implements UserDetailsService {
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserFollowRepository userFollowRepository;
+    private final BlockService blockService;
     private final UserValidator validator;
     private final UserProfileUpdater updater;
     private final UserAssembler assembler;
@@ -180,9 +181,15 @@ public class UserService implements UserDetailsService {
         UserProfile profile = userProfileRepository.findById(user.getId())
                 .orElseThrow(() -> new UserNotFoundException(username));
 
-        boolean isFollowing = userFollowRepository.existsByFollowerIdAndFollowingId(requesterId, user.getId());
+        // Whoever blocked the requester does not exist for her (404, like an unknown username)
+        if (blockService.hasBlocked(user.getId(), requesterId)) {
+            throw new UserNotFoundException(username);
+        }
 
-        return assembler.toUserProfile(user, profile, isFollowing);
+        boolean isFollowing = userFollowRepository.existsByFollowerIdAndFollowingId(requesterId, user.getId());
+        boolean isBlockedByMe = blockService.hasBlocked(requesterId, user.getId());
+
+        return assembler.toUserProfile(user, profile, isFollowing, isBlockedByMe);
     }
 
     public Page<UserSearchDto> getAllUsers(Long userId, Pageable pageable) {

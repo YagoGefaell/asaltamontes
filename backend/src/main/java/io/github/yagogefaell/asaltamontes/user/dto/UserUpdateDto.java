@@ -4,6 +4,7 @@ import static io.github.yagogefaell.asaltamontes.user.validation.UserFieldRules.
 
 import java.util.UUID;
 
+import io.github.yagogefaell.asaltamontes.user.domain.DmPolicy;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -28,5 +29,7 @@ public record UserUpdateDto(
     @Size(max = 255, message = "La URL de la imagen no puede superar los 255 caracteres")
     String profilePictureUrl,
     UUID avatarMediaId,
-    Boolean isPublicProfile
+    Boolean isPublicProfile,
+    // Who can start a new private chat with her (T13)
+    DmPolicy dmPolicy
 ) {}

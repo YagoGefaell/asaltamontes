@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import io.github.yagogefaell.asaltamontes.common.exceptions.AlreadyFollowingException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.SelfFollowException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -24,6 +25,7 @@ public class FollowService {
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserFollowRepository userFollowRepository;
+    private final BlockService blockService;
 
     @Transactional
     public void followUser(Long followerId, String usernameToFollow) {
@@ -68,17 +70,40 @@ public class FollowService {
         if (followerId.equals(user.getId())) {
             throw new SelfFollowException();
         }
+        requireNoBlock(followerId, user);
 
         return user;
     }
 
+    /** Who blocked the requester looks like an unknown user; if the requester blocked her, she must unblock first. */
+    private void requireNoBlock(Long requesterId, UserAccount other) {
+        blockService.lockPair(requesterId, other.getId());
+        if (blockService.hasBlocked(other.getId(), requesterId)) {
+            throw new UserNotFoundException(other.getUsername());
+        }
+        if (blockService.hasBlocked(requesterId, other.getId())) {
+            throw new ForbiddenException("Desbloquea a esta usuaria para poder seguirla");
+        }
+    }
+
+    /** The lists of someone who blocked the requester are not visible to her (404). */
+    private void requireVisible(String username, Long currentUserId) {
+        userAccountRepository.findByUsernameIgnoreCase(username)
+                .filter(u -> blockService.hasBlocked(u.getId(), currentUserId))
+                .ifPresent(u -> {
+                    throw new UserNotFoundException(username);
+                });
+    }
+
     @Transactional(readOnly = true)
     public Page<UserSearchDto> getUsersFollowedBy(String username, Long currentUserId, Pageable pageable) {
+        requireVisible(username, currentUserId);
         return userFollowRepository.findFollowingByUsername(username, currentUserId, pageable);
     }
 
     @Transactional(readOnly = true)
     public Page<UserSearchDto> getUsersFollowing(String username, Long currentUserId, Pageable pageable) {
+        requireVisible(username, currentUserId);
         return userFollowRepository.findFollowersByUsername(username, currentUserId, pageable);
     }
 }

@@ -23,12 +23,13 @@ public class UserAssembler {
                 profile.getBirthDate(),
                 profile.getPhoneNumber(),
                 profile.getIsPublicProfile(),
+                profile.getDmPolicy().name(),
                 profile.getFollowersCount(),
                 profile.getFollowingCount()
         );
     }
 
-    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile, boolean isFollowing) {
+    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile, boolean isFollowing, boolean isBlockedByMe) {
         return new UserProfileDto(
                 user.getUsername(),
                 user.getIsVerified(),
@@ -39,6 +40,7 @@ public class UserAssembler {
                 profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
                 profile.getIsPublicProfile(),
                 isFollowing,
+                isBlockedByMe,
                 profile.getFollowersCount(),
                 profile.getFollowingCount()
         );

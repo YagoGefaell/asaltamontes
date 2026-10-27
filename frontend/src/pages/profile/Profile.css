@@ -26,6 +26,55 @@
   justify-content: flex-start;
 }
 
+/* Menú "⋯" de otra usuaria (bloquear / desbloquear) */
+.profile-more {
+  margin-left: auto;
+  position: relative;
+}
+
+.profile-more .back-btn {
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text-color);
+  min-width: 40px;
+  min-height: 40px;
+}
+
+.profile-more-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: var(--background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  min-width: 150px;
+}
+
+.profile-more-menu button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 0.6rem 0.75rem;
+  color: var(--text-color);
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.profile-more-menu button:hover {
+  background: var(--background-alt);
+}
+
+.blocked-note {
+  margin-top: 1.5rem;
+  color: var(--text-secondary, var(--text-color));
+  text-align: center;
+}
+
 .profile-title {
   font-size: var(--text-2xl);
   font-weight: 800;

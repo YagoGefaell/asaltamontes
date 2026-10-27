@@ -16,6 +16,7 @@ public record UserSelfDto(
     LocalDate birthDate,
     String phoneNumber,
     Boolean isPublicProfile,
+    String dmPolicy,
 
     Long followersCount,
     Long followingCount
