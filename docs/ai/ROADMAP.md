@@ -103,7 +103,7 @@
 
 T29b+ (una PR por pantalla, ver [T29](tasks/T29-design-system.md)): se hacen cuando el límite WIP bloquea PRs de backend o al cerrar cada fase.
 
-**Segunda ronda (2026-10-27)**: T29c → T29d → T29e → T29f → T29g → T29h, siguiendo [`DESIGN.md`](DESIGN.md). Prioridad alta, por delante de nuevas pantallas: las pantallas nuevas (T19b+, T20, T21) se hacen ya con la guía. T29g (navegación) espera el OK de Yago.
+**Segunda ronda (2026-10-27)**: T29c → T29d → T29e → T29f → T29g → T29h, siguiendo [`DESIGN.md`](DESIGN.md). Prioridad alta, por delante de nuevas pantallas: las pantallas nuevas (T19b+, T20, T21) se hacen ya con la guía. T29g (barra inferior: Inicio · Buscar · Quedadas · Comunidades · Perfil; Notificaciones y Mensajes con contador en la cabecera de Inicio) tiene el OK de Yago (2026-10-27). [T31](tasks/T31-backend-for-ui.md) (backend para la UI) va por delante de T29f y T29h.
 
 ## Bugs sueltos (no cubiertos por ninguna tarea)
 

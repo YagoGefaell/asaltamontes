@@ -80,3 +80,6 @@ Yago da libertad para mejorar la interfaz (D-015). Antes de construir muchas pan
 - Comunidades: se elimina el campo de nombre y se añade la lupa en la cabecera. **Se mantienen** Ciudad y Provincia hasta T29e (pasan a la hoja de filtros). Quedadas: lupa en la cabecera; los filtros no se tocan (T29e).
 - **Necesidad de backend (no incluida):** `GET /api/events` no tiene búsqueda por texto (solo `city`). La pestaña Quedadas busca el texto como ciudad y lo avisa con una nota. Falta un parámetro `q` (título, lugar, ciudad) y, para sugerencias, "comunidades/quedadas cercanas" (necesita ubicación de la usuaria).
 - Fuera de alcance: el endpoint de personas sigue ordenando como antes; no hay búsqueda de personas por comunidad.
+
+## Nota T29d — sugerencias «Cerca de mí» (decisión de Yago, 2026-10-27)
+Por ahora se hacen **sin GPS**: se sugieren quedadas y comunidades de la ciudad del perfil y de las ciudades de mis comunidades. La geolocalización queda para más adelante, opcional y solo al pulsar «Cerca de mí». El backend que falta para la UI (`q`, `attendeePreview`, `city`) está en [T31](T31-backend-for-ui.md).
