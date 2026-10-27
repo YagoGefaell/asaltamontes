@@ -1,12 +1,17 @@
 import "./Profile.css";
 import { useState, useEffect } from "react";
+import { FaCog, FaEllipsisH, FaCheckCircle, FaMapMarkerAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 import FollowUserButton from "../../shared/components/FollowUserButton";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
-import { formatters } from "../../utils/helpers";
+import Avatar from "../../shared/ui/Avatar";
+import PageHeader from "../../shared/ui/PageHeader";
+import Tabs from "../../shared/ui/Tabs";
+import BottomSheet from "../../shared/ui/BottomSheet";
+import { ProfileEvents, ProfileCommunities } from "./ProfileTabs";
 import { useToast } from "../../shared/ui/Toast";
 import ConfirmModal from "../../shared/ui/ConfirmModal";
 import { blockUserRequest, unblockUserRequest } from "../../features/users/services/users.service";
@@ -22,7 +27,7 @@ function Profile({
   const { userProfile, loading: contextLoading } = useUserProfile();
   const navigate = useNavigate();
   const [openChatLoading, setOpenChatLoading] = useState(false);
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
+  const [tab, setTab] = useState("events");
   const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockConfirm, setBlockConfirm] = useState(null); // isBlocked actual cuando se pide confirmar
@@ -86,40 +91,19 @@ function Profile({
   };
 
   if (isLoading) return <Loading />;
-  
+
   if (error) {
     return (
       <div className="profile-page">
-        <div className={`profile-header ${!isOwnProfile ? 'other-profile' : ''}`}>
-          {onBack && (
-            <button
-              className="back-btn"
-              onClick={onBack}
-              aria-label="Volver atrás"
-            >
-              <svg
-                className="back-icon"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="15 18 9 12 15 6" />
-              </svg>
-            </button>
-          )}
-          {isOwnProfile && <h2 className="profile-title">Perfil</h2>}
-        </div>
-        <div className="error-message">
+        <PageHeader title="Perfil" onBack={onBack} />
+        <div className="pf-error">
           <p>{error}</p>
           <Button onClick={() => navigate("/search")}>Volver a la búsqueda</Button>
         </div>
       </div>
     );
   }
-  
+
   if (!profileData) {
     return isOwnProfile ? (
       <p className="no-profile">No hay perfil disponible.</p>
@@ -128,192 +112,127 @@ function Profile({
 
   const {
     username = "usuario",
-    fullName = "Nombre completo",
-    bio = isOwnProfile ? "Agrega una bio breve..." : "Sin biografía",
+    fullName = "",
+    bio = "",
     city = "",
     profilePictureUrl,
-    runningLevel = "BEGINNER",
+    runningLevel = "",
     isVerified = false,
     followersCount = 0,
     followingCount = 0,
   } = profileData;
 
-  const displayFollowersCount = isOwnProfile && currentUser 
-    ? currentUser.followersCount 
+  const displayFollowersCount = isOwnProfile && currentUser
+    ? currentUser.followersCount
     : (followersCount || 0);
-  
-  const displayFollowingCount = isOwnProfile && currentUser 
-    ? currentUser.followingCount 
+
+  const displayFollowingCount = isOwnProfile && currentUser
+    ? currentUser.followingCount
     : (followingCount || 0);
 
   const levelLabels = {
     BEGINNER: "Principiante",
-    INTERMEDIATE: "Intermedio", 
-    ADVANCED: "Avanzado",
-    EXPERT: "Experto"
+    INTERMEDIATE: "Intermedia",
+    ADVANCED: "Avanzada",
+    EXPERT: "Experta",
   };
 
   const isBlockedByMe = blockedOverride ?? Boolean(profileData.isBlockedByMe);
-  const avatarUrl = formatters.avatar(profilePictureUrl, fullName, username);
-  const avatarInitial = formatters.getInitial(fullName, username);
+  const base = isOwnProfile ? "/me" : `/users/${username}`;
+  const tabs = [
+    { id: "events", label: "Quedadas" },
+    { id: "communities", label: "Comunidades" },
+  ];
+
   return (
     <div className="profile-page">
-      {/* Barra superior con icono de ajustes o botón volver */}
-      <div className={`profile-header ${!isOwnProfile ? 'other-profile' : ''}`}>
-        {onBack && (
-          <button
-            className="back-btn"
-            onClick={onBack}
-            aria-label="Volver atrás"
-          >
-            <svg
-              className="back-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-        )}
-        {isOwnProfile && <h2 className="profile-title">Perfil</h2>}
-        {!isOwnProfile && (
-          <div className="profile-more">
-            <button
-              className="back-btn"
-              onClick={() => setMenuOpen((open) => !open)}
-              aria-label="Más opciones"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-            >
-              ⋯
+      <PageHeader
+        title={`@${username}`}
+        onBack={isOwnProfile ? undefined : onBack}
+        actions={
+          isOwnProfile ? (
+            <button type="button" onClick={() => navigate("/settings")} aria-label="Ir a ajustes">
+              <FaCog aria-hidden="true" />
             </button>
-            {menuOpen && (
-              <ul className="profile-more-menu" role="menu">
-                <li role="none">
-                  <button role="menuitem" onClick={() => askToggleBlock(isBlockedByMe)}>
-                    {isBlockedByMe ? "Desbloquear" : "Bloquear"}
-                  </button>
-                </li>
-              </ul>
-            )}
-          </div>
-        )}
-        {isOwnProfile && (
-          <button
-            className="settings-icon-btn"
-            onClick={() => navigate("/settings/")}
-            aria-label="Ir a ajustes"
-          >
-            <svg
-              className="settings-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+          ) : (
+            <button type="button" onClick={() => setMenuOpen(true)} aria-label="Más opciones" aria-haspopup="dialog">
+              <FaEllipsisH aria-hidden="true" />
+            </button>
+          )
+        }
+      />
+
+      <section className="pf-top" aria-label="Datos del perfil">
+        <Avatar src={profilePictureUrl} name={fullName || username} size="xl" />
+        <div className="pf-stats">
+          <button type="button" className="pf-stat" onClick={() => navigate(`${base}/followers`)} aria-label="Ver seguidoras">
+            <span className="pf-stat__count">{displayFollowersCount}</span>
+            <span className="pf-stat__label">Seguidoras</span>
           </button>
-        )}
+          <button type="button" className="pf-stat" onClick={() => navigate(`${base}/following`)} aria-label="Ver a quién sigue">
+            <span className="pf-stat__count">{displayFollowingCount}</span>
+            <span className="pf-stat__label">Siguiendo</span>
+          </button>
+        </div>
+      </section>
+
+      <div className="pf-info">
+        <p className="pf-name">
+          {fullName || username}
+          {isVerified && <FaCheckCircle className="pf-verified" aria-label="Cuenta verificada" />}
+        </p>
+        {bio && <p className="pf-bio">{bio}</p>}
+        <p className="pf-meta">
+          {levelLabels[runningLevel] && (
+            <span className={`pf-level pf-level--${runningLevel.toLowerCase()}`}>{levelLabels[runningLevel]}</span>
+          )}
+          {city && (
+            <span className="pf-city">
+              <FaMapMarkerAlt aria-hidden="true" /> {city}
+            </span>
+          )}
+        </p>
       </div>
 
-      <div className="profile-avatar-container">
-        {!avatarLoadError ? (
-          <img
-            src={avatarUrl}
-            alt={`${username}'s avatar`}
-            className="profile-avatar"
-            onError={() => setAvatarLoadError(true)}
-          />
+      {!isOwnProfile && isBlockedByMe && (
+        <p className="pf-blocked">Has bloqueado a esta usuaria.</p>
+      )}
+
+      <div className="pf-actions">
+        {isOwnProfile ? (
+          <Button variant="secondary" onClick={() => navigate("/settings/profile")}>Editar perfil</Button>
         ) : (
-          <div className="profile-avatar profile-avatar-fallback" aria-hidden="true">
-            {avatarInitial}
-          </div>
-        )}
-        {isVerified && (
-          <div className="verified-badge">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-        )}
-      </div>
-
-      <div className="profile-main">
-        <h2 className="username">@{username}</h2>
-        <p className="full-name">{fullName}</p>
-        <p className="bio">{bio}</p>
-        
-        {city && (
-          <p className="city">
-            <span className="city-icon">📍</span>
-            {city}
-          </p>
-        )}
-        
-        <div className="running-level">
-          <span className="level-label">Nivel: </span>
-          <span className={`level-badge level-${runningLevel.toLowerCase()}`}>
-            {levelLabels[runningLevel] || runningLevel}
-          </span>
-        </div>
-
-        <div className="profile-stats">
-          <button
-            className="stat stat-btn"
-            onClick={() => isOwnProfile ? navigate("/me/followers") : navigate("/users/" + username + "/followers")}
-            aria-label="Ver seguidores"
-          >
-            <span className="count">{displayFollowersCount}</span>
-            <span className="label">Seguidores</span>
-          </button>
-          <button
-            className="stat stat-btn"
-            onClick={() => isOwnProfile ? navigate("/me/following") : navigate("/users/" + username + "/following")}
-            aria-label="Ver usuarios que sigo"
-          >
-            <span className="count">{displayFollowingCount}</span>
-            <span className="label">Siguiendo</span>
-          </button>
-        </div>
-
-        {!isOwnProfile && isBlockedByMe && (
-          <p className="blocked-note">Has bloqueado a esta usuaria.</p>
-        )}
-
-        {!isOwnProfile && !isBlockedByMe && (
-          <div className="profile-actions">
-            <FollowUserButton
-              userId={profileData.username}
-              initialIsFollowing={profileData.isFollowing || false}
-            />
-            <Button
-              variant="primary"
-              onClick={handleOpenChat}
-              loading={openChatLoading}
-              disabled={openChatLoading}
-            >
-              {openChatLoading ? "Cargando..." : "Abrir chat"}
-            </Button>
-          </div>
-        )}
-
-        {isOwnProfile && (
-          <div className="profile-extra">
-            <p className="placeholder-text">
-              Aquí podrías agregar logros, links, badges o información adicional
-              del usuario.
-            </p>
-          </div>
+          !isBlockedByMe && (
+            <>
+              <FollowUserButton
+                userId={profileData.username}
+                initialIsFollowing={profileData.isFollowing || false}
+              />
+              <Button
+                variant="secondary"
+                onClick={handleOpenChat}
+                loading={openChatLoading}
+                disabled={openChatLoading}
+              >
+                Mensaje
+              </Button>
+            </>
+          )
         )}
       </div>
+
+      {isOwnProfile && (
+        <>
+          <Tabs tabs={tabs} value={tab} onChange={setTab} label="Contenido del perfil" idPrefix="profile" className="pf-tabs" />
+          {tab === "events" ? <ProfileEvents /> : <ProfileCommunities />}
+        </>
+      )}
+
+      <BottomSheet open={menuOpen} title={`@${username}`} onClose={() => setMenuOpen(false)}>
+        <button type="button" className="pf-sheet-action pf-sheet-action--danger" onClick={() => askToggleBlock(isBlockedByMe)}>
+          {isBlockedByMe ? "Desbloquear" : "Bloquear"}
+        </button>
+      </BottomSheet>
 
       <ConfirmModal
         open={blockConfirm !== null}

@@ -1,6 +1,6 @@
 # T29 — Sistema de diseño y pulido de la interfaz
 
-- **Estado:** pendiente (T29a y T29b-chat hechas; siguen T29c–T29h, ver abajo)
+- **Estado:** pendiente (T29a y T29b-chat hechas; T29c–T29h hechas salvo lo que indique cada fila)
 - **Fase:** Transversal (UI)
 - **Depende de:** T01 (tests de frontend)
 - **Rama sugerida:** `refactor/T29a-design-tokens`, `feat/T29b-ui-polish-<pantalla>`…
@@ -42,7 +42,7 @@ Orden recomendado (una PR por punto, `feat(ui)` / `refactor(front)`, sin cambios
 | **T29e — filtros de quedadas y comunidades** | Una fila de chips (Próximas/Hoy/Este finde/Mis quedadas…) + chip "Filtros · n" que abre `BottomSheet` con tipo, nivel y ciudad. Lista/Mapa como icono en la cabecera; "Crear quedada" como `+`/`Fab`. Comunidades: ciudad y provincia en la hoja; tarjetas en filas compactas | Criterio: primer resultado visible por encima de ~20 % de la pantalla a 390×844 |
 | **T29f — formularios unificados** | `CommunityCreatorPanel`, `CommunityEditForm` y formularios de moderación pasan a `Input`/`Button`/`SectionCard`, con el patrón de `EditProfile`. `EventForm`: una columna (máx. 2 campos cortos por fila), opcionales en "Más opciones". Botones sin mayúsculas ("Guardar cambios") | Sin cambios de comportamiento: los tests existentes deben seguir pasando |
 | **T29g — navegación de 5 pestañas** ✅ | Barra inferior: Inicio · Buscar · Quedadas · Comunidades · Perfil. Notificaciones y Mensajes como iconos con contador en la cabecera de Inicio | Aprobada por Yago (2026-10-27). Hecha: Notificaciones y Mensajes en la cabecera de Inicio |
-| **T29h — perfil e inicio** | Perfil tipo Instagram (avatar a la izquierda, contadores, bio, pestañas Quedadas · Comunidades), sin texto de relleno. Inicio: quitar las publicaciones e historias de mentira; mientras no haya publicaciones (fuera de alcance), mostrar próximas quedadas de mis comunidades y de quien sigo | El contenido real del feed depende de backend: si no hay endpoint, usar los listados existentes y anotarlo |
+| **T29h — perfil e inicio** ✅ | Perfil tipo Instagram (avatar a la izquierda, contadores, bio, pestañas Quedadas · Comunidades), sin texto de relleno. Inicio: quitar las publicaciones e historias de mentira; mientras no haya publicaciones (fuera de alcance), mostrar próximas quedadas de mis comunidades y de quien sigo | El contenido real del feed depende de backend: si no hay endpoint, usar los listados existentes y anotarlo. Hecha: Inicio muestra tus próximas quedadas, las próximas visibles, tus comunidades y sugerencias (`GET /api/events`, `/api/communities/me`). Perfil propio con pestañas Quedadas (`attending=me`) y Comunidades. **Falta backend**: el listado de eventos no filtra por organizadora ajena (`organizer` solo vale para `me`), no hay comunidades de otra usuaria ni filtro por "quien sigo"; por eso el perfil ajeno no tiene pestañas todavía |
 
 ## Objetivo
 Yago da libertad para mejorar la interfaz (D-015). Antes de construir muchas pantallas nuevas (eventos, notificaciones, moderación), conviene tener una base visual coherente para que todo parezca la misma app.

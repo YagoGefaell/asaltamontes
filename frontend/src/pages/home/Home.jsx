@@ -1,13 +1,27 @@
 import "./Home.css";
-import { useContext, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBell, FaEnvelope } from "react-icons/fa";
+import { useContext, useMemo } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaBell, FaEnvelope, FaMountain } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
+import EmptyState from "../../shared/ui/EmptyState";
+import Skeleton from "../../shared/ui/Skeleton";
+import Avatar from "../../shared/ui/Avatar";
+import Button from "../../shared/forms/Button";
+import EventCard from "../../features/events/components/EventCard";
+import CommunityRow from "../../features/search/components/CommunityRow";
+import { useEvents } from "../../features/events/hooks/useEvents";
+import { useSearchSection } from "../../features/search/hooks/useSearchSection";
+import { getCommunitiesRequest, getMyCommunitiesRequest } from "../../features/communities/services/communities.service";
+import { communityPath } from "../../features/communities/utils/communityPath";
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
 import { useNotifications } from "../../features/notifications/hooks/useNotifications";
 import logo from "../../assets/logo01.png";
 
 const formatCount = (n) => (n > 9 ? "9+" : n);
+const MY_EVENTS = 3;
+const UPCOMING_EVENTS = 5;
+const MY_COMMUNITIES = 12;
+const SUGGESTED_COMMUNITIES = 3;
 
 function HeaderLink({ to, label, count, children }) {
   return (
@@ -20,41 +34,60 @@ function HeaderLink({ to, label, count, children }) {
   );
 }
 
+function Section({ title, to, linkLabel, children }) {
+  return (
+    <section className="home-section" aria-label={title}>
+      <div className="home-section__head">
+        <h2 className="home-section__title">{title}</h2>
+        {to && <Link to={to} className="home-section__link">{linkLabel}</Link>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function EventSkeleton() {
+  return (
+    <div className="home-skeleton" data-testid="home-skeleton">
+      <Skeleton height="104px" />
+    </div>
+  );
+}
+
 const Home = () => {
+  const navigate = useNavigate();
   const { totalUnreadCount } = useContext(ConversationsContext);
   const { unreadCount: unreadNotifications } = useNotifications();
-  const [posts] = useState([
-    {
-      id: 1,
-      user: "asaltamontes",
-      content: "Comunidad femenina creciendo juntas 💖",
-      likes: 120,
-      liked: false,
-    },
-    {
-      id: 2,
-      user: "empowered_woman",
-      content: "Celebrando nuestras historias y logros. ¡Somos increíbles! 💪",
-      likes: 85,
-      liked: false,
-    },
-    {
-      id: 3,
-      user: "creative_soul",
-      content: "La creatividad y la solidaridad nos hacen fuertes",
-      likes: 156,
-      liked: false,
-    },
-  ]);
 
-  const [likedPosts, setLikedPosts] = useState({});
+  // Upcoming events: the ones she is going to, and the rest she can see (public and her communities')
+  const mineFilters = useMemo(() => ({ from: new Date().toISOString(), mine: true, size: MY_EVENTS }), []);
+  const upcomingFilters = useMemo(() => ({ from: new Date().toISOString(), size: UPCOMING_EVENTS + MY_EVENTS }), []);
+  const mine = useEvents(mineFilters);
+  const upcoming = useEvents(upcomingFilters);
 
-  const handleLike = (postId) => {
-    setLikedPosts((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-  };
+  const myCommunities = useSearchSection(
+    async (page) => getMyCommunitiesRequest({ page, size: MY_COMMUNITIES }),
+    "mine",
+  );
+  const suggested = useSearchSection(
+    async (page) => {
+      const result = await getCommunitiesRequest({ page });
+      return { items: result.items.filter((c) => !c.role).slice(0, SUGGESTED_COMMUNITIES), hasMore: false };
+    },
+    "suggested",
+  );
+
+  const replaceIn = (list) => (updated) =>
+    list.setEvents((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
+
+  const mineIds = new Set(mine.events.map((e) => e.id));
+  const others = upcoming.events.filter((e) => !mineIds.has(e.id)).slice(0, UPCOMING_EVENTS);
+
+  const loading = mine.loading || upcoming.loading || myCommunities.loading || suggested.loading;
+  const failed = Boolean(mine.error || upcoming.error);
+  const nothing = !loading && !failed
+    && mine.events.length === 0 && others.length === 0
+    && myCommunities.items.length === 0 && suggested.items.length === 0;
 
   return (
     <div className="home-container">
@@ -71,50 +104,79 @@ const Home = () => {
           </>
         }
       />
-      <div className="stories">
-        {[1, 2, 3, 4, 5].map((story) => (
-          <div className="story" key={story}>
-            <div className="story-avatar" />
-            <span className="story-name">User {story}</span>
+
+      {mine.loading && (
+        <Section title="Tus próximas quedadas"><EventSkeleton /></Section>
+      )}
+      {!mine.loading && mine.events.length > 0 && (
+        <Section title="Tus próximas quedadas" to="/events" linkLabel="Ver todas">
+          {mine.events.map((event) => (
+            <div className="home-event" key={event.id}>
+              <EventCard event={event} onChange={replaceIn(mine)} />
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {upcoming.loading && (
+        <Section title="Próximas quedadas"><EventSkeleton /><EventSkeleton /></Section>
+      )}
+      {!upcoming.loading && others.length > 0 && (
+        <Section title="Próximas quedadas" to="/events" linkLabel="Ver más">
+          {others.map((event) => (
+            <div className="home-event" key={event.id}>
+              <EventCard event={event} onChange={replaceIn(upcoming)} />
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {!myCommunities.loading && myCommunities.items.length > 0 && (
+        <Section title="Tus comunidades" to="/communities" linkLabel="Ver todas">
+          <ul className="home-communities">
+            {myCommunities.items.map((community) => (
+              <li key={community.id}>
+                <Link to={communityPath(community)} className="home-community">
+                  <Avatar src={community.imageUrl} name={community.name} size="lg" />
+                  <span className="home-community__name">{community.name}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {!suggested.loading && suggested.items.length > 0 && (
+        <Section title="Comunidades para ti" to="/search?tab=communities" linkLabel="Ver más">
+          <div className="home-suggestions">
+            {suggested.items.map((community) => <CommunityRow key={community.id} community={community} />)}
           </div>
-        ))}
-      </div>
+        </Section>
+      )}
 
-      <div className="feed">
-        {posts.map((post) => (
-          <div className="post-card" key={post.id}>
-            <div className="post-header">
-              <div className="post-user">
-                <div className="post-avatar" />
-                <span className="post-username">{post.user}</span>
-              </div>
-              <span className="post-menu">⋯</span>
-            </div>
+      {failed && !loading && (
+        <Section title="Próximas quedadas">
+          <p className="home-error" role="alert">No hemos podido cargar las quedadas.</p>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              mine.refetch();
+              upcoming.refetch();
+            }}
+          >
+            Reintentar
+          </Button>
+        </Section>
+      )}
 
-            <div className="post-image" />
-
-            <div className="post-actions">
-              <button
-                className={`action-btn ${likedPosts[post.id] ? "liked" : ""}`}
-                onClick={() => handleLike(post.id)}
-              >
-                {likedPosts[post.id] ? "❤️" : "🤍"}
-              </button>
-              <button className="action-btn">💬</button>
-              <button className="action-btn">📤</button>
-            </div>
-
-            <div className="post-content">
-              <span className="post-likes">
-                {post.likes + (likedPosts[post.id] ? 1 : 0)} likes
-              </span>
-              <p>
-                <strong>{post.user}</strong> {post.content}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {nothing && (
+        <EmptyState
+          icon={<FaMountain />}
+          title="Todavía no hay quedadas a la vista"
+          description="Únete a una comunidad o busca una quedada cerca de ti para empezar."
+          action={<Button variant="primary" onClick={() => navigate("/events")}>Ver quedadas</Button>}
+        />
+      )}
     </div>
   );
 };
