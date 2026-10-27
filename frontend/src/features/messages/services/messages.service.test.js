@@ -1,9 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const get = vi.fn()
-vi.mock('../../../lib/api-client.js', () => ({ apiClient: { get: (...args) => get(...args) } }))
+const post = vi.fn()
+const patch = vi.fn()
+const del = vi.fn()
+vi.mock('../../../lib/api-client.js', () => ({
+  apiClient: { get: (...args) => get(...args), post: (...args) => post(...args), patch: (...args) => patch(...args), delete: (...args) => del(...args) },
+}))
 
-const { getMessagesAfterRequest, getMyConversationsRequest, getConversationMessagesRequest } = await import('./messages.service.js')
+const {
+  getMessagesAfterRequest, getMyConversationsRequest, getConversationMessagesRequest, getGroupDetailsRequest, updateGroupRequest,
+  addParticipantsRequest, removeParticipantRequest, changeParticipantRoleRequest, leaveGroupRequest,
+} = await import('./messages.service.js')
 
 const page = (ids, hasMore) => ({ items: ids.map((id) => ({ id, cursor: `c${id}` })), hasMore, nextBefore: null })
 
@@ -70,5 +78,31 @@ describe('opaque cursors (T30c)', () => {
 
     expect(result.complete).toBe(false)
     expect(get).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('group management requests (T12)', () => {
+  beforeEach(() => [get, post, patch, del].forEach((mock) => mock.mockReset()))
+
+  it('calls each endpoint with its method and body', async () => {
+    await getGroupDetailsRequest('g1', { page: 2, size: 10 })
+    await updateGroupRequest('g1', { groupName: 'Nuevo' })
+    await addParticipantsRequest('g1', ['bea'])
+    await removeParticipantRequest('g1', 'bea')
+    await changeParticipantRoleRequest('g1', 'bea', 'ADMIN')
+    await leaveGroupRequest('g1')
+
+    expect(get).toHaveBeenCalledWith('/api/conversations/g1?page=2&size=10')
+    expect(patch).toHaveBeenCalledWith('/api/conversations/g1', { groupName: 'Nuevo' })
+    expect(post).toHaveBeenCalledWith('/api/conversations/g1/participants', { usernames: ['bea'] })
+    expect(del).toHaveBeenCalledWith('/api/conversations/g1/participants/bea')
+    expect(patch).toHaveBeenCalledWith('/api/conversations/g1/participants/bea', { role: 'ADMIN' })
+    expect(post).toHaveBeenCalledWith('/api/conversations/g1/leave')
+  })
+
+  it('keeps the message of the server when a request is refused', async () => {
+    patch.mockRejectedValue(new Error('Solo las administradoras del grupo pueden hacerlo'))
+
+    await expect(updateGroupRequest('g1', {})).rejects.toThrow('Solo las administradoras')
   })
 })
