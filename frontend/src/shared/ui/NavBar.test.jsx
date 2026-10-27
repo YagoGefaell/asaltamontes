@@ -2,36 +2,36 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import Navbar from './NavBar.jsx'
-import { NotificationsContext } from '../../features/notifications/hooks/notifications.context'
-import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
 
-function renderBar(unreadCount) {
+function renderBar(path = '/home') {
   return render(
-    <MemoryRouter>
-      <ConversationsContext.Provider value={{ totalUnreadCount: 0 }}>
-        <NotificationsContext.Provider value={{ unreadCount }}>
-          <Navbar />
-        </NotificationsContext.Provider>
-      </ConversationsContext.Provider>
+    <MemoryRouter initialEntries={[path]}>
+      <Navbar />
     </MemoryRouter>,
   )
 }
 
-describe('NavBar notifications badge', () => {
-  it('is hidden at zero', () => {
-    renderBar(0)
-    expect(screen.getByRole('link', { name: 'Notificaciones' })).toBeTruthy()
-    expect(document.querySelector('a[href="/notifications"] .unread-count')).toBeNull()
+describe('NavBar', () => {
+  it('has exactly the 5 destinations, in order, with accessible names', () => {
+    renderBar()
+    const links = screen.getAllByRole('link')
+    expect(links.map((l) => l.getAttribute('aria-label'))).toEqual([
+      'Inicio', 'Buscar', 'Quedadas', 'Comunidades', 'Perfil',
+    ])
+    expect(links.map((l) => l.getAttribute('href'))).toEqual([
+      '/home', '/search', '/events', '/communities', '/me',
+    ])
   })
 
-  it('shows the counter with an accessible label', () => {
-    renderBar(4)
-    expect(screen.getByRole('link', { name: 'Notificaciones, 4 sin leer' })).toBeTruthy()
-    expect(document.querySelector('a[href="/notifications"] .unread-count').textContent).toBe('4')
+  it('no longer holds notifications or messages', () => {
+    renderBar()
+    expect(screen.queryByRole('link', { name: /Notificaciones/ })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Mensajes/ })).toBeNull()
   })
 
-  it('caps at 9+', () => {
-    renderBar(10)
-    expect(document.querySelector('a[href="/notifications"] .unread-count').textContent).toBe('9+')
+  it('marks the current section with aria-current', () => {
+    renderBar('/communities/mi-club')
+    expect(screen.getByRole('link', { name: 'Comunidades' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Inicio' })).not.toHaveAttribute('aria-current')
   })
 })
