@@ -22,6 +22,8 @@ export const ConversationsProvider = ({ children }) => {
   const [chats, setChats] = useState([]);
   // Last error of a message we sent (from /user/queue/errors); Messages shows it and restores the text
   const [chatError, setChatError] = useState(null);
+  // The last chat the user stopped belonging to: { id, reason: "REMOVED" | "LEFT", at } (T12). Messages closes it if open.
+  const [removedChat, setRemovedChat] = useState(null);
   const [chatMessages, setChatMessages] = useState({});
   // Per conversation: { hasMore, nextBefore, loading } of the history pagination (T10)
   const [historyPaging, setHistoryPaging] = useState({});
@@ -503,8 +505,18 @@ export const ConversationsProvider = ({ children }) => {
         senderUsername: payload.senderUsername,
         sentAt: payload.sentAt,
         cursor: payload.cursor,
+        // System messages of a group (T12): the text is composed from the payload
+        type: payload.type,
+        systemPayload: payload.systemPayload,
       }]),
     }));
+
+    const isSystem = payload.type === "SYSTEM";
+    // What I did myself does not count as unread (the server does not count it either)
+    const isMyOwnAction = isSystem && payload.systemPayload?.actor === currentUser?.username;
+    if (isSystem && payload.systemPayload?.action === "GROUP_IMAGE_CHANGED") {
+      refreshChats().catch(() => {});
+    }
 
     // A chat that is not loaded (older page, or new): the first page brings its real name and avatar (T10b)
     if (!chatsRef.current.some((chat) => String(chat.id) === String(conversationId))) {
@@ -537,9 +549,11 @@ export const ConversationsProvider = ({ children }) => {
         ];
       }
 
-      const newUnreadCount = isCurrentlyReading ? 0 : (existing.unreadCount || 0) + 1;
+      const newUnreadCount = isCurrentlyReading || isMyOwnAction ? 0 : (existing.unreadCount || 0) + 1;
+      const renamed = isSystem && payload.systemPayload?.action === "GROUP_RENAMED" && payload.systemPayload?.name;
       const updatedChat = {
         ...existing,
+        ...(renamed ? { name: renamed, avatar: renamed.trim().charAt(0).toUpperCase() || existing.avatar } : {}),
         lastMsg: buildLastMessagePreview(payload, payload.senderUsername, existing.type || "INDIVIDUAL"),
         lastMessageAt: payload?.sentAt || existing.lastMessageAt || null,
         unreadCount: newUnreadCount,
@@ -551,7 +565,7 @@ export const ConversationsProvider = ({ children }) => {
 
       return [updatedChat, ...remainingChats];
     });
-  }, [activeChatId, sendReadReceipt, buildLastMessagePreview, refreshChats]);
+  }, [activeChatId, sendReadReceipt, buildLastMessagePreview, refreshChats, currentUser?.username]);
 
   const handleChatError = useCallback((error) => {
     setChatError({ detail: error?.detail || "No se ha podido enviar el mensaje", at: Date.now() });
@@ -559,11 +573,32 @@ export const ConversationsProvider = ({ children }) => {
 
   const clearChatError = useCallback(() => setChatError(null), []);
 
+  // The user is no longer in a chat (expelled, or she left from another session): it leaves the list (T12)
+  const handleConversationRemoved = useCallback((event) => {
+    const conversationId = event?.conversationId;
+    if (!conversationId) return;
+
+    const forget = (prev) => {
+      if (!(conversationId in prev)) return prev;
+      const { [conversationId]: _removed, ...rest } = prev;
+      return rest;
+    };
+    setChats((prevChats) => prevChats.filter((chat) => String(chat.id) !== String(conversationId)));
+    setChatMessages(forget);
+    setHistoryPaging(forget);
+    setHistoryError(forget);
+    setActiveChatId((current) => (String(current) === String(conversationId) ? null : current));
+    setRemovedChat({ id: conversationId, reason: event.reason, at: Date.now() });
+  }, []);
+
+  const clearRemovedChat = useCallback(() => setRemovedChat(null), []);
+
   useGlobalMessageListener(
     websocketClient,
     websocketConnected,
     handleNewMessage,
-    handleChatError
+    handleChatError,
+    handleConversationRemoved
   );
 
   const totalUnreadCount = countUnreadChats(chats) + unreadElsewhere;
@@ -590,7 +625,9 @@ export const ConversationsProvider = ({ children }) => {
         setActiveChatId,
         totalUnreadCount,
         chatError,
-        clearChatError
+        clearChatError,
+        removedChat,
+        clearRemovedChat
       }}
     >
       {children}

@@ -11,12 +11,15 @@ const safeUnsubscribe = (subscription) => {
   }
 };
 
-export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived, onError = logChatError) {
+// onConversationRemoved ({ conversationId, reason: "REMOVED" | "LEFT" }, T12): a chat has to leave the list
+export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived, onError = logChatError, onConversationRemoved = null) {
   const subscriptionRef = useRef(null);
   const errorSubscriptionRef = useRef(null);
+  const removedSubscriptionRef = useRef(null);
   
   const savedCallback = useRef(onMessageReceived);
   const savedErrorCallback = useRef(onError);
+  const savedRemovedCallback = useRef(onConversationRemoved);
 
   useEffect(() => {
     savedCallback.current = onMessageReceived;
@@ -25,6 +28,10 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
   useEffect(() => {
     savedErrorCallback.current = onError;
   }, [onError]);
+
+  useEffect(() => {
+    savedRemovedCallback.current = onConversationRemoved;
+  }, [onConversationRemoved]);
 
   useEffect(() => {
     if (!websocketClient || !websocketConnected) {
@@ -54,7 +61,17 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
       }
     });
 
+    removedSubscriptionRef.current = websocketClient.subscribe("/user/queue/conversations", (frame) => {
+      try {
+        savedRemovedCallback.current?.(JSON.parse(frame.body));
+      } catch (parseError) {
+        console.error("Error parseando evento de conversación", parseError);
+      }
+    });
+
     return () => {
+      safeUnsubscribe(removedSubscriptionRef.current);
+      removedSubscriptionRef.current = null;
       safeUnsubscribe(subscriptionRef.current);
       subscriptionRef.current = null;
       safeUnsubscribe(errorSubscriptionRef.current);

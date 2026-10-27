@@ -103,3 +103,56 @@ export async function markConversationReadRequest(conversationId) {
     // Not critical: the unread badge is corrected the next time the chat is opened
   }
 }
+
+// --- Group management (T12). The server decides who may do what; errors carry its Spanish message. ---
+
+// Details of a group and one page of its participants: { id, name, imageUrl, imageMediaId, participantCount, myRole,
+// historyVisibleToNew, managed, participants: { content, totalElements, last... } }
+export async function getGroupDetailsRequest(conversationId, { page = 0, size = 20 } = {}) {
+  try {
+    return await apiClient.get(`/api/conversations/${conversationId}?page=${page}&size=${size}`);
+  } catch (error) {
+    throw new Error(error.message || "Error cargando el grupo");
+  }
+}
+
+// `changes` only has the fields to change: groupName, groupMediaId (null removes the image), historyVisibleToNew
+export async function updateGroupRequest(conversationId, changes) {
+  try {
+    return await apiClient.patch(`/api/conversations/${conversationId}`, changes);
+  } catch (error) {
+    throw new Error(error.message || "Error actualizando el grupo");
+  }
+}
+
+export async function addParticipantsRequest(conversationId, usernames) {
+  try {
+    return await apiClient.post(`/api/conversations/${conversationId}/participants`, { usernames });
+  } catch (error) {
+    throw new Error(error.message || "Error añadiendo participantes");
+  }
+}
+
+export async function removeParticipantRequest(conversationId, username) {
+  try {
+    await apiClient.delete(`/api/conversations/${conversationId}/participants/${encodeURIComponent(username)}`);
+  } catch (error) {
+    throw new Error(error.message || "Error expulsando a la participante");
+  }
+}
+
+export async function changeParticipantRoleRequest(conversationId, username, role) {
+  try {
+    await apiClient.patch(`/api/conversations/${conversationId}/participants/${encodeURIComponent(username)}`, { role });
+  } catch (error) {
+    throw new Error(error.message || "Error cambiando el rol");
+  }
+}
+
+export async function leaveGroupRequest(conversationId) {
+  try {
+    await apiClient.post(`/api/conversations/${conversationId}/leave`);
+  } catch (error) {
+    throw new Error(error.message || "Error saliendo del grupo");
+  }
+}
