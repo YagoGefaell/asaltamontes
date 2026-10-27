@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { UserProfileProvider } from "../features/users/hooks/UserProfileProvider.jsx";
 import ScrollToTop from "../shared/components/ScrollToTop.jsx";
 import { ToastProvider } from "../shared/ui/Toast.jsx";
+import { NotificationsProvider } from "../features/notifications/components/notifications.provider.jsx";
 import { ConversationsProvider } from "../features/messages/components/conversations.provider.jsx";
 
 export function Providers({ children }) {
@@ -17,7 +18,9 @@ export function Providers({ children }) {
         <AuthProvider>
           <UserProfileProvider>
             <ConversationsProvider>
-              {children}
+              <NotificationsProvider>
+                {children}
+              </NotificationsProvider>
             </ConversationsProvider>
           </UserProfileProvider>
         </AuthProvider>

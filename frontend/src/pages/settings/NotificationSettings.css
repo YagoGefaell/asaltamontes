@@ -1,0 +1,22 @@
+.notification-settings {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  box-sizing: border-box;
+  color: var(--text-color);
+}
+
+.notification-settings ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.notification-settings-hint {
+  margin: 0 0 var(--space-4);
+  padding: 0 1rem;
+  opacity: 0.8;
+}
