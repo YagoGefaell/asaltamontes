@@ -76,7 +76,7 @@ export default function CommunitySettingsMenu() {
       : []),
     { label: "Expulsadas", action: go("banned"), isAction: true },
     { label: "Registro de moderación", action: go("log"), isAction: true },
-    ...(chatEnabled === null ? [] : [{
+    ...(!isOwner || chatEnabled === null ? [] : [{
       label: chatEnabled ? "Desactivar el chat de la comunidad" : "Activar el chat de la comunidad",
       action: handleToggleChat,
       isAction: true,

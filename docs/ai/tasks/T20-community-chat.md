@@ -34,7 +34,7 @@ En el chat gestionado de comunidad las nuevas participantes ven el **historial c
 - **Fuera de alcance / pendiente:** mensajes fijados (opcional en la spec), aviso visual previo de "solo lectura" en el input, y ajustes de moderación para moderadoras (el interruptor vive en la pantalla de la propietaria).
 
 ## Decisiones de Yago (2026-10-29)
-- Una silenciada **puede salir** de la comunidad, pero el silencio va ligado a usuaria + comunidad y **sigue vigente si vuelve a entrar** (test incluido). Sustituye al 409 al salir estando silenciada que introdujo la primera versión: **cambio pendiente** en el código.
+- Una silenciada **puede salir** de la comunidad, pero el silencio va ligado a usuaria + comunidad y **sigue vigente si vuelve a entrar** (test incluido). Sustituye al 409 al salir estando silenciada que introdujo la primera versión: **hecho en T20c**: el silencio vive en `community_mutes` (V17) y se reaplica al entrar (unirse, aceptar solicitud, readmitir).
 - **Sin mensajes de sistema** de entrada y salida en el chat de comunidad.
-- El **interruptor del chat** es solo para la propietaria (también en el endpoint: hoy lo permite a las moderadoras: **pendiente** restringirlo). Las moderadoras silencian y **borran mensajes** (pendiente: borrado de mensajes por moderación).
+- El **interruptor del chat** es solo para la propietaria (también en el endpoint: hoy lo permite a las moderadoras: restringido en T20c). Las moderadoras silencian y **borran mensajes** (T20c: `DELETE /api/conversations/{id}/messages/{messageId}`, evento WS `/user/queue/message-deletions`, entrada `MESSAGE_DELETED` en el registro). Pendiente en el front: botón de borrar mensaje para moderación y escuchar el evento de borrado.
 

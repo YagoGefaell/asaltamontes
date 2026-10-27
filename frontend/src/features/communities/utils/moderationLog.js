@@ -11,6 +11,7 @@ const ACTION_TEXT = {
   TRANSFER_OWNERSHIP: (a, t) => `${a} transfirió la propiedad a ${t}`,
   REQUEST_APPROVED: (a, t) => `${a} aceptó la solicitud de ${t}`,
   REQUEST_REJECTED: (a, t) => `${a} rechazó la solicitud de ${t}`,
+  MESSAGE_DELETED: (a, t) => `${a} borró un mensaje de ${t}`,
   COMMUNITY_UPDATED: (a) => `${a} editó los datos de la comunidad`,
 };
 

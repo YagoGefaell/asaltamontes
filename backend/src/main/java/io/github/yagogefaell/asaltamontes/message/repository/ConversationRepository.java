@@ -159,6 +159,16 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     int updateLastMessage(@Param("conversationId") Long conversationId, @Param("preview") String preview,
                           @Param("sentAt") LocalDateTime sentAt, @Param("sender") UserAccount sender);
 
+    // The preview of the list after the last message was deleted (null when the chat is empty)
+    @Modifying
+    @Query("""
+        UPDATE Conversation c
+        SET c.lastMessage = :preview, c.lastMessageAt = :sentAt, c.lastSender = :sender
+        WHERE c.id = :conversationId
+    """)
+    int replaceLastMessage(@Param("conversationId") Long conversationId, @Param("preview") String preview,
+                           @Param("sentAt") LocalDateTime sentAt, @Param("sender") UserAccount sender);
+
     // --- Chats managed by a community (T20) ---
 
     @Query("""

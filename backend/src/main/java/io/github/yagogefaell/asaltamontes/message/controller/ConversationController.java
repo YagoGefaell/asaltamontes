@@ -124,6 +124,15 @@ public class ConversationController {
         return ResponseEntity.ok(history);
     }
 
+    @DeleteMapping("/{conversationId}/messages/{messageId}")
+    public ResponseEntity<Void> deleteMessage(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PathVariable UUID conversationId,
+            @PathVariable UUID messageId) {
+        messageService.deleteMessage(conversationId, messageId, currentUser.getId());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{conversationId}/read")
     public ResponseEntity<Void> markAsRead(
             @AuthenticationPrincipal UserAccount currentUser,

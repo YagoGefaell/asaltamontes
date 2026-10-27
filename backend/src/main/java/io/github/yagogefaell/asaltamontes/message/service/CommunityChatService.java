@@ -13,7 +13,10 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityModerationLog;
 import io.github.yagogefaell.asaltamontes.community.domain.MemberStatus;
+import io.github.yagogefaell.asaltamontes.community.domain.ModerationAction;
+import io.github.yagogefaell.asaltamontes.community.repository.CommunityModerationLogRepository;
 import io.github.yagogefaell.asaltamontes.community.dto.ChatAccess;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunityChatDto;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
@@ -44,6 +47,7 @@ import lombok.RequiredArgsConstructor;
 public class CommunityChatService {
 
     private static final String NOT_FOUND = "Comunidad no encontrada";
+    private static final String CANNOT_DELETE = "No puedes borrar mensajes de este chat";
 
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository participantRepository;
@@ -52,6 +56,7 @@ public class CommunityChatService {
     private final CommunityMemberRepository memberRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final UserActionLimiter limiter;
+    private final CommunityModerationLogRepository moderationLogRepository;
 
     /** The chat of a community she belongs to (created if missing); everybody else gets the 404 of a missing community. */
     @Transactional
@@ -149,6 +154,26 @@ public class CommunityChatService {
             throw new ForbiddenException("Estás silenciada en esta comunidad y no puedes escribir");
         }
         limiter.communityMessage(userId);
+    }
+
+    /**
+     * Moderation of the chat of a community (T20c): the owner and the moderators delete other members' messages.
+     * Returns the id of the community, and 403 for anyone else or for a chat that no community manages.
+     */
+    @Transactional(readOnly = true)
+    public Long requireModerator(Long conversationId, Long userId) {
+        Long communityId = conversationRepository.findManagingCommunityId(conversationId)
+                .orElseThrow(() -> new ForbiddenException(CANNOT_DELETE));
+        if (!memberRepository.isModerator(communityId, userId)) {
+            throw new ForbiddenException(CANNOT_DELETE);
+        }
+        return communityId;
+    }
+
+    /** Leaves a trace of a deleted message in the moderation log of the community. */
+    @Transactional
+    public void logMessageDeleted(Long communityId, Long actorId, Long authorId) {
+        moderationLogRepository.save(new CommunityModerationLog(communityId, actorId, authorId, ModerationAction.MESSAGE_DELETED, null));
     }
 
     private static LocalDateTime now() {
