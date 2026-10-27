@@ -32,3 +32,9 @@ En el chat gestionado de comunidad las nuevas participantes ven el **historial c
 - **Entrega por WS:** sin cambios, una consulta de ids por mensaje (`findUserIdsByConversationPublicId`); el `UPDATE` de no leídos es una sola sentencia. Vigilar con T28 en comunidades de miles de miembros.
 - **Frontend:** botón "Chat" en el perfil de la comunidad (solo miembros) que abre la conversación en `/messages`; interruptor "Activar/Desactivar el chat" en los ajustes de la propietaria. Silenciada o chat apagado: el servidor rechaza y el aviso sale con el mecanismo de errores existente.
 - **Fuera de alcance / pendiente:** mensajes fijados (opcional en la spec), aviso visual previo de "solo lectura" en el input, y ajustes de moderación para moderadoras (el interruptor vive en la pantalla de la propietaria).
+
+## Decisiones de Yago (2026-10-29)
+- Una silenciada **puede salir** de la comunidad, pero el silencio va ligado a usuaria + comunidad y **sigue vigente si vuelve a entrar** (test incluido). Sustituye al 409 al salir estando silenciada que introdujo la primera versión: **cambio pendiente** en el código.
+- **Sin mensajes de sistema** de entrada y salida en el chat de comunidad.
+- El **interruptor del chat** es solo para la propietaria (también en el endpoint: hoy lo permite a las moderadoras: **pendiente** restringirlo). Las moderadoras silencian y **borran mensajes** (pendiente: borrado de mensajes por moderación).
+
