@@ -52,8 +52,22 @@ public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Lo
         )
         FROM EventAttendee a JOIN a.user u LEFT JOIN u.profile p
         WHERE a.event.id = :eventId AND a.status = :status
+          AND (u.id = :currentUserId OR NOT EXISTS (
+              SELECT 1 FROM UserBlock bl
+              WHERE (bl.blocker.id = :currentUserId AND bl.blocked.id = u.id)
+                 OR (bl.blocked.id = :currentUserId AND bl.blocker.id = u.id)
+          ))
         ORDER BY a.waitlistPosition ASC NULLS FIRST, a.joinedAt ASC, a.id ASC
         """,
-        countQuery = "SELECT COUNT(a) FROM EventAttendee a WHERE a.event.id = :eventId AND a.status = :status")
-    Page<EventAttendeeDto> findAttendees(@Param("eventId") Long eventId, @Param("status") AttendeeStatus status, Pageable pageable);
+        countQuery = """
+        SELECT COUNT(a) FROM EventAttendee a
+        WHERE a.event.id = :eventId AND a.status = :status
+          AND (a.user.id = :currentUserId OR NOT EXISTS (
+              SELECT 1 FROM UserBlock bl
+              WHERE (bl.blocker.id = :currentUserId AND bl.blocked.id = a.user.id)
+                 OR (bl.blocked.id = :currentUserId AND bl.blocker.id = a.user.id)
+          ))
+        """)
+    Page<EventAttendeeDto> findAttendees(@Param("eventId") Long eventId, @Param("status") AttendeeStatus status,
+                                         @Param("currentUserId") Long currentUserId, Pageable pageable);
 }
