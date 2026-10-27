@@ -71,6 +71,23 @@ describe('notificationDestination', () => {
   })
 })
 
+describe('community join notifications', () => {
+  const payload = { communityName: 'Trail Madrid' }
+
+  it('words the three types', () => {
+    expect(notificationText({ type: 'COMMUNITY_JOIN_REQUEST', actor: { username: 'ana', fullName: 'Ana' }, payload }).text)
+      .toBe('Ana quiere unirse a «Trail Madrid»')
+    expect(notificationText({ type: 'COMMUNITY_JOIN_APPROVED', payload }).text).toContain('aceptada')
+    expect(notificationText({ type: 'COMMUNITY_JOIN_REJECTED', payload }).text).toContain('no ha sido aceptada')
+  })
+
+  it('sends staff to the requests screen and the requester to the community', () => {
+    const target = { type: 'COMMUNITY', ref: 'trail-madrid' }
+    expect(notificationDestination({ type: 'COMMUNITY_JOIN_REQUEST', target }).to).toBe('/communities/trail-madrid/settings/requests')
+    expect(notificationDestination({ type: 'COMMUNITY_JOIN_APPROVED', target }).to).toBe('/communities/trail-madrid')
+  })
+})
+
 describe('formatAge', () => {
   const now = Date.parse('2026-10-27T12:00:00Z')
   it('is relative for recent ones', () => {

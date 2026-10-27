@@ -63,6 +63,12 @@ export function notificationText(notification, options = {}) {
       return { text: `¡Ya tienes plaza en ${quoted(payload.title)}!`, detail: eventWhen(payload, options) }
     case 'ADDED_TO_GROUP':
       return { text: `${actorName(notification)} te ha añadido al grupo «${payload.groupName || 'sin nombre'}»`, detail: '' }
+    case 'COMMUNITY_JOIN_REQUEST':
+      return { text: `${actorName(notification)} quiere unirse a «${payload.communityName || 'tu comunidad'}»`, detail: '' }
+    case 'COMMUNITY_JOIN_APPROVED':
+      return { text: `Tu solicitud para unirte a «${payload.communityName || 'la comunidad'}» ha sido aceptada`, detail: '' }
+    case 'COMMUNITY_JOIN_REJECTED':
+      return { text: `Tu solicitud para unirte a «${payload.communityName || 'la comunidad'}» no ha sido aceptada`, detail: '' }
     default:
       return { text: FALLBACK, detail: '' }
   }
@@ -77,6 +83,8 @@ export function notificationDestination(notification) {
     case 'EVENT':
       return { to: `/events/${ref}` }
     case 'COMMUNITY':
+      // Moderation staff land on the pending requests
+      if (notification.type === 'COMMUNITY_JOIN_REQUEST') return { to: `/communities/${ref}/settings/requests` }
       return { to: `/communities/${ref}` }
     case 'USER':
       return { to: `/users/${ref}` }
