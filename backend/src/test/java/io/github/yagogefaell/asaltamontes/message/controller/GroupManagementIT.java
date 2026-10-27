@@ -246,7 +246,7 @@ class GroupManagementIT extends AbstractIntegrationTest {
         mockMvc.perform(json(patch("/api/conversations/" + group + "/participants/" + bea.getUsername()), "{\"role\":\"ADMIN\"}", ana))
                 .andExpect(status().isNoContent());
         mockMvc.perform(get("/api/conversations/" + group).with(auth.bearer(bea))).andExpect(jsonPath("$.myRole").value("ADMIN"));
-        mockMvc.perform(json(patch("/api/conversations/" + group + "/participants/" + ana.getUsername()), "{\"role\":\"MEMBER\"}", bea))
+        mockMvc.perform(json(patch("/api/conversations/" + group + "/participants/" + ana.getUsername()), "{\"role\":\"MEMBER\"}", ana))
                 .andExpect(status().isNoContent());
         mockMvc.perform(json(patch("/api/conversations/" + group + "/participants/" + bea.getUsername()), "{\"role\":\"BOSS\"}", bea))
                 .andExpect(status().isBadRequest());
@@ -254,6 +254,22 @@ class GroupManagementIT extends AbstractIntegrationTest {
         JsonNode last = history(group, bea).get("items").get(1);
         assertThat(last.get("systemPayload").get("action").asText()).isEqualTo("ROLE_CHANGED");
         assertThat(last.get("systemPayload").get("role").asText()).isEqualTo("MEMBER");
+    }
+
+    @Test
+    void anAdminCannotExpelOrDemoteTheCreator() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UUID group = testData.createGroup(ana, bea);
+        mockMvc.perform(json(patch("/api/conversations/" + group + "/participants/" + bea.getUsername()), "{\"role\":\"ADMIN\"}", ana))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(json(patch("/api/conversations/" + group + "/participants/" + ana.getUsername()), "{\"role\":\"MEMBER\"}", bea))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(delete("/api/conversations/" + group + "/participants/" + ana.getUsername()).with(auth.bearer(bea)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(json(patch("/api/conversations/" + group), "{\"groupName\":\"a\u202Eb\"}", bea))
+                .andExpect(status().isBadRequest());
     }
 
     // --- leave ---

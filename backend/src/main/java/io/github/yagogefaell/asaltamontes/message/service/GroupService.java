@@ -106,6 +106,9 @@ public class GroupService {
             if (name.isEmpty()) {
                 throw new BadRequestException("El nombre del grupo es obligatorio");
             }
+            if (name.codePoints().anyMatch(c -> Character.isISOControl(c) || Character.getType(c) == Character.FORMAT)) {
+                throw new BadRequestException("El nombre del grupo contiene caracteres no permitidos");
+            }
             if (!name.equals(conversation.getGroupName())) {
                 conversation.setGroupName(name);
                 postSystem(conversation, user.getId(), "GROUP_RENAMED", actor + " cambió el nombre del grupo a «" + name + "»",
@@ -208,6 +211,7 @@ public class GroupService {
             throw new BadRequestException("Para salir del grupo usa «Salir del grupo»");
         }
         UserAccount removed = target.getUser();
+        requireNotCreator(conversation, removed, user);
         participantRepository.delete(target);
         participantRepository.flush();
 
@@ -226,6 +230,7 @@ public class GroupService {
         if (target.getRole() == role) {
             return;
         }
+        requireNotCreator(conversation, target.getUser(), user);
         if (role == ParticipantRole.MEMBER && participantRepository.countAdmins(conversation.getId()) <= 1) {
             throw new ConflictException("El grupo debe tener al menos una administradora");
         }
@@ -295,6 +300,14 @@ public class GroupService {
             throw new ForbiddenException("Solo las administradoras del grupo pueden hacerlo");
         }
         return new Access(conversation, me);
+    }
+
+    /** The creator cannot be expelled or demoted by another admin (security review of #82). */
+    private static void requireNotCreator(Conversation conversation, UserAccount target, UserAccount actor) {
+        UserAccount creator = conversation.getCreatedBy();
+        if (creator != null && creator.getId().equals(target.getId()) && !creator.getId().equals(actor.getId())) {
+            throw new ForbiddenException("Solo la creadora del grupo puede hacerlo con ella");
+        }
     }
 
     private static void requireManual(Conversation conversation) {
