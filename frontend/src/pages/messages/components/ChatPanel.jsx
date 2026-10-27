@@ -3,6 +3,7 @@ import { CHAT } from "../../../config/constants";
 import Button from "../../../shared/forms/Button";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Skeleton from "../../../shared/ui/Skeleton";
+import { systemMessageText } from "../../../features/messages/utils/systemMessage";
 import { formatDayLabel, formatMessageTime, isSameDay, parseMessageDate } from "../../../features/messages/utils/messageDates";
 
 // Show the counter only when it matters
@@ -30,11 +31,13 @@ const ChatPane = ({
   onRetryHistory,
   onLeaveChat,
   onOpenUserProfile,
+  onOpenGroupInfo,
   onSelectedAvatarError,
   websocketConnected,
   websocketStatus = "connected",
   messagesEndRef,
 }) => {
+  const isGroup = selectedChat.type === "GROUP";
   const containerRef = useRef(null);
   const topSentinelRef = useRef(null);
   // Scroll height before an older page is added, to keep the same messages on screen afterwards
@@ -110,7 +113,7 @@ const ChatPane = ({
         </Button>
         <div
           className="chat-title"
-          onClick={(event) => onOpenUserProfile(selectedChat, event)}
+          onClick={(event) => (isGroup && onOpenGroupInfo ? onOpenGroupInfo() : onOpenUserProfile(selectedChat, event))}
         >
           <div className="chat-avatar" aria-hidden="true">
             {selectedChat.avatarUrl ? (
@@ -126,9 +129,14 @@ const ChatPane = ({
           </div>
           <div className="chat-title-text">
             <span className="chat-name">{selectedChat.name}</span>
-            <span className="chat-status">En linea</span>
+            <span className="chat-status">{isGroup ? "Toca para ver el grupo" : "En linea"}</span>
           </div>
         </div>
+        {isGroup && onOpenGroupInfo && (
+          <Button variant="ghost" size="small" className="chat-info-btn" onClick={onOpenGroupInfo}>
+            Info del grupo
+          </Button>
+        )}
       </div>
 
       <div
@@ -165,6 +173,7 @@ const ChatPane = ({
         )}
 
         {currentMessages.map((message, index) => {
+          const isSystem = message.type === "SYSTEM";
           const isSent = message.senderUsername === currentUsername;
           const showTimeMarker = shouldRenderTimeMarker(currentMessages, index);
           const markerLabel = formatMessageTime(message.sentAt);
@@ -181,11 +190,16 @@ const ChatPane = ({
                 <div className="message-time-marker">{markerLabel}</div>
               )}
 
-              <div
-                className={`message ${isSent ? "sent" : "received"}`}
-              >
-                {message.content}
-              </div>
+              {isSystem ? (
+                // Group events (T12): centered, no sender, text composed from the payload
+                <div className="message-system">{systemMessageText(message, currentUsername)}</div>
+              ) : (
+                <div
+                  className={`message ${isSent ? "sent" : "received"}`}
+                >
+                  {message.content}
+                </div>
+              )}
             </div>
           );
         })}
