@@ -32,6 +32,15 @@ describe('notificationText', () => {
     expect(result.detail).toContain('23:30')
   })
 
+  it('reminders say how long is left and show the time at the event place and in the viewer zone', () => {
+    const tomorrow = notificationText({ type: 'EVENT_REMINDER', payload: { ...event, hoursBefore: 24 } }, opts)
+    expect(tomorrow.text).toBe('Mañana tienes «Trail nocturno»')
+    expect(tomorrow.detail).toContain('07:30')
+    expect(tomorrow.detail).toContain('23:30')
+    expect(notificationText({ type: 'EVENT_REMINDER', payload: { ...event, hoursBefore: 2 } }, opts).text)
+      .toBe('«Trail nocturno» empieza en 2 horas')
+  })
+
   it('does not repeat the time when the viewer is in the event zone', () => {
     const result = notificationText({ type: 'WAITLIST_PROMOTED', payload: event }, { locale: 'es-ES', viewerZone: 'Asia/Tokyo' })
     expect(result.text).toBe('¡Ya tienes plaza en «Trail nocturno»!')

@@ -1,6 +1,7 @@
 // Text of a system message of a group (T12). The server sends a structured payload ({ action, actor, targets, ... })
 // and the text is composed here, in Spanish, so it can say "Tú" / "te" for the current user (D-019: no text in the API).
 // `content` is only the fallback for actions this client does not know yet.
+import { formatEventDateTime } from "../../events/utils/eventFormat";
 
 const name = (username) => `@${username}`;
 
@@ -50,6 +51,17 @@ export function systemMessageText(message, currentUsername) {
         return `${actorIsMe ? "Activaste" : `${actor} activó`} que las nuevas participantes vean el historial`;
       }
       return `${actorIsMe ? "Desactivaste" : `${actor} desactivó`} que las nuevas participantes vean el historial`;
+    case "EVENT_CANCELLED":
+      return payload.reason ? `La quedada se ha cancelado: ${payload.reason}` : "La quedada se ha cancelado";
+    case "EVENT_UPDATED": {
+      const changed = Array.isArray(payload.changed) ? payload.changed : [];
+      const parts = [];
+      if (changed.includes("startsAt") || changed.includes("timezone")) parts.push("la hora");
+      if (changed.includes("city") || changed.includes("meetingPoint")) parts.push("el lugar");
+      const what = parts.length > 0 ? `Ha cambiado ${parts.join(" y ")} de la quedada` : "Ha cambiado la quedada";
+      // The time at the place of the event, with its zone when it differs from hers (D-019)
+      return payload.startsAt ? `${what}. Ahora: ${formatEventDateTime(payload.startsAt, payload.timeZone)}` : what;
+    }
     default:
       return fallback;
   }

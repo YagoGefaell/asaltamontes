@@ -130,6 +130,27 @@ export async function updateEventRequest(eventId, payload) {
   }
 }
 
+// -------- CHAT (T21) --------
+// { conversationId, canWrite, readOnlyReason } for someone who is going (readOnlyReason: null | CANCELLED | ARCHIVED);
+// 404 for anyone else, the waitlist included
+export async function getEventChatRequest(eventId) {
+  try {
+    return await apiClient.get(`/api/events/${encodeURIComponent(eventId)}/chat`)
+  } catch (error) {
+    throw new Error(error.message || 'Error abriendo el chat de la quedada')
+  }
+}
+
+// -------- CALENDAR (T21) --------
+// The iCalendar file as text. It needs the token, so it is fetched (not a plain link) and saved as a file.
+export async function getEventCalendarRequest(eventId) {
+  try {
+    return await apiClient.get(`/api/events/${encodeURIComponent(eventId)}.ics`, { headers: { Accept: 'text/calendar' } })
+  } catch (error) {
+    throw new Error(error.message || 'Error descargando el calendario')
+  }
+}
+
 // -------- COMMUNITY EVENTS --------
 // Upcoming events of a community the user can see
 export async function getCommunityEventsRequest(slug, { page = 0, size = 5 } = {}) {

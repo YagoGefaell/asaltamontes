@@ -6,7 +6,7 @@ vi.mock('../../../lib/api-client.js', () => ({
 
 import { apiClient } from '../../../lib/api-client.js'
 import {
-  buildEventsQuery, getEventAttendeesRequest, getEventsInBoundsRequest, getEventsRequest, toBounds, joinEventRequest, leaveEventRequest,
+  buildEventsQuery, getEventAttendeesRequest, getEventCalendarRequest, getEventChatRequest, getEventsInBoundsRequest, getEventsRequest, toBounds, joinEventRequest, leaveEventRequest,
 } from './events.service.js'
 
 describe('buildEventsQuery', () => {
@@ -94,5 +94,24 @@ describe('map search by bounding box', () => {
   it('falls back to the number of items when the answer has no total', async () => {
     apiClient.get.mockResolvedValue({ content: [{ id: 1 }, { id: 2 }] })
     expect((await getEventsInBoundsRequest(bounds)).total).toBe(2)
+  })
+})
+
+describe('chat and calendar (T21)', () => {
+  it('asks for the chat of the event by its public id', async () => {
+    apiClient.get.mockResolvedValue({ conversationId: 'c1', canWrite: true, readOnlyReason: null })
+    expect(await getEventChatRequest('e 1')).toEqual({ conversationId: 'c1', canWrite: true, readOnlyReason: null })
+    expect(apiClient.get).toHaveBeenLastCalledWith('/api/events/e%201/chat')
+  })
+
+  it('keeps the message of the server when the chat is not available', async () => {
+    apiClient.get.mockRejectedValue(new Error('Chat no encontrado'))
+    await expect(getEventChatRequest('e1')).rejects.toThrow('Chat no encontrado')
+  })
+
+  it('downloads the calendar file as text', async () => {
+    apiClient.get.mockResolvedValue('BEGIN:VCALENDAR\r\n')
+    expect(await getEventCalendarRequest('e1')).toBe('BEGIN:VCALENDAR\r\n')
+    expect(apiClient.get).toHaveBeenLastCalledWith('/api/events/e1.ics', { headers: { Accept: 'text/calendar' } })
   })
 })

@@ -36,3 +36,19 @@ describe('systemMessageText (T12)', () => {
     expect(systemMessageText(message(null, 'texto del servidor'), 'ana')).toBe('texto del servidor')
   })
 })
+
+describe('systemMessageText of an event chat (T21)', () => {
+  it('says the event was cancelled, with the reason if there is one', () => {
+    expect(systemMessageText(message({ action: 'EVENT_CANCELLED', reason: 'Viento' }), 'bea')).toBe('La quedada se ha cancelado: Viento')
+    expect(systemMessageText(message({ action: 'EVENT_CANCELLED', reason: null }), 'bea')).toBe('La quedada se ha cancelado')
+  })
+
+  it('says what changed and the new time at the place of the event', () => {
+    const text = systemMessageText(message({
+      action: 'EVENT_UPDATED', changed: ['startsAt', 'meetingPoint'], startsAt: '2026-11-01T22:30:00Z', timeZone: 'Asia/Tokyo',
+    }), 'bea')
+    expect(text).toMatch(/^Ha cambiado la hora y el lugar de la quedada\. Ahora: /)
+    expect(text).toContain('07:30')
+    expect(systemMessageText(message({ action: 'EVENT_UPDATED', changed: ['city'] }), 'bea')).toBe('Ha cambiado el lugar de la quedada')
+  })
+})
