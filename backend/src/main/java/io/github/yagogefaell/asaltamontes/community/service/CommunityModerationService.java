@@ -151,6 +151,9 @@ public class CommunityModerationService {
             }
         }
         String url = body.hasNonNull("imageUrl") ? body.get("imageUrl").asText() : null;
+        if (url != null && url.length() > 255) {
+            throw new BadRequestException("La URL de la imagen no puede superar los 255 caracteres");
+        }
         MediaReferenceService.Linked cover = mediaReferences.link(mediaId, url, MediaPurpose.COMMUNITY_COVER, user.getId(), legacyExternal);
         community.setCoverMediaId(cover.mediaId());
         community.setImageUrl(cover.url());
