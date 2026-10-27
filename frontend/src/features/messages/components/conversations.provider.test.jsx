@@ -2,7 +2,7 @@ import { useContext, useEffect } from 'react'
 import { act, render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const listener = vi.hoisted(() => ({ onMessage: null }))
+const listener = vi.hoisted(() => ({ onMessage: null, onRemoved: null }))
 const auth = vi.hoisted(() => ({ isAuthenticated: true, sendMessage: () => {} }))
 
 vi.mock('../../auth/hooks/useAuth', () => ({
@@ -15,8 +15,9 @@ vi.mock('../../auth/hooks/useAuth', () => ({
   }),
 }))
 vi.mock('../hooks/useGlobalMessageListener', () => ({
-  useGlobalMessageListener: (_client, _connected, onMessage) => {
+  useGlobalMessageListener: (_client, _connected, onMessage, _onError, onRemoved) => {
     listener.onMessage = onMessage
+    listener.onRemoved = onRemoved
   },
 }))
 vi.mock('../services/messages.service.js', () => ({
@@ -186,5 +187,44 @@ describe('ConversationsProvider chat list cursor (T30c)', () => {
     })
 
     expect(getMyConversationsRequest).toHaveBeenLastCalledWith({ before: 'tok_page2' })
+  })
+})
+
+describe('ConversationsProvider group events (T12)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    listener.onMessage = null
+  })
+
+  it('drops a chat the user was removed from and reports it', async () => {
+    getMyConversationsRequest.mockResolvedValue({
+      items: [{ conversationId: 'g1', displayName: 'Trail', type: 'GROUP', unreadCount: 0 }],
+      hasMore: false,
+    })
+    const ctx = renderProvider()
+    await waitFor(() => expect(ctx.current.chats).toHaveLength(1))
+
+    act(() => listener.onRemoved({ conversationId: 'g1', reason: 'REMOVED' }))
+
+    await waitFor(() => expect(ctx.current.chats).toHaveLength(0))
+    expect(ctx.current.removedChat).toMatchObject({ id: 'g1', reason: 'REMOVED' })
+  })
+
+  it('updates the name of a renamed group and does not count my own action as unread', async () => {
+    getMyConversationsRequest.mockResolvedValue({
+      items: [{ conversationId: 'g1', displayName: 'Trail', type: 'GROUP', unreadCount: 0 }],
+      hasMore: false,
+    })
+    const ctx = renderProvider()
+    await waitFor(() => expect(ctx.current.chats).toHaveLength(1))
+
+    act(() => listener.onMessage({
+      id: 'm1', conversationId: 'g1', type: 'SYSTEM', content: 'ana cambió el nombre', senderUsername: null,
+      sentAt: '2026-10-27T10:00:00', systemPayload: { action: 'GROUP_RENAMED', actor: 'ana', name: 'Montaña' },
+    }))
+
+    await waitFor(() => expect(ctx.current.chats[0].name).toBe('Montaña'))
+    expect(ctx.current.chats[0].unreadCount).toBe(0)
+    expect(ctx.current.chatMessages.g1[0].type).toBe('SYSTEM')
   })
 })

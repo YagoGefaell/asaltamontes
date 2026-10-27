@@ -1,12 +1,12 @@
 # T12 — Gestión de grupos de chat
 
-- **Estado:** pendiente
+- **Estado:** hecho
 - **Fase:** 1 — Chat
 - **Depende de:** T09 (hecho), T30a (hecho en la rama `feat/T30a-public-ids`; ids públicos, 404 uniforme)
 - **Rama sugerida:** `feat/T12-group-management`
 - **Cierra bugs:** BUG-056, BUG-057 (parte)
 - **Tamaño:** M (1 PR grande; si el diff se dispara, cortar en T12a = migración + endpoints + mensajes de sistema y T12b = frontend)
-- **Sub-PRs:** T12a (backend: migración V10, `GroupService`, endpoints, mensajes de sistema, filtro de historial por `joined_at`; hecha) y T12b (frontend, apilada sobre T12a). El `Estado` pasa a `hecho` en T12b. BUG-056 (frontend) se cierra en T12b; BUG-057 (longitud de la imagen) queda cubierto en T12a por `@Size(255)` en el PATCH.
+- **Sub-PRs:** T12a (backend: migración V10, `GroupService`, endpoints, mensajes de sistema, filtro de historial por `joined_at`; hecha) y T12b (frontend, apilada sobre T12a). T12b (frontend) hecha. BUG-057 queda cubierto por `@Size(255)` en el PATCH; BUG-056 (refresco tras crear grupo) no se ha tocado y sigue abierto.
 - **Spec:** refinada el 2026-10-24 contra el código de `feat/T30a-public-ids`.
 
 ## Objetivo

@@ -8,6 +8,7 @@ import { useToast } from "../../shared/ui/Toast";
 import ConversationsPane from "./components/ConversationsPanel";
 import ChatPane from "./components/ChatPanel";
 import GroupCreatorPanel from "./components/GroupCreatorPanel";
+import GroupInfoPanel from "./components/GroupInfoPanel";
 
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
 
@@ -34,7 +35,9 @@ const Messages = () => {
     loadMoreChats,
     errorChats,
     chatError,
-    clearChatError
+    clearChatError,
+    removedChat,
+    clearRemovedChat
   } = useContext(ConversationsContext);
 
   const [selectedChat, setSelectedChat] = useState(() => {
@@ -64,6 +67,7 @@ const Messages = () => {
   const lastSentRef = useRef(null);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [isGroupCreatorOpen, setIsGroupCreatorOpen] = useState(false);
+  const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -100,6 +104,7 @@ const Messages = () => {
   }, [navigate]);
 
   const handleLeaveChat = useCallback(() => {
+    setIsGroupInfoOpen(false);
     setSelectedChat(null);
     setActiveChatId(null);
     navigate("/messages", { replace: true, state: {} });
@@ -135,6 +140,32 @@ const Messages = () => {
     location.pathname, 
     handleEnterChat,
   ]);
+
+  // T12: the group info changed the name or image, or I left: keep the open chat and the list in step
+  const handleGroupChanged = useCallback((details) => {
+    const patch = { name: details.name, avatar: details.name.trim().charAt(0).toUpperCase() || "?", avatarUrl: details.imageUrl || null };
+    setSelectedChat((prev) => (prev && String(prev.id) === String(details.id) ? { ...prev, ...patch } : prev));
+    setChats((prevChats) => prevChats.map((chat) => (String(chat.id) === String(details.id) ? { ...chat, ...patch } : chat)));
+  }, [setChats]);
+
+  const handleLeftGroup = useCallback(() => {
+    const leftId = selectedChat?.id;
+    if (leftId) setChats((prevChats) => prevChats.filter((chat) => String(chat.id) !== String(leftId)));
+    handleLeaveChat();
+    toast.success("Has salido del grupo");
+  }, [selectedChat?.id, setChats, handleLeaveChat, toast]);
+
+  // The server removed me from the open chat (expelled, or I left in another session)
+  useEffect(() => {
+    if (!removedChat) return;
+    if (selectedChat?.id && String(selectedChat.id) === String(removedChat.id)) {
+      setIsGroupInfoOpen(false);
+      setSelectedChat(null);
+      navigate("/messages", { replace: true, state: {} });
+      if (removedChat.reason === "REMOVED") toast.error("Ya no formas parte de este grupo");
+    }
+    clearRemovedChat();
+  }, [removedChat, selectedChat?.id, clearRemovedChat, navigate, toast]);
 
   useEffect(() => {
     const className = "chat-open";
@@ -339,7 +370,17 @@ const Messages = () => {
         />
       )}
 
-      {selectedChat && (
+      {selectedChat && isGroupInfoOpen && (
+        <GroupInfoPanel
+          chat={selectedChat}
+          currentUsername={currentUser?.username}
+          onClose={() => setIsGroupInfoOpen(false)}
+          onGroupChanged={handleGroupChanged}
+          onLeft={handleLeftGroup}
+        />
+      )}
+
+      {selectedChat && !isGroupInfoOpen && (
         <ChatPane
           selectedChat={selectedChat}
           currentMessages={currentMessages}
@@ -355,6 +396,7 @@ const Messages = () => {
           onSendMessage={handleSendMessage}
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}
+          onOpenGroupInfo={() => setIsGroupInfoOpen(true)}
           onSelectedAvatarError={() => {
             setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
           }}

@@ -131,4 +131,26 @@ describe('ChatPanel', () => {
     }
     spy.mockRestore()
   })
+
+  it('renders system messages of a group centered, composed from the payload (T12)', () => {
+    renderPanel({
+      selectedChat: { id: 1, name: 'Trail', type: 'GROUP' },
+      currentMessages: [{
+        id: 'm1', type: 'SYSTEM', content: 'respaldo', senderUsername: null, sentAt: '2026-10-27T10:00:00',
+        systemPayload: { action: 'MEMBER_ADDED', actor: 'bea', targets: ['ana'] },
+      }],
+    })
+
+    expect(screen.getByText('@bea te añadió al grupo')).toHaveClass('message-system')
+    expect(screen.queryByText('respaldo')).not.toBeInTheDocument()
+  })
+
+  it('opens the group info from the header of a group (T12)', () => {
+    const onOpenGroupInfo = vi.fn()
+    renderPanel({ selectedChat: { id: 1, name: 'Trail', type: 'GROUP' }, onOpenGroupInfo })
+
+    fireEvent.click(screen.getByText('Info del grupo'))
+
+    expect(onOpenGroupInfo).toHaveBeenCalled()
+  })
 })
