@@ -1,49 +1,23 @@
-import React from "react";
 import { NavLink } from "react-router-dom";
-import { FaHome, FaSearch, FaEnvelope, FaBell, FaUsers, FaUser, FaCalendarAlt } from "react-icons/fa";
-import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
-import { useNotifications } from "../../features/notifications/hooks/useNotifications";
+import { FaHome, FaSearch, FaUsers, FaUser, FaCalendarAlt } from "react-icons/fa";
 import "./NavBar.css";
 
-const Navbar = () => {
-  const { totalUnreadCount } = React.useContext(ConversationsContext);
-  const { unreadCount: unreadNotifications } = useNotifications();
+const TABS = [
+  { to: "/home", label: "Inicio", icon: <FaHome aria-hidden="true" /> },
+  { to: "/search", label: "Buscar", icon: <FaSearch aria-hidden="true" /> },
+  { to: "/events", label: "Quedadas", icon: <FaCalendarAlt aria-hidden="true" /> },
+  { to: "/communities", label: "Comunidades", icon: <FaUsers aria-hidden="true" /> },
+  { to: "/me", label: "Perfil", icon: <FaUser aria-hidden="true" /> },
+];
 
-  return (
-    <nav className="bottom-nav">
-      <NavLink to="/home" className={({ isActive }) => (isActive ? "active" : "")}>
-        <FaHome />
+const Navbar = () => (
+  <nav className="bottom-nav" aria-label="Navegación principal">
+    {TABS.map(({ to, label, icon }) => (
+      <NavLink key={to} to={to} aria-label={label} className={({ isActive }) => (isActive ? "active" : "")}>
+        {icon}
       </NavLink>
-      <NavLink to="/search" className={({ isActive }) => (isActive ? "active" : "")}>
-        <FaSearch />
-      </NavLink>
-      <NavLink to="/communities" className={({ isActive }) => (isActive ? "active" : "")}>
-        <FaUsers />
-      </NavLink>
-      <NavLink to="/events" aria-label="Quedadas" className={({ isActive }) => (isActive ? "active" : "")}>
-        <FaCalendarAlt />
-      </NavLink>
-      <NavLink
-        to="/notifications"
-        aria-label={unreadNotifications > 0 ? `Notificaciones, ${unreadNotifications} sin leer` : "Notificaciones"}
-        className={({ isActive }) => (isActive ? "active" : "")}
-      >
-        <FaBell />
-        {unreadNotifications > 0 && (
-          <span className="unread-count" aria-hidden="true">{unreadNotifications > 9 ? "9+" : unreadNotifications}</span>
-        )}
-      </NavLink>
-      <NavLink to="/messages" className={({ isActive }) => (isActive ? "active" : "")}>
-        <FaEnvelope />
-        {totalUnreadCount > 0 && (
-          <span className="unread-count">{totalUnreadCount > 9 ? "9+" : totalUnreadCount}</span>
-        )}
-      </NavLink>
-      <NavLink to="/me" className={({ isActive }) => (isActive ? "active" : "")}>
-        <FaUser />
-      </NavLink>
-    </nav>
-  );
-};
+    ))}
+  </nav>
+);
 
 export default Navbar;

@@ -1,7 +1,28 @@
 import "./Home.css";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBell, FaEnvelope } from "react-icons/fa";
+import PageHeader from "../../shared/ui/PageHeader";
+import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
+import { useNotifications } from "../../features/notifications/hooks/useNotifications";
+import logo from "../../assets/logo01.png";
+
+const formatCount = (n) => (n > 9 ? "9+" : n);
+
+function HeaderLink({ to, label, count, children }) {
+  return (
+    <Link to={to} className="home-header__link" aria-label={count > 0 ? `${label}, ${count} sin leer` : label}>
+      {children}
+      {count > 0 && (
+        <span className="home-header__badge" aria-hidden="true">{formatCount(count)}</span>
+      )}
+    </Link>
+  );
+}
 
 const Home = () => {
+  const { totalUnreadCount } = useContext(ConversationsContext);
+  const { unreadCount: unreadNotifications } = useNotifications();
   const [posts] = useState([
     {
       id: 1,
@@ -37,6 +58,19 @@ const Home = () => {
 
   return (
     <div className="home-container">
+      <PageHeader
+        title={<img className="home-header__logo" src={logo} alt="Asaltamontes Female" />}
+        actions={
+          <>
+            <HeaderLink to="/notifications" label="Notificaciones" count={unreadNotifications}>
+              <FaBell aria-hidden="true" />
+            </HeaderLink>
+            <HeaderLink to="/messages" label="Mensajes" count={totalUnreadCount}>
+              <FaEnvelope aria-hidden="true" />
+            </HeaderLink>
+          </>
+        }
+      />
       <div className="stories">
         {[1, 2, 3, 4, 5].map((story) => (
           <div className="story" key={story}>

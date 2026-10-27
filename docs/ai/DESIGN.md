@@ -36,7 +36,7 @@ Principios, por orden:
 
 ## 3. Estructura y navegación
 
-- **Barra inferior**: máximo **5 destinos** (como Instagram). Hoy tiene 7 iconos sin texto (Inicio, Buscar, Comunidades, Quedadas, Notificaciones, Mensajes, Perfil): demasiados para 360 px. Propuesta (T29f, pendiente del OK de Yago): **Inicio · Buscar · Quedadas · Comunidades · Perfil**, con **Notificaciones y Mensajes como iconos en la cabecera de Inicio** (arriba a la derecha, con su contador), igual que Instagram.
+- **Barra inferior**: máximo **5 destinos** (como Instagram). Antes tenía 7 iconos; desde T29g (aprobada por Yago): **Inicio · Buscar · Quedadas · Comunidades · Perfil**, con **Notificaciones y Mensajes como iconos en la cabecera de Inicio** (arriba a la derecha, con su contador), igual que Instagram.
 - **Cabecera de pantalla**: una línea, 56 px como mucho: título (o logo en Inicio) a la izquierda, 1–2 iconos de acción a la derecha. En pantallas de detalle: flecha atrás + título. Nada de botones grandes rellenos en la cabecera ("Crear quedada" → icono `+` o botón flotante).
 - **Acción de crear**: un botón `+` en la cabecera o un botón flotante abajo a la derecha (por encima de la barra inferior), no un botón ancho que empuja el contenido.
 - **Zona segura**: la barra inferior y los botones fijos respetan `env(safe-area-inset-bottom)`; el contenido deja hueco para la barra (no queda tapado el último elemento).
