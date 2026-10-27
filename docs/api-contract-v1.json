@@ -886,7 +886,7 @@
     "/api/conversations/{conversationId}/messages/{messageId}": {
       "delete": {
         "summary": "Delete a message of a community chat (T20c)",
-        "description": "Only the owner and the moderators of the community that manages the chat. Any other chat, or a plain member: 403. Not a participant or unknown chat/message: 404. System messages: 409. The message disappears for everybody, the chat list preview is recomputed, the participants receive {conversationId, messageId} on /user/queue/message-deletions and the moderation log records MESSAGE_DELETED.",
+        "description": "Only the owner and the moderators of the community that manages the chat; a moderator cannot delete messages of the owner or of other moderators (403). Any other chat, or a plain member: 403. Not a participant or unknown chat/message: 404. System messages: 409. The message disappears for everybody, the chat list preview is recomputed, the participants receive {conversationId, messageId} on /user/queue/message-deletions and the moderation log records MESSAGE_DELETED.",
         "tags": ["Messages"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
