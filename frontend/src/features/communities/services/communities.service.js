@@ -4,9 +4,11 @@ export const COMMUNITIES_PAGE_SIZE = 20
 
 // -------- GET ALL COMMUNITIES --------
 // One page (Spring Page) of the communities, or of those whose name contains `query` (T14)
-export async function getCommunitiesRequest({ page = 0, query = '' } = {}) {
+export async function getCommunitiesRequest({ page = 0, query = '', city = '', province = '' } = {}) {
   const params = new URLSearchParams({ page: String(page), size: String(COMMUNITIES_PAGE_SIZE) })
   if (query.trim()) params.set('query', query.trim())
+  if (city.trim()) params.set('city', city.trim())
+  if (province.trim()) params.set('province', province.trim())
   try {
     const response = await apiClient.get(`/api/communities?${params}`)
     return {
@@ -32,10 +34,19 @@ export async function getCommunityRequest(slug) {
 
 // -------- GET MEMBERS --------
 // First page of the members other than her. Only members get it: others receive 404 (BUG-066)
-export async function getCommunityMembersRequest(communityId) {
+export async function getCommunityMembersRequest(communityId, page = 0) {
+  const page_ = await getCommunityMembersPageRequest(communityId, page)
+  return page_.items
+}
+
+// One page of members with `hasMore`; the staff also get each member's `status` (MUTED) (T19)
+export async function getCommunityMembersPageRequest(communityId, page = 0) {
   try {
-    const response = await apiClient.get(`/api/communities/${communityId}/members?page=0&size=${COMMUNITIES_PAGE_SIZE}`)
-    return Array.isArray(response?.content) ? response.content : []
+    const response = await apiClient.get(`/api/communities/${communityId}/members?page=${page}&size=${COMMUNITIES_PAGE_SIZE}`)
+    return {
+      items: Array.isArray(response?.content) ? response.content : [],
+      hasMore: response?.last === false,
+    }
   } catch (error) {
     throw new Error(error.message || "Error obteniendo los miembros")
   }
@@ -50,12 +61,22 @@ export async function createCommunityRequest(communityData) {
   }
 }
 
+// Keeps status and retryAfter so the screens can tell 403/404/429 apart (T19b)
+function keepStatus(error, fallback) {
+  const wrapped = new Error(error.message || fallback)
+  wrapped.status = error.status
+  wrapped.retryAfter = error.retryAfter
+  wrapped.code = error.code
+  return wrapped
+}
+
 // -------- JOIN COMMUNITY --------
+// 201 = member; 202 = request sent to a private community (T19). The body is empty either way
 export async function joinCommunityRequest(communityId) {
   try {
     return await apiClient.post(`/api/communities/${communityId}/join`, {})
   } catch (error) {
-    throw new Error(error.message || "Error al unirse a la comunidad")
+    throw keepStatus(error, "Error al unirse a la comunidad")
   }
 }
 
@@ -92,3 +113,67 @@ export async function getOrganizableCommunitiesRequest() {
     throw new Error(error.message || 'Error obteniendo tus comunidades')
   }
 }
+
+// ================= MODERATION (T19b) =================
+const base = (communityId) => `/api/communities/${communityId}`
+const user = (username) => encodeURIComponent(username)
+
+// -------- EDIT COMMUNITY --------
+// PATCH by public id; absent field = unchanged, null clears it (D-020)
+export async function updateCommunityRequest(communityId, changes) {
+  try {
+    return await apiClient.patch(base(communityId), changes)
+  } catch (error) {
+    throw keepStatus(error, "No se pudo guardar la comunidad")
+  }
+}
+
+// -------- MEMBER ACTIONS --------
+async function post(path, body, fallback) {
+  try {
+    return await apiClient.post(path, body)
+  } catch (error) {
+    throw keepStatus(error, fallback)
+  }
+}
+
+export function setMemberRoleRequest(communityId, username, role) {
+  return apiClient.put(`${base(communityId)}/members/${user(username)}/role`, { role })
+    .catch((error) => { throw keepStatus(error, "No se pudo cambiar el rol") })
+}
+export const muteMemberRequest = (communityId, username) =>
+  post(`${base(communityId)}/members/${user(username)}/mute`, {}, "No se pudo silenciar")
+export const unmuteMemberRequest = (communityId, username) =>
+  post(`${base(communityId)}/members/${user(username)}/unmute`, {}, "No se pudo quitar el silencio")
+export const banMemberRequest = (communityId, username, reason) =>
+  post(`${base(communityId)}/members/${user(username)}/ban`, reason?.trim() ? { reason: reason.trim() } : {}, "No se pudo expulsar")
+export const unbanMemberRequest = (communityId, username) =>
+  post(`${base(communityId)}/members/${user(username)}/unban`, {}, "No se pudo readmitir")
+export const transferOwnershipRequest = (communityId, username) =>
+  post(`${base(communityId)}/transfer-ownership/${user(username)}`, {}, "No se pudo transferir la propiedad")
+export const approveJoinRequest = (communityId, username) =>
+  post(`${base(communityId)}/requests/${user(username)}/approve`, {}, "No se pudo aceptar la solicitud")
+export const rejectJoinRequest = (communityId, username) =>
+  post(`${base(communityId)}/requests/${user(username)}/reject`, {}, "No se pudo rechazar la solicitud")
+
+// -------- CURSOR LISTS (opaque `before` / `nextBefore`) --------
+async function getCursorPage(path, before, fallback) {
+  const params = new URLSearchParams({ limit: '20' })
+  if (before) params.set('before', before)
+  try {
+    const response = await apiClient.get(`${path}?${params}`)
+    return {
+      items: Array.isArray(response?.items) ? response.items : [],
+      nextBefore: response?.nextBefore ?? null,
+    }
+  } catch (error) {
+    throw keepStatus(error, fallback)
+  }
+}
+
+export const getBannedRequest = (communityId, before) =>
+  getCursorPage(`${base(communityId)}/banned`, before, "No se pudo cargar la lista de expulsadas")
+export const getJoinRequestsRequest = (communityId, before) =>
+  getCursorPage(`${base(communityId)}/requests`, before, "No se pudieron cargar las solicitudes")
+export const getModerationLogRequest = (communityId, before) =>
+  getCursorPage(`${base(communityId)}/moderation-log`, before, "No se pudo cargar el registro")

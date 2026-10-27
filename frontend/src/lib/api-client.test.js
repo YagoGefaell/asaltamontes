@@ -121,4 +121,12 @@ describe('ApiClient', () => {
     await expect(client.refreshSession()).rejects.toMatchObject({ status: 502 })
     expect(logout).not.toHaveBeenCalled()
   })
+
+  it('exposes Retry-After (seconds) on a 429 error', async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ detail: 'Espera' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json', 'Retry-After': '3600' },
+    }))
+    await expect(client.post('/api/x', {})).rejects.toMatchObject({ status: 429, retryAfter: 3600, message: 'Espera' })
+  })
 })

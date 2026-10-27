@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { getCommunitiesRequest } from '../services/communities.service.js'
 
 /** Communities by pages, optionally filtered by name (T14: "cargar más" and search). */
-export function useCommunities(query = '') {
+export function useCommunities(query = '', { city = '', province = '' } = {}) {
   const [communities, setCommunities] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -18,7 +18,7 @@ export function useCommunities(query = '') {
     setError(null)
 
     try {
-      const page = await getCommunitiesRequest({ page: 0, query })
+      const page = await getCommunitiesRequest({ page: 0, query, city, province })
       if (requestId !== requestRef.current) return
       pageRef.current = page.page
       setCommunities(page.items)
@@ -31,14 +31,14 @@ export function useCommunities(query = '') {
     } finally {
       if (requestId === requestRef.current) setLoading(false)
     }
-  }, [query])
+  }, [query, city, province])
 
   const loadMore = useCallback(async () => {
     if (!hasMore || loadingMore) return
     const requestId = requestRef.current
     setLoadingMore(true)
     try {
-      const page = await getCommunitiesRequest({ page: pageRef.current + 1, query })
+      const page = await getCommunitiesRequest({ page: pageRef.current + 1, query, city, province })
       if (requestId !== requestRef.current) return
       pageRef.current = page.page
       // A community may move between pages (members join meanwhile): one card per id
@@ -52,7 +52,7 @@ export function useCommunities(query = '') {
     } finally {
       setLoadingMore(false)
     }
-  }, [hasMore, loadingMore, query])
+  }, [hasMore, loadingMore, query, city, province])
 
   useEffect(() => {
     fetchCommunities()

@@ -9,6 +9,8 @@ import { useCommunityMembers } from "../../features/communities/hooks/useCommuni
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { communityPath } from "../../features/communities/utils/communityPath";
 import CommunityEvents from "../../features/events/components/CommunityEvents";
+import { isStaff } from "../../features/communities/utils/communityErrors";
+import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 function CommunityProfile() {
@@ -24,7 +26,8 @@ function CommunityProfile() {
   const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
 
   // Check if current user is the community owner
-  const isOwner = community && currentUser && (community.role === 'ADMIN' || community.role === 'OWNER');
+  // Owner and moderators manage the community (T19b)
+  const canManage = community && currentUser && isStaff(community.role);
 
   useEffect(() => {
     if (!slug) {
@@ -104,7 +107,7 @@ function CommunityProfile() {
             <polyline points="15 18 9 12 15 6" />
           </svg>
         </button>
-        {isOwner && (
+        {canManage && (
           <button
             className="settings-icon-btn"
             onClick={() => navigate(communityPath(community, "/settings"))}
@@ -148,6 +151,14 @@ function CommunityProfile() {
           <p className="bio">{community.description}</p>
         )}
 
+        {(community.visibility === "PRIVATE" || community.city || community.province) && (
+          <p className="community-meta">
+            {community.visibility === "PRIVATE" && "Comunidad privada"}
+            {community.visibility === "PRIVATE" && (community.city || community.province) && " · "}
+            {[community.city, community.province].filter(Boolean).join(", ")}
+          </p>
+        )}
+
         <div className="profile-stats">
           <div className="stat">
             <strong>{community.memberCount || 0}</strong>
@@ -156,13 +167,21 @@ function CommunityProfile() {
         </div>
 
         <div className="profile-actions">
-          <CommunityJoinButton
-            communityId={community.id}
-            role={community.role}
-            joinLabel="Unirse"
-            memberLabel="Miembro"
-            onToggle={handleToggleCommunity}
-          />
+          {community.visibility === "PRIVATE" && !community.role ? (
+            <CommunityRequestButton
+              communityId={community.id}
+              joinRequested={community.joinRequested}
+              onRequested={() => setCommunity((prev) => ({ ...prev, joinRequested: true }))}
+            />
+          ) : (
+            <CommunityJoinButton
+              communityId={community.id}
+              role={community.role}
+              joinLabel="Unirse"
+              memberLabel="Miembro"
+              onToggle={handleToggleCommunity}
+            />
+          )}
         </div>
       </div>
 

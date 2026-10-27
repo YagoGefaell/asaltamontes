@@ -362,6 +362,9 @@
 }
 .communities-search {
   padding: 0 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .communities-search-input {

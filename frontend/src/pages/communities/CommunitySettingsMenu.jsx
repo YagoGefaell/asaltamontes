@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import Modal from "../../shared/ui/Modal";
 import Button from "../../shared/forms/Button";
 import { useToast } from "../../shared/ui/Toast";
+import { isStaff } from "../../features/communities/utils/communityErrors";
+import Loading from "../../shared/components/Loading";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 export default function CommunitySettingsMenu() {
@@ -18,12 +20,12 @@ export default function CommunitySettingsMenu() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const isOwner = community?.role === 'OWNER';
+
+  // Owner and moderators manage the community (T19b); anyone else goes back to its page
   useEffect(() => {
-    if (!loading && community && currentUser) {
-      const isOwner = community.role === 'OWNER';
-      if (!isOwner) {
-        navigate(communityPath(community));
-      }
+    if (!loading && community && currentUser && !isStaff(community.role)) {
+      navigate(communityPath(community));
     }
   }, [loading, community, currentUser, navigate]);
 
@@ -43,43 +45,31 @@ export default function CommunitySettingsMenu() {
     }
   };
 
-  const sections = [
-    {
-      title: "Información",
-      items: [
-        { label: "General", path: "#general", isPlaceholder: true },
-        { label: "Descripción", path: "#description", isPlaceholder: true },
-      ],
-    },
-    {
-      title: "Gestión",
-      items: [
-        { label: "Miembros", path: "#members", isPlaceholder: true },
-        { label: "Permisos", path: "#permissions", isPlaceholder: true },
-      ],
-    },
-    {
-      title: "Estadísticas",
-      items: [
-        { label: "Actividad", path: "#activity", isPlaceholder: true },
-      ],
-    },
-    {
-      title: "Peligro",
-      items: [
-        { label: "Borrar comunidad", action: () => setConfirmingDelete(true), isAction: true, isDanger: true },
-      ],
-    },
+  const go = (section) => () => navigate(communityPath(community, `/settings/${section}`));
+
+  const management = [
+    { label: "Miembros", action: go("members"), isAction: true },
+    ...(community?.visibility === 'PRIVATE'
+      ? [{ label: "Solicitudes de unión", action: go("requests"), isAction: true }]
+      : []),
+    { label: "Expulsadas", action: go("banned"), isAction: true },
+    { label: "Registro de moderación", action: go("log"), isAction: true },
   ];
 
-  const handleItemClick = (item) => {
-    if (item.isPlaceholder) {
-      // Placeholder para futuras funcionalidades
-      console.log("Próximamente:", item.label);
-    } else if (item.isAction) {
-      item.action();
-    }
-  };
+  const sections = [
+    { title: "Información", items: [{ label: "Editar comunidad", action: go("edit"), isAction: true }] },
+    { title: "Gestión", items: management },
+    ...(isOwner
+      ? [{
+          title: "Peligro",
+          items: [{ label: "Borrar comunidad", action: () => setConfirmingDelete(true), isAction: true, isDanger: true }],
+        }]
+      : []),
+  ];
+
+  const handleItemClick = (item) => item.action();
+
+  if (loading || !community) return <Loading />;
 
   return (
     <div className="community-settings-menu">
@@ -92,6 +82,9 @@ export default function CommunitySettingsMenu() {
                 key={item.label}
                 className={`settings-item ${item.isDanger ? 'danger-item' : ''}`}
                 onClick={() => handleItemClick(item)}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && handleItemClick(item)}
+                role="button"
+                tabIndex={0}
               >
                 <span>{item.label}</span>
                 <span className="arrow">›</span>
