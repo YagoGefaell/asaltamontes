@@ -304,3 +304,9 @@
   margin-top: 1rem;
   box-sizing: border-box;
 }
+
+.community-meta {
+  font-size: var(--text-sm);
+  color: var(--text-soft);
+  margin: 0 0 1rem 0;
+}

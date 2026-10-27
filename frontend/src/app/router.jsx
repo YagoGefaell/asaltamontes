@@ -25,6 +25,7 @@ import EditProfile from "../pages/settings/EditProfile.jsx";
 import PrivacySettings from "../pages/settings/PrivacySettings.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
+import CommunitySettingsSection from "../pages/communities/settings/CommunitySettingsSection.jsx";
 import CommunitySettingsPage from "../shared/layouts/CommunitySettingsPage.jsx";
 
 export function AppRouter() {
@@ -102,6 +103,15 @@ export function AppRouter() {
           element={
             <CommunitySettingsPage>
               <CommunitySettingsMenu />
+            </CommunitySettingsPage>
+          }
+        />
+
+        <Route
+          path="/communities/:slug/settings/:section"
+          element={
+            <CommunitySettingsPage>
+              <CommunitySettingsSection />
             </CommunitySettingsPage>
           }
         />

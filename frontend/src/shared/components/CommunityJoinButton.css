@@ -142,3 +142,6 @@
   outline-offset: 2px !important;
   box-shadow: var(--focus-ring) !important;
 }
+.community-join-pending {
+  opacity: 0.8;
+}

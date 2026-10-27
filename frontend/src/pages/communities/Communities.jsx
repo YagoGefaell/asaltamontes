@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useCommunities } from "../../features/communities/hooks/useCommunities.js";
 import { createCommunityRequest } from "../../features/communities/services/communities.service.js";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
+import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import Button from "../../shared/forms/Button";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
@@ -19,15 +20,28 @@ const Communities = () => {
   const toast = useToast();
   const [searchText, setSearchText] = useState("");
   const [query, setQuery] = useState("");
-  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities(query);
+  const [cityText, setCityText] = useState("");
+  const [provinceText, setProvinceText] = useState("");
+  const [place, setPlace] = useState({ city: "", province: "" });
+  const { communities, setCommunities, loading, loadingMore, hasMore, loadMore, error, refetch } = useCommunities(query, place);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [creatingCommunity, setCreatingCommunity] = useState(false);
 
   // Search when the user stops typing
   useEffect(() => {
-    const timeoutId = setTimeout(() => setQuery(searchText.trim()), SEARCH_DEBOUNCE_MS);
+    const timeoutId = setTimeout(() => {
+      setQuery(searchText.trim());
+      setPlace({ city: cityText.trim(), province: provinceText.trim() });
+    }, SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeoutId);
-  }, [searchText]);
+  }, [searchText, cityText, provinceText]);
+
+  const filtered = Boolean(query || place.city || place.province);
+  const clearFilters = () => {
+    setSearchText("");
+    setCityText("");
+    setProvinceText("");
+  };
 
   const openCreator = useCallback(() => {
     setIsCreatorOpen(true);
@@ -111,6 +125,22 @@ const Communities = () => {
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
         />
+        <input
+          type="search"
+          className="communities-search-input"
+          placeholder="Ciudad"
+          aria-label="Filtrar por ciudad"
+          value={cityText}
+          onChange={(e) => setCityText(e.target.value)}
+        />
+        <input
+          type="search"
+          className="communities-search-input"
+          placeholder="Provincia"
+          aria-label="Filtrar por provincia"
+          value={provinceText}
+          onChange={(e) => setProvinceText(e.target.value)}
+        />
       </div>
 
       <div className="communities-grid" aria-busy={loading || undefined}>
@@ -141,13 +171,17 @@ const Communities = () => {
                 </span>
               </Link>
               <div className="community-card-actions">
-                <CommunityJoinButton
-                  communityId={community.id}
-                  role={community.role}
-                  joinLabel="Unirse"
-                  memberLabel="Miembro"
-                  onToggle={handleToggleCommunityForButton(community.id)}
-                />
+                {community.visibility === "PRIVATE" && !community.role ? (
+                  <CommunityRequestButton communityId={community.id} />
+                ) : (
+                  <CommunityJoinButton
+                    communityId={community.id}
+                    role={community.role}
+                    joinLabel="Unirse"
+                    memberLabel="Miembro"
+                    onToggle={handleToggleCommunityForButton(community.id)}
+                  />
+                )}
               </div>
             </div>
           ))}
@@ -155,11 +189,11 @@ const Communities = () => {
         {!loading && !error && communities.length === 0 && (
           <EmptyState
             className="communities-empty"
-            title={query ? `No hay comunidades que coincidan con "${query}"` : "Todavía no hay comunidades"}
-            description={query ? "Prueba con otro nombre." : "Crea la primera y reúne a tu grupo."}
+            title={filtered ? "No hay comunidades que coincidan con tu búsqueda" : "Todavía no hay comunidades"}
+            description={filtered ? "Prueba con otro nombre o lugar." : "Crea la primera y reúne a tu grupo."}
             action={
-              query ? (
-                <Button variant="secondary" onClick={() => setSearchText("")}>Limpiar búsqueda</Button>
+              filtered ? (
+                <Button variant="secondary" onClick={clearFilters}>Limpiar búsqueda</Button>
               ) : (
                 <Button onClick={openCreator}>Crear comunidad</Button>
               )

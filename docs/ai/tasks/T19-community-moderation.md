@@ -1,6 +1,6 @@
 # T19 — Gestión y moderación de comunidades + comunidades privadas
 
-- **Estado:** pendiente (T19a backend hecho en esta PR; queda T19b frontend)
+- **Estado:** hecho (T19a backend + T19b frontend)
 - **Fase:** 2b — Comunidades
 - **Depende de:** T14, T18
 - **Rama sugerida:** `feat/T19-community-moderation`
@@ -44,7 +44,7 @@ Que cada comunidad (grupo local de trail) pueda gestionarse sola: editar datos, 
 - Silenciar solo marca a la usuaria (visible para la moderación); su efecto en el chat de comunidad llega con T20.
 - Fuera de alcance: expulsar no la saca de eventos/chats de la comunidad (T20); las imágenes de comunidades privadas se sirven por URL pública (T23); la ubicación es texto libre (ciudad/provincia), sin geocodificar.
 
-### T19b — frontend (pendiente)
+### T19b — frontend (hecho)
 - Completar `CommunitySettingsMenu.jsx`: editar datos, visibilidad, ubicación; miembros con roles/silenciar/expulsar (con motivo); sección "Expulsadas" con "Readmitir"; solicitudes pendientes (aceptar/rechazar); registro de moderación; transferir propiedad.
 - Texto de las notificaciones `COMMUNITY_JOIN_*` (payload `communityName`, target `COMMUNITY` con el slug).
 - Botón "Solicitar unirse" / "Solicitud enviada" según `visibility` y `joinRequested`; buscador por ciudad/provincia.
@@ -54,3 +54,5 @@ Que cada comunidad (grupo local de trail) pueda gestionarse sola: editar datos, 
 - **Jerarquía al readmitir:** una moderadora **no puede readmitir** (unban) a quien expulsó la propietaria (`403` "Solo la propietaria puede readmitir a quien ella expulsó"); la propietaria puede readmitir a cualquiera, y una moderadora puede readmitir a quien expulsó otra moderadora. Para ello `community_members` guarda `banned_by` (FK a `users`, `ON DELETE SET NULL`) y `banned_by_role` (`OWNER` | `MODERATOR`, el rol **en ese momento**: sobrevive a una transferencia de propiedad o a que la autora borre su cuenta). Se limpian al readmitir.
 - **Migración `V14__moderation_hierarchy_and_join_cooldown.sql`:** añade las dos columnas, rellena las expulsiones existentes desde el último `BAN` del registro (rol `OWNER` si su autora es hoy la propietaria; en cualquier otro caso, o sin entrada en el registro, `MODERATOR`, la lectura permisiva) y crea el índice de rechazos. Probada sobre una BD con datos: `ModerationHierarchyMigrationIT`.
 - Tests: `CommunityModerationIT` (`afterARejection_...`, `aModerator_cannotReadmitWhoTheOwnerExpelled_...`).
+**Implementación T19b:** rutas `/communities/:slug/settings/{edit|members|requests|banned|log}` (propietaria y moderadoras; "Solicitudes" solo si la comunidad es privada; borrar solo la propietaria), `CommunityRequestButton` ("Solicitar unirse" / "Solicitud enviada") en la ficha y en el listado, filtros ciudad/provincia en el buscador, listados con cursores opacos (`useCursorList`) y mensajes 403/404/429 (con `Retry-After`) en `communityErrorMessage`. `api-client` expone `error.retryAfter` (en desarrollo entre orígenes la cabecera no es legible: BUG-072).
+**Pendiente (depende de la PR de T18b):** el texto de las notificaciones `COMMUNITY_JOIN_REQUEST|APPROVED|REJECTED` va en `notificationText.js`, que aún no está en `main`; añadirlo cuando T18b se mergee.

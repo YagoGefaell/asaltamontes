@@ -206,7 +206,13 @@ class ApiClient {
 
     const error = new Error(errorMessage)
     error.status = response.status
-    
+
+    // 429 carries Retry-After in seconds (T19b); an HTTP date is not used by the backend
+    const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)
+    if (Number.isFinite(retryAfter) && retryAfter >= 0) {
+      error.retryAfter = retryAfter
+    }
+
     // Attach field errors if they exist
     if (errors) {
       error.errors = errors
