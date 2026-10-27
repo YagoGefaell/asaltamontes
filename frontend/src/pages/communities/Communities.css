@@ -8,236 +8,76 @@
   padding-bottom: 5rem;
 }
 
-.communities-header {
+
+/* Lista de comunidades: filas compactas (T29e) */
+.communities-list {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.55rem 0.75rem;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--border-soft);
-  background: var(--surface);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.communities-header h2 {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.communities-header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-
-/* ==========================================================================
-   BOTÓN CREAR COMUNIDAD
-   ========================================================================== */
-.create-community-btn {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  padding: 0;
-}
-
-.create-community-icon {
-  width: 18px;
-  height: 18px;
-}
-
-/* ==========================================================================
-   GRID DE COMUNIDADES
-   ========================================================================== */
-.communities-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  padding: 0.75rem;
-  max-width: 100%;
+  flex-direction: column;
+  max-width: 600px;
   margin: 0 auto;
+  padding: 0 var(--space-4);
 }
 
-/* ==========================================================================
-   TARJETA DE COMUNIDAD (ESTILOS BASE)
-   ========================================================================== */
-.community-card {
-  background: var(--surface);
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  text-align: center;
-  transition: all 0.2s;
-  cursor: pointer;
-  touch-action: manipulation;
+.community-row {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-soft);
 }
 
-.community-card-link {
+.community-row__link {
+  flex: 1;
+  min-width: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 100%;
+  gap: var(--space-3);
   color: inherit;
   text-decoration: none;
-  border-radius: var(--radius-md);
 }
 
-.community-card--skeleton {
-  gap: 0.75rem;
-  cursor: default;
+.community-row__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
 }
 
-/* Contenido interno */
-
-.community-card h3 {
-  margin: 0.5rem 0;
+.community-row__name {
   font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-color);
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .community-members {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--text-soft);
-  margin-bottom: 0.75rem;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
 }
 
-.community-card-actions {
-  width: 100%;
-  margin-top: auto;
-  padding-top: 0.75rem;
+.community-row__action .btn {
+  min-height: var(--touch-min);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
 }
 
-.community-card-actions button {
-  width: 100%;
-  min-height: 44px;
-}
-
-/* ==========================================================================
-   CONTROL DE INTERACCIONES DE LA TARJETA (FILTRADO INTELIGENTE)
-   ========================================================================== */
-
-/* Se activa el click en la card SOLO si no se está pulsando el botón interno */
-.community-card:active:not(:has(.community-card-actions:active)) {
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px var(--shadow-color);
-}
-
-/* Si se presiona el botón, congelamos los estilos de la card de forma agresiva */
-.community-card:has(.community-card-actions:active) {
-  transform: none !important;
-  box-shadow: none !important;
-  border-color: var(--border-soft) !important;
-}
-
-/* ==========================================================================
-   RESPONSIVE MEDIA QUERIES (>= 600px)
-   ========================================================================== */
-@media (min-width: 600px) {
-  .communities-header {
-    padding: 1rem;
-  }
-
-  .communities-header h2 {
-    font-size: var(--text-2xl);
-  }
-
-  .create-community-btn:hover {
-    background: var(--hover-color);
-  }
-
-  .communities-grid {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
-    padding: 1rem;
-    max-width: 600px;
-  }
-
-  /* Hover condicional en escritorio */
-  .community-card:hover:not(:has(.community-card-actions:hover)) {
-    border-color: var(--primary);
-    box-shadow: 0 4px 12px var(--shadow-color);
-  }
-
-  .community-card {
-    border-radius: var(--radius-md);
-    padding: 1.5rem;
-  }
-
-  .community-card h3 {
-    font-size: var(--text-base);
-  }
-
-  .community-members {
-    font-size: var(--text-xs);
-    margin-bottom: 1rem;
-  }
-}
-
-/* ==========================================================================
-   RESPONSIVE MEDIA QUERIES (>= 1024px)
-   ========================================================================== */
-@media (min-width: 1024px) {
-  .communities-grid {
-    max-width: 900px;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  }
-}
-
-/* ==========================================================================
-   ESTADOS GLOBALES DE LA PÁGINA
-   ========================================================================== */
-.communities-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 3rem 1rem;
-  grid-column: 1 / -1;
-}
-
-.communities-error {
+.communities-sheet__fields {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  grid-column: 1 / -1;
-  text-align: center;
-  padding: 2rem 1rem;
-  color: var(--error-text);
-  font-weight: 500;
-  font-size: var(--text-base);
+  gap: var(--space-3);
 }
 
-.no-results {
-  grid-column: 1 / -1;
-  text-align: center;
-  margin-top: 2rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  font-size: var(--text-base);
+.communities-sheet__actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
 }
 
-/* ==========================================================================
-   ACCESIBILIDAD Y RENDIMIENTO
-   ========================================================================== */
-@media (prefers-reduced-motion: reduce) {
-  .community-card {
-    transition: none;
-  }
-  .community-card:active {
-    transform: none;
-  }
+.communities-sheet__actions .btn:last-child {
+  flex: 1;
 }
 
 /* ==========================================================================
@@ -360,22 +200,6 @@
     transform: scale(0.98);
   }
 }
-.communities-search {
-  padding: 0 16px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.communities-search-input {
-  width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--border-soft);
-  border-radius: var(--radius-pill);
-  background: var(--surface);
-  color: inherit;
-  font-size: var(--text-base);
-}
 
 .communities-load-more {
   display: block;
@@ -383,15 +207,16 @@
 }
 
 .communities-empty {
-  grid-column: 1 / -1;
+  padding: var(--space-6) 0;
 }
 
-.communities-search-link {
-  width: var(--touch-min);
-  height: var(--touch-min);
+.communities-error {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  color: var(--text-color);
-  border-radius: var(--radius-pill);
+  gap: var(--space-3);
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  color: var(--error-text);
 }
+

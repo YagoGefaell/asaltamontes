@@ -70,7 +70,7 @@ describe('EventCard', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/events/9')
     expect(screen.getByText('Subida al Mulhacén')).toBeInTheDocument()
     expect(screen.getByText(/12\/12 · completo/)).toBeInTheDocument()
-    expect(screen.getByText('Avanzado')).toBeInTheDocument()
+    expect(screen.getByText(/Avanzado · /)).toBeInTheDocument()
   })
 })
 
@@ -84,10 +84,21 @@ describe('EventFilters', () => {
     expect(onChange).toHaveBeenLastCalledWith({ ...EMPTY_FILTERS, mine: true })
   })
 
-  it('offers to clear active filters', () => {
+  it('counts sheet filters and applies the draft only on "Aplicar"', () => {
     const onChange = vi.fn()
-    render(<EventFilters filters={{ ...EMPTY_FILTERS, type: 'RACE' }} onChange={onChange} />)
+    render(<EventFilters filters={{ ...EMPTY_FILTERS, level: 'ADVANCED' }} onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros · 1' }))
+    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: ' Granada ' } })
+    expect(onChange).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }))
+    expect(onChange).toHaveBeenCalledWith({ ...EMPTY_FILTERS, level: 'ADVANCED', city: 'Granada' })
+  })
+
+  it('clears the sheet filters but keeps the date chip', () => {
+    const onChange = vi.fn()
+    render(<EventFilters filters={{ ...EMPTY_FILTERS, date: 'today', type: 'RACE' }} onChange={onChange} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Filtros · 1' }))
     fireEvent.click(screen.getByRole('button', { name: 'Quitar filtros' }))
-    expect(onChange).toHaveBeenCalledWith(EMPTY_FILTERS)
+    expect(onChange).toHaveBeenCalledWith({ ...EMPTY_FILTERS, date: 'today' })
   })
 })

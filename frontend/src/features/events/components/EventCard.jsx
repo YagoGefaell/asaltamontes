@@ -1,36 +1,77 @@
 import { Link } from 'react-router-dom'
-import { EVENT_LEVELS, EVENT_TYPES, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, formatViewerDateTime, isFull } from '../utils/eventFormat.js'
+import Avatar from '../../../shared/ui/Avatar.jsx'
+import Button from '../../../shared/forms/Button.jsx'
+import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useToast } from '../../../shared/ui/Toast.jsx'
+import { useEventAttendance } from '../hooks/useEventAttendance.js'
+import { EVENT_LEVELS, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, isFull } from '../utils/eventFormat.js'
 import './EventCard.css'
 
-/** Card of a listing: big date, title, place, distance, level and places. */
-export default function EventCard({ event }) {
+const MAX_AVATARS = 3
+
+/** Small join / leave button of the card. Only mounted when the list can update the event (`onChange`). */
+function CardAttend({ event, onChange }) {
+  const toast = useToast()
+  const { currentUser } = useAuth()
+  const { pending, join, leave } = useEventAttendance(event, onChange, { onError: toast.error })
+  const username = currentUser?.username
+  if (event.status === 'CANCELLED' || event.status === 'FINISHED') return null
+  if (username && event.organizerUsername === username) return <span className="event-card__badge">Organizas</span>
+  if (event.myStatus === 'GOING') {
+    return <Button size="small" variant="outline" onClick={leave} disabled={pending} aria-label="Estás dentro. Pulsa para salir de la quedada">Estás dentro ✓</Button>
+  }
+  if (event.myStatus === 'WAITLIST') {
+    return <Button size="small" variant="outline" onClick={leave} disabled={pending}>En lista de espera</Button>
+  }
+  return (
+    <Button size="small" variant="secondary" className="event-card__join" onClick={join} disabled={pending}>
+      {isFull(event) ? 'Lista de espera' : 'Apuntarme'}
+    </Button>
+  )
+}
+
+/**
+ * Card of a listing (T29e): orange date block, title, metadata in two short lines, stacked avatars (when the
+ * listing sends `attendeePreview`) and "Apuntarme". With `onChange` the join button works from the list.
+ */
+export default function EventCard({ event, onChange }) {
   const { day, month } = formatDateBadge(event.startsAt, event.timezone)
-  const viewerTime = formatViewerDateTime(event.startsAt, event.timezone)
   const distance = formatDistance(event.distanceKm, event.elevationGainM)
-  const place = [event.meetingPointName, event.city].filter(Boolean).join(' · ')
+  const place = event.meetingPointName || event.city
+  const when = [formatEventDateTime(event.startsAt, event.timezone), place].filter(Boolean).join(' · ')
+  const details = [event.level && (EVENT_LEVELS[event.level] ?? event.level), distance].filter(Boolean).join(' · ')
   const full = isFull(event)
+  const preview = (event.attendeePreview ?? []).slice(0, MAX_AVATARS)
 
   return (
-    <Link to={`/events/${event.id}`} className="event-card">
-      <div className="event-card__date" aria-hidden="true">
-        <span className="event-card__day">{day}</span>
-        <span className="event-card__month">{month}</span>
-      </div>
-      <div className="event-card__body">
-        <h3 className="event-card__title">{event.title}</h3>
-        <p className="event-card__when">{formatEventDateTime(event.startsAt, event.timezone)}</p>
-        {viewerTime && <p className="event-card__when event-card__when--viewer">Tu hora: {viewerTime}</p>}
-        {place && <p className="event-card__place">{place}</p>}
-        <div className="event-card__tags">
-          <span className="event-card__tag">{EVENT_TYPES[event.type] ?? event.type}</span>
-          {event.level && <span className="event-card__tag">{EVENT_LEVELS[event.level] ?? event.level}</span>}
-          {distance && <span className="event-card__tag">{distance}</span>}
-          <span className={`event-card__tag${full ? ' event-card__tag--full' : ''}`}>
+    <article className="event-card">
+      <Link to={`/events/${event.id}`} className="event-card__main">
+        <div className="event-card__date" aria-hidden="true">
+          <span className="event-card__day">{day}</span>
+          <span className="event-card__month">{month}</span>
+        </div>
+        <div className="event-card__body">
+          <h3 className="event-card__title">{event.title}</h3>
+          <p className="event-card__meta">{when}</p>
+          {details && <p className="event-card__meta">{details}</p>}
+        </div>
+      </Link>
+      <div className="event-card__footer">
+        <div className="event-card__people">
+          {preview.length > 0 && (
+            <span className="event-card__avatars" aria-hidden="true">
+              {preview.map((p) => (
+                <Avatar key={p.username} src={p.pictureUrl} name={p.fullName || p.username} size="sm" className="event-card__avatar" />
+              ))}
+            </span>
+          )}
+          <span className={`event-card__places${full ? ' event-card__places--full' : ''}`}>
             {formatPlaces(event.attendeeCount, event.capacity)}
             {full && ' · completo'}
           </span>
         </div>
+        {onChange && <CardAttend event={event} onChange={onChange} />}
       </div>
-    </Link>
+    </article>
   )
 }

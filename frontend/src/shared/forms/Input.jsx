@@ -52,7 +52,7 @@ export default function Input({
 
   return (
     <div className="input-group">
-      {label && <label>{label}</label>}
+      {label && <label htmlFor={props.id}>{label}</label>}
       <div className="input-wrapper">
         {inputElement}
 
