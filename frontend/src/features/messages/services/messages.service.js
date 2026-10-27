@@ -107,7 +107,7 @@ export async function markConversationReadRequest(conversationId) {
 // --- Group management (T12). The server decides who may do what; errors carry its Spanish message. ---
 
 // Details of a group and one page of its participants: { id, name, imageUrl, imageMediaId, participantCount, myRole,
-// historyVisibleToNew, managed, participants: { content, totalElements, last... } }
+// historyVisibleToNew, managed, canModerateMessages, participants: { content, totalElements, last... } }
 export async function getGroupDetailsRequest(conversationId, { page = 0, size = 20 } = {}) {
   try {
     return await apiClient.get(`/api/conversations/${conversationId}?page=${page}&size=${size}`);
@@ -154,5 +154,15 @@ export async function leaveGroupRequest(conversationId) {
     await apiClient.post(`/api/conversations/${conversationId}/leave`);
   } catch (error) {
     throw new Error(error.message || "Error saliendo del grupo");
+  }
+}
+
+// Moderation of a community chat (T20d): the owner or a moderator deletes a message. The server applies the hierarchy
+// (a moderator cannot delete those of the owner or other moderators: 403 with its Spanish message).
+export async function deleteMessageRequest(conversationId, messageId) {
+  try {
+    await apiClient.delete(`/api/conversations/${conversationId}/messages/${messageId}`);
+  } catch (error) {
+    throw new Error(error.message || "No se pudo eliminar el mensaje");
   }
 }

@@ -42,6 +42,16 @@ describe('useGlobalMessageListener', () => {
     expect(onRemoved).toHaveBeenCalledWith({ conversationId: 'c1', reason: 'REMOVED' })
   })
 
+  it('tells when a moderator deleted a message (T20d)', () => {
+    const client = fakeStompClient()
+    const onDeleted = vi.fn()
+
+    renderHook(() => useGlobalMessageListener(client, true, vi.fn(), vi.fn(), null, onDeleted))
+    client.handlers['/user/queue/message-deletions']({ body: JSON.stringify({ conversationId: 'c1', messageId: 'm1' }) })
+
+    expect(onDeleted).toHaveBeenCalledWith({ conversationId: 'c1', messageId: 'm1' })
+  })
+
   it('does not subscribe until the socket is connected and unsubscribes on unmount', () => {
     const client = fakeStompClient()
 
@@ -52,7 +62,7 @@ describe('useGlobalMessageListener', () => {
     expect(client.subscribe).not.toHaveBeenCalled()
 
     rerender({ connected: true })
-    expect(client.subscribe).toHaveBeenCalledTimes(3)
+    expect(client.subscribe).toHaveBeenCalledTimes(4)
 
     unmount()
     client.unsubscribes.forEach((unsubscribe) => expect(unsubscribe).toHaveBeenCalled())

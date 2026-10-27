@@ -153,4 +153,32 @@ describe('ChatPanel', () => {
 
     expect(onOpenGroupInfo).toHaveBeenCalled()
   })
+
+  describe('moderation delete (T20d)', () => {
+    const messages = [
+      { id: 'm1', senderUsername: 'bea', content: 'hola', sentAt: '2026-10-22T10:00:00Z' },
+      { id: 'm2', senderUsername: 'cris', content: '', deleted: true, sentAt: '2026-10-22T10:01:00Z' },
+    ]
+    const group = { id: 1, name: 'Comunidad', type: 'GROUP' }
+
+    it('offers the delete action only to moderation, and reports the message', () => {
+      const onDeleteMessage = vi.fn()
+      const { unmount } = renderPanel({ selectedChat: group, currentMessages: messages })
+      expect(screen.queryByRole('button', { name: /Eliminar mensaje/ })).not.toBeInTheDocument()
+      unmount()
+
+      renderPanel({ selectedChat: group, currentMessages: messages, canModerateMessages: true, onDeleteMessage })
+      fireEvent.click(screen.getByRole('button', { name: 'Eliminar mensaje de bea' }))
+
+      expect(onDeleteMessage).toHaveBeenCalledWith(messages[0])
+      // the already deleted one has no action
+      expect(screen.getAllByRole('button', { name: /Eliminar mensaje/ })).toHaveLength(1)
+    })
+
+    it('shows a deleted message as a moderation notice, for everybody', () => {
+      renderPanel({ selectedChat: group, currentMessages: messages })
+
+      expect(screen.getByText('Mensaje eliminado por moderación')).toBeInTheDocument()
+    })
+  })
 })

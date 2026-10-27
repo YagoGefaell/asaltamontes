@@ -32,6 +32,8 @@ const ChatPane = ({
   onLeaveChat,
   onOpenUserProfile,
   onOpenGroupInfo,
+  canModerateMessages = false,
+  onDeleteMessage,
   onSelectedAvatarError,
   websocketConnected,
   websocketStatus = "connected",
@@ -193,11 +195,30 @@ const ChatPane = ({
               {isSystem ? (
                 // Group events (T12): centered, no sender, text composed from the payload
                 <div className="message-system">{systemMessageText(message, currentUsername)}</div>
+              ) : message.deleted ? (
+                // Deleted by the moderation (T20d): the message stays as a notice while the chat is open
+                <div className="message-system message-deleted">Mensaje eliminado por moderación</div>
               ) : (
-                <div
-                  className={`message ${isSent ? "sent" : "received"}`}
-                >
-                  {message.content}
+                <div className={`message-line ${isSent ? "sent" : "received"}`}>
+                  <div
+                    className={`message ${isSent ? "sent" : "received"}`}
+                  >
+                    {message.content}
+                  </div>
+                  {canModerateMessages && onDeleteMessage && (
+                    <button
+                      type="button"
+                      className="message-delete-btn"
+                      aria-label={`Eliminar mensaje de ${message.senderUsername}`}
+                      onClick={() => onDeleteMessage(message)}
+                    >
+                      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
