@@ -6,6 +6,8 @@ import { useEvent } from '../../features/events/hooks/useEvent.js'
 import { useEventAttendance } from '../../features/events/hooks/useEventAttendance.js'
 import { getEventAttendeesRequest } from '../../features/events/services/events.service.js'
 import AttendButton from '../../features/events/components/AttendButton.jsx'
+import AddToCalendarButton from '../../features/events/components/AddToCalendarButton.jsx'
+import EventChatButton from '../../features/events/components/EventChatButton.jsx'
 import {
   EVENT_LEVELS, EVENT_TYPES, directionsUrl, formatDistance, formatEventDateTime, formatPlaces, formatViewerDateTime,
 } from '../../features/events/utils/eventFormat.js'
@@ -181,6 +183,8 @@ export default function EventDetail() {
             onJoin={join}
             onLeave={leave}
           />
+          {myStatus === 'GOING' && <EventChatButton event={event} />}
+          <AddToCalendarButton event={event} />
         </div>
 
         {event.description && <p className="event-detail__description">{event.description}</p>}

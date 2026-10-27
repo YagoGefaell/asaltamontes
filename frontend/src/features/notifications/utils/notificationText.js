@@ -7,6 +7,7 @@ export const NOTIFICATION_TYPE_LABELS = {
   EVENT_UPDATED: 'Cambian la hora o el lugar de una quedada en la que estoy',
   EVENT_CANCELLED: 'Se cancela una quedada en la que estoy',
   WAITLIST_PROMOTED: 'Consigo plaza desde la lista de espera',
+  EVENT_REMINDER: 'Recordatorio de una quedada en la que estoy (24 h y 2 h antes)',
   ADDED_TO_GROUP: 'Me añaden a un grupo',
 }
 
@@ -61,6 +62,13 @@ export function notificationText(notification, options = {}) {
       return { text: `${quoted(payload.title)} se ha cancelado`, detail: payload.reason || '' }
     case 'WAITLIST_PROMOTED':
       return { text: `¡Ya tienes plaza en ${quoted(payload.title)}!`, detail: eventWhen(payload, options) }
+    case 'EVENT_REMINDER':
+      return {
+        text: payload.hoursBefore === 2
+          ? `${quoted(payload.title)} empieza en 2 horas`
+          : `Mañana tienes ${quoted(payload.title)}`,
+        detail: eventWhen(payload, options),
+      }
     case 'ADDED_TO_GROUP':
       return { text: `${actorName(notification)} te ha añadido al grupo «${payload.groupName || 'sin nombre'}»`, detail: '' }
     default:
