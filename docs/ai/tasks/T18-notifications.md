@@ -1,6 +1,6 @@
 # T18 — Notificaciones en tiempo real
 
-- **Estado:** pendiente (T18a backend hecho en su PR; falta T18b frontend, que lo pasa a `hecho`)
+- **Estado:** hecho (T18a backend en #85, T18b frontend)
 - **Fase:** Transversal
 - **Depende de:** T09, T15, T30a (hecho en la rama `feat/T30a-public-ids`; ids públicos y 404 uniforme)
 - **Rama sugerida:** `feat/T18a-notifications-backend`, `feat/T18b-notifications-frontend`
