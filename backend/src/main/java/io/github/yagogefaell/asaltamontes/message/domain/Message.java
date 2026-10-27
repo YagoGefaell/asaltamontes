@@ -1,6 +1,13 @@
 package io.github.yagogefaell.asaltamontes.message.domain;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import io.github.yagogefaell.asaltamontes.common.identifier.PublicIdEntity;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.persistence.Entity;
@@ -32,8 +39,18 @@ public class Message extends PublicIdEntity {
     private Conversation conversation;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sender_id", nullable = false)
+    @JoinColumn(name = "sender_id")
+    /** Null in system messages (a member was added, the group was renamed...). */
     private UserAccount sender;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MessageType type = MessageType.USER;
+
+    /** Structured description of a system message; the client composes the text from it. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "system_payload", columnDefinition = "jsonb")
+    private Map<String, Object> systemPayload;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;

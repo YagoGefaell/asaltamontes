@@ -5,7 +5,9 @@ import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
 import org.springframework.data.domain.Limit;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,6 +24,13 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
     // The API only knows public ids (D-021); the unique index on public_id serves these lookups
     @Query("SELECT c.id FROM Conversation c WHERE c.publicId = :publicId")
     Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId);
+
+    Optional<Conversation> findByPublicId(UUID publicId);
+
+    // Row lock for the operations that count or change the members of a group (size cap, last admin)
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Conversation c WHERE c.publicId = :publicId")
+    Optional<Conversation> findByPublicIdForUpdate(@Param("publicId") UUID publicId);
 
     // A chat of the list cursor: it must be one of hers, so a cursor cannot probe other people's chats
     @Query("""

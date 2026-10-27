@@ -1,6 +1,10 @@
 package io.github.yagogefaell.asaltamontes.message.repository;
 
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
+import io.github.yagogefaell.asaltamontes.message.dto.ParticipantDto;
+import org.springframework.data.domain.Limit;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,6 +33,39 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
         WHERE p.conversation.id = :conversationId AND p.user.id <> :senderId
     """)
     int incrementUnreadExceptSender(@Param("conversationId") Long conversationId, @Param("senderId") Long senderId);
+
+    Optional<ConversationParticipant> findByConversationIdAndUserId(Long conversationId, Long userId);
+
+    long countByConversationId(Long conversationId);
+
+    // The group's members, admins first, then by seniority (T12). One page of at most 50 (the controller clamps it).
+    @Query(value = """
+        SELECT new io.github.yagogefaell.asaltamontes.message.dto.ParticipantDto(
+            u.username, pr.fullName, pr.profilePictureUrl, p.role, p.joinedAt)
+        FROM ConversationParticipant p JOIN p.user u LEFT JOIN u.profile pr
+        WHERE p.conversation.id = :conversationId
+        ORDER BY CASE WHEN p.role = io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole.ADMIN THEN 0 ELSE 1 END,
+                 p.joinedAt, p.id
+    """, countQuery = "SELECT COUNT(p) FROM ConversationParticipant p WHERE p.conversation.id = :conversationId")
+    Page<ParticipantDto> findParticipantPage(@Param("conversationId") Long conversationId, Pageable pageable);
+
+    // The member who has been in the group the longest, to be promoted when the last admin leaves (excluding her)
+    @Query("""
+        SELECT p FROM ConversationParticipant p
+        WHERE p.conversation.id = :conversationId AND p.user.id <> :excludedUserId
+        ORDER BY p.joinedAt, p.id
+    """)
+    List<ConversationParticipant> findOldestExcluding(@Param("conversationId") Long conversationId,
+                                                      @Param("excludedUserId") Long excludedUserId, Limit limit);
+
+    @Query("SELECT COUNT(p) FROM ConversationParticipant p WHERE p.conversation.id = :conversationId AND p.role = io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole.ADMIN")
+    long countAdmins(@Param("conversationId") Long conversationId);
+
+    @Query("SELECT p.user.id FROM ConversationParticipant p WHERE p.conversation.id = :conversationId AND p.user.id IN :userIds")
+    List<Long> findParticipantUserIds(@Param("conversationId") Long conversationId, @Param("userIds") java.util.Collection<Long> userIds);
+
+    @Query("SELECT p FROM ConversationParticipant p WHERE p.conversation.id = :conversationId AND LOWER(p.user.username) = :username")
+    Optional<ConversationParticipant> findByConversationIdAndLowerUsername(@Param("conversationId") Long conversationId, @Param("username") String username);
 
     @Modifying
     @Query("""

@@ -8,7 +8,9 @@ import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
 import io.github.yagogefaell.asaltamontes.message.domain.Conversation;
 import io.github.yagogefaell.asaltamontes.message.domain.ConversationParticipant;
+import io.github.yagogefaell.asaltamontes.message.domain.ManagedBy;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
+import io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatPageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatResponseDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatSummaryDto;
@@ -49,6 +51,7 @@ public class MessageService {
     public static final int MAX_HISTORY_PAGE = 50;
     public static final int MAX_CHAT_PAGE = 50;
     private static final int PREVIEW_LENGTH = 30;
+    private static final LocalDateTime FULL_HISTORY = LocalDateTime.of(1970, 1, 1, 0, 0);
 
     public MessageService(MessageRepository messageRepository, 
                           ConversationRepository conversationRepository,
@@ -92,8 +95,7 @@ public class MessageService {
         message.setSentAt(OpaqueCursor.truncate(LocalDateTime.now()));
         Message savedMessage = messageRepository.save(message);
 
-        String preview = text.length() > PREVIEW_LENGTH ? text.substring(0, PREVIEW_LENGTH).trim() + "..." : text;
-        conversationRepository.updateLastMessage(conversationId, preview, savedMessage.getSentAt(), sender);
+        conversationRepository.updateLastMessage(conversationId, preview(text), savedMessage.getSentAt(), sender);
         participantRepository.incrementUnreadExceptSender(conversationId, senderId);
 
         MessageDto dto = new MessageDto(
@@ -106,6 +108,11 @@ public class MessageService {
 
         eventPublisher.publishEvent(new MessageSentEvent(dto));
         return dto;
+    }
+
+    /** The text shown in the chat list for the last message. */
+    static String preview(String text) {
+        return text.length() > PREVIEW_LENGTH ? text.substring(0, PREVIEW_LENGTH).trim() + "..." : text;
     }
 
     private static String validateContent(String content) {
@@ -191,13 +198,14 @@ public class MessageService {
     public MessagePageDto getConversationHistory(UUID conversationPublicId, Long userId, String beforeToken, int limit) {
         Long conversationId = participantConversationId(conversationPublicId, userId);
         Long before = messageCursor(beforeToken, conversationId);
+        LocalDateTime since = historyStart(conversationId, userId);
 
         int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
         // One extra row tells whether there is a previous page
         Limit fetch = Limit.of(pageSize + 1);
         List<MessageDto> newestFirst = before == null
-                ? messageRepository.findLatest(conversationId, fetch)
-                : messageRepository.findBefore(conversationId, before, fetch);
+                ? messageRepository.findLatest(conversationId, since, fetch)
+                : messageRepository.findBefore(conversationId, since, before, fetch);
 
         boolean hasMore = newestFirst.size() > pageSize;
         List<MessageDto> page = new ArrayList<>(newestFirst.subList(0, Math.min(pageSize, newestFirst.size())));
@@ -220,7 +228,8 @@ public class MessageService {
         }
 
         int pageSize = Math.clamp(limit, 1, MAX_HISTORY_PAGE);
-        List<MessageDto> oldestFirst = messageRepository.findAfter(conversationId, after, Limit.of(pageSize + 1));
+        List<MessageDto> oldestFirst = messageRepository.findAfter(conversationId, historyStart(conversationId, userId),
+                after, Limit.of(pageSize + 1));
 
         boolean hasMore = oldestFirst.size() > pageSize;
         List<MessageDto> page = List.copyOf(oldestFirst.subList(0, Math.min(pageSize, oldestFirst.size())));
@@ -243,6 +252,20 @@ public class MessageService {
             throw new NotFoundException("Chat no encontrado");
         }
         return conversationId;
+    }
+
+    /**
+     * The first moment of the history this user may read (T12). In a manual group, someone who joined later sees
+     * only what was sent since she joined, unless an admin made the history visible; chats managed by a community
+     * or an event, and private chats, show everything.
+     */
+    private LocalDateTime historyStart(Long conversationId, Long userId) {
+        ConversationParticipant participant = participantRepository.findByConversationIdAndUserId(conversationId, userId)
+                .orElseThrow(() -> new NotFoundException("Chat no encontrado"));
+        Conversation conversation = participant.getConversation();
+        boolean fromJoin = conversation.getType() == ChatType.GROUP && conversation.getManagedBy() == ManagedBy.NONE
+                && !conversation.isHistoryVisibleToNew();
+        return fromJoin ? participant.getJoinedAt() : FULL_HISTORY;
     }
 
     /**
@@ -288,6 +311,7 @@ public class MessageService {
         conv.setGroupImage(image.url());
         conv.setGroupMediaId(image.mediaId());
         conv.setCreatedAt(LocalDateTime.now());
+        conv.setCreatedBy(creator);
         Conversation savedConv = conversationRepository.save(conv);
 
         Set<Long> addedUsers = new LinkedHashSet<>();
@@ -296,6 +320,7 @@ public class MessageService {
         ConversationParticipant creatorParticipant = new ConversationParticipant();
         creatorParticipant.setConversation(savedConv);
         creatorParticipant.setUser(creator);
+        creatorParticipant.setRole(ParticipantRole.ADMIN);
 
         List<ConversationParticipant> participants = new java.util.ArrayList<>();
         participants.add(creatorParticipant);
