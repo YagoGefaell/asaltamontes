@@ -51,6 +51,11 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
         WHERE cm.community.id = :communityId
           AND u.id <> :currentUserId
           AND cm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+          AND NOT EXISTS (
+              SELECT 1 FROM UserBlock bl
+              WHERE (bl.blocker.id = :currentUserId AND bl.blocked.id = u.id)
+                 OR (bl.blocked.id = :currentUserId AND bl.blocker.id = u.id)
+          )
     """)
     Page<CommunityMemberDto> findMembersExcept(@Param("communityId") Long communityId, @Param("currentUserId") Long currentUserId, Pageable pageable);
 

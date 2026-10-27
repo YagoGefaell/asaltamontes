@@ -339,12 +339,12 @@ public class EventService {
         return toDetails(event, user, AttendeeStatus.CANCELLED);
     }
 
-    /** Attendees by status (GOING by default): GOING in order of arrival, WAITLIST by position. */
+    /** Attendees by status (GOING by default): GOING in order of arrival, WAITLIST by position. Blocks hide each other (BUG-069). */
     @Transactional(readOnly = true)
     public Page<EventAttendeeDto> getAttendees(UUID eventPublicId, AttendeeStatus status, UserAccount user, Pageable pageable) {
         Long eventId = findVisible(eventPublicId, user).getId();
         Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), MAX_PAGE));
-        return attendeeRepository.findAttendees(eventId, status == null ? AttendeeStatus.GOING : status, page);
+        return attendeeRepository.findAttendees(eventId, status == null ? AttendeeStatus.GOING : status, user.getId(), page);
     }
 
     // Fills the free places with the first ones on the waitlist. The caller holds the lock of the event.

@@ -1868,7 +1868,7 @@
     },
     "/api/events/{eventId}/attendees": {
       "get": {
-        "summary": "Attendees by status: GOING (default) in order of arrival, WAITLIST by position",
+        "summary": "Attendees by status: GOING (default) in order of arrival, WAITLIST by position. Women blocked by or blocking the caller are not listed (BUG-069)",
         "tags": ["Events"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
