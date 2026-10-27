@@ -270,6 +270,43 @@ class NotificationsIT extends AbstractIntegrationTest {
         assertThat(items(bea)).isEmpty();
     }
 
+    @Test
+    void whenTheRecipientBlocksTheActor_herNotificationsAreHiddenOnRead_butNotDeleted_andComeBackOnUnblock() throws Exception {
+        UserAccount me = testData.createUser();
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        for (int i = 0; i < 3; i++) {
+            // One unread per actor (unique index); the rest read
+            Instant readAt = i == 0 ? null : Instant.now();
+            insert(me, ana, "{\"n\":" + i + "}", readAt);
+            insert(me, bea, "{\"n\":" + i + "}", readAt);
+        }
+        insert(me, null, "{}", null); // no actor: never hidden
+        mockMvc.perform(get("/api/notifications/unread-count").with(auth.bearer(me))).andExpect(jsonPath("$.count").value(3));
+
+        mockMvc.perform(post("/api/users/{u}/block", ana.getUsername()).with(auth.bearer(me))).andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/notifications/unread-count").with(auth.bearer(me))).andExpect(jsonPath("$.count").value(2));
+        assertThat(items(me)).hasSize(4).allSatisfy(n -> assertThat(n.path("actor").path("username").asText())
+                .isNotEqualTo(ana.getUsername()));
+        // The pages skip them too, with a cursor
+        JsonNode first = getJson(me, "/api/notifications?limit=2");
+        assertThat(first.get("items")).hasSize(2);
+        assertThat(first.get("hasMore").asBoolean()).isTrue();
+        JsonNode second = getJson(me, "/api/notifications?limit=2&before=" + first.get("nextBefore").asText());
+        assertThat(second.get("items")).hasSize(2);
+        assertThat(second.get("hasMore").asBoolean()).isFalse();
+        // Nothing was deleted
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM notifications WHERE recipient_id = ?", Integer.class, me.getId())).isEqualTo(7);
+        // It is one way: the blocked one still sees her own
+        insert(ana, me, "{}", null);
+        assertThat(items(ana)).hasSize(1);
+
+        mockMvc.perform(delete("/api/users/{u}/block", ana.getUsername()).with(auth.bearer(me))).andExpect(status().isNoContent());
+        assertThat(items(me)).hasSize(7);
+        mockMvc.perform(get("/api/notifications/unread-count").with(auth.bearer(me))).andExpect(jsonPath("$.count").value(3));
+    }
+
     // ---- the API ----
 
     @Test

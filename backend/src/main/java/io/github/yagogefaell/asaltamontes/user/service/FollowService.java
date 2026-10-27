@@ -17,6 +17,7 @@ import io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
+import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -28,9 +29,11 @@ public class FollowService {
     private final UserFollowRepository userFollowRepository;
     private final BlockService blockService;
     private final ApplicationEventPublisher eventPublisher;
+    private final UserActionLimiter limiter;
 
     @Transactional
     public void followUser(Long followerId, String usernameToFollow) {
+        limiter.follow(followerId);
         UserAccount following = getUserToFollowOrThrow(followerId, usernameToFollow);
 
         if (userFollowRepository.existsByFollowerIdAndFollowingId(followerId, following.getId())) {

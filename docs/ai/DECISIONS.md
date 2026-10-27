@@ -108,3 +108,11 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
   - Los **cursores de paginación son opacos** (no se expone el id interno ni el orden real). T30c los codifica (base64url) y los valida contra la BD y los permisos; **no van firmados** (Yago, 2026-10-27: no por ahora). Si algún día un cursor lleva filtros o permisos dentro, habrá que firmarlos (HMAC con secreto en `.env`).
   - Postgres 17 no genera UUID v7 de forma nativa: se generan en Java al crear la entidad (`@PrePersist` o generador de Hibernate si lo soporta la versión).
   - **Todo recurso nuevo que se exponga nace con `public_id`.** Implementación de lo existente: **T30**.
+
+## D-022 · Grupos, bloqueos, límites y moderación: ajustes de Yago (2026-10-28)
+- **Decisión (Yago):**
+  1. Los **administradores de un grupo de chat** pueden expulsar o degradar a otra administradora, salvo a la creadora (T12).
+  2. El **`dm_policy` se aplica también al añadir a alguien a un grupo** y al crear un grupo con participantes; un **bloqueo en cualquier dirección lo impide siempre**. Mismo código y mensaje que en los privados, sin revelar el bloqueo (T13).
+  3. **Límites por usuaria**, generosos y configurables: ~30 ediciones de evento/hora, 10 grupos creados/día, 100 follows/hora, con `429` y `Retry-After`. Las notificaciones de una actora bloqueada se ocultan al leer, sin borrarlas. Cooldown de 24 h de `NEW_FOLLOWER` aceptado (T18).
+  4. **Cooldown de 7 días** (configurable) tras rechazar una solicitud de unión; **una moderadora no puede readmitir a quien expulsó la propietaria** (T19).
+- **Consecuencias:** detalles y propiedades en las secciones "Decisiones de Yago (2026-10-28)" de T12, T13, T18 y T19. Los límites por usuaria van en `UserActionLimiter`; futuros límites del mismo tipo (T20+) deben usarlo.

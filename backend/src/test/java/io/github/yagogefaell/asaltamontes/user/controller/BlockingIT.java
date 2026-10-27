@@ -193,6 +193,69 @@ class BlockingIT extends AbstractIntegrationTest {
         assertThat(openPrivateChat(ana, fani)).isEqualTo(200);
     }
 
+    private String addToGroup(UUID group, UserAccount by, UserAccount who, int expectedStatus) throws Exception {
+        return mockMvc.perform(post("/api/conversations/{id}/participants", group).with(auth.bearer(by))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("usernames", List.of(who.getUsername())))))
+                .andExpect(status().is(expectedStatus))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    private String createGroup(UserAccount by, int expectedStatus, UserAccount... members) throws Exception {
+        return mockMvc.perform(post("/api/conversations/group").with(auth.bearer(by)).contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of("groupName", "g",
+                                "users", java.util.Arrays.stream(members).map(UserAccount::getUsername).toList()))))
+                .andExpect(status().is(expectedStatus))
+                .andReturn().getResponse().getContentAsString();
+    }
+
+    @Test
+    void dmPolicy_isAlsoAppliedWhenAddingToAGroupOrCreatingOne_withTheSameNeutralError() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UserAccount cris = testData.createUser();
+        UserAccount dora = testData.createUser();
+        UUID group = testData.createGroup(ana, dora);
+
+        // The refusal for a policy is the one of a private chat, whatever the reason (no hint of a block)
+        setPolicy(bea, "NOBODY");
+        String privateChatRefusal = mockMvc.perform(post("/api/conversations/private").with(auth.bearer(ana))
+                        .contentType(MediaType.APPLICATION_JSON).content(json(Map.of("username", bea.getUsername()))))
+                .andExpect(status().isForbidden()).andReturn().getResponse().getContentAsString();
+        String message = com.jayway.jsonpath.JsonPath.read(privateChatRefusal, "$.detail");
+        assertThat(message).isEqualTo(BlockService.NOT_ALLOWED_MESSAGE);
+        assertThat((String) com.jayway.jsonpath.JsonPath.read(addToGroup(group, ana, bea, 403), "$.detail")).isEqualTo(message);
+        assertThat((String) com.jayway.jsonpath.JsonPath.read(createGroup(ana, 403, cris, bea), "$.detail")).isEqualTo(message);
+        // A block gets the same text
+        block(ana, cris);
+        assertThat((String) com.jayway.jsonpath.JsonPath.read(addToGroup(group, ana, cris, 403), "$.detail")).isEqualTo(message);
+        // Nothing was added by the failed attempts
+        mockMvc.perform(get("/api/conversations/{id}", group).with(auth.bearer(ana)))
+                .andExpect(jsonPath("$.participantCount").value(2));
+
+        setPolicy(bea, "FOLLOWING");
+        addToGroup(group, ana, bea, 403);
+        follow(bea, ana);
+        addToGroup(group, ana, bea, 200);
+
+        UserAccount eva = testData.createUser();
+        setPolicy(eva, "MUTUALS");
+        createGroup(ana, 403, eva);
+        follow(eva, ana);
+        createGroup(ana, 403, eva);
+        follow(ana, eva);
+        createGroup(ana, 200, eva);
+
+        // A block beats any policy, in either direction
+        UserAccount fani = testData.createUser();
+        setPolicy(fani, "EVERYONE");
+        block(fani, ana);
+        createGroup(ana, 404, fani);
+        UserAccount gema = testData.createUser();
+        block(ana, gema);
+        createGroup(ana, 403, gema);
+    }
+
     @Test
     void invalidDmPolicy_isRejected() throws Exception {
         UserAccount ana = testData.createUser();

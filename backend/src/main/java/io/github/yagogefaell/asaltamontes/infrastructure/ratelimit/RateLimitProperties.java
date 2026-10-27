@@ -22,4 +22,10 @@ public class RateLimitProperties {
     private int refreshPerMinute = 30;
     /** Per user (not per IP: behind the proxy every IP looks the same), for POST /api/notifications/read. */
     private int notificationsReadPerMinute = 60;
+    /** Per user: PATCH of events (T18). */
+    private int eventEditsPerHour = 30;
+    /** Per user: groups created (T18). */
+    private int groupsCreatedPerDay = 10;
+    /** Per user: follows (T18). */
+    private int followsPerHour = 100;
 }

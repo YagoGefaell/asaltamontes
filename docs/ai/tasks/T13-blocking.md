@@ -36,3 +36,9 @@ La plataforma se presenta como un **espacio seguro para mujeres**: los mensajes 
 
 ## Tests requeridos
 - IT de cada efecto listado.
+
+## Decisiones de Yago (2026-10-28) — implementadas en `feat/yago-decisions-t12-t13-t18-t19`
+- **`dm_policy` también al añadir a un grupo** (`POST /api/conversations/{id}/participants`) **y al crear un grupo con participantes** (`POST /api/conversations/group`). Quien añade es la iniciadora y cada persona añadida la destinataria: se aplica la misma regla que para abrir un chat privado nuevo (`EVERYONE`, `FOLLOWING`, `MUTUALS`, `NOBODY`). Si **alguna** no lo permite, no se añade a nadie.
+- **Un bloqueo en cualquier dirección impide añadir siempre**, sea cual sea la política (`EVERYONE` incluida).
+- **Error uniforme:** `403` con `BlockService.NOT_ALLOWED_MESSAGE` ("No puedes interactuar con esta usuaria"), el mismo texto y código que en los mensajes privados, para política y para bloqueo, sin revelar cuál aplicó. Quien bloqueó a la iniciadora sigue respondiendo `404` como una usuaria inexistente (igual que en el chat privado). `GROUP_ADD_MESSAGE` desaparece.
+- Implementación: `BlockService.requireCanAddToGroup(initiatorId, targetIds)` (consultas por lote: bloqueos, políticas y seguimientos de todas las destinatarias, no una por usuaria). Tests: `BlockingIT.dmPolicy_isAlsoAppliedWhenAddingToAGroupOrCreatingOne_withTheSameNeutralError`.

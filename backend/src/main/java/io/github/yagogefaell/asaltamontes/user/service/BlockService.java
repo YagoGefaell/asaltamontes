@@ -36,8 +36,6 @@ public class BlockService {
     /** Deliberately says nothing about who blocked whom or which policy applied. */
     public static final String NOT_ALLOWED_MESSAGE = "No puedes interactuar con esta usuaria";
 
-    public static final String GROUP_ADD_MESSAGE = "No puedes añadir a alguna de las usuarias indicadas";
-
     private final UserBlockRepository blockRepository;
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
@@ -131,6 +129,47 @@ public class BlockService {
         };
         if (!allowed) {
             throw new ForbiddenException(NOT_ALLOWED_MESSAGE);
+        }
+    }
+
+    /**
+     * Whether {@code initiator} may add all of {@code targets} to a group (also when creating it): no block in either
+     * direction and each target's {@code dm_policy} as for a new private chat (T13). Nothing is added if any fails,
+     * and the answer is the same neutral 403 for every reason (block or policy), so nobody can tell which applied.
+     * Callers answer the targets that blocked the initiator with their 404 before calling this.
+     */
+    @Transactional(readOnly = true)
+    public void requireCanAddToGroup(Long initiatorId, Collection<Long> targetIds) {
+        if (targetIds.isEmpty()) {
+            return;
+        }
+        if (!blockedEitherWayAmong(initiatorId, targetIds).isEmpty()) {
+            throw new ForbiddenException(NOT_ALLOWED_MESSAGE);
+        }
+        Set<Long> followers = null;
+        Set<Long> followed = null;
+        for (Object[] row : userProfileRepository.findDmPolicies(targetIds)) {
+            Long targetId = (Long) row[0];
+            DmPolicy policy = (DmPolicy) row[1];
+            boolean allowed = switch (policy) {
+                case EVERYONE -> true;
+                case NOBODY -> false;
+                case FOLLOWING -> {
+                    followers = followers != null ? followers
+                            : new HashSet<>(userFollowRepository.findFollowerIdsAmong(initiatorId, targetIds));
+                    yield followers.contains(targetId);
+                }
+                case MUTUALS -> {
+                    followers = followers != null ? followers
+                            : new HashSet<>(userFollowRepository.findFollowerIdsAmong(initiatorId, targetIds));
+                    followed = followed != null ? followed
+                            : new HashSet<>(userFollowRepository.findFollowingIdsAmong(initiatorId, targetIds));
+                    yield followers.contains(targetId) && followed.contains(targetId);
+                }
+            };
+            if (!allowed) {
+                throw new ForbiddenException(NOT_ALLOWED_MESSAGE);
+            }
         }
     }
 

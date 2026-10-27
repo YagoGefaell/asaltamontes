@@ -356,8 +356,82 @@ class CommunityModerationIT extends AbstractIntegrationTest {
             assertThat(notifications(ana, "COMMUNITY_JOIN_APPROVED")).isEqualTo(1);
             assertThat(notifications(bea, "COMMUNITY_JOIN_REJECTED")).isEqualTo(1);
         });
-        // She can ask again after a rejection
+        // After a rejection she must wait (the cooldown is tested apart)
+        join(bea, community).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void afterARejection_sheWaitsTheCooldown_withRetryAfter_andThenCanAskAgain() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        patchCommunity(owner, community, "{\"visibility\":\"PRIVATE\"}").andExpect(status().isOk());
+
+        join(ana, community).andExpect(status().isAccepted());
+        mockMvc.perform(post(url(community, "/requests/" + ana.getUsername() + "/reject")).with(auth.bearer(owner)))
+                .andExpect(status().isNoContent());
+
+        // 7 days by default: the header is in seconds and the message says how long
+        long retryAfter = Long.parseLong(join(ana, community).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("7 días")))
+                .andReturn().getResponse().getHeader("Retry-After"));
+        assertThat(retryAfter).isBetween(6L * 24 * 3600, 7L * 24 * 3600 + 1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM community_join_requests WHERE community_id = ?", Integer.class,
+                community.getId())).isZero();
+        // Another user who was never rejected is not affected, nor is a rejection in another community
         join(bea, community).andExpect(status().isAccepted());
+
+        // Almost over: the days left go down
+        jdbc.update("UPDATE community_moderation_log SET created_at = now() - interval '6 days 12 hours' WHERE action = 'REQUEST_REJECTED' AND target_id = ?",
+                ana.getId());
+        join(ana, community).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("1 día")));
+
+        // Over
+        jdbc.update("UPDATE community_moderation_log SET created_at = now() - interval '7 days 1 minute' WHERE action = 'REQUEST_REJECTED' AND target_id = ?",
+                ana.getId());
+        join(ana, community).andExpect(status().isAccepted());
+    }
+
+    @Test
+    void aModerator_cannotReadmitWhoTheOwnerExpelled_butCanReadmitWhoAModeratorExpelled_andTheOwnerReadmitsAnyone() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount mod = testData.createUser();
+        UserAccount mod2 = testData.createUser();
+        UserAccount byOwner = testData.createUser();
+        UserAccount byMod = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        for (UserAccount u : new UserAccount[] {mod, mod2, byOwner, byMod}) {
+            join(u, community);
+        }
+        promote(owner, community, mod);
+        promote(owner, community, mod2);
+
+        action(owner, community, byOwner, "ban", null).andExpect(status().isNoContent());
+        action(mod, community, byMod, "ban", null).andExpect(status().isNoContent());
+        assertThat(memberRepository.findByCommunityIdAndUserAccountId(community.getId(), byOwner.getId()).orElseThrow().getBannedByRole())
+                .isEqualTo(CommunityRole.OWNER);
+        assertThat(memberRepository.findByCommunityIdAndUserAccountId(community.getId(), byMod.getId()).orElseThrow().getBannedByRole())
+                .isEqualTo(CommunityRole.MODERATOR);
+
+        // Any moderator, even the one who is not the author, is stopped by the owner's expulsion
+        action(mod, community, byOwner, "unban", null).andExpect(status().isForbidden());
+        action(mod2, community, byOwner, "unban", null).andExpect(status().isForbidden());
+        assertThat(memberRepository.findStatus(community.getId(), byOwner.getId())).contains(MemberStatus.BANNED);
+        assertThat(count(community)).isEqualTo(3);
+
+        // But another moderator can undo a moderator's expulsion, and the owner anything
+        action(mod2, community, byMod, "unban", null).andExpect(status().isNoContent());
+        action(owner, community, byOwner, "unban", null).andExpect(status().isNoContent());
+        assertThat(count(community)).isEqualTo(5);
+        assertThat(memberRepository.findByCommunityIdAndUserAccountId(community.getId(), byOwner.getId()).orElseThrow().getBannedBy()).isNull();
+
+        // A moderator who bans again is recorded with her own role; a banned moderator expelled by the owner too
+        action(owner, community, mod2, "ban", null).andExpect(status().isNoContent());
+        action(owner, community, mod2, "unban", null).andExpect(status().isNoContent());
+        action(mod, community, byMod, "ban", null).andExpect(status().isNoContent());
+        action(owner, community, byMod, "unban", null).andExpect(status().isNoContent());
     }
 
     @Test

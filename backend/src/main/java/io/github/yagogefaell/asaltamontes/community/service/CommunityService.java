@@ -2,11 +2,13 @@ package io.github.yagogefaell.asaltamontes.community.service;
 
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsException;
+import io.github.yagogefaell.asaltamontes.community.repository.CommunityModerationLogRepository;
 import io.github.yagogefaell.asaltamontes.common.pagination.SortWhitelist;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
@@ -46,18 +50,24 @@ public class CommunityService {
     private final MediaReferenceService mediaReferences;
     private final CommunityJoinRequestRepository joinRequestRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityModerationLogRepository moderationLogRepository;
+    private final Duration joinRequestCooldown;
 
     /** What joining did: she is a member now, or her request waits for the moderation (private communities). */
     public enum JoinResult { JOINED, REQUESTED }
 
     public CommunityService(CommunityRepository communityRepository, CommunityMemberRepository communityMemberRepository,
                             MediaReferenceService mediaReferences, CommunityJoinRequestRepository joinRequestRepository,
-                            ApplicationEventPublisher eventPublisher) {
+                            ApplicationEventPublisher eventPublisher,
+                            CommunityModerationLogRepository moderationLogRepository,
+                            @Value("${asaltamontes.community.join-request-cooldown:7d}") Duration joinRequestCooldown) {
         this.communityRepository = communityRepository;
         this.communityMemberRepository = communityMemberRepository;
         this.mediaReferences = mediaReferences;
         this.joinRequestRepository = joinRequestRepository;
         this.eventPublisher = eventPublisher;
+        this.moderationLogRepository = moderationLogRepository;
+        this.joinRequestCooldown = joinRequestCooldown;
     }
     
     @Transactional
@@ -190,11 +200,29 @@ public class CommunityService {
 
     /** Idempotent: asking twice leaves one request and notifies the staff once. */
     private void requestToJoin(Community community, UserAccount requester) {
+        requireRejectionCooldownOver(community.getId(), requester.getId());
         int inserted = joinRequestRepository.insertIfAbsent(UuidV7.next(), community.getId(), requester.getId(), Instant.now());
         if (inserted > 0) {
             eventPublisher.publishEvent(new JoinRequested(community.getSlug(), community.getName(), requester.getId(),
                     communityMemberRepository.findStaffUserIds(community.getId())));
         }
+    }
+
+    /** After a rejection she must wait (T19, {@code asaltamontes.community.join-request-cooldown}): 429 with Retry-After. */
+    private void requireRejectionCooldownOver(Long communityId, Long userId) {
+        if (joinRequestCooldown.isZero() || joinRequestCooldown.isNegative()) {
+            return;
+        }
+        moderationLogRepository.findLastRejection(communityId, userId).ifPresent(rejectedAt -> {
+            Instant now = Instant.now();
+            Instant until = rejectedAt.plus(joinRequestCooldown);
+            if (until.isAfter(now)) {
+                long seconds = Math.max(1, Duration.between(now, until).toSeconds() + 1);
+                long days = (seconds + 86_399) / 86_400;
+                throw new TooManyRequestsException("Tu solicitud fue rechazada. Podrás volver a solicitarlo en "
+                        + days + (days == 1 ? " día" : " días"), seconds);
+            }
+        });
     }
 
     @Transactional

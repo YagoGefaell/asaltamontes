@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.infrastructure.ratelimit;
 
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -19,7 +20,11 @@ import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
 import io.github.yagogefaell.asaltamontes.support.TestDataFactory;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
-@TestPropertySource(properties = "asaltamontes.rate-limit.enabled=true")
+@TestPropertySource(properties = {
+        "asaltamontes.rate-limit.enabled=true",
+        "asaltamontes.rate-limit.event-edits-per-hour=2",
+        "asaltamontes.rate-limit.groups-created-per-day=2",
+        "asaltamontes.rate-limit.follows-per-hour=3"})
 class RateLimitIT extends AbstractIntegrationTest {
 
     @Test
@@ -78,6 +83,55 @@ class RateLimitIT extends AbstractIntegrationTest {
 
         mockMvc.perform(post("/api/notifications/read").contentType(MediaType.APPLICATION_JSON).content("{\"all\":true}")
                 .with(auth.bearer(user)).with(from(ip))).andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void editingEvents_isLimitedPerUser_withRetryAfter() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        String missing = "/api/events/" + java.util.UUID.randomUUID();
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(patch(missing).with(auth.bearer(ana)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                    .andExpect(status().isNotFound());
+        }
+
+        mockMvc.perform(patch(missing).with(auth.bearer(ana)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+        // Another user is not affected
+        mockMvc.perform(patch(missing).with(auth.bearer(bea)).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void creatingGroups_isLimitedPerUser() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        for (int i = 0; i < 2; i++) {
+            createGroup(ana, bea).andExpect(status().isOk());
+        }
+
+        createGroup(ana, bea).andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+        createGroup(bea, ana).andExpect(status().isOk());
+    }
+
+    @Test
+    void following_isLimitedPerUser() throws Exception {
+        UserAccount ana = testData.createUser();
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/users/follow/{u}", testData.createUser().getUsername()).with(auth.bearer(ana)))
+                    .andExpect(status().isOk());
+        }
+
+        mockMvc.perform(post("/api/users/follow/{u}", testData.createUser().getUsername()).with(auth.bearer(ana)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+    }
+
+    private org.springframework.test.web.servlet.ResultActions createGroup(UserAccount by, UserAccount member) throws Exception {
+        return mockMvc.perform(post("/api/conversations/group").with(auth.bearer(by)).contentType(MediaType.APPLICATION_JSON)
+                .content(json(java.util.Map.of("groupName", "g", "users", java.util.List.of(member.getUsername())))));
     }
 
     private MockHttpServletRequestBuilder login(String username, String password) throws Exception {

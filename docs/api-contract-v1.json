@@ -170,7 +170,10 @@
                 "schema": { "$ref": "#/components/schemas/ChatResponse" }
               }
             }
-          }
+          },
+          "403": { "description": "T13: one of the users is blocked by the caller, or her dm_policy does not allow the caller to start a chat with her: nothing is created and the message is the one of a private chat ('No puedes interactuar con esta usuaria'), for every reason" },
+          "404": { "description": "A username does not exist or blocked the caller (same answer)" },
+          "429": { "description": "T18: more than asaltamontes.rate-limit.groups-created-per-day (10) groups created by the caller in a day. Retry-After in seconds" }
         }
       }
     },
@@ -553,6 +556,9 @@
           },
           "404": {
             "description": "User not found"
+          },
+          "429": {
+            "description": "T18: more than asaltamontes.rate-limit.follows-per-hour (100) follows by the caller in an hour. Retry-After in seconds"
           }
         }
       },
@@ -731,7 +737,7 @@
     "/api/notifications": {
       "get": {
         "summary": "One page of the caller's notifications (T18)",
-        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor).",
+        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Notifications whose actor was blocked by the caller are hidden when reading (list and unread-count) and come back if she unblocks (T18); nothing is deleted. Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor).",
         "tags": ["Notifications"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -751,6 +757,7 @@
     "/api/notifications/unread-count": {
       "get": {
         "summary": "Number of unread notifications (badge)",
+        "description": "Does not count the notifications hidden because the caller blocked their actor (T18).",
         "tags": ["Notifications"],
         "security": [{ "bearerAuth": [] }],
         "responses": {
@@ -1000,7 +1007,7 @@
         "responses": {
           "200": { "description": "GroupDetailsDto" },
           "400": { "description": "No valid usernames, or the group would exceed its maximum size" },
-          "403": { "description": "Not an admin; or (T13) one of the new members blocked the caller or was blocked by her: nothing is added and the message does not say who. Up to 50 per request is kept: the block check is a single query" },
+          "403": { "description": "Not an admin; or (T13) one of the new members is blocked by the caller, or her dm_policy (EVERYONE, FOLLOWING, MUTUALS, NOBODY) does not allow the caller to start a chat with her, as for a private chat: nothing is added and the message is the same neutral one for every reason ('No puedes interactuar con esta usuaria'). One that blocked the caller answers 404 like a user that does not exist. Up to 50 per request is kept: the block and policy checks are a few queries, not one per user" },
           "404": { "description": "Chat not found, or a username does not exist" },
           "409": { "description": "Este grupo se gestiona automáticamente" }
         }
@@ -1226,6 +1233,9 @@
           },
           "409": {
             "description": "Already a member"
+          },
+          "429": {
+            "description": "T19: her previous request to this private community was rejected less than asaltamontes.community.join-request-cooldown (7 days) ago. Retry-After in seconds"
           }
         }
       }
@@ -1418,7 +1428,7 @@
     "/api/communities/{communityId}/members/{username}/unban": {
       "post": {
         "summary": "Readmit an expelled member (T19)",
-        "description": "Owner or moderators. She becomes ACTIVE, memberCount increases in the same transaction, it is logged. 404 if she is not expelled.",
+        "description": "Owner or moderators. She becomes ACTIVE, memberCount increases in the same transaction, it is logged. 404 if she is not expelled. Whoever the owner expelled can only be readmitted by the owner (403 'Solo la propietaria puede readmitir a quien ella expulsó' for a moderator); the owner can readmit anyone.",
         "tags": [
           "Communities"
         ],
@@ -1449,6 +1459,9 @@
         "responses": {
           "204": {
             "description": "Done"
+          },
+          "403": {
+            "description": "A moderator tried to readmit someone the owner expelled"
           },
           "404": {
             "description": "Community not found, or the caller is not owner/moderator (same answer, uniform)"
@@ -1784,7 +1797,8 @@
           "200": { "description": "The updated event" },
           "400": { "description": "Invalid data" },
           "403": { "description": "Not the organizer nor community staff" },
-          "409": { "description": "Cancelled event, capacity below attendeeCount, or edited by someone else at the same time" }
+          "409": { "description": "Cancelled event, capacity below attendeeCount, or edited by someone else at the same time" },
+          "429": { "description": "T18: more than asaltamontes.rate-limit.event-edits-per-hour (30) edits by the caller in an hour. Retry-After in seconds" }
         }
       }
     },
