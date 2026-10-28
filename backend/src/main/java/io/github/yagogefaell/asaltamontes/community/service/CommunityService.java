@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.community.service;
 
+import io.github.yagogefaell.asaltamontes.event.service.EventService;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import java.time.Duration;
@@ -54,6 +55,7 @@ public class CommunityService {
     private final CommunityModerationLogRepository moderationLogRepository;
     private final Duration joinRequestCooldown;
     private final CommunityChatService communityChat;
+    private final EventService eventService;
 
     /** What joining did: she is a member now, or her request waits for the moderation (private communities). */
     public enum JoinResult { JOINED, REQUESTED }
@@ -62,7 +64,7 @@ public class CommunityService {
                             MediaReferenceService mediaReferences, CommunityJoinRequestRepository joinRequestRepository,
                             ApplicationEventPublisher eventPublisher,
                             CommunityModerationLogRepository moderationLogRepository,
-                            CommunityChatService communityChat,
+                            CommunityChatService communityChat, EventService eventService,
                             @Value("${asaltamontes.community.join-request-cooldown:7d}") Duration joinRequestCooldown) {
         this.communityRepository = communityRepository;
         this.communityMemberRepository = communityMemberRepository;
@@ -71,6 +73,7 @@ public class CommunityService {
         this.eventPublisher = eventPublisher;
         this.moderationLogRepository = moderationLogRepository;
         this.communityChat = communityChat;
+        this.eventService = eventService;
         this.joinRequestCooldown = joinRequestCooldown;
     }
     
@@ -249,6 +252,8 @@ public class CommunityService {
         }
         communityRepository.decrementMemberCount(communityId);
         communityChat.removeMember(communityId, currentUser.getId(), "LEFT");
+        // Same as an expulsion: no place left in its members-only events (BUG-074)
+        eventService.withdrawFromCommunityEvents(communityId, currentUser.getId(), "LEFT");
     }
 
     @Transactional

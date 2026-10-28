@@ -70,4 +70,16 @@ public interface EventAttendeeRepository extends JpaRepository<EventAttendee, Lo
         """)
     Page<EventAttendeeDto> findAttendees(@Param("eventId") Long eventId, @Param("status") AttendeeStatus status,
                                          @Param("currentUserId") Long currentUserId, Pageable pageable);
+
+    // Members-only events of a community that she attends (going or waiting), not organized by her and not cancelled
+    @Query("""
+        SELECT a.event.id FROM EventAttendee a
+        WHERE a.user.id = :userId AND a.status <> io.github.yagogefaell.asaltamontes.event.domain.AttendeeStatus.CANCELLED
+          AND a.event.community.id = :communityId
+          AND a.event.visibility = io.github.yagogefaell.asaltamontes.event.domain.EventVisibility.COMMUNITY
+          AND a.event.status = io.github.yagogefaell.asaltamontes.event.domain.EventStatus.SCHEDULED
+          AND a.event.organizer.id <> :userId
+        ORDER BY a.event.id
+        """)
+    List<Long> findOpenCommunityEventIds(@Param("communityId") Long communityId, @Param("userId") Long userId);
 }
