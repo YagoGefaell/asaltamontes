@@ -190,7 +190,7 @@ const Search = () => {
           <input
             type="search"
             enterKeyHint="search"
-            placeholder="Buscar personas, comunidades, quedadas"
+            placeholder="Buscar"
             aria-label="Buscar"
             autoComplete="off"
             value={text}

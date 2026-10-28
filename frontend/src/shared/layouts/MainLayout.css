@@ -8,6 +8,11 @@ main {
   overflow-y: auto;
 }
 
+/* Pantallas de ancho completo (DESIGN.md): gestionan su propio gutter de --space-4 */
+main:has(> .home-container, > .search-page, > .profile-page) {
+  padding: 0;
+}
+
 /* Navbar fijo abajo */
 .navbar {
   position: fixed;
