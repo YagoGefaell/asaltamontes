@@ -32,6 +32,9 @@ function HeaderLink({ to, label, count, children }) {
   );
 }
 
+// Between Avatar's lg (64) and xl (96): the picture leads the card without filling it
+const SUGGESTION_AVATAR = 80;
+
 function Section({ title, children }) {
   return (
     <section className="home-section" aria-label={title}>
@@ -49,7 +52,7 @@ function RecommendedCommunities({ items }) {
         {items.map((community) => (
           <li key={community.id} className="home-rail__item">
             <Link to={communityPath(community)} className="home-rail__link">
-              <Avatar src={community.imageUrl} name={community.name} size="xl" />
+              <Avatar src={community.imageUrl} name={community.name} size={SUGGESTION_AVATAR} />
               <span className="home-rail__name">{community.name}</span>
               <span className="home-rail__meta">{community.city || `${community.memberCount} miembros`}</span>
             </Link>
@@ -73,7 +76,7 @@ function SuggestedUsers({ items }) {
         {items.map((user) => (
           <li key={user.username} className="home-rail__item">
             <Link to={`/users/${user.username}`} className="home-rail__link">
-              <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="xl" />
+              <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size={SUGGESTION_AVATAR} />
               <span className="home-rail__name">{user.fullName || user.username}</span>
               <span className="home-rail__meta">@{user.username}</span>
             </Link>
