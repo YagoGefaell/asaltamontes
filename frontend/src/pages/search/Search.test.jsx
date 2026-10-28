@@ -49,6 +49,17 @@ describe('Search (T29d)', () => {
     expect(screen.getAllByTestId('community-row')).toHaveLength(5)
   })
 
+  it('suggests only communities she is not in yet', async () => {
+    getCommunitiesRequest.mockResolvedValue({
+      items: [{ id: 'c1', name: 'Mía', role: 'OWNER' }, { id: 'c2', name: 'Valkirias', role: null }],
+      hasMore: false,
+      page: 0,
+    })
+    renderAt()
+    expect(await screen.findByText('Valkirias')).toBeInTheDocument()
+    expect(screen.queryByText('Mía')).not.toBeInTheDocument()
+  })
+
   it('shows the four tabs', () => {
     renderAt()
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Todo', 'Personas', 'Comunidades', 'Quedadas'])

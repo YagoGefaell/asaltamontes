@@ -31,6 +31,8 @@
 .search-bar .search-bar__cancel {
   flex-shrink: 0;
   padding-inline: var(--space-2);
+  font-size: var(--text-base);
+  font-weight: 600;
 }
 
 .search-field input {

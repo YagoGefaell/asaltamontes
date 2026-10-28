@@ -275,7 +275,7 @@ const Search = () => {
               {wantsCommunities && (
                 <ResultSection
                   title="Comunidades para ti"
-                  section={{ ...communities, items: communities.items.slice(0, SUGGESTIONS), hasMore: false }}
+                  section={{ ...communities, items: communities.items.filter((c) => !c.role).slice(0, SUGGESTIONS), hasMore: false }}
                   render={renderCommunity}
                   skeleton={<UserRowSkeleton />}
                   hideWhenEmpty
