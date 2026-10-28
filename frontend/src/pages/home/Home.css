@@ -18,8 +18,7 @@
   font-weight: 700;
 }
 
-/* Sugerencias (usuarias y comunidades): fila deslizable de avatares, como las historias de Instagram.
-   Sin tarjetas: avatar, nombre corto y la acción en texto. */
+/* Sugerencias (usuarias y comunidades): filas deslizables de tarjetas */
 .home-rail {
   display: flex;
   gap: var(--space-3);
@@ -29,7 +28,7 @@
   overflow-x: auto;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
-  /* Snapping aligns items with the scrollport edge: keep them on the same gutter as the titles */
+  /* Snapping aligns cards with the scrollport edge: keep them on the same gutter as the titles */
   scroll-padding-inline: var(--space-4);
 }
 
@@ -38,11 +37,16 @@
 }
 
 .home-rail__item {
-  flex: 0 0 76px;
+  flex: 0 0 140px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-width: 0;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
   scroll-snap-align: start;
 }
 
@@ -52,6 +56,7 @@
   align-items: center;
   gap: var(--space-1);
   width: 100%;
+  min-height: var(--touch-min);
   color: var(--text-color);
   text-decoration: none;
 }
@@ -61,49 +66,23 @@
   outline-offset: 2px;
 }
 
-.home-rail__name {
+.home-rail__name,
+.home-rail__meta {
   width: 100%;
-  font-size: var(--text-xs);
   text-align: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Follow / join as plain text under the name, not as a filled button */
-.home-rail .follow-user-button-container,
-.home-rail .community-join-button-container {
-  align-items: center;
-}
-
-/* .home-rail__item adds specificity over the buttons' own state rules (.follow-user-button.not-following…) */
-.home-rail__item .follow-user-button.follow-user-button,
-.home-rail__item .community-join-button.community-join-button {
-  min-width: 0;
-  min-height: var(--touch-min);
-  padding: 0 var(--space-2);
-  border: 0;
-  background: none;
-  box-shadow: none;
-  color: var(--primary);
+.home-rail__name {
+  font-weight: 600;
   font-size: var(--text-sm);
-  font-weight: 700;
 }
 
-.home-rail__item .follow-user-button.following,
-.home-rail__item .community-join-button.member,
-.home-rail__item .community-join-button.owner,
-.home-rail__item .community-join-button.moderator {
+.home-rail__meta {
+  font-size: var(--text-xs);
   color: var(--text-muted);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .home-rail__item .follow-user-button.follow-user-button:hover:not(:disabled),
-  .home-rail__item .community-join-button.community-join-button:hover:not(:disabled) {
-    background: none;
-    box-shadow: none;
-    text-decoration: underline;
-  }
 }
 
 /* ===== CABECERA (T29g) ===== */

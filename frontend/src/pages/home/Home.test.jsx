@@ -72,14 +72,11 @@ describe('Home content', () => {
       { id: 'c2', name: 'Valkirias', slug: 'valkirias', city: 'Madrid', role: null },
     ]))
     renderHome()
-    expect(await screen.findByRole('link', { name: 'Cris Gil (@cris)' })).toHaveAttribute('href', '/users/cris')
-    // Only the username is shown, as on Instagram
-    expect(screen.getByText('cris')).toBeTruthy()
-    expect(screen.queryByText('Cris Gil')).toBeNull()
+    expect(await screen.findByRole('link', { name: /Cris Gil/ })).toHaveAttribute('href', '/users/cris')
     expect(await screen.findByRole('link', { name: /Valkirias/ })).toHaveAttribute('href', '/communities/valkirias')
     expect(screen.queryByText('Cabras')).toBeNull()
     expect(document.querySelectorAll('.home-rail')).toHaveLength(2)
-    expect(screen.getByRole('heading', { name: 'Sugerencias para ti' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Comunidades para ti' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Usuarias para seguir' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Comunidades recomendadas' })).toBeTruthy()
   })
 })

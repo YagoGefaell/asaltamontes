@@ -41,21 +41,22 @@ function Section({ title, children }) {
   );
 }
 
-/** Row of recommended communities (avatar, name, "Unirme"), shown between blocks of content. */
+/** Horizontal row of recommended communities, shown between blocks of content. */
 function RecommendedCommunities({ items }) {
   return (
-    <Section title="Comunidades para ti">
+    <Section title="Comunidades recomendadas">
       <ul className="home-rail">
         {items.map((community) => (
           <li key={community.id} className="home-rail__item">
             <Link to={communityPath(community)} className="home-rail__link">
               <Avatar src={community.imageUrl} name={community.name} size="lg" />
               <span className="home-rail__name">{community.name}</span>
+              <span className="home-rail__meta">{community.city || `${community.memberCount} miembros`}</span>
             </Link>
             {community.visibility === "PRIVATE" && !community.role ? (
               <CommunityRequestButton communityId={community.id} />
             ) : (
-              <CommunityJoinButton communityId={community.id} role={community.role} joinLabel="Unirme" memberLabel="Miembro" />
+              <CommunityJoinButton communityId={community.id} role={community.role} joinLabel="Unirse" memberLabel="Miembro" />
             )}
           </li>
         ))}
@@ -64,20 +65,17 @@ function RecommendedCommunities({ items }) {
   );
 }
 
-/** Row of users she may want to follow, as Instagram's stories: avatar, username and "Seguir". */
+/** Horizontal row of users she may want to follow (followed by her follows, or in her communities). */
 function SuggestedUsers({ items }) {
   return (
-    <Section title="Sugerencias para ti">
+    <Section title="Usuarias para seguir">
       <ul className="home-rail">
         {items.map((user) => (
           <li key={user.username} className="home-rail__item">
-            <Link
-              to={`/users/${user.username}`}
-              className="home-rail__link"
-              aria-label={user.fullName ? `${user.fullName} (@${user.username})` : `@${user.username}`}
-            >
+            <Link to={`/users/${user.username}`} className="home-rail__link">
               <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="lg" />
-              <span className="home-rail__name">{user.username}</span>
+              <span className="home-rail__name">{user.fullName || user.username}</span>
+              <span className="home-rail__meta">@{user.username}</span>
             </Link>
             <FollowUserButton userId={user.username} initialIsFollowing={false} />
           </li>
