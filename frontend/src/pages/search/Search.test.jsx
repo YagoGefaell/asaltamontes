@@ -43,8 +43,9 @@ describe('Search (T29d)', () => {
 
   it('without text shows suggestions and does not list people', async () => {
     renderAt()
-    expect(await screen.findByText('Comunidades para ti')).toBeInTheDocument()
-    expect(screen.getByText('Próximas quedadas')).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Comunidades para ti' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Próximas quedadas' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Comunidades para ti' })).not.toBeInTheDocument()
     expect(getAllUsersRequest).not.toHaveBeenCalled()
     expect(screen.getAllByTestId('community-row')).toHaveLength(5)
   })
@@ -103,11 +104,11 @@ describe('Search (T29d)', () => {
   it('hides recents until she focuses the field, and then shows them instead of the suggestions', async () => {
     window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
     renderAt()
-    expect(await screen.findByText('Comunidades para ti')).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Comunidades para ti' })).toBeInTheDocument()
     expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
     fireEvent.focus(screen.getByRole('searchbox'))
     expect(screen.getByText('Recientes')).toBeInTheDocument()
-    expect(screen.queryByText('Comunidades para ti')).not.toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: 'Comunidades para ti' })).not.toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 
@@ -120,7 +121,7 @@ describe('Search (T29d)', () => {
     expect(input).toHaveValue('')
     expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
-    expect(await screen.findByText('Comunidades para ti')).toBeInTheDocument()
+    expect(await screen.findByRole('region', { name: 'Comunidades para ti' })).toBeInTheDocument()
   })
 
   it('says there are no recents when she focuses the field without history', () => {

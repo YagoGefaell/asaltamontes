@@ -48,15 +48,15 @@ function EventSkeleton() {
   );
 }
 
-/** A block of results: title, rows (skeleton / error / items) and "Ver todas" or "Cargar más". */
-function ResultSection({ title, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
+/** A block of results: title (only for screen readers when `untitled`), rows (skeleton / error / items) and "Ver todas" or "Cargar más". */
+function ResultSection({ title, untitled, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
   const { items, loading, loadingMore, hasMore, error, loadMore, retry } = section;
   if (hideWhenEmpty && !loading && !error && items.length === 0) return null;
   const shown = preview ? items.slice(0, preview) : items;
 
   return (
     <section className="search-section" aria-label={title} aria-busy={loading || undefined}>
-      <h2 className="search-section__title">{title}</h2>
+      {!untitled && <h2 className="search-section__title">{title}</h2>}
       {loading && [0, 1, 2].slice(0, preview || 3).map((i) => <div key={i}>{skeleton}</div>)}
       {!loading && error && (
         <div className="search-error" role="alert">
@@ -275,6 +275,7 @@ const Search = () => {
               {wantsCommunities && (
                 <ResultSection
                   title="Comunidades para ti"
+                  untitled
                   section={{ ...communities, items: communities.items.filter((c) => !c.role).slice(0, SUGGESTIONS), hasMore: false }}
                   render={renderCommunity}
                   skeleton={<UserRowSkeleton />}
@@ -284,6 +285,7 @@ const Search = () => {
               {wantsEvents && (
                 <ResultSection
                   title="Próximas quedadas"
+                  untitled
                   section={{ ...events, hasMore: false }}
                   render={renderEvent}
                   skeleton={<EventSkeleton />}
