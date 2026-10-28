@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { FaSearch, FaTimes, FaHistory } from "react-icons/fa";
 import "./Search.css";
@@ -86,6 +86,9 @@ const Search = () => {
 
   const [text, setText] = useState(qParam);
   const [query, setQuery] = useState(qParam.trim());
+  // Search mode, as in Instagram: focusing the field swaps the suggestions for her recents until she cancels
+  const [active, setActive] = useState(false);
+  const inputRef = useRef(null);
   const { recents, add: addRecent, remove: removeRecent, clear: clearRecents } = useRecentSearches();
 
   // Search when she stops typing; the term lives in the URL so a reload or a shared link keeps it
@@ -172,6 +175,20 @@ const Search = () => {
     setQuery(term);
   };
 
+  const clearText = () => {
+    setText("");
+    inputRef.current?.focus();
+  };
+
+  const cancel = () => {
+    setText("");
+    setQuery("");
+    setActive(false);
+    inputRef.current?.blur();
+  };
+
+  const showRecents = active && !text.trim();
+
   // Tapping any result keeps the term in her recents
   const rememberOnResultClick = () => addRecent(query);
 
@@ -184,127 +201,141 @@ const Search = () => {
   return (
     <div className="search-page">
       <div className="search-top">
-        <form className="search-field" role="search" onSubmit={onSubmit}>
-          <FaSearch className="search-field__icon" aria-hidden="true" />
-          <input
-            type="search"
-            enterKeyHint="search"
-            placeholder="Buscar"
-            aria-label="Buscar"
-            autoComplete="off"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-          />
-          {text && (
-            <button type="button" className="search-field__clear" aria-label="Borrar búsqueda" onClick={() => setText("")}>
-              <FaTimes aria-hidden="true" />
-            </button>
+        <div className="search-bar">
+          <form className="search-field" role="search" onSubmit={onSubmit}>
+            <FaSearch className="search-field__icon" aria-hidden="true" />
+            <input
+              ref={inputRef}
+              type="search"
+              enterKeyHint="search"
+              placeholder="Buscar"
+              aria-label="Buscar"
+              autoComplete="off"
+              value={text}
+              onFocus={() => setActive(true)}
+              onKeyDown={(e) => e.key === "Escape" && cancel()}
+              onChange={(e) => setText(e.target.value)}
+            />
+            {text && (
+              <button type="button" className="search-field__clear" aria-label="Borrar búsqueda" onClick={clearText}>
+                <FaTimes aria-hidden="true" />
+              </button>
+            )}
+          </form>
+          {(active || text) && (
+            <Button variant="ghost" className="search-bar__cancel" onClick={cancel}>Cancelar</Button>
           )}
-        </form>
-        <Tabs tabs={SEARCH_TABS} value={tab} onChange={setTab} label="Tipo de resultado" idPrefix="search-tab" />
-      </div>
-
-      <div className="search-results" id={`search-tab-panel-${tab}`} role="tabpanel" aria-labelledby={`search-tab-${tab}`}
-        onClick={searching ? rememberOnResultClick : undefined}>
-        {!searching && (
-          <>
-            {recents.length > 0 && (
-              <section className="search-section" aria-label="Búsquedas recientes">
-                <div className="search-section__head">
-                  <h2 className="search-section__title">Recientes</h2>
-                  <Button variant="ghost" size="small" onClick={clearRecents}>Borrar todo</Button>
-                </div>
-                <ul className="search-recents">
-                  {recents.map((term) => (
-                    <li key={term} className="search-recents__item">
-                      <button type="button" className="search-recents__term" onClick={() => pickRecent(term)}>
-                        <FaHistory aria-hidden="true" />
-                        <span>{term}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="search-recents__remove"
-                        aria-label={`Quitar ${term} de recientes`}
-                        onClick={() => removeRecent(term)}
-                      >
-                        <FaTimes aria-hidden="true" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            )}
-
-            {tab === "users" && recents.length === 0 && (
-              <EmptyState title="Busca a otras corredoras" description="Escribe un nombre o un @usuario." />
-            )}
-            {tab === "users" && recents.length > 0 && (
-              <p className="search-hint">Escribe un nombre o un @usuario para buscar personas.</p>
-            )}
-
-            {wantsCommunities && (
-              <ResultSection
-                title="Comunidades para ti"
-                section={{ ...communities, items: communities.items.slice(0, SUGGESTIONS), hasMore: false }}
-                render={renderCommunity}
-                skeleton={<UserRowSkeleton />}
-                hideWhenEmpty
-              />
-            )}
-            {wantsEvents && (
-              <ResultSection
-                title="Próximas quedadas"
-                section={{ ...events, hasMore: false }}
-                render={renderEvent}
-                skeleton={<EventSkeleton />}
-                hideWhenEmpty
-              />
-            )}
-          </>
-        )}
-
-        {searching && (
-          <>
-            {wantsUsers && (
-              <ResultSection
-                title="Personas"
-                section={users}
-                render={renderUser}
-                skeleton={<UserRowSkeleton />}
-                onSeeAll={() => setTab("users")}
-                {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
-              />
-            )}
-            {wantsCommunities && (
-              <ResultSection
-                title="Comunidades"
-                section={communities}
-                render={renderCommunity}
-                skeleton={<UserRowSkeleton />}
-                onSeeAll={() => setTab("communities")}
-                {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
-              />
-            )}
-            {wantsEvents && (
-              <ResultSection
-                title="Quedadas"
-                section={events}
-                render={renderEvent}
-                skeleton={<EventSkeleton />}
-                onSeeAll={() => setTab("events")}
-                {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
-              />
-            )}
-            {nothingFound && (
-              <EmptyState
-                title={`No hay resultados para «${query}»`}
-                description={tab === "events" ? "Prueba con otro título, ciudad o lugar." : "Prueba con otro nombre."}
-                action={<Button variant="outline" onClick={() => setText("")}>Borrar búsqueda</Button>}
-              />
-            )}
-          </>
+        </div>
+        {!showRecents && (
+          <Tabs tabs={SEARCH_TABS} value={tab} onChange={setTab} label="Tipo de resultado" idPrefix="search-tab" />
         )}
       </div>
+
+      {showRecents && (
+        <div className="search-results">
+          <section className="search-section" aria-label="Búsquedas recientes">
+            <div className="search-section__head">
+              <h2 className="search-section__title">Recientes</h2>
+              {recents.length > 0 && (
+                <Button variant="ghost" size="small" onClick={clearRecents}>Borrar todo</Button>
+              )}
+            </div>
+            {recents.length === 0 && <p className="search-hint">No hay búsquedas recientes.</p>}
+            <ul className="search-recents">
+              {recents.map((term) => (
+                <li key={term} className="search-recents__item">
+                  <button type="button" className="search-recents__term" onClick={() => pickRecent(term)}>
+                    <FaHistory aria-hidden="true" />
+                    <span>{term}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="search-recents__remove"
+                    aria-label={`Quitar ${term} de recientes`}
+                    onClick={() => removeRecent(term)}
+                  >
+                    <FaTimes aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </div>
+      )}
+
+      {!showRecents && (
+        <div className="search-results" id={`search-tab-panel-${tab}`} role="tabpanel" aria-labelledby={`search-tab-${tab}`}
+          onClick={searching ? rememberOnResultClick : undefined}>
+          {!searching && (
+            <>
+              {tab === "users" && (
+                <EmptyState title="Busca a otras corredoras" description="Escribe un nombre o un @usuario." />
+              )}
+
+              {wantsCommunities && (
+                <ResultSection
+                  title="Comunidades para ti"
+                  section={{ ...communities, items: communities.items.slice(0, SUGGESTIONS), hasMore: false }}
+                  render={renderCommunity}
+                  skeleton={<UserRowSkeleton />}
+                  hideWhenEmpty
+                />
+              )}
+              {wantsEvents && (
+                <ResultSection
+                  title="Próximas quedadas"
+                  section={{ ...events, hasMore: false }}
+                  render={renderEvent}
+                  skeleton={<EventSkeleton />}
+                  hideWhenEmpty
+                />
+              )}
+            </>
+          )}
+
+          {searching && (
+            <>
+              {wantsUsers && (
+                <ResultSection
+                  title="Personas"
+                  section={users}
+                  render={renderUser}
+                  skeleton={<UserRowSkeleton />}
+                  onSeeAll={() => setTab("users")}
+                  {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
+                />
+              )}
+              {wantsCommunities && (
+                <ResultSection
+                  title="Comunidades"
+                  section={communities}
+                  render={renderCommunity}
+                  skeleton={<UserRowSkeleton />}
+                  onSeeAll={() => setTab("communities")}
+                  {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
+                />
+              )}
+              {wantsEvents && (
+                <ResultSection
+                  title="Quedadas"
+                  section={events}
+                  render={renderEvent}
+                  skeleton={<EventSkeleton />}
+                  onSeeAll={() => setTab("events")}
+                  {...sectionProps(tab === "all" ? ALL_PREVIEW : undefined)}
+                />
+              )}
+              {nothingFound && (
+                <EmptyState
+                  title={`No hay resultados para «${query}»`}
+                  description={tab === "events" ? "Prueba con otro título, ciudad o lugar." : "Prueba con otro nombre."}
+                  action={<Button variant="outline" onClick={() => setText("")}>Borrar búsqueda</Button>}
+                />
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };

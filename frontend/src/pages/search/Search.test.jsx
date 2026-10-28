@@ -89,9 +89,39 @@ describe('Search (T29d)', () => {
     expect(JSON.parse(window.localStorage.getItem(RECENT_KEY))).toEqual(['laura'])
   })
 
-  it('lists recents without text, reuses one and removes another', async () => {
+  it('hides recents until she focuses the field, and then shows them instead of the suggestions', async () => {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
+    renderAt()
+    expect(await screen.findByText('Comunidades para ti')).toBeInTheDocument()
+    expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
+    fireEvent.focus(screen.getByRole('searchbox'))
+    expect(screen.getByText('Recientes')).toBeInTheDocument()
+    expect(screen.queryByText('Comunidades para ti')).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+  })
+
+  it('"Cancelar" clears the text and goes back to the suggestions', async () => {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
+    renderAt('/search?q=ana')
+    const input = screen.getByRole('searchbox')
+    fireEvent.focus(input)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(input).toHaveValue('')
+    expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Comunidades para ti')).toBeInTheDocument()
+  })
+
+  it('says there are no recents when she focuses the field without history', () => {
+    renderAt()
+    fireEvent.focus(screen.getByRole('searchbox'))
+    expect(screen.getByText('No hay búsquedas recientes.')).toBeInTheDocument()
+  })
+
+  it('lists recents on focus, reuses one and removes another', async () => {
     window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta', 'laura']))
     renderAt()
+    fireEvent.focus(screen.getByRole('searchbox'))
     expect(screen.getByText('Recientes')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Quitar laura de recientes' }))
     expect(screen.queryByText('laura')).not.toBeInTheDocument()
