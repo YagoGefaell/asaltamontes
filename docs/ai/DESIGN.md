@@ -21,15 +21,16 @@ Principios, por orden:
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--primary` | `#178B9F` turquesa (montañas) | **Color principal.** Acción principal, enlaces, pestaña activa, foco, iconos de acción de la cabecera de Inicio |
-| `--accent` | `#FFDA58` amarillo (sol) | **Color secundario.** Contadores de no leídos, anillo de "quedada hoy", destacados. Siempre como fondo con el texto en `--on-accent`; nunca texto amarillo sobre blanco |
-| `--secondary` | `#FFA61A` naranja (cabra) | **Tercer color, el de menos uso.** Solo el bloque de fecha de las tarjetas de quedada. Ante la duda, amarillo o turquesa |
+| `--primary` | `#178B9F` turquesa (montañas) | **Color principal.** Acción principal, enlaces, pestaña activa, foco |
+| `--secondary` | `#FFA61A` naranja (cabra) | **Color secundario.** Contadores de no leídos (cabecera de Inicio), bloque de fecha de las tarjetas de quedada. Siempre como fondo con el texto en `--on-secondary` |
+| `--accent` | `#FFDA58` amarillo (sol) | **Tercer color, el de menos uso.** Anillo de "quedada hoy" y destacados puntuales. Nunca texto amarillo sobre blanco (texto encima: `--on-accent`) |
 | `--background` / `--surface` | gris muy claro / blanco | Fondo de página / tarjetas, hojas y barras |
 | `--text-color` / `--text-muted` | casi negro / gris | Texto principal / secundario. `--text-soft` solo para texto grande o deshabilitado (contraste) |
 | `--error`, `--success`, `--warning`, `--info` | semánticos | Solo para estados, nunca decorativos |
 
-  - Jerarquía de la marca (Yago, 2026-10-28): **turquesa → amarillo → naranja**. Los nombres de los tokens son históricos: `--accent` (amarillo) es el secundario y `--secondary` (naranja) el tercero; no los renombres sin una tarea propia.
-  - Proporción orientativa: 85 % neutros, 10 % turquesa, ~4 % amarillo, ~1 % naranja. Si una pantalla parece "toda turquesa", sobra color (p. ej. avatares de iniciales grandes y botones rellenos repetidos).
+  - Jerarquía de la marca (Yago, 2026-10-28): **turquesa → naranja → amarillo**, que coincide con los nombres de los tokens (`--primary`, `--secondary`, `--accent`).
+  - Iconos de interfaz (cabeceras, acciones) en el color del texto (`--text-color`: negro en claro, blanco en oscuro), no en turquesa. El turquesa en un icono indica estado activo (barra inferior) o que es un botón principal.
+  - Proporción orientativa: 85 % neutros, 10 % turquesa, ~4 % naranja, ~1 % amarillo. Si una pantalla parece "toda turquesa", sobra color (p. ej. avatares de iniciales grandes y botones rellenos repetidos).
   - Texto sobre `--primary` → `--on-primary`. Modo oscuro por `prefers-color-scheme`: todo con tokens y se revisa en la captura oscura.
 - **Tipografía**: Inter / system-ui. Escala de `tokens.css` (`--text-xs` … `--text-2xl`). Títulos de pantalla `--text-xl` o `--text-2xl` en negrita; cuerpo `--text-base`; metadatos `--text-sm` en `--text-muted`. Nada de MAYÚSCULAS en botones o etiquetas (hoy "GUARDAR CAMBIOS", "PRINCIPIANTE": a corregir).
 - **Iconos**: `react-icons/fa` (como `NavBar`). No mezclar con emojis como iconos de interfaz (el feed de `Home` usa 🤍💬📤: a sustituir).

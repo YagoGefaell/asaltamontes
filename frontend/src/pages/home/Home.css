@@ -92,10 +92,8 @@
   width: auto;
 }
 
-.page-header .home-header__link {
+.home-header__link {
   position: relative;
-  color: var(--primary);
-  font-size: var(--text-xl);
 }
 
 .home-header__badge {
@@ -108,8 +106,8 @@
   box-sizing: border-box;
   border: 2px solid var(--surface);
   border-radius: var(--radius-pill);
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--secondary);
+  color: var(--on-secondary);
   font-size: var(--text-xs);
   font-weight: 700;
   line-height: 1;
