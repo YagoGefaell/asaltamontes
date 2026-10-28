@@ -19,24 +19,36 @@ import io.github.yagogefaell.asaltamontes.community.domain.MemberStatus;
 import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 
 public interface CommunityMemberRepository extends JpaRepository<CommunityMember, Long> {
-    @Query("""
-        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
-            c.publicId,
-            c.name,
-            c.slug,
-            c.imageUrl,
-            m.role,
-            c.memberCount,
-            c.visibility,
-            c.city,
-            c.province
-        )
-        FROM CommunityMember m 
+    /**
+     * Her communities with the state of their chat (T31c), in one statement. The caller sorts (activity by default).
+     * {@code lastSenderUserId} is internal: the service uses it to hide what a blocked user wrote, and drops it.
+     */
+    @Query(value = """
+        SELECT new io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository$MyCommunityRow(
+            c.id, c.publicId, c.name, c.slug, c.imageUrl, m.role, c.memberCount, c.visibility, c.city, c.province,
+            ch.publicId, ch.lastMessage, ls.id, ls.username, ch.lastMessageAt, COALESCE(p.unreadCount, 0))
+        FROM CommunityMember m
         JOIN m.community c
+        LEFT JOIN Conversation ch ON ch.managedBy = io.github.yagogefaell.asaltamontes.message.domain.ManagedBy.COMMUNITY
+             AND ch.managedRefId = c.id
+        LEFT JOIN ch.lastSender ls
+        LEFT JOIN ConversationParticipant p ON p.conversation = ch AND p.user.id = :userId
+        WHERE m.userAccount.id = :userId
+          AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+    """, countQuery = """
+        SELECT COUNT(m) FROM CommunityMember m
         WHERE m.userAccount.id = :userId
           AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
     """)
-    Page<CommunitySearchDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);
+    Page<MyCommunityRow> findMyCommunities(@Param("userId") Long userId, Pageable pageable);
+
+    record MyCommunityRow(Long communityInternalId, java.util.UUID id, String name, String slug, String imageUrl,
+                          io.github.yagogefaell.asaltamontes.community.domain.CommunityRole role, Long memberCount,
+                          io.github.yagogefaell.asaltamontes.community.domain.CommunityVisibility visibility,
+                          String city, String province, java.util.UUID conversationId, String lastMessage,
+                          Long lastSenderUserId, String lastSenderUsername, java.time.LocalDateTime lastMessageAt,
+                          Integer unreadCount) {
+    }
 
     /** PUBLIC communities of {@code targetId} (T31b); {@code role} is the viewer's, null if she is not a member. */
     @Query(value = """

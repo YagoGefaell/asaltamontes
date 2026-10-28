@@ -35,6 +35,13 @@ function renderHome({ notifications = 0, messages = 0 } = {}) {
   )
 }
 
+describe('Home content (T29i)', () => {
+  it('does not repeat the user communities: they live in the Comunidades tab', () => {
+    renderHome()
+    expect(screen.queryByText('Tus comunidades')).toBeNull()
+  })
+})
+
 describe('Home header', () => {
   it('links to notifications and messages without counters at zero', () => {
     renderHome()

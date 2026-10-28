@@ -13,6 +13,7 @@ import org.springframework.data.repository.query.Param;
 
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityJoinRequest;
 import io.github.yagogefaell.asaltamontes.community.dto.JoinRequestDto;
+import io.github.yagogefaell.asaltamontes.community.dto.PendingCommunitiesDto;
 
 public interface CommunityJoinRequestRepository extends JpaRepository<CommunityJoinRequest, Long> {
 
@@ -50,4 +51,42 @@ public interface CommunityJoinRequestRepository extends JpaRepository<CommunityJ
         """)
     List<JoinRequestDto> findPageBefore(@Param("communityId") Long communityId, @Param("beforeAt") Instant beforeAt,
                                         @Param("beforeId") Long beforeId, Limit limit);
+
+    /**
+     * Communities where {@code userId} is owner or moderator (not banned) with undecided requests, newest activity
+     * first (T31c). Requests from users with a block against her in either direction are not counted (D-022).
+     */
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.PendingCommunitiesDto$ToApprove(
+            new io.github.yagogefaell.asaltamontes.community.dto.PendingCommunitiesDto$Community(
+                c.publicId, c.name, c.slug, c.imageUrl),
+            COUNT(r), MAX(r.createdAt))
+        FROM CommunityJoinRequest r
+        JOIN Community c ON c.id = r.communityId
+        JOIN CommunityMember m ON m.community = c AND m.userAccount.id = :userId
+        WHERE m.role IN (io.github.yagogefaell.asaltamontes.community.domain.CommunityRole.OWNER,
+                         io.github.yagogefaell.asaltamontes.community.domain.CommunityRole.MODERATOR)
+          AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+          AND NOT EXISTS (
+              SELECT 1 FROM UserBlock bl
+              WHERE (bl.blocker.id = :userId AND bl.blocked.id = r.userId)
+                 OR (bl.blocked.id = :userId AND bl.blocker.id = r.userId))
+        GROUP BY c.id, c.publicId, c.name, c.slug, c.imageUrl
+        ORDER BY MAX(r.createdAt) DESC, c.id
+        """)
+    List<PendingCommunitiesDto.ToApprove> findToApprove(@Param("userId") Long userId, Limit limit);
+
+    /** Her own undecided requests, newest first (T31c). */
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.PendingCommunitiesDto$Mine(
+            r.publicId,
+            new io.github.yagogefaell.asaltamontes.community.dto.PendingCommunitiesDto$Community(
+                c.publicId, c.name, c.slug, c.imageUrl),
+            r.createdAt)
+        FROM CommunityJoinRequest r
+        JOIN Community c ON c.id = r.communityId
+        WHERE r.userId = :userId
+        ORDER BY r.createdAt DESC, r.id DESC
+        """)
+    List<PendingCommunitiesDto.Mine> findMine(@Param("userId") Long userId, Limit limit);
 }

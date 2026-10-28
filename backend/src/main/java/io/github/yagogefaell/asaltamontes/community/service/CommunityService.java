@@ -122,10 +122,6 @@ public class CommunityService {
         return slug;
     }
 
-    public Page<CommunitySearchDto> getMyCommunities(UserAccount currentUser, Pageable pageable) {
-        return communityMemberRepository.findCommunitiesByUserId(currentUser.getId(), COMMUNITY_SORT.apply(pageable));
-    }
-
     /** All communities, or those whose name contains {@code query} (case-insensitive). */
     public Page<CommunitySearchDto> getAllCommunities(UserAccount currentUser, String query, String city, String province,
                                                       Pageable pageable) {

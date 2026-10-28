@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.event.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,6 +45,30 @@ public interface EventRepository extends JpaRepository<Event, Long>, EventSearch
                        AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED))
         """)
     boolean canView(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * The next scheduled event of each of these communities, in ONE statement (T31c). A tie on the start time returns
+     * several rows for a community; the caller keeps the first. The caller has already checked she is a member, so
+     * both visibilities may be shown.
+     */
+    @Query("""
+        SELECT new io.github.yagogefaell.asaltamontes.event.repository.EventRepository$NextEventRow(
+            e.community.id, e.publicId, e.title, e.startsAt, e.timezone)
+        FROM Event e
+        WHERE e.community.id IN :communityIds
+          AND e.status = io.github.yagogefaell.asaltamontes.event.domain.EventStatus.SCHEDULED
+          AND e.startsAt > :now
+          AND e.startsAt = (SELECT MIN(e2.startsAt) FROM Event e2
+                            WHERE e2.community.id = e.community.id
+                              AND e2.status = io.github.yagogefaell.asaltamontes.event.domain.EventStatus.SCHEDULED
+                              AND e2.startsAt > :now)
+        ORDER BY e.startsAt, e.id
+        """)
+    List<NextEventRow> findNextEventsOf(@Param("communityIds") java.util.Collection<Long> communityIds,
+                                        @Param("now") java.time.Instant now);
+
+    record NextEventRow(Long communityInternalId, UUID id, String title, java.time.Instant startsAt, String timezone) {
+    }
 
     // The start moved: the reminders of the new date are still to be sent (T21). Native: the columns are not mapped,
     // so saving the entity never touches them and this does not bump @Version.
