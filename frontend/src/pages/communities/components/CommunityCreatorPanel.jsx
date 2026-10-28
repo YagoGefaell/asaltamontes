@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { FaMountain } from "react-icons/fa";
 import Button from "../../../shared/forms/Button.jsx";
 import FormError from "../../../shared/forms/FormError.jsx";
 import Input from "../../../shared/forms/Input.jsx";
@@ -79,6 +80,22 @@ const CommunityCreatorPanel = ({
       <PageHeader title="Crear comunidad" onBack={handleClose} backDisabled={creatingCommunity} backLabel="Volver a comunidades" />
 
       <form className="community-creator-form" onSubmit={handleSubmit}>
+        <ImageUploader
+          value={communityImageUrl}
+          onChange={(url, mediaId) => {
+            setCommunityImageUrl(url);
+            setCoverMediaId(mediaId || null);
+          }}
+          onUploadingChange={setUploadingImage}
+          purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
+          label="Imagen de la comunidad"
+          chooseLabel="Elegir imagen"
+          changeLabel="Cambiar imagen"
+          disabled={creatingCommunity}
+          tapToChoose
+          emptyIcon={<FaMountain />}
+        />
+
         <SectionCard>
           <Input
             id="community-name-input"
@@ -103,22 +120,6 @@ const CommunityCreatorPanel = ({
           />
         </SectionCard>
 
-        <SectionCard title="Imagen de portada (opcional)">
-          <ImageUploader
-            value={communityImageUrl}
-            onChange={(url, mediaId) => {
-              setCommunityImageUrl(url);
-              setCoverMediaId(mediaId || null);
-            }}
-            onUploadingChange={setUploadingImage}
-            purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
-            label="Imagen de portada"
-            chooseLabel="Elegir imagen"
-            changeLabel="Cambiar imagen"
-            shape="wide"
-            disabled={creatingCommunity}
-          />
-        </SectionCard>
 
         <FormError message={createCommunityError} />
 
