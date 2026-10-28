@@ -2,11 +2,11 @@ import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProfileCommunities, ProfileEvents } from './ProfileTabs.jsx'
-import { getEventsRequest } from '../../features/events/services/events.service'
-import { getMyCommunitiesRequest } from '../../features/communities/services/communities.service'
+import { getEventsRequest, getUserEventsRequest } from '../../features/events/services/events.service'
+import { getMyCommunitiesRequest, getUserCommunitiesRequest } from '../../features/communities/services/communities.service'
 
-vi.mock('../../features/events/services/events.service', () => ({ getEventsRequest: vi.fn() }))
-vi.mock('../../features/communities/services/communities.service', () => ({ getMyCommunitiesRequest: vi.fn() }))
+vi.mock('../../features/events/services/events.service', () => ({ getEventsRequest: vi.fn(), getUserEventsRequest: vi.fn() }))
+vi.mock('../../features/communities/services/communities.service', () => ({ getMyCommunitiesRequest: vi.fn(), getUserCommunitiesRequest: vi.fn() }))
 vi.mock('../../features/events/components/EventCard', () => ({
   default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
 }))
@@ -54,5 +54,22 @@ describe('ProfileCommunities', () => {
     renderIn(<ProfileCommunities />)
     expect(await screen.findByText('Aún no estás en ninguna comunidad')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Descubrir comunidades' })).toBeTruthy()
+  })
+})
+
+describe('Someone else\'s profile tabs', () => {
+  it('lists the events she organizes through her own endpoint, not mine', async () => {
+    getUserEventsRequest.mockResolvedValue(page([{ id: 'a', title: 'Rodada de Bea' }]))
+    renderIn(<ProfileEvents username="bea" />)
+    expect(await screen.findByText('Rodada de Bea')).toBeTruthy()
+    expect(getUserEventsRequest).toHaveBeenCalledWith('bea', expect.objectContaining({ page: 0 }))
+    expect(getEventsRequest).not.toHaveBeenCalled()
+  })
+
+  it('lists her public communities', async () => {
+    getUserCommunitiesRequest.mockResolvedValue(page([{ id: 'c', name: 'Valkirias' }]))
+    renderIn(<ProfileCommunities username="bea" />)
+    expect(await screen.findByText('Valkirias')).toBeTruthy()
+    expect(getMyCommunitiesRequest).not.toHaveBeenCalled()
   })
 })

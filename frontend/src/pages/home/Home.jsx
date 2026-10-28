@@ -12,6 +12,8 @@ import Button from "../../shared/forms/Button";
 import EventCard from "../../features/events/components/EventCard";
 import { useEvents } from "../../features/events/hooks/useEvents";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
+import FollowUserButton from "../../shared/components/FollowUserButton";
+import { getSuggestionsRequest } from "../../features/users/services/users.service";
 import { getCommunitiesRequest } from "../../features/communities/services/communities.service";
 import { communityPath } from "../../features/communities/utils/communityPath";
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
@@ -22,6 +24,8 @@ const formatCount = (n) => (n > 9 ? "9+" : n);
 const MY_EVENTS = 3;
 const UPCOMING_EVENTS = 5;
 const SUGGESTED_COMMUNITIES = 10;
+const FOLLOWED_EVENTS = 3;
+const SUGGESTED_USERS = 10;
 
 function HeaderLink({ to, label, count, children }) {
   return (
@@ -72,6 +76,26 @@ function RecommendedCommunities({ items }) {
   );
 }
 
+/** Horizontal row of users she may want to follow (followed by her follows, or in her communities). */
+function SuggestedUsers({ items }) {
+  return (
+    <Section title="Usuarias para seguir">
+      <ul className="home-rail">
+        {items.map((user) => (
+          <li key={user.username} className="home-rail__item">
+            <Link to={`/users/${user.username}`} className="home-rail__link">
+              <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="lg" />
+              <span className="home-rail__name">{user.fullName || user.username}</span>
+              <span className="home-rail__meta">@{user.username}</span>
+            </Link>
+            <FollowUserButton userId={user.username} initialIsFollowing={false} />
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
 function EventSkeleton() {
   return (
     <div className="home-skeleton" data-testid="home-skeleton">
@@ -91,6 +115,10 @@ const Home = () => {
   const mine = useEvents(mineFilters);
   const upcoming = useEvents(upcomingFilters);
 
+  const followedFilters = useMemo(() => ({ from: new Date().toISOString(), followedBy: true, size: FOLLOWED_EVENTS }), []);
+  const followed = useEvents(followedFilters);
+  const people = useSearchSection(() => getSuggestionsRequest({ size: SUGGESTED_USERS }).then((r) => ({ ...r, hasMore: false })), "people");
+
   const suggested = useSearchSection(
     async (page) => {
       const result = await getCommunitiesRequest({ page });
@@ -109,7 +137,7 @@ const Home = () => {
   const failed = Boolean(mine.error || upcoming.error);
   const nothing = !loading && !failed
     && mine.events.length === 0 && others.length === 0
-    && suggested.items.length === 0;
+    && suggested.items.length === 0 && followed.events.length === 0 && people.items.length === 0;
 
   return (
     <div className="home-container">
@@ -139,6 +167,18 @@ const Home = () => {
           ))}
         </Section>
       )}
+
+      {!followed.loading && followed.events.length > 0 && (
+        <Section title="Quedadas de quienes sigues">
+          {followed.events.map((event) => (
+            <div className="home-event" key={event.id}>
+              <EventCard event={event} onChange={replaceIn(followed)} />
+            </div>
+          ))}
+        </Section>
+      )}
+
+      {!people.loading && people.items.length > 0 && <SuggestedUsers items={people.items} />}
 
       {upcoming.loading && (
         <Section title="Próximas quedadas"><EventSkeleton /><EventSkeleton /></Section>

@@ -62,11 +62,12 @@ describe('Profile (own)', () => {
 })
 
 describe('Profile (someone else)', () => {
-  it('offers follow and message, and has no tabs without data to show', () => {
+  it('offers follow and message, and shows the tabs of what she organizes and her public communities', () => {
     renderProfile({ userData: data, isOwnProfile: false, onBack: vi.fn() })
     expect(screen.getByRole('button', { name: 'Seguir' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Mensaje' })).toBeTruthy()
-    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.getByRole('tablist')).toBeTruthy()
+    expect(screen.getByText('tab-eventos')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Ver seguidoras' }))
     expect(navigate).toHaveBeenCalledWith('/users/ana/followers')
   })

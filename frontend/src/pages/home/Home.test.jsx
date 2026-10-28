@@ -6,11 +6,14 @@ import { NotificationsContext } from '../../features/notifications/hooks/notific
 import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
 import { getEventsRequest } from '../../features/events/services/events.service'
 import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
+import { getSuggestionsRequest } from '../../features/users/services/users.service'
 
 vi.mock('../../features/events/services/events.service', () => ({ getEventsRequest: vi.fn() }))
 vi.mock('../../features/communities/services/communities.service', () => ({
   getCommunitiesRequest: vi.fn(),
 }))
+vi.mock('../../features/users/services/users.service', () => ({ getSuggestionsRequest: vi.fn() }))
+vi.mock('../../shared/components/FollowUserButton', () => ({ default: () => <button>Seguir</button> }))
 vi.mock('../../features/events/components/EventCard', () => ({
   default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
 }))
@@ -23,6 +26,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   getEventsRequest.mockResolvedValue(page([]))
   getCommunitiesRequest.mockResolvedValue(page([]))
+  getSuggestionsRequest.mockResolvedValue(page([]))
 })
 
 function renderHome({ notifications = 0, messages = 0 } = {}) {
@@ -69,7 +73,7 @@ describe('Home content', () => {
 
   it('lists the events she is going to once and the other upcoming ones without repeating', async () => {
     getEventsRequest.mockImplementation(async (filters) =>
-      filters.mine
+      filters.followedBy ? page([]) : filters.mine
         ? page([{ id: 'a', title: 'Trail del Montseny' }])
         : page([{ id: 'a', title: 'Trail del Montseny' }, { id: 'b', title: 'Sunset run' }]),
     )
@@ -91,6 +95,18 @@ describe('Home content', () => {
     expect(screen.queryByText('Cabras')).toBeNull()
     expect(screen.getByRole('link', { name: /Valkirias/ })).toHaveAttribute('href', '/communities/valkirias')
     expect(document.querySelector('.home-rail')).not.toBeNull()
+  })
+
+  it('shows the events of the people she follows and a row of users to follow', async () => {
+    getEventsRequest.mockImplementation(async (filters) =>
+      filters.followedBy ? page([{ id: 'f', title: 'Rodada de Bea' }]) : page([]))
+    getSuggestionsRequest.mockResolvedValue(page([{ username: 'cris', fullName: 'Cris Gil', isFollowing: false }]))
+    renderHome()
+    expect(await screen.findByText('Quedadas de quienes sigues')).toBeTruthy()
+    expect(screen.getByText('Rodada de Bea')).toBeTruthy()
+    expect(await screen.findByText('Usuarias para seguir')).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Cris Gil/ })).toHaveAttribute('href', '/users/cris')
+    expect(getEventsRequest).toHaveBeenCalledWith(expect.objectContaining({ followedBy: true }))
   })
 
   it('offers a retry when the events fail to load', async () => {
