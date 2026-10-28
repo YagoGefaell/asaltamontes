@@ -593,12 +593,33 @@ export const ConversationsProvider = ({ children }) => {
 
   const clearRemovedChat = useCallback(() => setRemovedChat(null), []);
 
+  // A moderator deleted a message (T20d): it stays in the chat as a notice, and the list preview is recomputed by the server
+  const handleMessageDeleted = useCallback((event) => {
+    const { conversationId, messageId } = event ?? {};
+    if (!conversationId || !messageId) return;
+
+    setChatMessages((prev) => {
+      const messages = prev[conversationId];
+      if (!messages?.some((message) => String(message.id) === String(messageId))) return prev;
+      return {
+        ...prev,
+        [conversationId]: messages.map((message) => (
+          String(message.id) === String(messageId)
+            ? { ...message, deleted: true, content: "" }
+            : message
+        )),
+      };
+    });
+    refreshChats().catch(() => {});
+  }, [refreshChats]);
+
   useGlobalMessageListener(
     websocketClient,
     websocketConnected,
     handleNewMessage,
     handleChatError,
-    handleConversationRemoved
+    handleConversationRemoved,
+    handleMessageDeleted
   );
 
   const totalUnreadCount = countUnreadChats(chats) + unreadElsewhere;
@@ -627,7 +648,8 @@ export const ConversationsProvider = ({ children }) => {
         chatError,
         clearChatError,
         removedChat,
-        clearRemovedChat
+        clearRemovedChat,
+        markMessageDeleted: handleMessageDeleted
       }}
     >
       {children}

@@ -417,6 +417,27 @@ class CommunityChatIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void groupDetails_tellOwnerAndModeratorsTheyCanModerateMessages_butNotMembers() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount moderator = testData.createUser();
+        UserAccount member = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        UUID chat = chatOf(owner, community);
+        join(moderator, community).andExpect(status().isCreated());
+        join(member, community).andExpect(status().isCreated());
+        promote(owner, community, moderator);
+
+        for (UserAccount who : new UserAccount[] {owner, moderator}) {
+            mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(who)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.canModerateMessages").value(true));
+        }
+        mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(member)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.canModerateMessages").value(false));
+    }
+
+    @Test
     void theModerationCanSwitchTheChatOff_historyStaysReadable() throws Exception {
         UserAccount owner = testData.createUser();
         UserAccount member = testData.createUser();

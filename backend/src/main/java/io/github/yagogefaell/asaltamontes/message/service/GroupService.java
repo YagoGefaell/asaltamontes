@@ -33,6 +33,7 @@ import io.github.yagogefaell.asaltamontes.message.domain.ManagedBy;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.domain.MessageType;
 import io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole;
+import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
 import io.github.yagogefaell.asaltamontes.message.dto.GroupDetailsDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ParticipantDto;
@@ -68,6 +69,7 @@ public class GroupService {
     private final BlockService blockService;
     private final MediaReferenceService mediaReferences;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommunityMemberRepository communityMemberRepository;
     private final int maxGroupSize;
 
     public GroupService(ConversationRepository conversationRepository,
@@ -77,6 +79,7 @@ public class GroupService {
                         BlockService blockService,
                         MediaReferenceService mediaReferences,
                         ApplicationEventPublisher eventPublisher,
+                        CommunityMemberRepository communityMemberRepository,
                         @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
@@ -85,6 +88,7 @@ public class GroupService {
         this.blockService = blockService;
         this.mediaReferences = mediaReferences;
         this.eventPublisher = eventPublisher;
+        this.communityMemberRepository = communityMemberRepository;
         this.maxGroupSize = maxGroupSize;
     }
 
@@ -371,7 +375,14 @@ public class GroupService {
                 access.me().getRole(),
                 conversation.isHistoryVisibleToNew(),
                 conversation.getManagedBy() != ManagedBy.NONE,
+                canModerateMessages(conversation, access.me().getUser().getId()),
                 participants);
+    }
+
+    /** Owner or moderator of the community that manages the chat: the ones who may try to delete messages (T20d). */
+    private boolean canModerateMessages(Conversation conversation, Long userId) {
+        return conversation.getManagedBy() == ManagedBy.COMMUNITY
+                && communityMemberRepository.isModerator(conversation.getManagedRefId(), userId);
     }
 
     private static Map<String, Object> payload(String action, String actor, List<String> targets, Map<String, Object> extra) {

@@ -722,3 +722,45 @@ body.chat-open .bottom-nav {
 .group-info-leave {
   margin-top: 0.5rem;
 }
+
+/* Moderation of community chats (T20d) */
+.message-line {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.message-line.sent {
+  flex-direction: row-reverse;
+}
+
+.message-line .message {
+  min-width: 0;
+}
+
+.message-line .message.sent {
+  margin-left: 0;
+}
+
+.message-delete-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch-min, 44px);
+  height: var(--touch-min, 44px);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.message-delete-btn:focus-visible {
+  outline: 2px solid var(--primary);
+}
+
+.message-deleted {
+  font-style: italic;
+}

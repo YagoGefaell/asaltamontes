@@ -2,7 +2,7 @@ import { useContext, useEffect } from 'react'
 import { act, render, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const listener = vi.hoisted(() => ({ onMessage: null, onRemoved: null }))
+const listener = vi.hoisted(() => ({ onMessage: null, onRemoved: null, onDeleted: null }))
 const auth = vi.hoisted(() => ({ isAuthenticated: true, sendMessage: () => {} }))
 
 vi.mock('../../auth/hooks/useAuth', () => ({
@@ -15,9 +15,10 @@ vi.mock('../../auth/hooks/useAuth', () => ({
   }),
 }))
 vi.mock('../hooks/useGlobalMessageListener', () => ({
-  useGlobalMessageListener: (_client, _connected, onMessage, _onError, onRemoved) => {
+  useGlobalMessageListener: (_client, _connected, onMessage, _onError, onRemoved, onDeleted) => {
     listener.onMessage = onMessage
     listener.onRemoved = onRemoved
+    listener.onDeleted = onDeleted
   },
 }))
 vi.mock('../services/messages.service.js', () => ({
@@ -226,5 +227,47 @@ describe('ConversationsProvider group events (T12)', () => {
     await waitFor(() => expect(ctx.current.chats[0].name).toBe('Montaña'))
     expect(ctx.current.chats[0].unreadCount).toBe(0)
     expect(ctx.current.chatMessages.g1[0].type).toBe('SYSTEM')
+  })
+})
+
+describe('ConversationsProvider moderation deletes (T20d)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    listener.onMessage = null
+    listener.onDeleted = null
+  })
+
+  it('turns a deleted message into a notice and asks the server for the new preview', async () => {
+    getConversationMessagesRequest.mockResolvedValue({
+      items: [
+        { id: 1, content: 'hola', senderUsername: 'bea', sentAt: '2026-10-22T10:00:00Z' },
+        { id: 2, content: 'insulto', senderUsername: 'cris', sentAt: '2026-10-22T10:01:00Z' },
+      ],
+      hasMore: false,
+      nextBefore: null,
+    })
+    const ctx = renderProvider()
+    await waitFor(() => expect(listener.onDeleted).toBeTypeOf('function'))
+    await act(async () => {
+      await ctx.current.loadConversationMessages(7)
+    })
+    getMyConversationsRequest.mockClear()
+
+    act(() => listener.onDeleted({ conversationId: 7, messageId: 2 }))
+
+    const [kept, deleted] = ctx.current.chatMessages[7]
+    expect(kept).toMatchObject({ id: 1, content: 'hola' })
+    expect(deleted).toMatchObject({ id: 2, deleted: true, content: '' })
+    await waitFor(() => expect(getMyConversationsRequest).toHaveBeenCalled())
+  })
+
+  it('ignores deletions of chats or messages that are not loaded', async () => {
+    const ctx = renderProvider()
+    await waitFor(() => expect(listener.onDeleted).toBeTypeOf('function'))
+    getMyConversationsRequest.mockClear()
+
+    act(() => listener.onDeleted({ conversationId: 9, messageId: 1 }))
+
+    expect(ctx.current.chatMessages).toEqual({})
   })
 })

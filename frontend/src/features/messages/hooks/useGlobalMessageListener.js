@@ -11,15 +11,18 @@ const safeUnsubscribe = (subscription) => {
   }
 };
 
+// onMessageDeleted ({ conversationId, messageId }, T20d): a moderator deleted a message of a community chat
 // onConversationRemoved ({ conversationId, reason: "REMOVED" | "LEFT" }, T12): a chat has to leave the list
-export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived, onError = logChatError, onConversationRemoved = null) {
+export function useGlobalMessageListener(websocketClient, websocketConnected, onMessageReceived, onError = logChatError, onConversationRemoved = null, onMessageDeleted = null) {
   const subscriptionRef = useRef(null);
   const errorSubscriptionRef = useRef(null);
   const removedSubscriptionRef = useRef(null);
+  const deletedSubscriptionRef = useRef(null);
   
   const savedCallback = useRef(onMessageReceived);
   const savedErrorCallback = useRef(onError);
   const savedRemovedCallback = useRef(onConversationRemoved);
+  const savedDeletedCallback = useRef(onMessageDeleted);
 
   useEffect(() => {
     savedCallback.current = onMessageReceived;
@@ -32,6 +35,10 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
   useEffect(() => {
     savedRemovedCallback.current = onConversationRemoved;
   }, [onConversationRemoved]);
+
+  useEffect(() => {
+    savedDeletedCallback.current = onMessageDeleted;
+  }, [onMessageDeleted]);
 
   useEffect(() => {
     if (!websocketClient || !websocketConnected) {
@@ -69,7 +76,17 @@ export function useGlobalMessageListener(websocketClient, websocketConnected, on
       }
     });
 
+    deletedSubscriptionRef.current = websocketClient.subscribe("/user/queue/message-deletions", (frame) => {
+      try {
+        savedDeletedCallback.current?.(JSON.parse(frame.body));
+      } catch (parseError) {
+        console.error("Error parseando borrado de mensaje", parseError);
+      }
+    });
+
     return () => {
+      safeUnsubscribe(deletedSubscriptionRef.current);
+      deletedSubscriptionRef.current = null;
       safeUnsubscribe(removedSubscriptionRef.current);
       removedSubscriptionRef.current = null;
       safeUnsubscribe(subscriptionRef.current);

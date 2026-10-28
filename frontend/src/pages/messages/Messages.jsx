@@ -5,6 +5,8 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 import { formatters } from "../../utils/helpers";
 import { formatMessageTime } from "../../features/messages/utils/messageDates";
 import { useToast } from "../../shared/ui/Toast";
+import ConfirmModal from "../../shared/ui/ConfirmModal";
+import { deleteMessageRequest, getGroupDetailsRequest } from "../../features/messages/services/messages.service";
 import ConversationsPane from "./components/ConversationsPanel";
 import ChatPane from "./components/ChatPanel";
 import GroupCreatorPanel from "./components/GroupCreatorPanel";
@@ -37,7 +39,8 @@ const Messages = () => {
     chatError,
     clearChatError,
     removedChat,
-    clearRemovedChat
+    clearRemovedChat,
+    markMessageDeleted
   } = useContext(ConversationsContext);
 
   const [selectedChat, setSelectedChat] = useState(() => {
@@ -68,6 +71,11 @@ const Messages = () => {
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [isGroupCreatorOpen, setIsGroupCreatorOpen] = useState(false);
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
+
+  // Owner or moderator of the community that manages the open chat (T20d): the server says it, with the group details
+  const [canModerateMessages, setCanModerateMessages] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
+  const [deletingMessage, setDeletingMessage] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -102,6 +110,34 @@ const Messages = () => {
 
     navigate(`/users/${encodeURIComponent(chat.name)}`);
   }, [navigate]);
+
+  const selectedChatId = selectedChat?.id;
+  const selectedChatIsGroup = selectedChat?.type === "GROUP";
+  useEffect(() => {
+    setCanModerateMessages(false);
+    setMessageToDelete(null);
+    if (!selectedChatId || !selectedChatIsGroup) return undefined;
+
+    let cancelled = false;
+    getGroupDetailsRequest(selectedChatId, { page: 0, size: 1 })
+      .then((details) => { if (!cancelled) setCanModerateMessages(Boolean(details?.canModerateMessages)); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [selectedChatId, selectedChatIsGroup]);
+
+  const confirmDeleteMessage = useCallback(async () => {
+    if (!messageToDelete || !selectedChatId) return;
+    setDeletingMessage(true);
+    try {
+      await deleteMessageRequest(selectedChatId, messageToDelete.id);
+      markMessageDeleted?.({ conversationId: selectedChatId, messageId: messageToDelete.id });
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setDeletingMessage(false);
+      setMessageToDelete(null);
+    }
+  }, [messageToDelete, selectedChatId, markMessageDeleted, toast]);
 
   const handleLeaveChat = useCallback(() => {
     setIsGroupInfoOpen(false);
@@ -399,6 +435,8 @@ const Messages = () => {
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}
           onOpenGroupInfo={() => setIsGroupInfoOpen(true)}
+          canModerateMessages={canModerateMessages}
+          onDeleteMessage={setMessageToDelete}
           onSelectedAvatarError={() => {
             setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));
           }}
@@ -407,6 +445,16 @@ const Messages = () => {
           messagesEndRef={messagesEndRef}
         />
       )}
+
+      <ConfirmModal
+        open={Boolean(messageToDelete)}
+        title="¿Eliminar este mensaje?"
+        message="Se eliminará para todas las participantes y quedará registrado en el historial de moderación."
+        confirmLabel={deletingMessage ? "Eliminando…" : "Eliminar"}
+        destructive
+        onConfirm={confirmDeleteMessage}
+        onCancel={() => !deletingMessage && setMessageToDelete(null)}
+      />
     </div>
   );
 };
