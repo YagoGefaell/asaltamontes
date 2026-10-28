@@ -1,7 +1,7 @@
 import "./Home.css";
 import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaBell, FaEnvelope, FaPen } from "react-icons/fa";
+import { FaBell, FaComment, FaPen } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
@@ -111,7 +111,7 @@ const Home = () => {
               <FaBell aria-hidden="true" />
             </HeaderLink>
             <HeaderLink to="/messages" label="Mensajes" count={totalUnreadCount}>
-              <FaEnvelope aria-hidden="true" />
+              <FaComment aria-hidden="true" />
             </HeaderLink>
           </>
         }

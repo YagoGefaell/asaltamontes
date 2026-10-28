@@ -6,29 +6,6 @@
   padding-bottom: 5rem;
 }
 
-.notifications-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.90rem 0.75rem;
-  width: 100%;
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--border-soft);
-  background: var(--surface);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.notifications-header h2 {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.notif-mark-all,
 .notif-more button,
 .notif-error button {
   background: none;

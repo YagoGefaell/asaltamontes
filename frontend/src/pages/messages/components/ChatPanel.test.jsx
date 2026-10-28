@@ -149,7 +149,7 @@ describe('ChatPanel', () => {
     const onOpenGroupInfo = vi.fn()
     renderPanel({ selectedChat: { id: 1, name: 'Trail', type: 'GROUP' }, onOpenGroupInfo })
 
-    fireEvent.click(screen.getByText('Info del grupo'))
+    fireEvent.click(screen.getByRole('button', { name: 'Info del grupo' }))
 
     expect(onOpenGroupInfo).toHaveBeenCalled()
   })

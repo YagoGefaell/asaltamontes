@@ -40,12 +40,12 @@ describe('ConversationsPanel', () => {
     expect(screen.queryByText('Aún no tienes conversaciones.')).not.toBeInTheDocument()
   })
 
-  it('creates a group from a shared Button with an accessible name', () => {
+  it('creates a group from the header icon with an accessible name', () => {
     const onCreateGroup = vi.fn()
     renderPane({ onCreateGroup })
 
     const button = screen.getByRole('button', { name: 'Crear grupo' })
-    expect(button).toHaveClass('btn')
+    expect(button.closest('.page-header')).not.toBeNull()
     fireEvent.click(button)
     expect(onCreateGroup).toHaveBeenCalledTimes(1)
   })

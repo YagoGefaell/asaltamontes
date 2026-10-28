@@ -13,55 +13,6 @@ body.chat-open .bottom-nav {
   display: none;
 }
 
-.messages-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.55rem 0.75rem;
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--border-soft);
-  background: var(--surface);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  flex-shrink: 0;
-}
-
-.messages-title {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.messages-header-actions {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-}
-
-.btn.create-group-btn {
-  width: var(--touch-min);
-  min-width: var(--touch-min);
-  padding: 0;
-  border-color: var(--border-soft);
-  background: var(--surface);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.create-group-btn:active {
-  transform: scale(0.98);
-}
-
-.create-group-icon {
-  width: 18px;
-  height: 18px;
-}
-
 .group-creator-page {
   display: flex;
   flex-direction: column;
@@ -209,12 +160,6 @@ body.chat-open .bottom-nav {
   }
 }
 
-@media (min-width: 600px) {
-  .messages-title {
-    font-size: var(--text-2xl);
-  }
-}
-
 .back-button {
   width: 40px;
   height: 40px;
@@ -234,23 +179,6 @@ body.chat-open .bottom-nav {
 .back-button:active {
   background: var(--hover-color);
   transform: scale(0.98);
-}
-
-.btn.chat-back-btn {
-  width: var(--touch-min);
-  min-width: var(--touch-min);
-  padding: 0;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-color);
-  flex-shrink: 0;
-}
-
-.chat-back-icon {
-  width: 22px;
-  height: 22px;
 }
 
 .chat-title {
@@ -506,14 +434,6 @@ body.chat-open .bottom-nav {
 }
 
 @media (min-width: 600px) {
-  .messages-header {
-    padding: 1rem;
-  }
-
-  .messages-title {
-    font-size: var(--text-2xl);
-  }
-
   .back-button {
     width: 44px;
     height: 44px;
@@ -648,10 +568,6 @@ body.chat-open .bottom-nav {
 }
 
 /* Group info and system messages (T12) */
-.chat-info-btn {
-  margin-left: auto;
-}
-
 .message-system {
   align-self: center;
   max-width: 90%;

@@ -44,13 +44,13 @@ describe('Notifications page', () => {
     expect(screen.getByText('Ana Ruiz ha empezado a seguirte').closest('button').className).toContain('unread')
     expect(screen.getByText('«Trail» se ha cancelado').closest('button').className).not.toContain('unread')
 
-    fireEvent.click(screen.getByText('Marcar todas como leídas'))
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }))
     expect(actions.markAllRead).toHaveBeenCalled()
   })
 
   it('hides "mark all" when nothing is unread', () => {
     renderPage({ items: [cancelled] })
-    expect(screen.queryByText('Marcar todas como leídas')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Marcar todas como leídas' })).toBeNull()
   })
 
   it('a click marks it as read and goes to its target', () => {

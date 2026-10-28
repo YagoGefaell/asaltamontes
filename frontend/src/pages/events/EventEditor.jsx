@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { FaArrowLeft } from 'react-icons/fa'
 import EventForm from '../../features/events/components/EventForm.jsx'
 import { useEvent } from '../../features/events/hooks/useEvent.js'
 import { createEventRequest, updateEventRequest } from '../../features/events/services/events.service.js'
@@ -11,18 +10,14 @@ import { getOrganizableCommunitiesRequest } from '../../features/communities/ser
 import EmptyState from '../../shared/ui/EmptyState.jsx'
 import Skeleton from '../../shared/ui/Skeleton.jsx'
 import Button from '../../shared/forms/Button.jsx'
+import PageHeader from '../../shared/ui/PageHeader.jsx'
 import { useToast } from '../../shared/ui/Toast.jsx'
 import './EventDetail.css'
 
 function Header({ title }) {
   const navigate = useNavigate()
   return (
-    <header className="event-detail__header">
-      <button type="button" className="event-detail__back" onClick={() => navigate(-1)} aria-label="Volver">
-        <FaArrowLeft />
-      </button>
-      <h2>{title}</h2>
-    </header>
+    <PageHeader title={title} onBack={() => navigate(-1)} backLabel="Volver" />
   )
 }
 

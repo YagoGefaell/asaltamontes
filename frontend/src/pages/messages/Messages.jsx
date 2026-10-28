@@ -383,6 +383,7 @@ const Messages = () => {
           chats={chats}
           onEnterChat={handleEnterChat}
           onCreateGroup={openGroupCreator}
+          onBack={() => navigate(-1)}
           creatingGroup={creatingGroup}
           hasMoreChats={chatsPaging.hasMore}
           loadingMoreChats={chatsPaging.loading}

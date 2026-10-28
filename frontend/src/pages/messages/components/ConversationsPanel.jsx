@@ -1,4 +1,6 @@
+import { FaPlus } from "react-icons/fa";
 import Skeleton from "../../../shared/ui/Skeleton";
+import PageHeader from "../../../shared/ui/PageHeader";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Button from "../../../shared/forms/Button";
 import { formatters } from "../../../utils/helpers";
@@ -12,41 +14,22 @@ const ConversationsPane = ({
   formatMessageTime,
   onCreateGroup,
   creatingGroup,
+  onBack,
   hasMoreChats = false,
   loadingMoreChats = false,
   onLoadMoreChats,
 }) => {
   return (
     <>
-      <div className="messages-header">
-        <h2 className="messages-title">Mensajes</h2>
-        <div className="messages-header-actions">
-          <Button
-            variant="outline"
-            className="create-group-btn"
-            aria-label="Crear grupo"
-            title="Crear grupo"
-            onClick={onCreateGroup}
-            disabled={creatingGroup}
-          >
-            <svg
-              className="create-group-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              aria-hidden="true"
-            >
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Mensajes"
+        onBack={onBack}
+        actions={
+          <button type="button" onClick={onCreateGroup} disabled={creatingGroup} aria-label="Crear grupo" title="Crear grupo">
+            <FaPlus aria-hidden="true" />
+          </button>
+        }
+      />
 
       <div className="contacts-list">
         {loadingChats && (
