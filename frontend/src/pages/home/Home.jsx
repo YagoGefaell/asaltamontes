@@ -130,14 +130,17 @@ const Home = () => {
   const replaceIn = (list) => (updated) =>
     list.setEvents((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
 
+  // Each event shows up once: hers first, then those of who she follows, then the rest
   const mineIds = new Set(mine.events.map((e) => e.id));
-  const others = upcoming.events.filter((e) => !mineIds.has(e.id)).slice(0, UPCOMING_EVENTS);
+  const fromFollowed = followed.events.filter((e) => !mineIds.has(e.id));
+  const shownIds = new Set([...mineIds, ...fromFollowed.map((e) => e.id)]);
+  const others = upcoming.events.filter((e) => !shownIds.has(e.id)).slice(0, UPCOMING_EVENTS);
 
   const loading = mine.loading || upcoming.loading || suggested.loading;
   const failed = Boolean(mine.error || upcoming.error);
   const nothing = !loading && !failed
     && mine.events.length === 0 && others.length === 0
-    && suggested.items.length === 0 && followed.events.length === 0 && people.items.length === 0;
+    && suggested.items.length === 0 && fromFollowed.length === 0 && people.items.length === 0;
 
   return (
     <div className="home-container">
@@ -168,9 +171,9 @@ const Home = () => {
         </Section>
       )}
 
-      {!followed.loading && followed.events.length > 0 && (
+      {!followed.loading && fromFollowed.length > 0 && (
         <Section title="Quedadas de quienes sigues">
-          {followed.events.map((event) => (
+          {fromFollowed.map((event) => (
             <div className="home-event" key={event.id}>
               <EventCard event={event} onChange={replaceIn(followed)} />
             </div>

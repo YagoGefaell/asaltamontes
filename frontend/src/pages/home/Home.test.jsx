@@ -109,6 +109,18 @@ describe('Home content', () => {
     expect(getEventsRequest).toHaveBeenCalledWith(expect.objectContaining({ followedBy: true }))
   })
 
+  it('shows an event of someone she follows only once, not again among the upcoming ones', async () => {
+    getEventsRequest.mockImplementation(async (filters) =>
+      filters.followedBy ? page([{ id: 'f', title: 'Rodada de Bea' }]) : filters.mine
+        ? page([])
+        : page([{ id: 'f', title: 'Rodada de Bea' }, { id: 'b', title: 'Sunset run' }]),
+    )
+    renderHome()
+    expect(await screen.findByText('Quedadas de quienes sigues')).toBeTruthy()
+    await waitFor(() => expect(screen.getByText('Sunset run')).toBeTruthy())
+    expect(screen.getAllByText('Rodada de Bea')).toHaveLength(1)
+  })
+
   it('offers a retry when the events fail to load', async () => {
     getEventsRequest.mockRejectedValue(new Error('boom'))
     renderHome()
