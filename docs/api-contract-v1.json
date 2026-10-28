@@ -1040,7 +1040,7 @@
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
         "responses": {
-          "200": { "description": "GroupDetailsDto { id, name, imageUrl, imageMediaId, participantCount, myRole (ADMIN|MEMBER), historyVisibleToNew, managed, canModerateMessages (T20d: owner or moderator of the community that manages the chat), participants: Spring Page of { username, fullName, profilePictureUrl, role, joinedAt } }" },
+          "200": { "description": "GroupDetailsDto { id, name, imageUrl, imageMediaId, participantCount, myRole (ADMIN|MEMBER), historyVisibleToNew, managed, canModerateMessages (T20d: owner or moderator of the community that manages the chat), moderationRole (T20e: OWNER|MODERATOR|null, same community), participants: Spring Page of { username, fullName, profilePictureUrl, role, joinedAt } }" },
           "404": { "description": "Unknown, foreign or not a group" }
         }
       },
@@ -2195,7 +2195,8 @@
           "sentAt": { "type": "string", "format": "date-time", "example": "2026-03-24T10:16:00" },
           "type": { "type": "string", "enum": ["USER", "SYSTEM"] },
           "systemPayload": { "type": "object", "nullable": true, "description": "SYSTEM messages (T12): { action: MEMBER_ADDED | MEMBER_REMOVED | MEMBER_LEFT | ROLE_CHANGED | ADMIN_ASSIGNED | GROUP_RENAMED | GROUP_IMAGE_CHANGED | HISTORY_VISIBILITY_CHANGED, actor?, targets?: [username], name?, role?, removed?, visible? }. Clients compose the text from it; `content` is a Spanish fallback.", "example": { "action": "MEMBER_ADDED", "actor": "ana", "targets": ["marta"] } },
-          "cursor": { "type": "string", "description": "Opaque token of this message, to use as `before` / `after` in the history", "example": "bXwxNzc0MzQ..." }
+          "cursor": { "type": "string", "description": "Opaque token of this message, to use as `before` / `after` in the history", "example": "bXwxNzc0MzQ..." },
+          "authorRole": { "type": "string", "nullable": true, "enum": ["OWNER", "MODERATOR"], "description": "T20e. Only in the chat that a community manages: the author is, today, the owner or a moderator of it. Null for plain members, other chats and SYSTEM messages. Public on purpose; also present in messages that arrive over the WebSocket." }
         }
       },
       "PrivateMessage": {

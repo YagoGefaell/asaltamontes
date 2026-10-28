@@ -7,6 +7,7 @@ import EmptyState from "../../../shared/ui/EmptyState";
 import Skeleton from "../../../shared/ui/Skeleton";
 import { systemMessageText } from "../../../features/messages/utils/systemMessage";
 import { formatDayLabel, formatMessageTime, isSameDay, parseMessageDate } from "../../../features/messages/utils/messageDates";
+import { AUTHOR_ROLE_LABELS, canDeleteMessage } from "../../../features/messages/utils/messageModeration";
 
 // Show the counter only when it matters
 const COUNTER_THRESHOLD = CHAT.MAX_MESSAGE_LENGTH - 200;
@@ -34,7 +35,7 @@ const ChatPane = ({
   onLeaveChat,
   onOpenUserProfile,
   onOpenGroupInfo,
-  canModerateMessages = false,
+  moderationRole = null,
   onDeleteMessage,
   onSelectedAvatarError,
   websocketConnected,
@@ -186,12 +187,22 @@ const ChatPane = ({
                 <div className="message-system message-deleted">Mensaje eliminado por moderación</div>
               ) : (
                 <div className={`message-line ${isSent ? "sent" : "received"}`}>
-                  <div
-                    className={`message ${isSent ? "sent" : "received"}`}
-                  >
-                    {message.content}
+                  <div className="message-body">
+                    {isGroup && !isSent && message.senderUsername && (
+                      <div className="message-author">
+                        <span className="message-author__name">@{message.senderUsername}</span>
+                        {AUTHOR_ROLE_LABELS[message.authorRole] && (
+                          <span className={`message-role message-role--${message.authorRole.toLowerCase()}`}>
+                            {AUTHOR_ROLE_LABELS[message.authorRole]}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className={`message ${isSent ? "sent" : "received"}`}>
+                      {message.content}
+                    </div>
                   </div>
-                  {canModerateMessages && onDeleteMessage && (
+                  {onDeleteMessage && canDeleteMessage(message, { moderationRole, currentUsername }) && (
                     <button
                       type="button"
                       className="message-delete-btn"

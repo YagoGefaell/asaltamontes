@@ -128,7 +128,7 @@ public class MessageService {
                 sender.getUsername(),
                 savedMessage.getContent(),
                 savedMessage.getSentAt()
-        );
+        ).withAuthorRole(communityChat.authorRole(conversationId, sender.getUsername()));
 
         eventPublisher.publishEvent(new MessageSentEvent(dto));
         return dto;
@@ -287,7 +287,8 @@ public class MessageService {
                 : messageRepository.findBefore(conversationId, since, before, fetch);
 
         boolean hasMore = newestFirst.size() > pageSize;
-        List<MessageDto> page = new ArrayList<>(newestFirst.subList(0, Math.min(pageSize, newestFirst.size())));
+        List<MessageDto> page = new ArrayList<>(communityChat.withAuthorRoles(conversationId,
+                newestFirst.subList(0, Math.min(pageSize, newestFirst.size()))));
         Collections.reverse(page);
         String nextBefore = hasMore ? page.get(0).cursor() : null;
 
@@ -311,7 +312,8 @@ public class MessageService {
                 after, Limit.of(pageSize + 1));
 
         boolean hasMore = oldestFirst.size() > pageSize;
-        List<MessageDto> page = List.copyOf(oldestFirst.subList(0, Math.min(pageSize, oldestFirst.size())));
+        List<MessageDto> page = List.copyOf(communityChat.withAuthorRoles(conversationId,
+                oldestFirst.subList(0, Math.min(pageSize, oldestFirst.size()))));
         return new MessagePageDto(page, hasMore, null);
     }
 

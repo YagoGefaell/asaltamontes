@@ -680,3 +680,40 @@ body.chat-open .bottom-nav {
 .message-deleted {
   font-style: italic;
 }
+
+/* Author of a received message in a group, with the owner / moderator badge of community chats (T20e) */
+.message-line .message-body {
+  min-width: 0;
+  max-width: 85%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.message-line .message-body .message {
+  max-width: 100%;
+}
+
+.message-author {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0.25rem 0.15rem;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.message-author__name {
+  overflow-wrap: anywhere;
+}
+
+.message-role {
+  padding: 0 0.45rem;
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-pill);
+  background: var(--primary-soft);
+  color: var(--text-color);
+  font-weight: 600;
+  line-height: 1.5;
+}

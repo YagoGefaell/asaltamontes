@@ -1,6 +1,7 @@
 package io.github.yagogefaell.asaltamontes.message.dto;
 
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
 import io.github.yagogefaell.asaltamontes.message.domain.MessageType;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,9 @@ import java.util.UUID;
  * A {@code SYSTEM} message (T12) has no sender ({@code senderUsername} is null) and carries {@code systemPayload},
  * e.g. {@code {"action": "MEMBER_ADDED", "actor": "ana", "targets": ["marta"]}}; clients compose the text from it
  * and only fall back to {@code content}. {@code systemPayload} is null in the messages of users.
+ * <p>
+ * {@code authorRole} (T20e) is OWNER or MODERATOR when the author is, today, the owner or a moderator of the community
+ * that manages the chat; null otherwise (plain members, other chats, system messages). It is public on purpose.
  */
 public record MessageDto(
     UUID id,
@@ -23,12 +27,17 @@ public record MessageDto(
     LocalDateTime sentAt,
     MessageType type,
     Map<String, Object> systemPayload,
-    String cursor
+    String cursor,
+    CommunityRole authorRole
 ) {
     public MessageDto(UUID id, UUID conversationId, String senderUsername, String content, LocalDateTime sentAt,
                       MessageType type, Map<String, Object> systemPayload) {
         this(id, conversationId, senderUsername, content, sentAt, type, systemPayload,
-                OpaqueCursor.encode(OpaqueCursor.MESSAGE, sentAt, id));
+                OpaqueCursor.encode(OpaqueCursor.MESSAGE, sentAt, id), null);
+    }
+
+    public MessageDto withAuthorRole(CommunityRole role) {
+        return new MessageDto(id, conversationId, senderUsername, content, sentAt, type, systemPayload, cursor, role);
     }
 
     /** A message of a user. */

@@ -83,6 +83,22 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     """)
     boolean isModerator(@Param("communityId") Long communityId, @Param("userId") Long userId);
 
+    /** Username and role of the owner and moderators (not banned) among these users: the author badge of the chat (T20e). */
+    @Query("""
+        SELECT m.userAccount.username AS username, m.role AS role FROM CommunityMember m
+        WHERE m.community.id = :communityId AND m.userAccount.username IN :usernames
+          AND m.role IN (io.github.yagogefaell.asaltamontes.community.domain.CommunityRole.OWNER,
+                         io.github.yagogefaell.asaltamontes.community.domain.CommunityRole.MODERATOR)
+          AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+    """)
+    List<StaffRole> findStaffRoles(@Param("communityId") Long communityId, @Param("usernames") java.util.Collection<String> usernames);
+
+    interface StaffRole {
+        String getUsername();
+
+        io.github.yagogefaell.asaltamontes.community.domain.CommunityRole getRole();
+    }
+
     Optional<CommunityMember> findByCommunityIdAndUserAccountId(Long communityId, Long userId);
 
     /** The member's row with a write lock: moderation actions on the same member run one after the other. */
