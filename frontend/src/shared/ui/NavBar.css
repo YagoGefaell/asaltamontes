@@ -21,7 +21,7 @@
 
 /* --- LINKS --- */
 .bottom-nav a {
-  color: var(--text-muted);
+  color: var(--text-color);
   font-size: var(--text-2xl);
   display: flex;
   align-items: center;
