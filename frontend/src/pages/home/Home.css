@@ -37,7 +37,9 @@
 }
 
 .home-rail__item {
+  /* Same width for every card: without min-width 0 a long name widens its card */
   flex: 0 0 140px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
