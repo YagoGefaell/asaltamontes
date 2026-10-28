@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { FaSearch, FaTimes, FaHistory } from "react-icons/fa";
+import { FaTimes, FaHistory } from "react-icons/fa";
 import "./Search.css";
 import { getAllUsersRequest } from "../../features/users/services/users.service";
 import { getCommunitiesRequest } from "../../features/communities/services/communities.service";
@@ -12,6 +12,7 @@ import CommunityRow from "../../features/search/components/CommunityRow";
 import EventCard from "../../features/events/components/EventCard";
 import UserCard from "../../shared/ui/UserCard";
 import Tabs from "../../shared/ui/Tabs";
+import SearchField from "../../shared/ui/SearchField";
 import EmptyState from "../../shared/ui/EmptyState";
 import Skeleton from "../../shared/ui/Skeleton";
 import Button from "../../shared/forms/Button";
@@ -165,8 +166,7 @@ const Search = () => {
     </div>
   );
 
-  const onSubmit = (e) => {
-    e.preventDefault();
+  const onSubmit = () => {
     setQuery(text.trim());
     addRecent(text);
   };
@@ -203,26 +203,15 @@ const Search = () => {
     <div className="search-page">
       <div className="search-top">
         <div className="search-bar">
-          <form className="search-field" role="search" onSubmit={onSubmit}>
-            <FaSearch className="search-field__icon" aria-hidden="true" />
-            <input
-              ref={inputRef}
-              type="search"
-              enterKeyHint="search"
-              placeholder="Buscar"
-              aria-label="Buscar"
-              autoComplete="off"
-              value={text}
-              onFocus={() => setActive(true)}
-              onKeyDown={(e) => e.key === "Escape" && cancel()}
-              onChange={(e) => setText(e.target.value)}
-            />
-            {text && (
-              <button type="button" className="search-field__clear" aria-label="Borrar búsqueda" onClick={clearText}>
-                <FaTimes aria-hidden="true" />
-              </button>
-            )}
-          </form>
+          <SearchField
+            ref={inputRef}
+            value={text}
+            onChange={setText}
+            onClear={clearText}
+            onSubmit={onSubmit}
+            onFocus={() => setActive(true)}
+            onKeyDown={(e) => e.key === "Escape" && cancel()}
+          />
           {(active || text) && (
             <Button variant="ghost" className="search-bar__cancel" onClick={cancel}>Cancelar</Button>
           )}
