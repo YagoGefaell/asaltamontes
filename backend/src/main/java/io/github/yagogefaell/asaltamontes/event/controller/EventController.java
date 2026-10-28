@@ -73,9 +73,10 @@ public class EventController {
             @RequestParam(required = false) Double maxLng,
             @RequestParam(required = false) String organizer,
             @RequestParam(required = false) String attending,
+            @RequestParam(required = false) String q,
             @PageableDefault(size = 20) Pageable pageable) {
         EventFilter filter = EventFilter.of(from, to, type, level, communityId, city, minDistance, maxDistance,
-                minLat, maxLat, minLng, maxLng, organizer, attending);
+                minLat, maxLat, minLng, maxLng, organizer, attending, q);
         return ResponseEntity.ok(eventService.search(currentUser, filter, pageable));
     }
 

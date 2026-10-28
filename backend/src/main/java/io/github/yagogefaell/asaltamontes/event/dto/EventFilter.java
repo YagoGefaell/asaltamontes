@@ -23,15 +23,16 @@ public record EventFilter(
     Double minLng,
     Double maxLng,
     boolean organizerMe,
-    boolean attendingMe
+    boolean attendingMe,
+    String q
 ) {
 
     /** From the raw query parameters: organizer and attending only accept "me". */
     public static EventFilter of(Instant from, Instant to, EventType type, RunningLevel level, UUID communityId,
             String city, BigDecimal minDistance, BigDecimal maxDistance, Double minLat, Double maxLat,
-            Double minLng, Double maxLng, String organizer, String attending) {
+            Double minLng, Double maxLng, String organizer, String attending, String q) {
         return new EventFilter(from, to, type, level, communityId, city, minDistance, maxDistance,
-                minLat, maxLat, minLng, maxLng, isMe("organizer", organizer), isMe("attending", attending));
+                minLat, maxLat, minLng, maxLng, isMe("organizer", organizer), isMe("attending", attending), q == null || q.isBlank() ? null : q.strip());
     }
 
     private static boolean isMe(String name, String value) {

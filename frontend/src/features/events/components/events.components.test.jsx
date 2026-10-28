@@ -72,6 +72,26 @@ describe('EventCard', () => {
     expect(screen.getByText(/12\/12 · completo/)).toBeInTheDocument()
     expect(screen.getByText(/Avanzado · /)).toBeInTheDocument()
   })
+
+  it('stacks the avatars of attendeePreview (thumb)', () => {
+    const { container } = render(
+      <MemoryRouter>
+        <EventCard
+          event={{
+            id: 9, title: 'Ruta', type: 'TRAINING', startsAt: '2026-10-24T07:30:00Z', timezone: 'Europe/Madrid',
+            capacity: 12, attendeeCount: 5,
+            attendeePreview: [
+              { username: 'ana', fullName: 'Ana', avatar: { thumb: '/media/avatar/a/thumb.jpg' } },
+              { username: 'bea', fullName: 'Bea', avatar: null },
+            ],
+          }}
+        />
+      </MemoryRouter>,
+    )
+    const avatars = container.querySelector('.event-card__avatars')
+    expect(avatars.children).toHaveLength(2)
+    expect(avatars.querySelector('img')).toHaveAttribute('src', '/media/avatar/a/thumb.jpg')
+  })
 })
 
 describe('EventFilters', () => {

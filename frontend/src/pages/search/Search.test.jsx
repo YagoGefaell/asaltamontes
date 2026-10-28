@@ -74,9 +74,9 @@ describe('Search (T29d)', () => {
     expect(getCommunitiesRequest).toHaveBeenCalledWith(expect.objectContaining({ query: 'trail' }))
   })
 
-  it('searches events by city while the API has no text search', async () => {
+  it('searches events by text (title, city or place) with q', async () => {
     renderAt('/search?tab=events&q=Madrid')
-    await waitFor(() => expect(getEventsRequest).toHaveBeenCalledWith(expect.objectContaining({ city: 'Madrid' })))
+    await waitFor(() => expect(getEventsRequest).toHaveBeenCalledWith(expect.objectContaining({ q: 'Madrid' })))
   })
 
   it('searches after she stops typing and remembers the term on submit', async () => {

@@ -175,6 +175,45 @@ class EventSearchIT extends AbstractIntegrationTest {
         titles(ana, "minDistance", "20", "maxDistance", "10").andExpect(status().isBadRequest());
     }
 
+    @Test
+    void q_matchesTitleCityAndPlace_ignoringCaseAndAccents_andComposesWithOtherFilters() throws Exception {
+        UserAccount ana = testData.createUser();
+        String tag = testData.uniqueName("qtag").toLowerCase();
+        create(ana, ev("Ruta de A Coruña " + tag, "Santiago", 0, Map.of("type", "TRAINING")));
+        create(ana, ev("Café y charla " + tag, "Santiago", 1, Map.of("type", "MEETUP")));
+        create(ana, ev("Al 100% " + tag, "Santiago", 2, Map.of("type", "MEETUP")));
+        create(ana, ev("Al 100x " + tag, "Santiago", 3, Map.of("type", "MEETUP")));
+        create(ana, ev("snake_case " + tag, "Santiago", 4, Map.of("type", "MEETUP")));
+        create(ana, ev("snakeXcase " + tag, "Santiago", 5, Map.of("type", "MEETUP")));
+        create(ana, ev("lugar " + tag, "Ourense", 6, Map.of("meetingPointName", "Praza do Ferro")));
+
+        String coruna = "Ruta de A Coruña " + tag + " Santiago";
+        titles(ana, "q", "CORUNA " + tag).andExpect(jsonPath("$.content[*].title").value(contains(coruna)));
+        titles(ana, "q", "coruña " + tag).andExpect(jsonPath("$.content[*].title").value(contains(coruna)));
+        titles(ana, "q", "cafe y").andExpect(jsonPath("$.content[?(@.title=='Café y charla " + tag + " Santiago')]").isNotEmpty());
+        // city and meeting point are searched too
+        titles(ana, "q", "ferro").andExpect(jsonPath("$.content[?(@.city=='Ourense')]").isNotEmpty());
+        titles(ana, "q", "ourense", "size", "50").andExpect(jsonPath("$.content[?(@.city=='Ourense')]").isNotEmpty());
+        // % and _ are literal
+        titles(ana, "q", "100% " + tag).andExpect(jsonPath("$.content[*].title").value(contains("Al 100% " + tag + " Santiago")));
+        titles(ana, "q", "snake_case " + tag).andExpect(jsonPath("$.content[*].title").value(contains("snake_case " + tag + " Santiago")));
+        // with other filters and pagination
+        titles(ana, "q", tag, "type", "TRAINING").andExpect(jsonPath("$.content[*].title").value(contains(coruna)));
+        titles(ana, "q", tag, "size", "2", "page", "1").andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(7));
+        // blank is the same as none
+        titles(ana, "q", "  ").andExpect(status().isOk());
+    }
+
+    @Test
+    void q_rejectsTooShortOrTooLongText() throws Exception {
+        UserAccount ana = testData.createUser();
+        titles(ana, "q", "a").andExpect(status().isBadRequest());
+        titles(ana, "q", " a ").andExpect(status().isBadRequest());
+        titles(ana, "q", "x".repeat(81)).andExpect(status().isBadRequest());
+        titles(ana, "q", "x".repeat(80)).andExpect(status().isOk());
+    }
+
     // Title unique per tag, so tests do not see each other's events
     private static String t(String tag, String name) {
         return name + " " + tag;

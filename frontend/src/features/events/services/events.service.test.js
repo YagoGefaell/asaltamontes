@@ -18,6 +18,12 @@ describe('buildEventsQuery', () => {
     expect(params.get('attending')).toBe('me')
     expect(params.has('level')).toBe(false)
     expect(params.has('from')).toBe(false)
+    expect(params.has('q')).toBe(false)
+  })
+
+  it('sends q trimmed, and only from 2 characters on (the API rejects shorter text)', () => {
+    expect(buildEventsQuery({ q: '  cafe ' }).get('q')).toBe('cafe')
+    expect(buildEventsQuery({ q: ' c ' }).has('q')).toBe(false)
   })
 
   it('does not send attending when "mis quedadas" is off', () => {

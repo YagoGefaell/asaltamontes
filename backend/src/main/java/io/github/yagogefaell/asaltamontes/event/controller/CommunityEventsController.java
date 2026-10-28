@@ -45,7 +45,7 @@ public class CommunityEventsController {
             @RequestParam(required = false) String attending,
             @PageableDefault(size = 20) Pageable pageable) {
         EventFilter filter = EventFilter.of(from, to, type, level, null, city, minDistance, maxDistance,
-                null, null, null, null, null, attending);
+                null, null, null, null, null, attending, null);
         return ResponseEntity.ok(eventService.searchByCommunity(slug, currentUser, filter, pageable));
     }
 }

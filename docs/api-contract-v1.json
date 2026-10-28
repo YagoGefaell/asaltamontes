@@ -1105,12 +1105,13 @@
           { "name": "maxLng", "in": "query", "schema": { "type": "number" } },
           { "name": "organizer", "in": "query", "description": "Only 'me': events she organizes", "schema": { "type": "string", "enum": ["me"] } },
           { "name": "attending", "in": "query", "description": "Only 'me': events where she is GOING or on the WAITLIST", "schema": { "type": "string", "enum": ["me"] } },
+          { "name": "q", "in": "query", "description": "T31: free text over title, city and meeting point; ignores case and accents; % and _ are literal; 2 to 80 characters after trimming (blank = no filter)", "schema": { "type": "string", "minLength": 2, "maxLength": 80 } },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
         "responses": {
-          "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none)" },
-          "400": { "description": "Invalid filter (unknown enum value, to before from, maxDistance below minDistance, incomplete or inverted bounding box, organizer/attending other than 'me')" }
+          "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none). T31: every item has attendeePreview, up to 3 people going (oldest first, blocked users in either direction left out) as {username, fullName, avatar: {thumb} | null}, loaded with one extra query per page" },
+          "400": { "description": "Invalid filter (q shorter than 2 or longer than 80, unknown enum value, to before from, maxDistance below minDistance, incomplete or inverted bounding box, organizer/attending other than 'me')" }
         }
       }
     },
@@ -1820,7 +1821,7 @@
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
         "responses": {
-          "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none)" },
+          "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none, and attendeePreview as in GET /api/events)" },
           "400": { "description": "Invalid filter" },
           "404": { "description": "Community not found" }
         }
