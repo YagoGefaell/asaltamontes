@@ -35,11 +35,11 @@ public interface EventRepository extends JpaRepository<Event, Long>, EventSearch
     @Query("SELECT new io.github.yagogefaell.asaltamontes.event.dto.EventTiming(e.status, e.startsAt, e.endsAt) FROM Event e WHERE e.id = :id")
     Optional<io.github.yagogefaell.asaltamontes.event.dto.EventTiming> findTiming(@Param("id") Long id);
 
-    // Same rule as EventService.canView, in one query: public events, her own, or a community she belongs to unbanned
+    // Same rule as EventService.canView, in one query: public events, her own outside a community, or a community she belongs to unbanned
     @Query("""
         SELECT COUNT(e) > 0 FROM Event e
         WHERE e.id = :id AND (e.visibility = io.github.yagogefaell.asaltamontes.event.domain.EventVisibility.PUBLIC
-            OR e.organizer.id = :userId
+            OR (e.organizer.id = :userId AND e.community IS NULL)
             OR EXISTS (SELECT 1 FROM CommunityMember m WHERE m.community.id = e.community.id AND m.userAccount.id = :userId
                        AND m.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED))
         """)

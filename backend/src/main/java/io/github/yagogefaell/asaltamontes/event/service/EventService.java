@@ -317,6 +317,10 @@ public class EventService {
         Event event = findVisible(eventPublicId, user);
         Long eventId = event.getId();
         lockAndRefresh(event);
+        // Again with the lock held: an expulsion that committed meanwhile wins (BUG-074)
+        if (!eventRepository.canView(eventId, user.getId())) {
+            throw new NotFoundException("Evento no encontrado");
+        }
         requireOpen(event);
 
         Optional<EventAttendee> current = attendeeRepository.findByEventIdAndUserId(eventId, user.getId());
@@ -482,7 +486,8 @@ public class EventService {
     }
 
     private boolean canView(Event event, UserAccount user) {
-        if (event.getVisibility() == EventVisibility.PUBLIC || event.getOrganizer().getId().equals(user.getId())) {
+        if (event.getVisibility() == EventVisibility.PUBLIC
+                || (event.getCommunity() == null && event.getOrganizer().getId().equals(user.getId()))) {
             return true;
         }
         return communityMemberRepository.findByCommunityIdAndUserAccountId(event.getCommunity().getId(), user.getId())

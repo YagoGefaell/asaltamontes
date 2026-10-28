@@ -398,6 +398,26 @@ class EventChatIT extends AbstractIntegrationTest {
         assertThat(attendeeStatus(event, member)).isEqualTo("GOING");
     }
 
+    @Test
+    void anExpelledOrganizer_losesAccessToHerMembersOnlyEvent() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount organizer = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        joinCommunity(community, organizer);
+        jdbc.update("UPDATE community_members SET role = 'MODERATOR' WHERE community_id = ? AND user_account_id = ?",
+                community.getId(), organizer.getId());
+        UUID event = communityEvent(community, organizer, null);
+        UUID chat = chatOf(organizer, event);
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/members/" + organizer.getUsername() + "/ban")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isNoContent());
+
+        chatRequest(organizer, event).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/events/" + event).with(auth.bearer(organizer))).andExpect(status().isNotFound());
+        assertThatThrownBy(() -> messageService.processIncomingMessage(chat, organizer.getId(), "sigo"))
+                .isInstanceOf(io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException.class);
+    }
+
     private void joinCommunity(Community community, UserAccount user) throws Exception {
         mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/join").with(auth.bearer(user))).andExpect(status().isCreated());
     }
