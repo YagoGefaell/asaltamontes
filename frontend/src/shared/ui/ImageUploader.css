@@ -67,9 +67,70 @@
   cursor: pointer;
 }
 
+/* Foto de perfil: la imagen es el botón, centrada y sin borde */
+.image-uploader--tap,
+.image-uploader--tap .image-uploader__controls {
+  flex-direction: column;
+  align-items: center;
+}
+
+.image-uploader--tap .image-uploader__controls {
+  width: 100%;
+  min-width: 0;
+}
+
+.image-uploader__tap {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.image-uploader__tap:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 4px;
+}
+
+.image-uploader__tap:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.image-uploader--tap .image-uploader__preview {
+  display: block;
+  width: 112px;
+  height: 112px;
+  border: 0;
+  box-shadow: none;
+}
+
+.image-uploader__tap-badge {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: var(--text-sm);
+}
+
 @media (max-width: 500px) {
   .image-uploader {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 500px) {
+  .image-uploader--tap {
+    align-items: center;
   }
 }

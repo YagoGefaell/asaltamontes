@@ -47,15 +47,18 @@ function EventSkeleton() {
   );
 }
 
-/** A block of results: title, rows (skeleton / error / items) and "Ver todas" or "Cargar más". */
-function ResultSection({ title, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
+/**
+ * A block of results: title, rows (skeleton / error / items) and "Ver todas" or "Cargar más".
+ * The visible title only shows in "Todo": inside a tab it would repeat the tab's name.
+ */
+function ResultSection({ title, showTitle, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
   const { items, loading, loadingMore, hasMore, error, loadMore, retry } = section;
   if (hideWhenEmpty && !loading && !error && items.length === 0) return null;
   const shown = preview ? items.slice(0, preview) : items;
 
   return (
     <section className="search-section" aria-label={title} aria-busy={loading || undefined}>
-      <h2 className="search-section__title">{title}</h2>
+      {showTitle && <h2 className="search-section__title">{title}</h2>}
       {loading && [0, 1, 2].slice(0, preview || 3).map((i) => <div key={i}>{skeleton}</div>)}
       {!loading && error && (
         <div className="search-error" role="alert">
@@ -194,7 +197,7 @@ const Search = () => {
   const nothingFound =
     searching && (tab === "all" ? [users, communities, events].every(settledEmpty) : settledEmpty({ users, communities, events }[tab]));
 
-  const sectionProps = (preview) => ({ preview, hideWhenEmpty: tab === "all" });
+  const sectionProps = (preview) => ({ preview, showTitle: tab === "all", hideWhenEmpty: tab === "all" });
 
   return (
     <div className="search-page">
@@ -224,7 +227,8 @@ const Search = () => {
             <Button variant="ghost" className="search-bar__cancel" onClick={cancel}>Cancelar</Button>
           )}
         </div>
-        {!showRecents && text.trim() && (
+        {/* Blank until she taps the field; from then on, so she can pick what to look for before typing */}
+        {(active || text.trim()) && (
           <Tabs tabs={SEARCH_TABS} value={tab} onChange={setTab} label="Tipo de resultado" idPrefix="search-tab" />
         )}
       </div>

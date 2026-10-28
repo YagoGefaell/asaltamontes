@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { FaCamera } from "react-icons/fa";
 import Button from "../forms/Button.jsx";
 import { useToast } from "./Toast.jsx";
 import { uploadImage, validateImageFile } from "../../features/media/services/media.service.js";
@@ -8,6 +9,7 @@ import "./ImageUploader.css";
  * Subida de una imagen (T17b): elegir archivo (en el móvil abre cámara o galería), vista previa local,
  * barra de progreso, errores en español y reintento. `onChange(url, mediaId)` recibe la URL de vista previa
  * (`urls.medium`) y el id de la media subida (lo que hay que enviar al backend), o ("", null) si se quita. `onUploadingChange` permite al formulario bloquear el envío mientras sube.
+ * Con `tapToChoose` la propia imagen (grande y centrada) es el botón para elegirla, sin botón aparte (foto de perfil).
  */
 export default function ImageUploader({
   value,
@@ -19,6 +21,7 @@ export default function ImageUploader({
   fallbackSrc,
   shape = "round",
   disabled = false,
+  tapToChoose = false,
   onUploadingChange,
 }) {
   const toast = useToast();
@@ -89,12 +92,28 @@ export default function ImageUploader({
   const shown = localPreview || value || fallbackSrc;
   const hasImage = Boolean(localPreview || value);
 
+  const preview = shown ? (
+    <img src={shown} alt={tapToChoose ? "" : label} className="image-uploader__preview" />
+  ) : (
+    <div className="image-uploader__preview image-uploader__preview--empty" aria-hidden="true" />
+  );
+  const choose = () => inputRef.current?.click();
+
   return (
-    <div className={`image-uploader image-uploader--${shape}`}>
-      {shown ? (
-        <img src={shown} alt={label} className="image-uploader__preview" />
+    <div className={["image-uploader", `image-uploader--${shape}`, tapToChoose && "image-uploader--tap"].filter(Boolean).join(" ")}>
+      {tapToChoose ? (
+        <button
+          type="button"
+          className="image-uploader__tap"
+          onClick={choose}
+          disabled={disabled || uploading}
+          aria-label={`${hasImage ? changeLabel : chooseLabel}: ${label.toLowerCase()}`}
+        >
+          {preview}
+          <span className="image-uploader__tap-badge" aria-hidden="true"><FaCamera /></span>
+        </button>
       ) : (
-        <div className="image-uploader__preview image-uploader__preview--empty" aria-hidden="true" />
+        preview
       )}
       <div className="image-uploader__controls">
         <input
@@ -107,14 +126,11 @@ export default function ImageUploader({
           hidden
         />
         <div className="image-uploader__actions">
-          <Button
-            variant="outline"
-            size="small"
-            onClick={() => inputRef.current?.click()}
-            disabled={disabled || uploading}
-          >
-            {hasImage ? changeLabel : chooseLabel}
-          </Button>
+          {!tapToChoose && (
+            <Button variant="outline" size="small" onClick={choose} disabled={disabled || uploading}>
+              {hasImage ? changeLabel : chooseLabel}
+            </Button>
+          )}
           {value && !uploading && (
             <Button variant="ghost" size="small" onClick={remove} disabled={disabled}>
               Quitar
