@@ -11,49 +11,50 @@
   padding-top: var(--space-4);
 }
 
-.home-section__head {
+/* Vista previa del editor de publicaciones (T22): aún no publica */
+.home-composer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 var(--space-4) var(--space-2);
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.home-section__title {
-  margin: 0;
-  font-size: var(--text-lg);
-  font-weight: 700;
-}
-
-.home-section__link {
-  display: inline-flex;
-  align-items: center;
+.home-composer__field {
+  flex: 1;
+  min-width: 0;
   min-height: var(--touch-min);
-  color: var(--primary);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-decoration: none;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-pill);
+  background: var(--input-bg);
+  color: var(--text-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
-.home-section__link:focus-visible {
+.home-composer__photo {
+  width: var(--touch-min);
+  height: var(--touch-min);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+
+.home-composer__field:focus-visible,
+.home-composer__photo:focus-visible {
   outline: var(--focus-outline);
   outline-offset: 2px;
 }
 
-.home-event {
-  padding: 0 var(--space-4) var(--space-3);
-}
-
-.home-skeleton {
-  padding: 0 var(--space-4) var(--space-3);
-}
-
-.home-error {
-  margin: 0 var(--space-4);
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-}
-
-/* Comunidades recomendadas: fila deslizable de tarjetas */
+/* Sugerencias (usuarias y comunidades): filas deslizables de tarjetas */
 .home-rail {
   display: flex;
   gap: var(--space-3);

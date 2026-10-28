@@ -1,22 +1,19 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.jsx'
 import { NotificationsContext } from '../../features/notifications/hooks/notifications.context'
 import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
-import { getEventsRequest } from '../../features/events/services/events.service'
 import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
 import { getSuggestionsRequest } from '../../features/users/services/users.service'
 
-vi.mock('../../features/events/services/events.service', () => ({ getEventsRequest: vi.fn() }))
+import { ToastProvider } from '../../shared/ui/Toast'
 vi.mock('../../features/communities/services/communities.service', () => ({
   getCommunitiesRequest: vi.fn(),
 }))
 vi.mock('../../features/users/services/users.service', () => ({ getSuggestionsRequest: vi.fn() }))
 vi.mock('../../shared/components/FollowUserButton', () => ({ default: () => <button>Seguir</button> }))
-vi.mock('../../features/events/components/EventCard', () => ({
-  default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
-}))
+vi.mock('../../features/auth/hooks/useAuth', () => ({ useAuth: () => ({ currentUser: { username: 'yo', fullName: 'Yo' } }) }))
 vi.mock('../../shared/components/CommunityJoinButton', () => ({ default: () => <button>Unirse</button> }))
 vi.mock('../../shared/components/CommunityRequestButton', () => ({ default: () => <button>Solicitar</button> }))
 
@@ -24,7 +21,6 @@ const page = (items) => ({ items, hasMore: false, page: 0 })
 
 beforeEach(() => {
   vi.clearAllMocks()
-  getEventsRequest.mockResolvedValue(page([]))
   getCommunitiesRequest.mockResolvedValue(page([]))
   getSuggestionsRequest.mockResolvedValue(page([]))
 })
@@ -32,11 +28,13 @@ beforeEach(() => {
 function renderHome({ notifications = 0, messages = 0 } = {}) {
   return render(
     <MemoryRouter>
-      <ConversationsContext.Provider value={{ totalUnreadCount: messages }}>
-        <NotificationsContext.Provider value={{ unreadCount: notifications }}>
-          <Home />
-        </NotificationsContext.Provider>
-      </ConversationsContext.Provider>
+      <ToastProvider>
+        <ConversationsContext.Provider value={{ totalUnreadCount: messages }}>
+          <NotificationsContext.Provider value={{ unreadCount: notifications }}>
+            <Home />
+          </NotificationsContext.Provider>
+        </ConversationsContext.Provider>
+      </ToastProvider>
     </MemoryRouter>,
   )
 }
@@ -63,68 +61,31 @@ describe('Home header', () => {
 })
 
 describe('Home content', () => {
-  it('shows an empty state with an action and no made-up posts when there is nothing yet', async () => {
+  it('is for posts: an empty feed with an action, no events and no made-up posts', async () => {
     renderHome()
-    expect(await screen.findByText('Todavía no hay quedadas a la vista')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Ver quedadas' })).toBeTruthy()
+    expect(await screen.findByText('Aún no hay publicaciones')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Explorar comunidades' })).toBeTruthy()
+    expect(screen.queryByText(/quedadas/i)).toBeNull()
     expect(document.querySelector('.stories, .post-card')).toBeNull()
-    expect(screen.queryByText(/likes/)).toBeNull()
   })
 
-  it('lists the events she is going to once and the other upcoming ones without repeating', async () => {
-    getEventsRequest.mockImplementation(async (filters) =>
-      filters.followedBy ? page([]) : filters.mine
-        ? page([{ id: 'a', title: 'Trail del Montseny' }])
-        : page([{ id: 'a', title: 'Trail del Montseny' }, { id: 'b', title: 'Sunset run' }]),
-    )
+  it('previews the composer and says posts are coming soon', async () => {
     renderHome()
-    expect(await screen.findByText('Tus próximas quedadas')).toBeTruthy()
-    await waitFor(() => expect(screen.getAllByTestId('event-card')).toHaveLength(2))
-    expect(screen.getAllByText('Trail del Montseny')).toHaveLength(1)
-    expect(screen.getByText('Sunset run')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '¿Qué tal tu último entreno?' }))
+    expect(await screen.findByText('Las publicaciones llegan pronto')).toBeTruthy()
   })
 
-  it('does not list her communities and recommends only the ones she is not in, in a row', async () => {
+  it('shows rows of users to follow and communities she is not in, without section titles', async () => {
+    getSuggestionsRequest.mockResolvedValue(page([{ username: 'cris', fullName: 'Cris Gil', isFollowing: false }]))
     getCommunitiesRequest.mockResolvedValue(page([
       { id: 'c1', name: 'Cabras', slug: 'cabras', role: 'MEMBER' },
       { id: 'c2', name: 'Valkirias', slug: 'valkirias', city: 'Madrid', role: null },
     ]))
     renderHome()
-    expect(await screen.findByText('Comunidades recomendadas')).toBeTruthy()
-    expect(screen.queryByText('Tus comunidades')).toBeNull()
+    expect(await screen.findByRole('link', { name: /Cris Gil/ })).toHaveAttribute('href', '/users/cris')
+    expect(await screen.findByRole('link', { name: /Valkirias/ })).toHaveAttribute('href', '/communities/valkirias')
     expect(screen.queryByText('Cabras')).toBeNull()
-    expect(screen.getByRole('link', { name: /Valkirias/ })).toHaveAttribute('href', '/communities/valkirias')
-    expect(document.querySelector('.home-rail')).not.toBeNull()
-  })
-
-  it('shows the events of the people she follows and a row of users to follow', async () => {
-    getEventsRequest.mockImplementation(async (filters) =>
-      filters.followedBy ? page([{ id: 'f', title: 'Rodada de Bea' }]) : page([]))
-    getSuggestionsRequest.mockResolvedValue(page([{ username: 'cris', fullName: 'Cris Gil', isFollowing: false }]))
-    renderHome()
-    expect(await screen.findByText('Quedadas de quienes sigues')).toBeTruthy()
-    expect(screen.getByText('Rodada de Bea')).toBeTruthy()
-    expect(await screen.findByText('Usuarias para seguir')).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Cris Gil/ })).toHaveAttribute('href', '/users/cris')
-    expect(getEventsRequest).toHaveBeenCalledWith(expect.objectContaining({ followedBy: true }))
-  })
-
-  it('shows an event of someone she follows only once, not again among the upcoming ones', async () => {
-    getEventsRequest.mockImplementation(async (filters) =>
-      filters.followedBy ? page([{ id: 'f', title: 'Rodada de Bea' }]) : filters.mine
-        ? page([])
-        : page([{ id: 'f', title: 'Rodada de Bea' }, { id: 'b', title: 'Sunset run' }]),
-    )
-    renderHome()
-    expect(await screen.findByText('Quedadas de quienes sigues')).toBeTruthy()
-    await waitFor(() => expect(screen.getByText('Sunset run')).toBeTruthy())
-    expect(screen.getAllByText('Rodada de Bea')).toHaveLength(1)
-  })
-
-  it('offers a retry when the events fail to load', async () => {
-    getEventsRequest.mockRejectedValue(new Error('boom'))
-    renderHome()
-    expect(await screen.findByText('No hemos podido cargar las quedadas.')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Reintentar' })).toBeTruthy()
+    expect(document.querySelectorAll('.home-rail')).toHaveLength(2)
+    expect(screen.queryByRole('heading', { level: 2 })).toBeNull()
   })
 })

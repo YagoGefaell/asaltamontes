@@ -1,18 +1,17 @@
 import "./Home.css";
-import { useContext, useMemo } from "react";
+import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaBell, FaEnvelope, FaMountain } from "react-icons/fa";
+import { FaBell, FaEnvelope, FaPen, FaRegImages } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
-import Skeleton from "../../shared/ui/Skeleton";
 import Avatar from "../../shared/ui/Avatar";
+import { useToast } from "../../shared/ui/Toast";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import Button from "../../shared/forms/Button";
-import EventCard from "../../features/events/components/EventCard";
-import { useEvents } from "../../features/events/hooks/useEvents";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
 import FollowUserButton from "../../shared/components/FollowUserButton";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import { getSuggestionsRequest } from "../../features/users/services/users.service";
 import { getCommunitiesRequest } from "../../features/communities/services/communities.service";
 import { communityPath } from "../../features/communities/utils/communityPath";
@@ -21,11 +20,9 @@ import { useNotifications } from "../../features/notifications/hooks/useNotifica
 import logo from "../../assets/logo01.png";
 
 const formatCount = (n) => (n > 9 ? "9+" : n);
-const MY_EVENTS = 3;
-const UPCOMING_EVENTS = 5;
 const SUGGESTED_COMMUNITIES = 10;
-const FOLLOWED_EVENTS = 3;
 const SUGGESTED_USERS = 10;
+const POSTS_SOON = "Las publicaciones llegan pronto";
 
 function HeaderLink({ to, label, count, children }) {
   return (
@@ -38,24 +35,10 @@ function HeaderLink({ to, label, count, children }) {
   );
 }
 
-function Section({ title, to, linkLabel, children }) {
-  return (
-    <section className="home-section" aria-label={title}>
-      {title && (
-        <div className="home-section__head">
-          <h2 className="home-section__title">{title}</h2>
-          {to && <Link to={to} className="home-section__link">{linkLabel}</Link>}
-        </div>
-      )}
-      {children}
-    </section>
-  );
-}
-
 /** Horizontal row of recommended communities, shown between blocks of content. */
 function RecommendedCommunities({ items }) {
   return (
-    <Section title="Comunidades recomendadas" to="/search?tab=communities" linkLabel="Ver más">
+    <section className="home-section" aria-label="Comunidades recomendadas">
       <ul className="home-rail">
         {items.map((community) => (
           <li key={community.id} className="home-rail__item">
@@ -72,14 +55,14 @@ function RecommendedCommunities({ items }) {
           </li>
         ))}
       </ul>
-    </Section>
+    </section>
   );
 }
 
 /** Horizontal row of users she may want to follow (followed by her follows, or in her communities). */
 function SuggestedUsers({ items }) {
   return (
-    <Section title="Usuarias para seguir">
+    <section className="home-section" aria-label="Usuarias para seguir">
       <ul className="home-rail">
         {items.map((user) => (
           <li key={user.username} className="home-rail__item">
@@ -92,33 +75,37 @@ function SuggestedUsers({ items }) {
           </li>
         ))}
       </ul>
-    </Section>
+    </section>
   );
 }
 
-function EventSkeleton() {
+/** Preview of the post composer (T22): looks like the real one, but posting is not available yet. */
+function Composer() {
+  const { currentUser } = useAuth();
+  const toast = useToast();
+  const name = currentUser?.fullName || currentUser?.username || "";
+
   return (
-    <div className="home-skeleton" data-testid="home-skeleton">
-      <Skeleton height="104px" />
+    <div className="home-composer">
+      <Avatar src={currentUser?.profilePictureUrl} name={name} size="md" />
+      <button type="button" className="home-composer__field" onClick={() => toast.info(POSTS_SOON)}>
+        ¿Qué tal tu último entreno?
+      </button>
+      <button type="button" className="home-composer__photo" aria-label="Añadir foto" onClick={() => toast.info(POSTS_SOON)}>
+        <FaRegImages aria-hidden="true" />
+      </button>
     </div>
   );
 }
 
+// Home is for posts (T22), with suggestions between them. Until posts exist: composer preview,
+// an empty feed and the suggestion rows. Events live in their own tab.
 const Home = () => {
   const navigate = useNavigate();
   const { totalUnreadCount } = useContext(ConversationsContext);
   const { unreadCount: unreadNotifications } = useNotifications();
 
-  // Upcoming events: the ones she is going to, and the rest she can see (public and her communities')
-  const mineFilters = useMemo(() => ({ from: new Date().toISOString(), mine: true, size: MY_EVENTS }), []);
-  const upcomingFilters = useMemo(() => ({ from: new Date().toISOString(), size: UPCOMING_EVENTS + MY_EVENTS }), []);
-  const mine = useEvents(mineFilters);
-  const upcoming = useEvents(upcomingFilters);
-
-  const followedFilters = useMemo(() => ({ from: new Date().toISOString(), followedBy: true, size: FOLLOWED_EVENTS }), []);
-  const followed = useEvents(followedFilters);
   const people = useSearchSection(() => getSuggestionsRequest({ size: SUGGESTED_USERS }).then((r) => ({ ...r, hasMore: false })), "people");
-
   const suggested = useSearchSection(
     async (page) => {
       const result = await getCommunitiesRequest({ page });
@@ -126,21 +113,6 @@ const Home = () => {
     },
     "suggested",
   );
-
-  const replaceIn = (list) => (updated) =>
-    list.setEvents((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
-
-  // Each event shows up once: hers first, then those of who she follows, then the rest
-  const mineIds = new Set(mine.events.map((e) => e.id));
-  const fromFollowed = followed.events.filter((e) => !mineIds.has(e.id));
-  const shownIds = new Set([...mineIds, ...fromFollowed.map((e) => e.id)]);
-  const others = upcoming.events.filter((e) => !shownIds.has(e.id)).slice(0, UPCOMING_EVENTS);
-
-  const loading = mine.loading || upcoming.loading || suggested.loading;
-  const failed = Boolean(mine.error || upcoming.error);
-  const nothing = !loading && !failed
-    && mine.events.length === 0 && others.length === 0
-    && suggested.items.length === 0 && fromFollowed.length === 0 && people.items.length === 0;
 
   return (
     <div className="home-container">
@@ -158,79 +130,17 @@ const Home = () => {
         }
       />
 
-      {mine.loading && (
-        <Section title="Tus próximas quedadas"><EventSkeleton /></Section>
-      )}
-      {!mine.loading && mine.events.length > 0 && (
-        <Section title="Tus próximas quedadas" to="/events" linkLabel="Ver todas">
-          {mine.events.map((event) => (
-            <div className="home-event" key={event.id}>
-              <EventCard event={event} onChange={replaceIn(mine)} />
-            </div>
-          ))}
-        </Section>
-      )}
+      <Composer />
 
-      {!followed.loading && fromFollowed.length > 0 && (
-        <Section title="Quedadas de quienes sigues">
-          {fromFollowed.map((event) => (
-            <div className="home-event" key={event.id}>
-              <EventCard event={event} onChange={replaceIn(followed)} />
-            </div>
-          ))}
-        </Section>
-      )}
+      <EmptyState
+        icon={<FaPen />}
+        title="Aún no hay publicaciones"
+        description="Aquí verás lo que comparten tus comunidades y las corredoras que sigues."
+        action={<Button variant="secondary" onClick={() => navigate("/search?tab=communities")}>Explorar comunidades</Button>}
+      />
 
       {!people.loading && people.items.length > 0 && <SuggestedUsers items={people.items} />}
-
-      {upcoming.loading && (
-        <Section title="Próximas quedadas"><EventSkeleton /><EventSkeleton /></Section>
-      )}
-      {!upcoming.loading && others.length > 0 && (
-        <Section title="Próximas quedadas" to="/events" linkLabel="Ver más">
-          {others.slice(0, 2).map((event) => (
-            <div className="home-event" key={event.id}>
-              <EventCard event={event} onChange={replaceIn(upcoming)} />
-            </div>
-          ))}
-        </Section>
-      )}
-
       {!suggested.loading && suggested.items.length > 0 && <RecommendedCommunities items={suggested.items} />}
-
-      {!upcoming.loading && others.length > 2 && (
-        <Section>
-          {others.slice(2).map((event) => (
-            <div className="home-event" key={event.id}>
-              <EventCard event={event} onChange={replaceIn(upcoming)} />
-            </div>
-          ))}
-        </Section>
-      )}
-
-      {failed && !loading && (
-        <Section title="Próximas quedadas">
-          <p className="home-error" role="alert">No hemos podido cargar las quedadas.</p>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              mine.refetch();
-              upcoming.refetch();
-            }}
-          >
-            Reintentar
-          </Button>
-        </Section>
-      )}
-
-      {nothing && (
-        <EmptyState
-          icon={<FaMountain />}
-          title="Todavía no hay quedadas a la vista"
-          description="Únete a una comunidad o busca una quedada cerca de ti para empezar."
-          action={<Button variant="primary" onClick={() => navigate("/events")}>Ver quedadas</Button>}
-        />
-      )}
     </div>
   );
 };
