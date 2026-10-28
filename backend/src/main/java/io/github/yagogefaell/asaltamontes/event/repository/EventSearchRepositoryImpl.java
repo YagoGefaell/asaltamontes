@@ -152,7 +152,7 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
                 cb.notEqual(m.get("status"), MemberStatus.BANNED));
         where.add(cb.or(
                 cb.equal(e.get("visibility"), EventVisibility.PUBLIC),
-                cb.equal(e.get("organizer").get("id"), userId),
+                cb.and(cb.equal(e.get("organizer").get("id"), userId), cb.isNull(e.get("community"))),
                 cb.exists(member)));
 
         if (f.to() != null) {

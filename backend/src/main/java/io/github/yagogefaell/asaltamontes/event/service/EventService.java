@@ -317,6 +317,10 @@ public class EventService {
         Event event = findVisible(eventPublicId, user);
         Long eventId = event.getId();
         lockAndRefresh(event);
+        // Again with the lock held: an expulsion that committed meanwhile wins (BUG-074)
+        if (!eventRepository.canView(eventId, user.getId())) {
+            throw new NotFoundException("Evento no encontrado");
+        }
         requireOpen(event);
 
         Optional<EventAttendee> current = attendeeRepository.findByEventIdAndUserId(eventId, user.getId());
@@ -363,7 +367,38 @@ public class EventService {
             throw new ConflictException("La organizadora no puede salir de su evento; si no se va a hacer, cancélalo");
         }
 
-        EventAttendee attendee = current.get();
+        cancelAttendance(event, current.get(), "LEFT");
+
+        entityManager.refresh(event);
+        return toDetails(event, user, AttendeeStatus.CANCELLED);
+    }
+
+    /**
+     * She loses her place in every members-only event of the community that has not finished (BUG-074): expelled or
+     * out by her own will she must not stay as an attendee, in the chat or in the reminders. The places go to the
+     * waitlist as in {@link #leave}. Events she organizes stay as they are. Runs in the caller's transaction; nothing
+     * re-enrols her if she is readmitted (she joins again by hand).
+     */
+    @Transactional
+    public void withdrawFromCommunityEvents(Long communityId, Long userId, String reason) {
+        for (Long eventId : attendeeRepository.findOpenCommunityEventIds(communityId, userId)) {
+            eventRepository.lockById(eventId);
+            Event event = eventRepository.findById(eventId).orElse(null);
+            if (event == null) {
+                continue;
+            }
+            entityManager.refresh(event);
+            EventAttendee attendee = attendeeRepository.findByEventIdAndUserId(eventId, userId)
+                    .filter(a -> a.getStatus() != AttendeeStatus.CANCELLED).orElse(null);
+            if (attendee != null && statusAt(event, Instant.now()) == EventStatus.SCHEDULED) {
+                cancelAttendance(event, attendee, reason);
+            }
+        }
+    }
+
+    // Cancels her attendance (GOING or WAITLIST), frees the place and promotes the waitlist. The caller holds the event lock.
+    private void cancelAttendance(Event event, EventAttendee attendee, String chatReason) {
+        Long eventId = event.getId();
         AttendeeStatus previous = attendee.getStatus();
         Integer position = attendee.getWaitlistPosition();
         attendee.setStatus(AttendeeStatus.CANCELLED);
@@ -374,15 +409,12 @@ public class EventService {
             attendeeRepository.shiftWaitlistAfter(eventId, position);
         } else {
             eventRepository.addToAttendeeCount(eventId, -1);
-            eventChat.removeAttendee(eventId, user.getId(), "LEFT");
+            eventChat.removeAttendee(eventId, attendee.getUser().getId(), chatReason);
             entityManager.refresh(event);
             if (event.getStatus() == EventStatus.SCHEDULED) {
                 promoteFromWaitlist(event);
             }
         }
-
-        entityManager.refresh(event);
-        return toDetails(event, user, AttendeeStatus.CANCELLED);
     }
 
     /** Attendees by status (GOING by default): GOING in order of arrival, WAITLIST by position. Blocks hide each other (BUG-069). */
@@ -454,7 +486,8 @@ public class EventService {
     }
 
     private boolean canView(Event event, UserAccount user) {
-        if (event.getVisibility() == EventVisibility.PUBLIC || event.getOrganizer().getId().equals(user.getId())) {
+        if (event.getVisibility() == EventVisibility.PUBLIC
+                || (event.getCommunity() == null && event.getOrganizer().getId().equals(user.getId()))) {
             return true;
         }
         return communityMemberRepository.findByCommunityIdAndUserAccountId(event.getCommunity().getId(), user.getId())

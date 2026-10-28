@@ -339,6 +339,105 @@ class EventChatIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void banningAMember_cancelsHerAttendanceFreesThePlaceAndTakesHerOutOfTheChat() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        UserAccount waiting = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        joinCommunity(community, member);
+        joinCommunity(community, waiting);
+        UUID event = communityEvent(community, owner, 2);
+        join(member, event).andExpect(status().isOk());
+        join(waiting, event).andExpect(jsonPath("$.myStatus").value("WAITLIST"));
+        UUID chat = chatOf(member, event);
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/members/" + member.getUsername() + "/ban")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isNoContent());
+
+        assertThat(attendeeStatus(event, member)).isEqualTo("CANCELLED");
+        // Her place went to the first one on the waitlist, who is now in the chat
+        assertThat(attendeeStatus(event, waiting)).isEqualTo("GOING");
+        assertThat(attendeeCount(event)).isEqualTo(2);
+        assertThat(participants(chat)).isEqualTo(2);
+        assertThat(chatOf(waiting, event)).isEqualTo(chat);
+        // She cannot read the history any more
+        mockMvc.perform(get("/api/conversations/" + chat + "/messages").with(auth.bearer(member))).andExpect(status().isNotFound());
+        chatRequest(member, event).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void leavingTheCommunity_alsoWithdrawsFromItsMembersOnlyEvents() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        joinCommunity(community, member);
+        UUID event = communityEvent(community, owner, null);
+        join(member, event).andExpect(status().isOk());
+        UUID chat = chatOf(member, event);
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/leave").with(auth.bearer(member)))
+                .andExpect(status().isNoContent());
+
+        assertThat(attendeeStatus(event, member)).isEqualTo("CANCELLED");
+        assertThat(attendeeCount(event)).isEqualTo(1);
+        mockMvc.perform(get("/api/conversations/" + chat + "/messages").with(auth.bearer(member))).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void banningAMember_leavesHerPublicEventsAlone() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount member = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        joinCommunity(community, member);
+        UUID event = newEvent(owner, null);
+        join(member, event).andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/members/" + member.getUsername() + "/ban")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isNoContent());
+
+        assertThat(attendeeStatus(event, member)).isEqualTo("GOING");
+    }
+
+    @Test
+    void anExpelledOrganizer_losesAccessToHerMembersOnlyEvent() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount organizer = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        joinCommunity(community, organizer);
+        jdbc.update("UPDATE community_members SET role = 'MODERATOR' WHERE community_id = ? AND user_account_id = ?",
+                community.getId(), organizer.getId());
+        UUID event = communityEvent(community, organizer, null);
+        UUID chat = chatOf(organizer, event);
+
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/members/" + organizer.getUsername() + "/ban")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isNoContent());
+
+        chatRequest(organizer, event).andExpect(status().isNotFound());
+        mockMvc.perform(get("/api/events/" + event).with(auth.bearer(organizer))).andExpect(status().isNotFound());
+        assertThatThrownBy(() -> messageService.processIncomingMessage(chat, organizer.getId(), "sigo"))
+                .isInstanceOf(io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException.class);
+    }
+
+    private void joinCommunity(Community community, UserAccount user) throws Exception {
+        mockMvc.perform(post("/api/communities/" + community.getPublicId() + "/join").with(auth.bearer(user))).andExpect(status().isCreated());
+    }
+
+    private UUID communityEvent(Community community, UserAccount organizer, Integer capacity) {
+        return eventService.create(new CreateEventDto(testData.uniqueName("Solo socias"), null, EventType.MEETUP,
+                Instant.now().plus(3, ChronoUnit.DAYS), null, "Europe/Madrid", null, null, null, null, null, null, null, capacity,
+                EventVisibility.COMMUNITY, community.getPublicId()), organizer).id();
+    }
+
+    private String attendeeStatus(UUID event, UserAccount user) {
+        return jdbc.queryForObject("SELECT a.status FROM event_attendees a JOIN events e ON e.id = a.event_id "
+                + "WHERE e.public_id = ? AND a.user_id = ?", String.class, event, user.getId());
+    }
+
+    private int attendeeCount(UUID event) {
+        return jdbc.queryForObject("SELECT attendee_count FROM events WHERE public_id = ?", Integer.class, event);
+    }
+
+    @Test
     void aCancelledEventIsMarkedCancelledInTheCalendarFile() throws Exception {
         UserAccount organizer = testData.createUser();
         UUID event = newEvent(organizer, null);

@@ -1,6 +1,6 @@
 # BUG-074 — Una expulsada de la comunidad sigue apuntada a sus quedadas y en su chat
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** probable
 - **Área:** backend/event, backend/community
@@ -22,3 +22,9 @@ Mitigado en T21a (revisión de seguridad): `EventChatService.open` y `requireCan
 
 ## Arreglo propuesto
 Al expulsar, cancelar sus asistencias a quedadas `COMMUNITY` de esa comunidad (liberando plaza y promoviendo la lista de espera) y quitarla de sus chats; en `open` exigir además `canView`.
+
+## Resolución
+- `CommunityModerationService.ban` y `CommunityService.leaveCommunity` (misma situación: quien sale por voluntad propia también seguía apuntada y en el chat) llaman a `EventService.withdrawFromCommunityEvents`: cancela sus asistencias (GOING o WAITLIST) a quedadas `COMMUNITY` de esa comunidad no terminadas ni canceladas, libera la plaza, promueve la lista de espera (con su notificación habitual) y la saca del chat.
+- Excepciones deliberadas: las quedadas que organiza ella (no puede salir de su propio evento; se cancelan a mano) y las quedadas `PUBLIC` (siguen visibles para todo el mundo).
+- `EventChatService.open` ya exigía `canView` (T21a); queda cubierto con test.
+- Al readmitir (`unban`) o volver a unirse no se la reapunta: debe apuntarse de nuevo.

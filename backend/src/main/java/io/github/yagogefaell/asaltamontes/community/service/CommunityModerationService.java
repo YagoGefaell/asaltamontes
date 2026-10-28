@@ -36,6 +36,7 @@ import io.github.yagogefaell.asaltamontes.community.repository.CommunityJoinRequ
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityModerationLogRepository;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityRepository;
+import io.github.yagogefaell.asaltamontes.event.service.EventService;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaCleanupService;
 import io.github.yagogefaell.asaltamontes.message.service.CommunityChatService;
@@ -76,6 +77,7 @@ public class CommunityModerationService {
     private final MediaCleanupService mediaCleanup;
     private final ApplicationEventPublisher eventPublisher;
     private final CommunityChatService communityChat;
+    private final EventService eventService;
 
     // ---- Edit the community ----
 
@@ -264,6 +266,8 @@ public class CommunityModerationService {
         communityRepository.decrementMemberCount(communityId);
         // Expelled: out of the chat too
         communityChat.removeMember(communityId, target.getUserAccount().getId(), "REMOVED");
+        // And out of the members-only events: place freed, waitlist promoted, out of their chats (BUG-074)
+        eventService.withdrawFromCommunityEvents(communityId, target.getUserAccount().getId(), "REMOVED");
         log(communityId, user.getId(), target.getUserAccount().getId(), ModerationAction.BAN, cleanReason(reason));
     }
 
