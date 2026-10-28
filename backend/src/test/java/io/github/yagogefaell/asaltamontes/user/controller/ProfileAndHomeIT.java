@@ -1,5 +1,6 @@
 package io.github.yagogefaell.asaltamontes.user.controller;
 
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
@@ -12,6 +13,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.LinkedHashMap;
@@ -21,14 +23,17 @@ import java.util.UUID;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.web.servlet.ResultActions;
 
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityVisibility;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
+import io.github.yagogefaell.asaltamontes.infrastructure.config.AsyncConfig;
 import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.BlockService;
@@ -45,6 +50,7 @@ class ProfileAndHomeIT extends AbstractIntegrationTest {
     @Autowired private FollowService follows;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private EntityManagerFactory entityManagerFactory;
+    @Autowired @Qualifier(AsyncConfig.NOTIFICATIONS_EXECUTOR) private ThreadPoolTaskExecutor notificationExecutor;
 
     // ---- GET /api/users/{username}/events ----
 
@@ -233,6 +239,9 @@ class ProfileAndHomeIT extends AbstractIntegrationTest {
                 create(other, ev("e" + i, tag, i, Map.of()));
                 follows.followUser(me.getId(), other.getUsername());
             }
+            // The setup above fires async notification tasks (NotificationListener) that run their own SQL; if they
+            // are still running when the counter resets they leak into the measured window (BUG-077)
+            awaitNotificationsIdle();
             stats.clear();
             mockMvc.perform(get("/api/users/suggestions").with(auth.bearer(me)).param("size", "50")).andExpect(status().isOk());
             mockMvc.perform(get("/api/users/{u}/communities", friend.getUsername()).with(auth.bearer(me)).param("size", "50"))
@@ -241,6 +250,7 @@ class ProfileAndHomeIT extends AbstractIntegrationTest {
                     .andExpect(status().isOk());
             mockMvc.perform(get("/api/events").with(auth.bearer(me)).param("followedBy", "me").param("size", "50"))
                     .andExpect(status().isOk());
+            awaitNotificationsIdle();
             long statements = stats.getPrepareStatementCount();
             if (round == 0) {
                 few = statements;
@@ -252,6 +262,12 @@ class ProfileAndHomeIT extends AbstractIntegrationTest {
     }
 
     // ---- helpers ----
+
+    private void awaitNotificationsIdle() {
+        var pool = notificationExecutor.getThreadPoolExecutor();
+        await().atMost(Duration.ofSeconds(10)).pollInterval(Duration.ofMillis(50))
+                .until(() -> pool.getActiveCount() == 0 && pool.getQueue().isEmpty());
+    }
 
     private static String t(String tag, String name) {
         return name + " " + tag;
