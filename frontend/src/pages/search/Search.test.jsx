@@ -41,28 +41,26 @@ describe('Search (T29d)', () => {
     getEventsRequest.mockResolvedValue(events(5))
   })
 
-  it('without text shows suggestions and does not list people', async () => {
+  it('without text stays blank and asks for nothing', async () => {
     renderAt()
-    expect(await screen.findByRole('region', { name: 'Comunidades para ti' })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Próximas quedadas' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Comunidades para ti' })).not.toBeInTheDocument()
+    await settle()
     expect(getAllUsersRequest).not.toHaveBeenCalled()
-    expect(screen.getAllByTestId('community-row')).toHaveLength(5)
+    expect(getCommunitiesRequest).not.toHaveBeenCalled()
+    expect(getEventsRequest).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region')).not.toBeInTheDocument()
   })
 
-  it('suggests only communities she is not in yet', async () => {
-    getCommunitiesRequest.mockResolvedValue({
-      items: [{ id: 'c1', name: 'Mía', role: 'OWNER' }, { id: 'c2', name: 'Valkirias', role: null }],
-      hasMore: false,
-      page: 0,
-    })
-    renderAt()
-    expect(await screen.findByText('Valkirias')).toBeInTheDocument()
-    expect(screen.queryByText('Mía')).not.toBeInTheDocument()
+  it('titles each kind of result in "Todo"', async () => {
+    renderAt('/search?q=ana')
+    expect(await screen.findByRole('heading', { name: 'Personas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Comunidades' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Quedadas' })).toBeInTheDocument()
   })
 
-  it('shows the four tabs', () => {
+  it('shows the four tabs only once there is text', () => {
     renderAt()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'a' } })
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Todo', 'Personas', 'Comunidades', 'Quedadas'])
   })
 
@@ -101,18 +99,16 @@ describe('Search (T29d)', () => {
     expect(JSON.parse(window.localStorage.getItem(RECENT_KEY))).toEqual(['laura'])
   })
 
-  it('hides recents until she focuses the field, and then shows them instead of the suggestions', async () => {
+  it('hides recents until she focuses the field, and then shows them without the tabs', () => {
     window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
     renderAt()
-    expect(await screen.findByRole('region', { name: 'Comunidades para ti' })).toBeInTheDocument()
     expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
     fireEvent.focus(screen.getByRole('searchbox'))
     expect(screen.getByText('Recientes')).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: 'Comunidades para ti' })).not.toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 
-  it('"Cancelar" clears the text and goes back to the suggestions', async () => {
+  it('"Cancelar" clears the text and leaves search mode', async () => {
     window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
     renderAt('/search?q=ana')
     const input = screen.getByRole('searchbox')
@@ -121,7 +117,8 @@ describe('Search (T29d)', () => {
     expect(input).toHaveValue('')
     expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
-    expect(await screen.findByRole('region', { name: 'Comunidades para ti' })).toBeInTheDocument()
+    await settle()
+    expect(screen.queryByRole('region')).not.toBeInTheDocument()
   })
 
   it('says there are no recents when she focuses the field without history', () => {

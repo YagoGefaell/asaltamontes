@@ -18,7 +18,6 @@ import Button from "../../shared/forms/Button";
 
 const DEBOUNCE_MS = 300;
 const ALL_PREVIEW = 3;
-const SUGGESTIONS = 5;
 
 const SEARCH_TABS = [
   { id: "all", label: "Todo" },
@@ -48,15 +47,15 @@ function EventSkeleton() {
   );
 }
 
-/** A block of results: title (only for screen readers when `untitled`), rows (skeleton / error / items) and "Ver todas" or "Cargar más". */
-function ResultSection({ title, untitled, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
+/** A block of results: title, rows (skeleton / error / items) and "Ver todas" or "Cargar más". */
+function ResultSection({ title, section, render, skeleton, preview, onSeeAll, hideWhenEmpty }) {
   const { items, loading, loadingMore, hasMore, error, loadMore, retry } = section;
   if (hideWhenEmpty && !loading && !error && items.length === 0) return null;
   const shown = preview ? items.slice(0, preview) : items;
 
   return (
     <section className="search-section" aria-label={title} aria-busy={loading || undefined}>
-      {!untitled && <h2 className="search-section__title">{title}</h2>}
+      <h2 className="search-section__title">{title}</h2>
       {loading && [0, 1, 2].slice(0, preview || 3).map((i) => <div key={i}>{skeleton}</div>)}
       {!loading && error && (
         <div className="search-error" role="alert">
@@ -86,7 +85,7 @@ const Search = () => {
 
   const [text, setText] = useState(qParam);
   const [query, setQuery] = useState(qParam.trim());
-  // Search mode, as in Instagram: focusing the field swaps the suggestions for her recents until she cancels
+  // Search mode, as in Instagram: focusing the field shows her recents until she cancels
   const [active, setActive] = useState(false);
   const inputRef = useRef(null);
   const { recents, add: addRecent, remove: removeRecent, clear: clearRecents } = useRecentSearches();
@@ -133,16 +132,15 @@ const Search = () => {
     query,
     searching && wantsUsers,
   );
-  // Both of these also feed the suggestions when there is no text
   const communities = useSearchSection(
     (page) => getCommunitiesRequest({ page, query }),
     query,
-    wantsCommunities,
+    searching && wantsCommunities,
   );
   const events = useSearchSection(
-    (page) => getEventsRequest({ page, q: query, from: new Date().toISOString(), size: searching ? 20 : SUGGESTIONS }),
+    (page) => getEventsRequest({ page, q: query, from: new Date().toISOString(), size: 20 }),
     query,
-    wantsEvents,
+    searching && wantsEvents,
   );
 
   const myUsername = currentUser?.username;
@@ -226,7 +224,7 @@ const Search = () => {
             <Button variant="ghost" className="search-bar__cancel" onClick={cancel}>Cancelar</Button>
           )}
         </div>
-        {!showRecents && (
+        {!showRecents && text.trim() && (
           <Tabs tabs={SEARCH_TABS} value={tab} onChange={setTab} label="Tipo de resultado" idPrefix="search-tab" />
         )}
       </div>
@@ -266,35 +264,7 @@ const Search = () => {
       {!showRecents && (
         <div className="search-results" id={`search-tab-panel-${tab}`} role="tabpanel" aria-labelledby={`search-tab-${tab}`}
           onClick={searching ? rememberOnResultClick : undefined}>
-          {!searching && (
-            <>
-              {tab === "users" && (
-                <EmptyState title="Busca a otras corredoras" description="Escribe un nombre o un @usuario." />
-              )}
-
-              {wantsCommunities && (
-                <ResultSection
-                  title="Comunidades para ti"
-                  untitled
-                  section={{ ...communities, items: communities.items.filter((c) => !c.role).slice(0, SUGGESTIONS), hasMore: false }}
-                  render={renderCommunity}
-                  skeleton={<UserRowSkeleton />}
-                  hideWhenEmpty
-                />
-              )}
-              {wantsEvents && (
-                <ResultSection
-                  title="Próximas quedadas"
-                  untitled
-                  section={{ ...events, hasMore: false }}
-                  render={renderEvent}
-                  skeleton={<EventSkeleton />}
-                  hideWhenEmpty
-                />
-              )}
-            </>
-          )}
-
+          {/* Without text the page stays blank; it will be the posts grid (Explore) with T22 */}
           {searching && (
             <>
               {wantsUsers && (
