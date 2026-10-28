@@ -5,26 +5,23 @@ import Home from './Home.jsx'
 import { NotificationsContext } from '../../features/notifications/hooks/notifications.context'
 import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
 import { getEventsRequest } from '../../features/events/services/events.service'
-import { getCommunitiesRequest, getMyCommunitiesRequest } from '../../features/communities/services/communities.service'
+import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
 
 vi.mock('../../features/events/services/events.service', () => ({ getEventsRequest: vi.fn() }))
 vi.mock('../../features/communities/services/communities.service', () => ({
   getCommunitiesRequest: vi.fn(),
-  getMyCommunitiesRequest: vi.fn(),
 }))
 vi.mock('../../features/events/components/EventCard', () => ({
   default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
 }))
-vi.mock('../../features/search/components/CommunityRow', () => ({
-  default: ({ community }) => <div data-testid="community-row">{community.name}</div>,
-}))
+vi.mock('../../shared/components/CommunityJoinButton', () => ({ default: () => <button>Unirse</button> }))
+vi.mock('../../shared/components/CommunityRequestButton', () => ({ default: () => <button>Solicitar</button> }))
 
 const page = (items) => ({ items, hasMore: false, page: 0 })
 
 beforeEach(() => {
   vi.clearAllMocks()
   getEventsRequest.mockResolvedValue(page([]))
-  getMyCommunitiesRequest.mockResolvedValue(page([]))
   getCommunitiesRequest.mockResolvedValue(page([]))
 })
 
@@ -83,16 +80,17 @@ describe('Home content', () => {
     expect(screen.getByText('Sunset run')).toBeTruthy()
   })
 
-  it('shows her communities and suggests only the ones she is not in', async () => {
-    getMyCommunitiesRequest.mockResolvedValue(page([{ id: 'c1', name: 'Cabras', slug: 'cabras', role: 'MEMBER' }]))
+  it('does not list her communities and recommends only the ones she is not in, in a row', async () => {
     getCommunitiesRequest.mockResolvedValue(page([
       { id: 'c1', name: 'Cabras', slug: 'cabras', role: 'MEMBER' },
-      { id: 'c2', name: 'Valkirias', slug: 'valkirias', role: null },
+      { id: 'c2', name: 'Valkirias', slug: 'valkirias', city: 'Madrid', role: null },
     ]))
     renderHome()
-    expect(await screen.findByRole('link', { name: /Cabras/ })).toHaveAttribute('href', '/communities/cabras')
-    expect(await screen.findByText('Comunidades para ti')).toBeTruthy()
-    expect(screen.getAllByTestId('community-row').map((n) => n.textContent)).toEqual(['Valkirias'])
+    expect(await screen.findByText('Comunidades recomendadas')).toBeTruthy()
+    expect(screen.queryByText('Tus comunidades')).toBeNull()
+    expect(screen.queryByText('Cabras')).toBeNull()
+    expect(screen.getByRole('link', { name: /Valkirias/ })).toHaveAttribute('href', '/communities/valkirias')
+    expect(document.querySelector('.home-rail')).not.toBeNull()
   })
 
   it('offers a retry when the events fail to load', async () => {
