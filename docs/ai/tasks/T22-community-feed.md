@@ -12,11 +12,12 @@
 Inicio sin feed real todavía. Sustituirlo por contenido real: publicaciones de comunidades y de las usuarias que sigues, con sugerencias intercaladas.
 
 ## Decisiones de Yago (2026-10-28, revisión de la PR #109)
-- **Inicio es de publicaciones**: el feed con, intercaladas entre publicaciones, filas deslizables de usuarias para seguir y de comunidades recomendadas. **Sin quedadas** en Inicio (viven en su pestaña) y **sin títulos que anuncien el contenido** («Tus próximas quedadas», «Tus comunidades»…).
+- **Inicio es de publicaciones**: el feed con, intercaladas entre publicaciones, filas deslizables (con su título) de usuarias para seguir y de comunidades recomendadas. **Sin quedadas** en Inicio: viven en su pestaña.
 - **Publicación = texto con foto opcional** (estilo Strava/Facebook, no solo foto).
 - **Quién publica**: a futuro cualquier usuaria, en su perfil (lo ven sus seguidoras) y en sus comunidades (lo ven sus miembros). Si para la demo no da tiempo, como mínimo en comunidades.
-- **Buscar sin texto**: cuadrícula visual de publicaciones con foto, estilo «Explorar» de Instagram, en lugar de listas de sugerencias.
-- Mientras tanto (T29h): Inicio muestra una vista previa no funcional del editor («Las publicaciones llegan pronto»), el estado vacío y las filas de sugerencias.
+- **Crear publicación es una pantalla aparte**, como en Instagram (un acceso propio de «crear», no un editor dentro de Inicio). Dónde va el acceso (pestaña de la barra inferior o `+` en la cabecera) se decide al refinar esta spec.
+- **Buscar sin texto**: cuadrícula visual de publicaciones con foto, estilo «Explorar» de Instagram.
+- Mientras tanto (T29h): Inicio muestra el estado vacío «Aún no hay publicaciones» y las filas de sugerencias; Buscar sin texto queda en blanco (recientes al tocar el campo).
 
 ## Enfoque
 - `posts` (author, community_id, text ≤ 2000, media ids hasta 4, created_at, like_count, comment_count, deleted_at), `post_likes`, `post_comments` (un solo nivel). Contadores desnormalizados con `UPDATE` atómicos, como los follows.
