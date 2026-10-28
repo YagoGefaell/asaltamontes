@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { FaMountain } from "react-icons/fa";
 import Button from "../../../shared/forms/Button";
 import FormError from "../../../shared/forms/FormError";
 import Input from "../../../shared/forms/Input";
@@ -61,6 +62,22 @@ export default function CommunityEditForm({ community, onSaved }) {
 
   return (
     <form className="moderation-form" onSubmit={handleSubmit}>
+      <ImageUploader
+        value={imageUrl}
+        onChange={(url, mediaId) => {
+          setImageUrl(url);
+          setCoverMediaId(mediaId || null);
+        }}
+        onUploadingChange={setUploading}
+        purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
+        label="Imagen de la comunidad"
+        chooseLabel="Elegir imagen"
+        changeLabel="Cambiar imagen"
+        tapToChoose
+        emptyIcon={<FaMountain />}
+        disabled={saving}
+      />
+
       <SectionCard title="Datos de la comunidad">
         <Input
           id="community-edit-name"
@@ -106,23 +123,6 @@ export default function CommunityEditForm({ community, onSaved }) {
             Quien no sea miembro solo verá el nombre, la imagen, la descripción y el número de miembros.
           </p>
         )}
-      </SectionCard>
-
-      <SectionCard title="Imagen">
-        <ImageUploader
-          value={imageUrl}
-          onChange={(url, mediaId) => {
-            setImageUrl(url);
-            setCoverMediaId(mediaId || null);
-          }}
-          onUploadingChange={setUploading}
-          purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
-          label="Imagen de la comunidad"
-          chooseLabel="Elegir imagen"
-          changeLabel="Cambiar imagen"
-          shape="wide"
-          disabled={saving}
-        />
       </SectionCard>
 
       <FormError message={error} />
