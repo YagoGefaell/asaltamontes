@@ -6,12 +6,19 @@ import EventForm from './EventForm.jsx'
 import CommunityEvents from './CommunityEvents.jsx'
 import { EMPTY_FORM } from '../utils/eventForm.js'
 import { getCommunityEventsRequest } from '../services/events.service.js'
+import { searchPlaces } from '../services/places.service.js'
 
 // Leaflet needs a real browser layout: the picker is replaced by a stub that "taps" a point
 vi.mock('./LocationPicker.jsx', () => ({
-  default: ({ onChange }) => <button type="button" onClick={() => onChange(40.5, -3.7)}>mapa</button>,
+  default: ({ onChange, focus }) => (
+    <>
+      <button type="button" onClick={() => onChange(40.5, -3.7)}>mapa</button>
+      {focus && <span>{`mapa centrado en ${focus.latitude}, ${focus.longitude}`}</span>}
+    </>
+  ),
 }))
 vi.mock('../services/events.service.js', () => ({ getCommunityEventsRequest: vi.fn() }))
+vi.mock('../services/places.service.js', () => ({ searchPlaces: vi.fn() }))
 
 function Harness({ onSubmit, initial = EMPTY_FORM, ...props }) {
   const [values, setValues] = useState(initial)
@@ -42,6 +49,52 @@ describe('EventForm', () => {
     expect(screen.getByText('40.50000, -3.70000')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rodaje', latitude: 40.5, longitude: -3.7 }))
+  })
+
+  it('suggests places as she types and fills the name, the city and the point with the one she picks', async () => {
+    searchPlaces.mockResolvedValue([
+      { id: 'W1', name: 'Centro Comercial Vialia', detail: 'Vigo, Galicia, España', city: 'Vigo', latitude: 42.2338, longitude: -8.7114 },
+    ])
+    const onSubmit = await renderForm()
+    const field = screen.getByRole('combobox', { name: 'Lugar' })
+    fireEvent.focus(field)
+    fireEvent.change(field, { target: { value: 'vialia' } })
+    const option = await screen.findByRole('option', { name: /Centro Comercial Vialia/ })
+    expect(searchPlaces).toHaveBeenCalledWith('vialia', expect.objectContaining({ near: null }))
+
+    fireEvent.click(option)
+    expect(field).toHaveValue('Centro Comercial Vialia')
+    expect(screen.getByLabelText('Ciudad')).toHaveValue('Vigo')
+    expect(screen.getByText('42.23380, -8.71140')).toBeInTheDocument()
+    expect(screen.getByText('mapa centrado en 42.2338, -8.7114')).toBeInTheDocument()
+    expect(screen.queryByRole('listbox')).toBeNull()
+
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Rodaje' } })
+    fireEvent.change(screen.getByLabelText('Empieza'), { target: { value: '2999-01-02T09:30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      meetingPointName: 'Centro Comercial Vialia', city: 'Vigo', latitude: 42.2338, longitude: -8.7114,
+    }))
+  })
+
+  it('keeps a free-text place, picks with the keyboard and says when nothing is found', async () => {
+    searchPlaces.mockResolvedValueOnce([])
+    await renderForm()
+    const field = screen.getByRole('combobox', { name: 'Lugar' })
+    fireEvent.focus(field)
+    fireEvent.change(field, { target: { value: 'Fuente de la Teja' } })
+    expect(await screen.findByText(/Sin resultados/)).toBeInTheDocument()
+    expect(field).toHaveValue('Fuente de la Teja')
+
+    searchPlaces.mockResolvedValueOnce([
+      { id: 'N1', name: 'Jaca', detail: 'Aragón', city: 'Jaca', latitude: 42.57, longitude: -0.55 },
+    ])
+    fireEvent.change(field, { target: { value: 'jaca' } })
+    await screen.findByRole('option', { name: /Jaca/ })
+    fireEvent.keyDown(field, { key: 'ArrowDown' })
+    expect(screen.getByRole('option', { name: /Jaca/ })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(screen.getByLabelText('Ciudad')).toHaveValue('Jaca')
   })
 
   it('defaults to the device zone and lets her pick another under "Más opciones" with a search box', async () => {

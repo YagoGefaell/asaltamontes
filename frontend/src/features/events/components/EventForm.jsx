@@ -8,8 +8,12 @@ import {
   CITY_MAX, DESCRIPTION_MAX, MEETING_POINT_MAX, TITLE_MAX, browserTimeZone, validateEventForm,
 } from '../utils/eventForm.js'
 import { zoneLabel } from '../utils/timeZones.js'
+import PlaceAutocomplete from './PlaceAutocomplete.jsx'
 import TimeZoneSelect from './TimeZoneSelect.jsx'
 import './EventForm.css'
+
+// Below this zoom the map shows a region too wide to rank place suggestions by
+const NEAR_MIN_ZOOM = 9
 
 // Leaflet only downloads when the form is opened
 const LocationPicker = lazy(() => import('./LocationPicker.jsx'))
@@ -25,6 +29,9 @@ export default function EventForm({
 }) {
   const timeZone = values.timezone || browserTimeZone()
   const [submitted, setSubmitted] = useState(false)
+  // Where the map should fly after a place is picked, and the area she is looking at (to rank suggestions)
+  const [mapFocus, setMapFocus] = useState(null)
+  const [mapView, setMapView] = useState(null)
   const errors = submitted ? { ...serverErrors, ...validateEventForm(values, { timeZone, original }) } : serverErrors
   const set = (patch) => onChange({ ...values, ...patch })
   const field = (name) => ({
@@ -40,6 +47,18 @@ export default function EventForm({
   }
 
   const hasPoint = values.latitude != null && values.longitude != null
+  // Rank suggestions near her point or the area she zoomed into; the whole-Spain view says nothing
+  const near = hasPoint ? { latitude: values.latitude, longitude: values.longitude } : mapView?.zoom >= NEAR_MIN_ZOOM ? mapView : null
+
+  const pickPlace = (place) => {
+    set({
+      meetingPointName: place.name.slice(0, MEETING_POINT_MAX),
+      city: place.city ? place.city.slice(0, CITY_MAX) : values.city,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    })
+    setMapFocus({ latitude: place.latitude, longitude: place.longitude })
+  }
   const otherZone = timeZone !== browserTimeZone()
   const moreHasError = ['distanceKm', 'elevationGainM', 'capacity', 'timezone'].some((name) => errors[name])
 
@@ -66,14 +85,23 @@ export default function EventForm({
       </p>
       <fieldset className="event-form__place">
         <legend>Punto de encuentro</legend>
-        <Input label="Nombre del lugar" aria-label="Lugar" maxLength={MEETING_POINT_MAX} placeholder="Ej.: Parking del Teleférico" {...field('meetingPointName')} />
+        <PlaceAutocomplete
+          value={values.meetingPointName}
+          onChange={(text) => set({ meetingPointName: text })}
+          onPick={pickPlace}
+          near={near}
+          error={errors.meetingPointName}
+          maxLength={MEETING_POINT_MAX}
+        />
         <Input label="Ciudad" aria-label="Ciudad" maxLength={CITY_MAX} {...field('city')} />
-        <p className="event-form__hint">Toca el mapa para marcar el punto y arrastra la chincheta para ajustarlo.</p>
+        <p className="event-form__hint">Elige un lugar de la lista o toca el mapa para marcar el punto. Arrastra la chincheta para ajustarlo.</p>
         <Suspense fallback={<Skeleton height="280px" />}>
           <LocationPicker
             latitude={values.latitude}
             longitude={values.longitude}
             onChange={(latitude, longitude) => set({ latitude, longitude })}
+            focus={mapFocus}
+            onViewChange={setMapView}
           />
         </Suspense>
         {hasPoint && (

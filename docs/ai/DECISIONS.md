@@ -122,3 +122,8 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 ## D-023 · Visibilidad en perfiles ajenos y en Inicio (2026-10-28)
 - **Decisión (Yago):** en el perfil de otra usuaria se muestran **solo** (a) las quedadas que **organiza** y que **quien mira puede ver**, y (b) sus **comunidades públicas**. **Nunca** su asistencia a quedadas futuras (revelaría dónde y cuándo estará). El filtro «de quienes sigo» de Inicio aplica **las mismas reglas de visibilidad**.
 - **Consecuencias:** los endpoints de T31b filtran por visibilidad en la consulta (no en memoria), paginan, respetan bloqueos (D-022) y llevan tests de que no se filtran quedadas o comunidades privadas. El rol de moderación en comunidades (propietaria/moderadora) es público a propósito (T20).
+
+## D-024 · Búsqueda de lugares con Photon (OpenStreetMap) (2026-10-28)
+- **Contexto:** al crear una quedada, Yago quiere escribir el lugar («vialia») y elegirlo de una lista que lo marque en el mapa. Google Places exige clave con facturación y prohíbe mostrar sus resultados sobre un mapa que no sea de Google, lo que chocaría con D-005.
+- **Decisión (Yago):** autocompletado con **Photon** (geocodificador de komoot sobre datos de OSM), llamado desde el navegador, sin clave. Los resultados se ordenan cerca del punto marcado o de la zona que se ve en el mapa. El nombre del lugar sigue siendo texto libre: la sugerencia es una ayuda.
+- **Consecuencias:** la instancia pública `photon.komoot.io` es de uso razonable y sin garantías; vale para la demo. Con tráfico real, autoalojar Photon o pasar a un proveedor (MapTiler, Geoapify…), cambiando solo `places.service.js`. Atribución a OpenStreetMap visible bajo las sugerencias.

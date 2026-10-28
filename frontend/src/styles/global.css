@@ -91,3 +91,10 @@ body {
   margin: 0;
   padding: 0;
 }
+/* Form controls don't inherit the font by default (textareas fall back to monospace) */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
