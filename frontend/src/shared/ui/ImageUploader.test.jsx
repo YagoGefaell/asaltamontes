@@ -100,4 +100,13 @@ describe('ImageUploader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
     expect(onChange).toHaveBeenCalledWith('', null)
   })
+
+  it('with tapToChoose the image itself opens the picker, without a separate button', () => {
+    const { input } = setup({ tapToChoose: true, label: 'Foto de perfil', fallbackSrc: '/avatar.png' })
+    const click = vi.spyOn(input, 'click')
+
+    expect(screen.queryByRole('button', { name: 'Elegir foto' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Elegir foto: foto de perfil' }))
+    expect(click).toHaveBeenCalledTimes(1)
+  })
 })

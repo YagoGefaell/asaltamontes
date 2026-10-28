@@ -11,33 +11,11 @@
   padding: var(--space-4);
 }
 
-.event-detail__header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: 0.55rem var(--space-3);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-soft);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.event-detail__header h2 {
+.event-detail__title {
   margin: 0;
-  flex: 1;
-  font-size: var(--text-lg);
-  min-width: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
   overflow-wrap: anywhere;
-}
-
-.event-detail__back {
-  flex: 0 0 var(--touch-min);
-  height: var(--touch-min);
-  background: none;
-  border: none;
-  color: var(--text-color);
-  cursor: pointer;
 }
 
 .event-detail__content {

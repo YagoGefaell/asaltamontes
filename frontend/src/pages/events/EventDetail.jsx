@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FaArrowLeft } from 'react-icons/fa'
+import { FaPen } from 'react-icons/fa'
 import { useAuth } from '../../features/auth/hooks/useAuth.js'
 import { useEvent } from '../../features/events/hooks/useEvent.js'
 import { useEventAttendance } from '../../features/events/hooks/useEventAttendance.js'
@@ -15,6 +15,7 @@ import Avatar from '../../shared/ui/Avatar.jsx'
 import EmptyState from '../../shared/ui/EmptyState.jsx'
 import Skeleton from '../../shared/ui/Skeleton.jsx'
 import Button from '../../shared/forms/Button.jsx'
+import PageHeader from '../../shared/ui/PageHeader.jsx'
 import { useToast } from '../../shared/ui/Toast.jsx'
 import { communityPath } from '../../features/communities/utils/communityPath.js'
 import './EventDetail.css'
@@ -148,15 +149,16 @@ export default function EventDetail() {
 
   return (
     <div className="event-detail">
-      <header className="event-detail__header">
-        <button type="button" className="event-detail__back" onClick={() => navigate('/events')} aria-label="Volver a las quedadas">
-          <FaArrowLeft />
-        </button>
-        <h2>{event.title}</h2>
-        {event.canEdit && event.status !== 'CANCELLED' && (
-          <Button variant="outline" size="small" onClick={() => navigate(`/events/${event.id}/edit`)}>Editar</Button>
+      <PageHeader
+        title="Quedada"
+        onBack={() => navigate('/events')}
+        backLabel="Volver a las quedadas"
+        actions={event.canEdit && event.status !== 'CANCELLED' && (
+          <button type="button" onClick={() => navigate(`/events/${event.id}/edit`)} aria-label="Editar quedada" title="Editar quedada">
+            <FaPen aria-hidden="true" />
+          </button>
         )}
-      </header>
+      />
 
       <div className="event-detail__content">
         {event.status === 'CANCELLED' && (
@@ -165,6 +167,7 @@ export default function EventDetail() {
           </p>
         )}
 
+        <h2 className="event-detail__title">{event.title}</h2>
         <p className="event-detail__when">{formatEventDateTime(event.startsAt, event.timezone)}</p>
         {viewerTime && <p className="event-detail__viewer-time">Tu hora: {viewerTime}</p>}
         <div className="event-detail__tags">

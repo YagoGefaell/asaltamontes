@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { CHAT } from "../../../config/constants";
+import { FaInfoCircle } from "react-icons/fa";
 import Button from "../../../shared/forms/Button";
+import PageHeader from "../../../shared/ui/PageHeader";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Skeleton from "../../../shared/ui/Skeleton";
 import { systemMessageText } from "../../../features/messages/utils/systemMessage";
@@ -93,26 +95,15 @@ const ChatPane = ({
 
   return (
     <>
-      <div className="messages-header">
-        <Button
-          variant="ghost"
-          className="chat-back-btn"
-          aria-label="Volver"
-          onClick={onLeaveChat}
-        >
-          <svg
-            className="chat-back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </Button>
+      <PageHeader
+        onBack={onLeaveChat}
+        backLabel="Volver"
+        actions={isGroup && onOpenGroupInfo && (
+          <button type="button" onClick={onOpenGroupInfo} aria-label="Info del grupo" title="Info del grupo">
+            <FaInfoCircle aria-hidden="true" />
+          </button>
+        )}
+      >
         <div
           className="chat-title"
           onClick={(event) => (isGroup && onOpenGroupInfo ? onOpenGroupInfo() : onOpenUserProfile(selectedChat, event))}
@@ -134,12 +125,7 @@ const ChatPane = ({
             <span className="chat-status">{isGroup ? "Toca para ver el grupo" : "En linea"}</span>
           </div>
         </div>
-        {isGroup && onOpenGroupInfo && (
-          <Button variant="ghost" size="small" className="chat-info-btn" onClick={onOpenGroupInfo}>
-            Info del grupo
-          </Button>
-        )}
-      </div>
+      </PageHeader>
 
       <div
         className="messages"

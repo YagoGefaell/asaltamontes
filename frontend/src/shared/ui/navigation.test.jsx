@@ -20,6 +20,22 @@ describe('PageHeader', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Volver atrás' }))
     expect(onBack).toHaveBeenCalledTimes(1)
   })
+
+  it('takes a custom back label and can disable it while saving', () => {
+    const onBack = vi.fn()
+    const { rerender } = render(<PageHeader title="Crear grupo" onBack={onBack} backLabel="Volver a contactos" />)
+    fireEvent.click(screen.getByRole('button', { name: 'Volver a contactos' }))
+    expect(onBack).toHaveBeenCalledTimes(1)
+
+    rerender(<PageHeader title="Crear grupo" onBack={onBack} backLabel="Volver a contactos" backDisabled />)
+    expect(screen.getByRole('button', { name: 'Volver a contactos' })).toBeDisabled()
+  })
+
+  it('renders custom content instead of the title heading', () => {
+    render(<PageHeader><span>Lucía · En línea</span></PageHeader>)
+    expect(screen.getByText('Lucía · En línea')).toBeTruthy()
+    expect(screen.queryByRole('heading')).toBeNull()
+  })
 })
 
 describe('Tabs', () => {

@@ -117,6 +117,33 @@ export async function deleteCommunityRequest(communityId) {
   }
 }
 
+// -------- MY COMMUNITIES --------
+// One page of the communities she belongs to (with her role in each one)
+export async function getMyCommunitiesRequest({ page = 0, size = COMMUNITIES_PAGE_SIZE } = {}) {
+  try {
+    const response = await apiClient.get(`/api/communities/me?page=${page}&size=${size}`)
+    return {
+      items: Array.isArray(response?.content) ? response.content : [],
+      hasMore: response?.last === false,
+    }
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo tus comunidades')
+  }
+}
+
+// -------- PUBLIC COMMUNITIES OF ANOTHER USER (T31b) --------
+export async function getUserCommunitiesRequest(username, { page = 0, size = COMMUNITIES_PAGE_SIZE } = {}) {
+  try {
+    const response = await apiClient.get(`/api/users/${encodeURIComponent(username)}/communities?page=${page}&size=${size}`)
+    return {
+      items: Array.isArray(response?.content) ? response.content : [],
+      hasMore: response?.last === false,
+    }
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo sus comunidades')
+  }
+}
+
 // -------- COMMUNITIES SHE CAN ORGANIZE IN --------
 // GET /api/communities/me has her role in each one; only OWNER and MODERATOR can create events (T16b)
 export async function getOrganizableCommunitiesRequest() {

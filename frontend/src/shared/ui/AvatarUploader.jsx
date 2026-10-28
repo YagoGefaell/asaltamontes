@@ -13,6 +13,7 @@ export default function AvatarUploader({ value, onChange, fullName, username, ..
       label="Foto de perfil"
       fallbackSrc={formatters.avatar(null, fullName, username)}
       shape="round"
+      tapToChoose
     />
   );
 }

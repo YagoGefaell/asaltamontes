@@ -1,9 +1,11 @@
 import "./CommunityProfileDetail.css";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { FaCog } from "react-icons/fa";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import Loading from "../../shared/components/Loading";
 import FormError from "../../shared/forms/FormError";
+import PageHeader from "../../shared/ui/PageHeader";
 import { formatters } from "../../utils/helpers";
 import { useCommunityMembers } from "../../features/communities/hooks/useCommunityMembers";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
@@ -63,25 +65,7 @@ function CommunityProfile() {
   if (error || !community) {
     return (
       <div className="community-profile-page">
-        <div className="profile-header other-profile">
-          <button
-            className="back-btn"
-            onClick={() => navigate(-1)}
-            aria-label="Volver atrás"
-          >
-            <svg
-              className="back-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-          </button>
-        </div>
+        <PageHeader title="Comunidad" onBack={() => navigate(-1)} />
         <FormError message={error || "Comunidad no encontrada"} />
       </div>
     );
@@ -89,46 +73,15 @@ function CommunityProfile() {
 
   return (
     <div className="community-profile-page">
-      {/* Header */}
-      <div className="profile-header other-profile">
-        <button
-          className="back-btn"
-          onClick={() => navigate(-1)}
-          aria-label="Volver atrás"
-        >
-          <svg
-            className="back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        {canManage && (
-          <button
-            className="settings-icon-btn"
-            onClick={() => navigate(communityPath(community, "/settings"))}
-            aria-label="Ir a ajustes de comunidad"
-          >
-            <svg
-              className="settings-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.09a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-            </svg>
+      <PageHeader
+        title={community.name}
+        onBack={() => navigate(-1)}
+        actions={canManage && (
+          <button type="button" onClick={() => navigate(communityPath(community, "/settings"))} aria-label="Ir a ajustes de comunidad" title="Ajustes de la comunidad">
+            <FaCog aria-hidden="true" />
           </button>
         )}
-      </div>
+      />
 
       <div className="profile-avatar-container">
         {!avatarLoadError ? (

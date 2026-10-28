@@ -42,3 +42,11 @@
 .community-row__action {
   flex-shrink: 0;
 }
+
+.community-row__action .btn,
+.community-row__action .community-join-button {
+  min-height: var(--touch-min);
+  padding-inline: var(--space-3);
+  font-size: var(--text-sm);
+  min-width: 0;
+}

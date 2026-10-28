@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Button from "../../../shared/forms/Button.jsx";
 import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
+import PageHeader from "../../../shared/ui/PageHeader.jsx";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 import { getUsersByUsername } from "../../../features/users/services/users.service.js";
 
@@ -149,26 +150,7 @@ const GroupCreatorPanel = ({
 
   return (
     <div className="group-creator-page" aria-label="Crear grupo">
-      <div className="messages-header">
-        <Button
-          variant="ghost"
-          className="chat-back-btn"
-          onClick={handleClose}
-          disabled={creatingGroup}
-          aria-label="Volver a contactos"
-        >
-          <svg className="chat-back-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-              d="M15 18L9 12L15 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </Button>
-        <h2 className="messages-title">Crear grupo</h2>
-      </div>
+      <PageHeader title="Crear grupo" onBack={handleClose} backDisabled={creatingGroup} backLabel="Volver a contactos" />
 
       <form className="group-creator-form" onSubmit={handleSubmit}>
           <label className="group-creator-label" htmlFor="group-name-input">Nombre del grupo</label>

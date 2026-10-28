@@ -1,5 +1,6 @@
 import "./Notifications.css";
 import { useNavigate } from "react-router-dom";
+import { FaCheckDouble } from "react-icons/fa";
 import { useNotifications } from "../../features/notifications/hooks/useNotifications";
 import {
   formatAge,
@@ -8,6 +9,7 @@ import {
 } from "../../features/notifications/utils/notificationText";
 import Avatar from "../../shared/ui/Avatar";
 import EmptyState from "../../shared/ui/EmptyState";
+import PageHeader from "../../shared/ui/PageHeader";
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -21,14 +23,15 @@ const Notifications = () => {
 
   return (
     <div className="notifications-page">
-      <div className="notifications-header">
-        <h2>Notificaciones</h2>
-        {unreadCount > 0 && (
-          <button type="button" className="notif-mark-all" onClick={markAllRead}>
-            Marcar todas como leídas
+      <PageHeader
+        title="Notificaciones"
+        onBack={() => navigate(-1)}
+        actions={unreadCount > 0 && (
+          <button type="button" onClick={markAllRead} aria-label="Marcar todas como leídas" title="Marcar todas como leídas">
+            <FaCheckDouble aria-hidden="true" />
           </button>
         )}
-      </div>
+      />
 
       {error && (
         <div className="notif-error" role="alert">

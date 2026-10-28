@@ -4,6 +4,7 @@ import FormError from "../../../shared/forms/FormError.jsx";
 import Input from "../../../shared/forms/Input.jsx";
 import SectionCard from "../../../shared/ui/SectionCard.jsx";
 import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
+import PageHeader from "../../../shared/ui/PageHeader.jsx";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 
 const CommunityCreatorPanel = ({
@@ -75,31 +76,7 @@ const CommunityCreatorPanel = ({
 
   return (
     <div className="community-creator-page" aria-label="Crear comunidad">
-      <div className="communities-header">
-        <button
-          type="button"
-          className="chat-back-btn"
-          onClick={handleClose}
-          disabled={creatingCommunity}
-          aria-label="Volver a comunidades"
-        >
-          <svg
-            className="chat-back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M15 18L9 12L15 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <h2>Crear comunidad</h2>
-      </div>
+      <PageHeader title="Crear comunidad" onBack={handleClose} backDisabled={creatingCommunity} backLabel="Volver a comunidades" />
 
       <form className="community-creator-form" onSubmit={handleSubmit}>
         <SectionCard>

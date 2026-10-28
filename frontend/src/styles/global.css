@@ -21,6 +21,7 @@
   --secondary-soft: #fff5e6;
   
   --accent: #FFDA58;
+  --on-accent: #222;
 
   --pressed-color: #116b7a;
   --hover-color: var(--primary-soft);
@@ -61,6 +62,7 @@
     --secondary-soft: #4a3005;
     
     --accent: #FFDA58;
+    --on-accent: #222;
 
     --pressed-color: #2cb2c7;
     --hover-color: #2a2a2a;

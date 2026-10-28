@@ -7,79 +7,10 @@
   align-items: center;
 }
 
-/* HEADER */
-.settings-header {
-  width: 100%;
-  max-width: 600px;
-  padding: 1rem;
-  text-align: center;
-  border-bottom: 1px solid var(--border-color);
-  box-sizing: border-box;
-}
-
-.settings-title {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-color);
-}
-
 /* CONTENIDO */
 .settings-content {
   width: 100%;
   max-width: 600px;
   padding: 1rem;
   box-sizing: border-box;
-}
-
-/* Botón de volver */
-.back-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-color);
-  transition: background 0.15s ease;
-}
-
-.back-btn:hover {
-  background: var(--background-alt);
-}
-
-.back-icon {
-  width: 22px;
-  height: 22px;
-}
-
-/* Ajuste del header para que la flecha no desplace el título */
-.settings-header {
-  width: 100%;
-  max-width: 600px;
-  padding: 1rem;
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--border-color);
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.settings-title {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--text-color);
-}
-
-/* Posicionar la flecha a la izquierda sin mover el título */
-.back-btn {
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
 }

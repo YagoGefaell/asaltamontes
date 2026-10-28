@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserCard from "../../shared/ui/UserCard";
+import PageHeader from "../../shared/ui/PageHeader";
 import Loading from "../../shared/components/Loading";
 import "./FollowersFollowing.css";
 
@@ -81,26 +82,7 @@ function FollowListPage({
 
   return (
     <div className={`${type}-page`}>
-      <div className={`${type}-header`}>
-        <button
-          className="back-btn"
-          onClick={() => navigate(-1)}
-          aria-label="Volver atrás"
-        >
-          <svg
-            className="back-icon"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-        </button>
-        <h2 className={`${type}-title`}>{title}</h2>
-      </div>
+      <PageHeader title={title} onBack={() => navigate(-1)} />
 
       <div className="search-input-container">
         <input

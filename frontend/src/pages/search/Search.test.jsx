@@ -41,17 +41,30 @@ describe('Search (T29d)', () => {
     getEventsRequest.mockResolvedValue(events(5))
   })
 
-  it('without text shows suggestions and does not list people', async () => {
+  it('without text stays blank and asks for nothing', async () => {
     renderAt()
-    expect(await screen.findByText('Comunidades para ti')).toBeInTheDocument()
-    expect(screen.getByText('Próximas quedadas')).toBeInTheDocument()
+    await settle()
     expect(getAllUsersRequest).not.toHaveBeenCalled()
-    expect(screen.getAllByTestId('community-row')).toHaveLength(5)
+    expect(getCommunitiesRequest).not.toHaveBeenCalled()
+    expect(getEventsRequest).not.toHaveBeenCalled()
+    expect(screen.queryByRole('region')).not.toBeInTheDocument()
   })
 
-  it('shows the four tabs', () => {
+  it('titles each kind of result in "Todo"', async () => {
+    renderAt('/search?q=ana')
+    expect(await screen.findByRole('heading', { name: 'Personas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Comunidades' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Quedadas' })).toBeInTheDocument()
+  })
+
+  it('starts blank and shows the four tabs as soon as she taps the field, before she types', () => {
     renderAt()
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument()
+    fireEvent.focus(screen.getByRole('searchbox'))
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Todo', 'Personas', 'Comunidades', 'Quedadas'])
+    fireEvent.click(screen.getByRole('tab', { name: 'Personas' }))
+    expect(screen.getByRole('tab', { name: 'Personas' })).toHaveAttribute('aria-selected', 'true')
+    expect(getAllUsersRequest).not.toHaveBeenCalled()
   })
 
   it('"Todo" shows a few of each kind with "Ver todas", which opens the tab', async () => {
@@ -69,6 +82,8 @@ describe('Search (T29d)', () => {
     renderAt('/search?tab=communities&q=trail')
     await waitFor(() => expect(screen.getAllByTestId('community-row')).toHaveLength(5))
     expect(screen.getByRole('tab', { name: 'Comunidades' })).toHaveAttribute('aria-selected', 'true')
+    // The tab already says what they are: no repeated "Comunidades" title
+    expect(screen.queryByRole('heading', { name: 'Comunidades' })).not.toBeInTheDocument()
     expect(getAllUsersRequest).not.toHaveBeenCalled()
     expect(getEventsRequest).not.toHaveBeenCalled()
     expect(getCommunitiesRequest).toHaveBeenCalledWith(expect.objectContaining({ query: 'trail' }))
@@ -89,9 +104,38 @@ describe('Search (T29d)', () => {
     expect(JSON.parse(window.localStorage.getItem(RECENT_KEY))).toEqual(['laura'])
   })
 
-  it('lists recents without text, reuses one and removes another', async () => {
+  it('hides recents until she focuses the field, and then shows them under the tabs', () => {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
+    renderAt()
+    expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
+    fireEvent.focus(screen.getByRole('searchbox'))
+    expect(screen.getByText('Recientes')).toBeInTheDocument()
+    expect(screen.getAllByRole('tab')).toHaveLength(4)
+  })
+
+  it('"Cancelar" clears the text and leaves search mode', async () => {
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta']))
+    renderAt('/search?q=ana')
+    const input = screen.getByRole('searchbox')
+    fireEvent.focus(input)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(input).toHaveValue('')
+    expect(screen.queryByText('Recientes')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cancelar' })).not.toBeInTheDocument()
+    await settle()
+    expect(screen.queryByRole('region')).not.toBeInTheDocument()
+  })
+
+  it('says there are no recents when she focuses the field without history', () => {
+    renderAt()
+    fireEvent.focus(screen.getByRole('searchbox'))
+    expect(screen.getByText('No hay búsquedas recientes.')).toBeInTheDocument()
+  })
+
+  it('lists recents on focus, reuses one and removes another', async () => {
     window.localStorage.setItem(RECENT_KEY, JSON.stringify(['marta', 'laura']))
     renderAt()
+    fireEvent.focus(screen.getByRole('searchbox'))
     expect(screen.getByText('Recientes')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Quitar laura de recientes' }))
     expect(screen.queryByText('laura')).not.toBeInTheDocument()

@@ -1,13 +1,25 @@
 import "./Home.css";
-import { useContext, useState } from "react";
-import { Link } from "react-router-dom";
-import { FaBell, FaEnvelope } from "react-icons/fa";
+import { useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaBell, FaComment, FaPen } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
+import EmptyState from "../../shared/ui/EmptyState";
+import Avatar from "../../shared/ui/Avatar";
+import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
+import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
+import Button from "../../shared/forms/Button";
+import { useSearchSection } from "../../features/search/hooks/useSearchSection";
+import FollowUserButton from "../../shared/components/FollowUserButton";
+import { getSuggestionsRequest } from "../../features/users/services/users.service";
+import { getCommunitiesRequest } from "../../features/communities/services/communities.service";
+import { communityPath } from "../../features/communities/utils/communityPath";
 import { ConversationsContext } from "../../features/messages/hooks/conversations.context";
 import { useNotifications } from "../../features/notifications/hooks/useNotifications";
 import logo from "../../assets/logo01.png";
 
 const formatCount = (n) => (n > 9 ? "9+" : n);
+const SUGGESTED_COMMUNITIES = 10;
+const SUGGESTED_USERS = 10;
 
 function HeaderLink({ to, label, count, children }) {
   return (
@@ -20,41 +32,74 @@ function HeaderLink({ to, label, count, children }) {
   );
 }
 
+function Section({ title, children }) {
+  return (
+    <section className="home-section" aria-label={title}>
+      <h2 className="home-section__title">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+/** Horizontal row of recommended communities, shown between blocks of content. */
+function RecommendedCommunities({ items }) {
+  return (
+    <Section title="Comunidades recomendadas">
+      <ul className="home-rail">
+        {items.map((community) => (
+          <li key={community.id} className="home-rail__item">
+            <Link to={communityPath(community)} className="home-rail__link">
+              <Avatar src={community.imageUrl} name={community.name} size="lg" />
+              <span className="home-rail__name">{community.name}</span>
+              <span className="home-rail__meta">{community.city || `${community.memberCount} miembros`}</span>
+            </Link>
+            {community.visibility === "PRIVATE" && !community.role ? (
+              <CommunityRequestButton communityId={community.id} />
+            ) : (
+              <CommunityJoinButton communityId={community.id} role={community.role} joinLabel="Unirse" memberLabel="Miembro" />
+            )}
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+/** Horizontal row of users she may want to follow (followed by her follows, or in her communities). */
+function SuggestedUsers({ items }) {
+  return (
+    <Section title="Usuarias para seguir">
+      <ul className="home-rail">
+        {items.map((user) => (
+          <li key={user.username} className="home-rail__item">
+            <Link to={`/users/${user.username}`} className="home-rail__link">
+              <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="lg" />
+              <span className="home-rail__name">{user.fullName || user.username}</span>
+              <span className="home-rail__meta">@{user.username}</span>
+            </Link>
+            <FollowUserButton userId={user.username} initialIsFollowing={false} />
+          </li>
+        ))}
+      </ul>
+    </Section>
+  );
+}
+
+// Home is for posts (T22), with suggestions between them. Until posts exist: an empty feed and
+// the suggestion rows. Events live in their own tab; creating a post will be its own screen.
 const Home = () => {
+  const navigate = useNavigate();
   const { totalUnreadCount } = useContext(ConversationsContext);
   const { unreadCount: unreadNotifications } = useNotifications();
-  const [posts] = useState([
-    {
-      id: 1,
-      user: "asaltamontes",
-      content: "Comunidad femenina creciendo juntas 💖",
-      likes: 120,
-      liked: false,
-    },
-    {
-      id: 2,
-      user: "empowered_woman",
-      content: "Celebrando nuestras historias y logros. ¡Somos increíbles! 💪",
-      likes: 85,
-      liked: false,
-    },
-    {
-      id: 3,
-      user: "creative_soul",
-      content: "La creatividad y la solidaridad nos hacen fuertes",
-      likes: 156,
-      liked: false,
-    },
-  ]);
 
-  const [likedPosts, setLikedPosts] = useState({});
-
-  const handleLike = (postId) => {
-    setLikedPosts((prev) => ({
-      ...prev,
-      [postId]: !prev[postId],
-    }));
-  };
+  const people = useSearchSection(() => getSuggestionsRequest({ size: SUGGESTED_USERS }).then((r) => ({ ...r, hasMore: false })), "people");
+  const suggested = useSearchSection(
+    async (page) => {
+      const result = await getCommunitiesRequest({ page });
+      return { items: result.items.filter((c) => !c.role).slice(0, SUGGESTED_COMMUNITIES), hasMore: false };
+    },
+    "suggested",
+  );
 
   return (
     <div className="home-container">
@@ -66,55 +111,21 @@ const Home = () => {
               <FaBell aria-hidden="true" />
             </HeaderLink>
             <HeaderLink to="/messages" label="Mensajes" count={totalUnreadCount}>
-              <FaEnvelope aria-hidden="true" />
+              <FaComment aria-hidden="true" />
             </HeaderLink>
           </>
         }
       />
-      <div className="stories">
-        {[1, 2, 3, 4, 5].map((story) => (
-          <div className="story" key={story}>
-            <div className="story-avatar" />
-            <span className="story-name">User {story}</span>
-          </div>
-        ))}
-      </div>
 
-      <div className="feed">
-        {posts.map((post) => (
-          <div className="post-card" key={post.id}>
-            <div className="post-header">
-              <div className="post-user">
-                <div className="post-avatar" />
-                <span className="post-username">{post.user}</span>
-              </div>
-              <span className="post-menu">⋯</span>
-            </div>
+      <EmptyState
+        icon={<FaPen />}
+        title="Aún no hay publicaciones"
+        description="Aquí verás lo que comparten tus comunidades y las corredoras que sigues."
+        action={<Button variant="secondary" onClick={() => navigate("/search?tab=communities")}>Explorar comunidades</Button>}
+      />
 
-            <div className="post-image" />
-
-            <div className="post-actions">
-              <button
-                className={`action-btn ${likedPosts[post.id] ? "liked" : ""}`}
-                onClick={() => handleLike(post.id)}
-              >
-                {likedPosts[post.id] ? "❤️" : "🤍"}
-              </button>
-              <button className="action-btn">💬</button>
-              <button className="action-btn">📤</button>
-            </div>
-
-            <div className="post-content">
-              <span className="post-likes">
-                {post.likes + (likedPosts[post.id] ? 1 : 0)} likes
-              </span>
-              <p>
-                <strong>{post.user}</strong> {post.content}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
+      {!people.loading && people.items.length > 0 && <SuggestedUsers items={people.items} />}
+      {!suggested.loading && suggested.items.length > 0 && <RecommendedCommunities items={suggested.items} />}
     </div>
   );
 };

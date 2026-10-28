@@ -4,6 +4,7 @@ import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
 import Modal from "../../../shared/ui/Modal.jsx";
 import ToggleSwitch from "../../../shared/ui/ToggleSwitch.jsx";
 import Skeleton from "../../../shared/ui/Skeleton.jsx";
+import PageHeader from "../../../shared/ui/PageHeader.jsx";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 import { getUsersByUsername } from "../../../features/users/services/users.service.js";
 import {
@@ -163,14 +164,7 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
 
   return (
     <div className="group-creator-page group-info" aria-label="Info del grupo">
-      <div className="messages-header">
-        <Button variant="ghost" className="chat-back-btn" onClick={onClose} aria-label="Volver al chat">
-          <svg className="chat-back-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M15 18L9 12L15 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </Button>
-        <h2 className="messages-title">Info del grupo</h2>
-      </div>
+      <PageHeader title="Info del grupo" onBack={onClose} backLabel="Volver al chat" />
 
       {status === "loading" && (
         <div className="group-creator-form" role="status" aria-label="Cargando el grupo">

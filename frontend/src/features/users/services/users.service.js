@@ -59,6 +59,19 @@ export async function getUserByUsername(username) {
   }
 }
 
+// ---------------- USERS TO FOLLOW (T31b) ----------------
+export async function getSuggestionsRequest({ page = 0, size = 10 } = {}) {
+  try {
+    const response = await apiClient.get(`/api/users/suggestions?page=${page}&size=${size}`)
+    return {
+      items: Array.isArray(response?.content) ? response.content : [],
+      hasMore: response?.last === false,
+    }
+  } catch (error) {
+    throw new Error(error.message || "Error obteniendo sugerencias")
+  }
+}
+
 // ---------------- FOLLOW / UNFOLLOW USERS ----------------
 export async function followUserRequest(username) {
   try {
