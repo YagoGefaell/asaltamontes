@@ -109,3 +109,5 @@ T29b+ (una PR por pantalla, ver [T29](tasks/T29-design-system.md)): se hacen cua
 
 Se arreglan en PRs `fix/BUG-xxx-*` independientes, intercaladas según severidad (ver `WORKFLOW.md` §8):
 BUG-006, BUG-007, BUG-031, BUG-038.
+
+**Ronda 2026-10-28**: T20e (rol de autora en mensajes), T31b ([backend perfil ajeno e Inicio](tasks/T31b-profile-and-home-backend.md), D-023), T31c + T29i ([pestaña Comunidades](tasks/T29i-communities-tab.md)).

@@ -118,3 +118,7 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
   5. **Expulsiones anteriores a V14** sin entrada en el registro de moderación cuentan como hechas por una moderadora (lectura permisiva: las puede readmitir cualquier moderadora). Aceptado por Yago (2026-10-28); los datos son desechables (D-014).
   6. **Bloqueo en grupos compartidos** (Yago, 2026-10-29): se mantiene; siguen juntas en el grupo y los participantes no se filtran. En el frontend, los mensajes de una usuaria que yo he bloqueado salen plegados como «Mensaje de una usuaria bloqueada · Ver» (solo para quien bloquea, resuelto en cliente).
 - **Consecuencias:** detalles y propiedades en las secciones "Decisiones de Yago (2026-10-28)" de T12, T13, T18 y T19. Los límites por usuaria van en `UserActionLimiter`; futuros límites del mismo tipo (T20+) deben usarlo.
+
+## D-023 · Visibilidad en perfiles ajenos y en Inicio (2026-10-28)
+- **Decisión (Yago):** en el perfil de otra usuaria se muestran **solo** (a) las quedadas que **organiza** y que **quien mira puede ver**, y (b) sus **comunidades públicas**. **Nunca** su asistencia a quedadas futuras (revelaría dónde y cuándo estará). El filtro «de quienes sigo» de Inicio aplica **las mismas reglas de visibilidad**.
+- **Consecuencias:** los endpoints de T31b filtran por visibilidad en la consulta (no en memoria), paginan, respetan bloqueos (D-022) y llevan tests de que no se filtran quedadas o comunidades privadas. El rol de moderación en comunidades (propietaria/moderadora) es público a propósito (T20).
