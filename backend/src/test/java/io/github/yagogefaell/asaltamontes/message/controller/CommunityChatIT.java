@@ -28,6 +28,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
 import io.github.yagogefaell.asaltamontes.message.dto.ChatErrorDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ConversationRemovedDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDeletedDto;
@@ -430,11 +431,13 @@ class CommunityChatIT extends AbstractIntegrationTest {
         for (UserAccount who : new UserAccount[] {owner, moderator}) {
             mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(who)))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.canModerateMessages").value(true));
+                    .andExpect(jsonPath("$.canModerateMessages").value(true))
+                    .andExpect(jsonPath("$.moderationRole").value(who == owner ? "OWNER" : "MODERATOR"));
         }
         mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(member)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.canModerateMessages").value(false));
+                .andExpect(jsonPath("$.canModerateMessages").value(false))
+                .andExpect(jsonPath("$.moderationRole").doesNotExist());
     }
 
     @Test
@@ -528,6 +531,41 @@ class CommunityChatIT extends AbstractIntegrationTest {
         assertThat(outsiderInbox.poll(1, TimeUnit.SECONDS)).isNull();
         memberConnection.disconnect();
         outsiderConnection.disconnect();
+    }
+
+    @Test
+    void messagesCarryTheRoleOfTheirAuthor_inTheHistoryAndOverTheWebSocket() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount mod = testData.createUser();
+        UserAccount member = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        UUID chat = chatOf(owner, community);
+        join(mod, community).andExpect(status().isCreated());
+        join(member, community).andExpect(status().isCreated());
+        promote(owner, community, mod);
+        Connection memberConnection = stomp.connect("Bearer " + auth.loginAs(member));
+        BlockingQueue<MessageDto> inbox = memberConnection.subscribe("/user/queue/messages", MessageDto.class);
+
+        messageService.processIncomingMessage(chat, owner.getId(), "uno");
+        messageService.processIncomingMessage(chat, mod.getId(), "dos");
+        messageService.processIncomingMessage(chat, member.getId(), "tres");
+
+        assertThat(inbox.poll(5, TimeUnit.SECONDS).authorRole()).isEqualTo(CommunityRole.OWNER);
+        assertThat(inbox.poll(5, TimeUnit.SECONDS).authorRole()).isEqualTo(CommunityRole.MODERATOR);
+        memberConnection.disconnect();
+
+        mockMvc.perform(get("/api/conversations/" + chat + "/messages").with(auth.bearer(member)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].authorRole").value("OWNER"))
+                .andExpect(jsonPath("$.items[1].authorRole").value("MODERATOR"))
+                .andExpect(jsonPath("$.items[2].authorRole").doesNotExist());
+
+        // A chat that no community manages never carries a role, even for the owner of a community
+        UUID privateChat = UUID.fromString(json(mockMvc.perform(post("/api/conversations/private").with(auth.bearer(owner))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"username\":\"" + member.getUsername() + "\"}"))
+                ).get("conversationId").asText());
+        MessageDto direct = messageService.processIncomingMessage(privateChat, owner.getId(), "hola");
+        assertThat(direct.authorRole()).isNull();
     }
 
     // ---- helpers ----

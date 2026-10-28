@@ -73,7 +73,7 @@ const Messages = () => {
   const [isGroupInfoOpen, setIsGroupInfoOpen] = useState(false);
 
   // Owner or moderator of the community that manages the open chat (T20d): the server says it, with the group details
-  const [canModerateMessages, setCanModerateMessages] = useState(false);
+  const [moderationRole, setModerationRole] = useState(null);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
 
@@ -114,13 +114,13 @@ const Messages = () => {
   const selectedChatId = selectedChat?.id;
   const selectedChatIsGroup = selectedChat?.type === "GROUP";
   useEffect(() => {
-    setCanModerateMessages(false);
+    setModerationRole(null);
     setMessageToDelete(null);
     if (!selectedChatId || !selectedChatIsGroup) return undefined;
 
     let cancelled = false;
     getGroupDetailsRequest(selectedChatId, { page: 0, size: 1 })
-      .then((details) => { if (!cancelled) setCanModerateMessages(Boolean(details?.canModerateMessages)); })
+      .then((details) => { if (!cancelled) setModerationRole(details?.canModerateMessages ? (details.moderationRole ?? "MODERATOR") : null); })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [selectedChatId, selectedChatIsGroup]);
@@ -436,7 +436,7 @@ const Messages = () => {
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}
           onOpenGroupInfo={() => setIsGroupInfoOpen(true)}
-          canModerateMessages={canModerateMessages}
+          moderationRole={moderationRole}
           onDeleteMessage={setMessageToDelete}
           onSelectedAvatarError={() => {
             setSelectedChat((prev) => (prev ? { ...prev, avatarUrl: null } : prev));

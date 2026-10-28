@@ -1,7 +1,10 @@
 package io.github.yagogefaell.asaltamontes.message.service;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,6 +17,8 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityModerationLog;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
+import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.community.domain.MemberStatus;
 import io.github.yagogefaell.asaltamontes.community.domain.ModerationAction;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityModerationLogRepository;
@@ -183,6 +188,39 @@ public class CommunityChatService {
         if (!actorIsOwner && memberRepository.isModerator(communityId, authorId)) {
             throw new ForbiddenException("Solo la propietaria puede borrar mensajes de la moderación");
         }
+    }
+
+    /**
+     * Fills {@code authorRole} (T20e) in the messages of a chat that a community manages: one query for the whole page,
+     * whatever its size. Other chats are returned as they are.
+     */
+    @Transactional(readOnly = true)
+    public List<MessageDto> withAuthorRoles(Long conversationId, List<MessageDto> messages) {
+        Collection<String> authors = messages.stream().map(MessageDto::senderUsername).filter(u -> u != null).distinct().toList();
+        if (authors.isEmpty()) {
+            return messages;
+        }
+        Long communityId = conversationRepository.findManagingCommunityId(conversationId).orElse(null);
+        if (communityId == null) {
+            return messages;
+        }
+        Map<String, CommunityRole> roles = new HashMap<>();
+        memberRepository.findStaffRoles(communityId, authors).forEach(r -> roles.put(r.getUsername(), r.getRole()));
+        if (roles.isEmpty()) {
+            return messages;
+        }
+        return messages.stream()
+                .map(m -> m.senderUsername() == null ? m : m.withAuthorRole(roles.get(m.senderUsername())))
+                .toList();
+    }
+
+    /** The role badge of one author (T20e), for the message that is being sent. */
+    @Transactional(readOnly = true)
+    public CommunityRole authorRole(Long conversationId, String username) {
+        return conversationRepository.findManagingCommunityId(conversationId)
+                .flatMap(communityId -> memberRepository.findStaffRoles(communityId, List.of(username)).stream()
+                        .map(CommunityMemberRepository.StaffRole::getRole).findFirst())
+                .orElse(null);
     }
 
     /** Leaves a trace of a deleted message in the moderation log of the community. */

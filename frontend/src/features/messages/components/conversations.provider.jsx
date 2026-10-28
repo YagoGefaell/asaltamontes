@@ -505,6 +505,8 @@ export const ConversationsProvider = ({ children }) => {
         senderUsername: payload.senderUsername,
         sentAt: payload.sentAt,
         cursor: payload.cursor,
+        // Owner or moderator badge of the author in community chats (T20e)
+        authorRole: payload.authorRole,
         // System messages of a group (T12): the text is composed from the payload
         type: payload.type,
         systemPayload: payload.systemPayload,

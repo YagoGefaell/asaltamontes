@@ -167,12 +167,27 @@ describe('ChatPanel', () => {
       expect(screen.queryByRole('button', { name: /Eliminar mensaje/ })).not.toBeInTheDocument()
       unmount()
 
-      renderPanel({ selectedChat: group, currentMessages: messages, canModerateMessages: true, onDeleteMessage })
+      renderPanel({ selectedChat: group, currentMessages: messages, moderationRole: 'OWNER', onDeleteMessage })
       fireEvent.click(screen.getByRole('button', { name: 'Eliminar mensaje de bea' }))
 
       expect(onDeleteMessage).toHaveBeenCalledWith(messages[0])
       // the already deleted one has no action
       expect(screen.getAllByRole('button', { name: /Eliminar mensaje/ })).toHaveLength(1)
+    })
+
+    it('labels owner and moderators next to the name, and hides the delete action where the server would refuse (T20e)', () => {
+      const staff = [
+        { id: 'm1', senderUsername: 'bea', content: 'hola', authorRole: 'OWNER', sentAt: '2026-10-22T10:00:00Z' },
+        { id: 'm2', senderUsername: 'cris', content: 'ey', authorRole: 'MODERATOR', sentAt: '2026-10-22T10:01:00Z' },
+        { id: 'm3', senderUsername: 'dani', content: 'buenas', sentAt: '2026-10-22T10:02:00Z' },
+      ]
+      renderPanel({ selectedChat: group, currentMessages: staff, moderationRole: 'MODERATOR', onDeleteMessage: vi.fn() })
+
+      expect(screen.getByText('Propietaria')).toBeInTheDocument()
+      expect(screen.getByText('Moderadora')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Eliminar mensaje de bea' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Eliminar mensaje de cris' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Eliminar mensaje de dani' })).toBeInTheDocument()
     })
 
     it('shows a deleted message as a moderation notice, for everybody', () => {

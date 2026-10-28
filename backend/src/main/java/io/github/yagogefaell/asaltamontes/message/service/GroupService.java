@@ -33,6 +33,7 @@ import io.github.yagogefaell.asaltamontes.message.domain.ManagedBy;
 import io.github.yagogefaell.asaltamontes.message.domain.Message;
 import io.github.yagogefaell.asaltamontes.message.domain.MessageType;
 import io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole;
+import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
 import io.github.yagogefaell.asaltamontes.message.dto.GroupDetailsDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
@@ -366,6 +367,7 @@ public class GroupService {
         int pageSize = Math.clamp(size, 1, MAX_PARTICIPANT_PAGE);
         Page<ParticipantDto> participants = participantRepository.findParticipantPage(conversation.getId(),
                 PageRequest.of(Math.max(page, 0), pageSize));
+        CommunityRole moderationRole = moderationRole(conversation, access.me().getUser());
         return new GroupDetailsDto(
                 conversation.getPublicId(),
                 conversation.getGroupName(),
@@ -375,14 +377,18 @@ public class GroupService {
                 access.me().getRole(),
                 conversation.isHistoryVisibleToNew(),
                 conversation.getManagedBy() != ManagedBy.NONE,
-                canModerateMessages(conversation, access.me().getUser().getId()),
+                moderationRole != null,
+                moderationRole,
                 participants);
     }
 
-    /** Owner or moderator of the community that manages the chat: the ones who may try to delete messages (T20d). */
-    private boolean canModerateMessages(Conversation conversation, Long userId) {
-        return conversation.getManagedBy() == ManagedBy.COMMUNITY
-                && communityMemberRepository.isModerator(conversation.getManagedRefId(), userId);
+    /** Owner or moderator of the community that manages the chat: the ones who may try to delete messages (T20d, T20e). */
+    private CommunityRole moderationRole(Conversation conversation, UserAccount user) {
+        if (conversation.getManagedBy() != ManagedBy.COMMUNITY) {
+            return null;
+        }
+        return communityMemberRepository.findStaffRoles(conversation.getManagedRefId(), List.of(user.getUsername())).stream()
+                .map(CommunityMemberRepository.StaffRole::getRole).findFirst().orElse(null);
     }
 
     private static Map<String, Object> payload(String action, String actor, List<String> targets, Map<String, Object> extra) {
