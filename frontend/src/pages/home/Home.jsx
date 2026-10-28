@@ -50,7 +50,7 @@ function RecommendedCommunities({ items }) {
     <Section title="Comunidades recomendadas">
       <ul className="home-rail">
         {items.map((community) => (
-          <li key={community.id} className="home-rail__item">
+          <li key={community.id} className="home-rail__item home-rail__item--community">
             <Link to={communityPath(community)} className="home-rail__link">
               <Avatar src={community.imageUrl} name={community.name} size={SUGGESTION_AVATAR} />
               <span className="home-rail__name">{community.name}</span>

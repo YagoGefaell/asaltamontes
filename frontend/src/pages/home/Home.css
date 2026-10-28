@@ -52,6 +52,11 @@
   scroll-snap-align: start;
 }
 
+/* Community names are longer than usernames: a bit more room, still the same for every card */
+.home-rail__item--community {
+  flex-basis: 168px;
+}
+
 .home-rail__link {
   display: flex;
   flex-direction: column;
