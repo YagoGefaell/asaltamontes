@@ -55,6 +55,15 @@ public class UserController {
         return userService.searchUsersByUsername(query, currentUser.getId(), pageable);
     }
 
+    /** Users to follow: followed by people I follow or in my communities; never ones I follow or blocked. */
+    @GetMapping("/suggestions")
+    public Page<UserSearchDto> getSuggestions(
+            @AuthenticationPrincipal UserAccount currentUser,
+            @PageableDefault(size = 20) Pageable pageable
+    ) {
+        return userService.getSuggestions(currentUser.getId(), pageable);
+    }
+
     @GetMapping("{username}")
     public UserProfileDto getUserByUsername(
         @AuthenticationPrincipal UserAccount currentUser,

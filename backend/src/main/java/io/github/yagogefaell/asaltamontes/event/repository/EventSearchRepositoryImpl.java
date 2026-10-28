@@ -22,6 +22,8 @@ import io.github.yagogefaell.asaltamontes.event.domain.EventVisibility;
 import io.github.yagogefaell.asaltamontes.event.dto.EventAttendeePreviewDto;
 import io.github.yagogefaell.asaltamontes.event.dto.EventFilter;
 import io.github.yagogefaell.asaltamontes.event.dto.EventSummaryDto;
+import io.github.yagogefaell.asaltamontes.user.domain.UserBlock;
+import io.github.yagogefaell.asaltamontes.user.domain.UserFollow;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
@@ -197,6 +199,26 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
                     cb.equal(a.get("user").get("id"), userId),
                     a.get("status").in(AttendeeStatus.GOING, AttendeeStatus.WAITLIST));
             where.add(cb.exists(attending));
+        }
+        if (f.organizerKey() != null) {
+            where.add(cb.equal(e.get("organizer").get("id"), f.organizerKey()));
+        }
+        if (f.followedByMe()) {
+            Subquery<Integer> followed = query.subquery(Integer.class);
+            Root<UserFollow> follow = followed.from(UserFollow.class);
+            followed.select(cb.literal(1)).where(
+                    cb.equal(follow.get("follower").get("id"), userId),
+                    cb.equal(follow.get("following"), e.get("organizer")));
+            where.add(cb.exists(followed));
+            // A block removes the follow, but the listing must not depend on that
+            Subquery<Integer> blocked = query.subquery(Integer.class);
+            Root<UserBlock> block = blocked.from(UserBlock.class);
+            blocked.select(cb.literal(1)).where(cb.or(
+                    cb.and(cb.equal(block.get("blocker").get("id"), userId),
+                            cb.equal(block.get("blocked"), e.get("organizer"))),
+                    cb.and(cb.equal(block.get("blocked").get("id"), userId),
+                            cb.equal(block.get("blocker"), e.get("organizer")))));
+            where.add(cb.not(cb.exists(blocked)));
         }
         return where;
     }

@@ -38,6 +38,35 @@ public interface CommunityMemberRepository extends JpaRepository<CommunityMember
     """)
     Page<CommunitySearchDto> findCommunitiesByUserId(@Param("userId") Long userId, Pageable pageable);
 
+    /** PUBLIC communities of {@code targetId} (T31b); {@code role} is the viewer's, null if she is not a member. */
+    @Query(value = """
+        SELECT new io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto(
+            c.publicId,
+            c.name,
+            c.slug,
+            c.imageUrl,
+            vm.role,
+            c.memberCount,
+            c.visibility,
+            c.city,
+            c.province
+        )
+        FROM CommunityMember tm
+        JOIN tm.community c
+        LEFT JOIN CommunityMember vm ON vm.community = c AND vm.userAccount.id = :viewerId
+             AND vm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+        WHERE tm.userAccount.id = :targetId
+          AND tm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+          AND c.visibility = io.github.yagogefaell.asaltamontes.community.domain.CommunityVisibility.PUBLIC
+    """, countQuery = """
+        SELECT COUNT(tm) FROM CommunityMember tm
+        WHERE tm.userAccount.id = :targetId
+          AND tm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+          AND tm.community.visibility = io.github.yagogefaell.asaltamontes.community.domain.CommunityVisibility.PUBLIC
+    """)
+    Page<CommunitySearchDto> findPublicCommunitiesOf(@Param("targetId") Long targetId, @Param("viewerId") Long viewerId,
+                                                     Pageable pageable);
+
     @Query("""
         SELECT m.status FROM CommunityMember m
         WHERE m.community.id = :communityId AND m.userAccount.id = :userId

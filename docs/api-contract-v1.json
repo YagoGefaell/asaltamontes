@@ -438,6 +438,57 @@
         }
       }
     },
+    "/api/users/suggestions": {
+      "get": {
+        "summary": "Users to follow (T31b)",
+        "description": "Users followed by people the caller follows, or who share a community with her (not banned). Never herself, anyone she already follows, or anyone with a block with her in either direction. Most followed first; ?sort= is ignored. Profile privacy (isPublicProfile) is not a filter, as in GET /api/users/search.",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": { "200": { "description": "Spring Page of UserSearch (isFollowing is always false)" } }
+      }
+    },
+    "/api/users/{username}/events": {
+      "get": {
+        "summary": "Upcoming events another user organizes and the caller can see (T31b, D-023)",
+        "description": "Public events, and those of communities where the caller is a member (not banned); the filter is in the query. Never the user's attendance. Soonest first.",
+        "tags": ["Users", "Events"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "username", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "from", "in": "query", "description": "ISO-8601 instant; default now", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Spring Page of EventSummary" },
+          "404": { "description": "Unknown user, or a block with the caller in either direction (same response, D-022)" }
+        }
+      }
+    },
+    "/api/users/{username}/communities": {
+      "get": {
+        "summary": "PUBLIC communities of another user (T31b, D-023)",
+        "description": "Private communities and the ones she was banned from never appear. `role` is the caller's own role in each community (null if not a member), as in every community listing.",
+        "tags": ["Users", "Communities"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "username", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["name", "memberCount", "createdAt"] } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
+          { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Spring Page of CommunitySearch" },
+          "400": { "description": "Invalid sort" },
+          "404": { "description": "Unknown user, or a block with the caller in either direction (same response, D-022)" }
+        }
+      }
+    },
     "/api/users/{username}": {
       "get": {
         "summary": "Get user public profile",
@@ -1106,12 +1157,13 @@
           { "name": "organizer", "in": "query", "description": "Only 'me': events she organizes", "schema": { "type": "string", "enum": ["me"] } },
           { "name": "attending", "in": "query", "description": "Only 'me': events where she is GOING or on the WAITLIST", "schema": { "type": "string", "enum": ["me"] } },
           { "name": "q", "in": "query", "description": "T31: free text over title, city and meeting point; ignores case and accents; % and _ are literal; 2 to 80 characters after trimming (blank = no filter)", "schema": { "type": "string", "minLength": 2, "maxLength": 80 } },
+          { "name": "followedBy", "in": "query", "description": "Only 'me' (T31b, D-023): events organized by the users she follows, with the same visibility rules; a user with a block in either direction never appears", "schema": { "type": "string", "enum": ["me"] } },
           { "name": "page", "in": "query", "schema": { "type": "integer", "default": 0 } },
           { "name": "size", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
         ],
         "responses": {
           "200": { "description": "Spring Page of EventSummary (includes latitude and longitude of the meeting point, null when the event has none). T31: every item has attendeePreview, up to 3 people going (oldest first, blocked users in either direction left out) as {username, fullName, avatar: {thumb} | null}, loaded with one extra query per page" },
-          "400": { "description": "Invalid filter (q shorter than 2 or longer than 80, unknown enum value, to before from, maxDistance below minDistance, incomplete or inverted bounding box, organizer/attending other than 'me')" }
+          "400": { "description": "Invalid filter (q shorter than 2 or longer than 80, unknown enum value, to before from, maxDistance below minDistance, incomplete or inverted bounding box, organizer/attending/followedBy other than 'me')" }
         }
       }
     },

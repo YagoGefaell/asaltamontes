@@ -6,6 +6,7 @@ import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaCleanupService;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -194,6 +195,12 @@ public class UserService implements UserDetailsService {
 
     public Page<UserSearchDto> getAllUsers(Long userId, Pageable pageable) {
         return userAccountRepository.searchAllUsers(userId, pageable);
+    }
+
+    /** "Users to follow" (T31b): one query, at most 50 per page, in a fixed order (any ?sort= is ignored). */
+    public Page<UserSearchDto> getSuggestions(Long userId, Pageable pageable) {
+        return userAccountRepository.findSuggestions(userId,
+                PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), 50)));
     }
 
     @Override
