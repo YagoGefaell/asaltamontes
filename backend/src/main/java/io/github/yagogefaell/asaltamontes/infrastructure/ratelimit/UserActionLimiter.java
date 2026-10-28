@@ -31,6 +31,10 @@ public class UserActionLimiter {
         check("group-create", userId, properties.getGroupsCreatedPerDay(), DAY);
     }
 
+    public void groupMemberAdd(Long userId) {
+        check("group-member-add", userId, properties.getGroupMemberAddsPerHour(), HOUR);
+    }
+
     public void follow(Long userId) {
         check("follow", userId, properties.getFollowsPerHour(), HOUR);
     }

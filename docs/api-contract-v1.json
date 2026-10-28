@@ -1078,7 +1078,8 @@
           "400": { "description": "No valid usernames, or the group would exceed its maximum size" },
           "403": { "description": "Not an admin; or (T13) one of the new members is blocked by the caller, or her dm_policy (EVERYONE, FOLLOWING, MUTUALS, NOBODY) does not allow the caller to start a chat with her, as for a private chat: nothing is added and the message is the same neutral one for every reason ('No puedes interactuar con esta usuaria'). One that blocked the caller answers 404 like a user that does not exist. Up to 50 per request is kept: the block and policy checks are a few queries, not one per user" },
           "404": { "description": "Chat not found, or a username does not exist" },
-          "409": { "description": "Este grupo se gestiona automáticamente" }
+          "409": { "description": "Este grupo se gestiona automáticamente" },
+          "429": { "description": "BUG-071: more than asaltamontes.rate-limit.group-member-adds-per-hour (60) calls by the caller in an hour. Retry-After in seconds" }
         }
       }
     },

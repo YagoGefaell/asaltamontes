@@ -24,6 +24,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
 import io.github.yagogefaell.asaltamontes.common.pagination.OpaqueCursor;
+import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.message.domain.ChatType;
@@ -71,6 +72,7 @@ public class GroupService {
     private final MediaReferenceService mediaReferences;
     private final ApplicationEventPublisher eventPublisher;
     private final CommunityMemberRepository communityMemberRepository;
+    private final UserActionLimiter limiter;
     private final int maxGroupSize;
 
     public GroupService(ConversationRepository conversationRepository,
@@ -81,6 +83,7 @@ public class GroupService {
                         MediaReferenceService mediaReferences,
                         ApplicationEventPublisher eventPublisher,
                         CommunityMemberRepository communityMemberRepository,
+                        UserActionLimiter limiter,
                         @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
@@ -90,6 +93,7 @@ public class GroupService {
         this.mediaReferences = mediaReferences;
         this.eventPublisher = eventPublisher;
         this.communityMemberRepository = communityMemberRepository;
+        this.limiter = limiter;
         this.maxGroupSize = maxGroupSize;
     }
 
@@ -165,6 +169,8 @@ public class GroupService {
         Access access = access(conversationId, user.getId(), true, true);
         Conversation conversation = access.conversation();
         requireManual(conversation);
+        // BUG-071: every add notifies the new members, so adding and expelling in a loop cannot be unlimited
+        limiter.groupMemberAdd(user.getId());
 
         Set<String> wanted = normalize(usernames, user.getUsername());
         if (wanted.isEmpty()) {
