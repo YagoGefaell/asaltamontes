@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.jsx'
@@ -7,13 +7,11 @@ import { ConversationsContext } from '../../features/messages/hooks/conversation
 import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
 import { getSuggestionsRequest } from '../../features/users/services/users.service'
 
-import { ToastProvider } from '../../shared/ui/Toast'
 vi.mock('../../features/communities/services/communities.service', () => ({
   getCommunitiesRequest: vi.fn(),
 }))
 vi.mock('../../features/users/services/users.service', () => ({ getSuggestionsRequest: vi.fn() }))
 vi.mock('../../shared/components/FollowUserButton', () => ({ default: () => <button>Seguir</button> }))
-vi.mock('../../features/auth/hooks/useAuth', () => ({ useAuth: () => ({ currentUser: { username: 'yo', fullName: 'Yo' } }) }))
 vi.mock('../../shared/components/CommunityJoinButton', () => ({ default: () => <button>Unirse</button> }))
 vi.mock('../../shared/components/CommunityRequestButton', () => ({ default: () => <button>Solicitar</button> }))
 
@@ -28,13 +26,11 @@ beforeEach(() => {
 function renderHome({ notifications = 0, messages = 0 } = {}) {
   return render(
     <MemoryRouter>
-      <ToastProvider>
-        <ConversationsContext.Provider value={{ totalUnreadCount: messages }}>
-          <NotificationsContext.Provider value={{ unreadCount: notifications }}>
-            <Home />
-          </NotificationsContext.Provider>
-        </ConversationsContext.Provider>
-      </ToastProvider>
+      <ConversationsContext.Provider value={{ totalUnreadCount: messages }}>
+        <NotificationsContext.Provider value={{ unreadCount: notifications }}>
+          <Home />
+        </NotificationsContext.Provider>
+      </ConversationsContext.Provider>
     </MemoryRouter>,
   )
 }
@@ -66,16 +62,10 @@ describe('Home content', () => {
     expect(await screen.findByText('Aún no hay publicaciones')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Explorar comunidades' })).toBeTruthy()
     expect(screen.queryByText(/quedadas/i)).toBeNull()
-    expect(document.querySelector('.stories, .post-card')).toBeNull()
+    expect(document.querySelector('.stories, .post-card, .home-composer')).toBeNull()
   })
 
-  it('previews the composer and says posts are coming soon', async () => {
-    renderHome()
-    fireEvent.click(screen.getByRole('button', { name: '¿Qué tal tu último entreno?' }))
-    expect(await screen.findByText('Las publicaciones llegan pronto')).toBeTruthy()
-  })
-
-  it('shows rows of users to follow and communities she is not in, without section titles', async () => {
+  it('shows titled rows of users to follow and communities she is not in', async () => {
     getSuggestionsRequest.mockResolvedValue(page([{ username: 'cris', fullName: 'Cris Gil', isFollowing: false }]))
     getCommunitiesRequest.mockResolvedValue(page([
       { id: 'c1', name: 'Cabras', slug: 'cabras', role: 'MEMBER' },
@@ -86,6 +76,7 @@ describe('Home content', () => {
     expect(await screen.findByRole('link', { name: /Valkirias/ })).toHaveAttribute('href', '/communities/valkirias')
     expect(screen.queryByText('Cabras')).toBeNull()
     expect(document.querySelectorAll('.home-rail')).toHaveLength(2)
-    expect(screen.queryByRole('heading', { level: 2 })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Usuarias para seguir' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Comunidades recomendadas' })).toBeTruthy()
   })
 })

@@ -1,17 +1,15 @@
 import "./Home.css";
 import { useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaBell, FaEnvelope, FaPen, FaRegImages } from "react-icons/fa";
+import { FaBell, FaEnvelope, FaPen } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
-import { useToast } from "../../shared/ui/Toast";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import Button from "../../shared/forms/Button";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
 import FollowUserButton from "../../shared/components/FollowUserButton";
-import { useAuth } from "../../features/auth/hooks/useAuth";
 import { getSuggestionsRequest } from "../../features/users/services/users.service";
 import { getCommunitiesRequest } from "../../features/communities/services/communities.service";
 import { communityPath } from "../../features/communities/utils/communityPath";
@@ -22,7 +20,6 @@ import logo from "../../assets/logo01.png";
 const formatCount = (n) => (n > 9 ? "9+" : n);
 const SUGGESTED_COMMUNITIES = 10;
 const SUGGESTED_USERS = 10;
-const POSTS_SOON = "Las publicaciones llegan pronto";
 
 function HeaderLink({ to, label, count, children }) {
   return (
@@ -35,10 +32,19 @@ function HeaderLink({ to, label, count, children }) {
   );
 }
 
+function Section({ title, children }) {
+  return (
+    <section className="home-section" aria-label={title}>
+      <h2 className="home-section__title">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
 /** Horizontal row of recommended communities, shown between blocks of content. */
 function RecommendedCommunities({ items }) {
   return (
-    <section className="home-section" aria-label="Comunidades recomendadas">
+    <Section title="Comunidades recomendadas">
       <ul className="home-rail">
         {items.map((community) => (
           <li key={community.id} className="home-rail__item">
@@ -55,14 +61,14 @@ function RecommendedCommunities({ items }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Section>
   );
 }
 
 /** Horizontal row of users she may want to follow (followed by her follows, or in her communities). */
 function SuggestedUsers({ items }) {
   return (
-    <section className="home-section" aria-label="Usuarias para seguir">
+    <Section title="Usuarias para seguir">
       <ul className="home-rail">
         {items.map((user) => (
           <li key={user.username} className="home-rail__item">
@@ -75,31 +81,12 @@ function SuggestedUsers({ items }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Section>
   );
 }
 
-/** Preview of the post composer (T22): looks like the real one, but posting is not available yet. */
-function Composer() {
-  const { currentUser } = useAuth();
-  const toast = useToast();
-  const name = currentUser?.fullName || currentUser?.username || "";
-
-  return (
-    <div className="home-composer">
-      <Avatar src={currentUser?.profilePictureUrl} name={name} size="md" />
-      <button type="button" className="home-composer__field" onClick={() => toast.info(POSTS_SOON)}>
-        ¿Qué tal tu último entreno?
-      </button>
-      <button type="button" className="home-composer__photo" aria-label="Añadir foto" onClick={() => toast.info(POSTS_SOON)}>
-        <FaRegImages aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-// Home is for posts (T22), with suggestions between them. Until posts exist: composer preview,
-// an empty feed and the suggestion rows. Events live in their own tab.
+// Home is for posts (T22), with suggestions between them. Until posts exist: an empty feed and
+// the suggestion rows. Events live in their own tab; creating a post will be its own screen.
 const Home = () => {
   const navigate = useNavigate();
   const { totalUnreadCount } = useContext(ConversationsContext);
@@ -129,8 +116,6 @@ const Home = () => {
           </>
         }
       />
-
-      <Composer />
 
       <EmptyState
         icon={<FaPen />}

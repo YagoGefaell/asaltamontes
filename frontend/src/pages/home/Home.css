@@ -11,47 +11,11 @@
   padding-top: var(--space-4);
 }
 
-/* Vista previa del editor de publicaciones (T22): aún no publica */
-.home-composer {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.home-composer__field {
-  flex: 1;
-  min-width: 0;
-  min-height: var(--touch-min);
-  padding: 0 var(--space-4);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-pill);
-  background: var(--input-bg);
-  color: var(--text-muted);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.home-composer__photo {
-  width: var(--touch-min);
-  height: var(--touch-min);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  background: transparent;
-  color: var(--primary);
+.home-section__title {
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-2);
   font-size: var(--text-lg);
-  cursor: pointer;
-}
-
-.home-composer__field:focus-visible,
-.home-composer__photo:focus-visible {
-  outline: var(--focus-outline);
-  outline-offset: 2px;
+  font-weight: 700;
 }
 
 /* Sugerencias (usuarias y comunidades): filas deslizables de tarjetas */
