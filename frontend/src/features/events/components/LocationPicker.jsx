@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
+import { roundCoordinate } from '../utils/eventForm.js'
 import { DEFAULT_CENTER, DEFAULT_ZOOM, meetingIcon, OSM_ATTRIBUTION, OSM_TILES } from './mapSetup.js'
 import './EventMap.css'
 
@@ -31,8 +32,6 @@ function ReportView({ onViewChange }) {
 
 const FOCUS_ZOOM = 16
 
-// Coordinates with ~1 m precision are plenty and keep the payload tidy
-const round = (n) => Math.round(n * 1e6) / 1e6
 
 /**
  * Map where she picks the meeting point: tap to place the marker, drag it to adjust.
@@ -41,7 +40,7 @@ const round = (n) => Math.round(n * 1e6) / 1e6
  */
 export default function LocationPicker({ latitude, longitude, onChange, focus = null, onViewChange }) {
   const hasPoint = latitude != null && longitude != null
-  const set = (lat, lng) => onChange(round(lat), round(lng))
+  const set = (lat, lng) => onChange(roundCoordinate(lat), roundCoordinate(lng))
   return (
     <MapContainer
       center={hasPoint ? [latitude, longitude] : DEFAULT_CENTER}

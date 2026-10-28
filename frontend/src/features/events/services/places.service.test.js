@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { PHOTON_URL, searchPlaces, toPlace } from './places.service.js'
+import { PHOTON_URL, locateCity, searchPlaces, toPlace } from './places.service.js'
 
 const feature = (properties, coordinates = [-8.7114, 42.2338]) => ({ properties, geometry: { coordinates } })
 
@@ -43,5 +43,21 @@ describe('searchPlaces', () => {
   it('fails with a message when Photon answers with an error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
     await expect(searchPlaces('vialia')).rejects.toThrow('No se pudo buscar el lugar')
+  })
+})
+
+describe('locateCity', () => {
+  it('asks Photon for the city layer once and remembers the answer', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ features: [feature({ type: 'city', name: 'Ourense' }, [-7.86, 42.34])] }) })
+    vi.stubGlobal('fetch', fetchMock)
+    expect(await locateCity('Ourense')).toEqual({ latitude: 42.34, longitude: -7.86 })
+    expect(await locateCity(' ourense ')).toEqual({ latitude: 42.34, longitude: -7.86 })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(new URL(fetchMock.mock.calls[0][0]).searchParams.get('layer')).toBe('city')
+  })
+
+  it('returns null for an unknown city', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ features: [] }) }))
+    expect(await locateCity('Ciudad inventada')).toBeNull()
   })
 })

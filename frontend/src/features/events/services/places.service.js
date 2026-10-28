@@ -35,3 +35,20 @@ export async function searchPlaces(query, { near = null, signal } = {}) {
     .map(toPlace)
     .filter((place) => place.name && Number.isFinite(place.latitude) && Number.isFinite(place.longitude))
 }
+
+// One lookup per city and page load: her profile city doesn't change while she fills the form
+const cityCache = new Map()
+
+/** Centre ({ latitude, longitude }) of the city called `name`, or null if Photon doesn't know it. */
+export async function locateCity(name, { signal } = {}) {
+  const key = name.trim().toLowerCase()
+  if (cityCache.has(key)) return cityCache.get(key)
+  const params = new URLSearchParams({ q: name.trim(), limit: '1', layer: 'city' })
+  const response = await fetch(`${PHOTON_URL}?${params}`, { signal })
+  if (!response.ok) throw new Error('No se pudo localizar la ciudad')
+  const [feature] = (await response.json()).features || []
+  const [longitude, latitude] = feature?.geometry?.coordinates || []
+  const centre = Number.isFinite(latitude) && Number.isFinite(longitude) ? { latitude, longitude } : null
+  cityCache.set(key, centre)
+  return centre
+}

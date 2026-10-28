@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EventForm from './EventForm.jsx'
 import CommunityEvents from './CommunityEvents.jsx'
 import { EMPTY_FORM } from '../utils/eventForm.js'
 import { getCommunityEventsRequest } from '../services/events.service.js'
-import { searchPlaces } from '../services/places.service.js'
+import { locateCity, searchPlaces } from '../services/places.service.js'
 
 // Leaflet needs a real browser layout: the picker is replaced by a stub that "taps" a point
 vi.mock('./LocationPicker.jsx', () => ({
@@ -18,7 +18,9 @@ vi.mock('./LocationPicker.jsx', () => ({
   ),
 }))
 vi.mock('../services/events.service.js', () => ({ getCommunityEventsRequest: vi.fn() }))
-vi.mock('../services/places.service.js', () => ({ searchPlaces: vi.fn() }))
+vi.mock('../services/places.service.js', () => ({ searchPlaces: vi.fn(), locateCity: vi.fn() }))
+const session = vi.hoisted(() => ({ currentUser: { username: 'yo', city: '' } }))
+vi.mock('../../auth/hooks/useAuth', () => ({ useAuth: () => session }))
 
 function Harness({ onSubmit, initial = EMPTY_FORM, ...props }) {
   const [values, setValues] = useState(initial)
@@ -95,6 +97,57 @@ describe('EventForm', () => {
     expect(screen.getByRole('option', { name: /Jaca/ })).toHaveAttribute('aria-selected', 'true')
     fireEvent.keyDown(field, { key: 'Enter' })
     expect(screen.getByLabelText('Ciudad')).toHaveValue('Jaca')
+  })
+
+  it('ranks the suggestions near the city of her profile until she marks a point', async () => {
+    session.currentUser.city = 'Vigo'
+    locateCity.mockResolvedValue({ latitude: 42.23, longitude: -8.72 })
+    searchPlaces.mockResolvedValue([])
+    try {
+      await renderForm()
+      await waitFor(() => expect(locateCity).toHaveBeenCalledWith('Vigo', expect.anything()))
+      const field = screen.getByRole('combobox', { name: 'Lugar' })
+      fireEvent.focus(field)
+      fireEvent.change(field, { target: { value: 'vialia' } })
+      await waitFor(() => expect(searchPlaces).toHaveBeenCalledWith('vialia', expect.objectContaining({
+        near: { latitude: 42.23, longitude: -8.72 },
+      })))
+    } finally {
+      session.currentUser.city = ''
+    }
+  })
+
+  describe('"Usar mi ubicación"', () => {
+    const getCurrentPosition = vi.fn()
+    beforeEach(() => {
+      Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
+      Object.defineProperty(navigator, 'geolocation', { value: { getCurrentPosition }, configurable: true })
+    })
+    afterEach(() => {
+      delete window.isSecureContext
+      delete navigator.geolocation
+      getCurrentPosition.mockReset()
+    })
+
+    it('marks her position on the map', async () => {
+      getCurrentPosition.mockImplementation((ok) => ok({ coords: { latitude: 42.2345678, longitude: -8.7123456 } }))
+      await renderForm()
+      fireEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación' }))
+      expect(screen.getByText('42.23457, -8.71235')).toBeInTheDocument()
+      expect(screen.getByText('mapa centrado en 42.234568, -8.712346')).toBeInTheDocument()
+    })
+
+    it('explains when she denies the permission', async () => {
+      getCurrentPosition.mockImplementation((ok, fail) => fail({ code: 1 }))
+      await renderForm()
+      fireEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación' }))
+      expect(screen.getByText(/Has denegado el permiso de ubicación/)).toBeInTheDocument()
+    })
+  })
+
+  it('hides "Usar mi ubicación" when the browser cannot locate her', async () => {
+    await renderForm()
+    expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).toBeNull()
   })
 
   it('defaults to the device zone and lets her pick another under "Más opciones" with a search box', async () => {
