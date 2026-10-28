@@ -18,7 +18,7 @@ function toPage(response, fallbackPage) {
 }
 
 // Query string of GET /api/events; only the filters that have a value are sent (T15c)
-export function buildEventsQuery({ page = 0, from, to, type, level, city, mine, bounds, size = EVENTS_PAGE_SIZE } = {}) {
+export function buildEventsQuery({ page = 0, from, to, type, level, city, mine, followedBy, bounds, size = EVENTS_PAGE_SIZE } = {}) {
   const params = new URLSearchParams({ page: String(page), size: String(size) })
   if (from) params.set('from', from)
   if (to) params.set('to', to)
@@ -26,6 +26,7 @@ export function buildEventsQuery({ page = 0, from, to, type, level, city, mine, 
   if (level) params.set('level', level)
   if (city && city.trim()) params.set('city', city.trim())
   if (mine) params.set('attending', 'me')
+  if (followedBy) params.set('followedBy', 'me')
   if (bounds) {
     params.set('minLat', String(bounds.minLat))
     params.set('maxLat', String(bounds.maxLat))
@@ -56,6 +57,19 @@ export async function getEventsRequest(filters = {}) {
     return toPage(response, filters.page ?? 0)
   } catch (error) {
     throw new Error(error.message || 'Error obteniendo quedadas')
+  }
+}
+
+// -------- EVENTS ANOTHER USER ORGANIZES (T31b) --------
+// Only what she organizes and the caller can see; never her attendance
+export async function getUserEventsRequest(username, { page = 0, size = EVENTS_PAGE_SIZE, from } = {}) {
+  try {
+    const params = new URLSearchParams({ page: String(page), size: String(size) })
+    if (from) params.set('from', from)
+    const response = await apiClient.get(`/api/users/${encodeURIComponent(username)}/events?${params}`)
+    return toPage(response, page)
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo sus quedadas')
   }
 }
 

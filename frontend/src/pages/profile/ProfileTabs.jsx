@@ -8,7 +8,8 @@ import EventCard from "../../features/events/components/EventCard";
 import CommunityRow from "../../features/search/components/CommunityRow";
 import { useEvents } from "../../features/events/hooks/useEvents";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
-import { getMyCommunitiesRequest } from "../../features/communities/services/communities.service";
+import { getUserEventsRequest } from "../../features/events/services/events.service";
+import { getMyCommunitiesRequest, getUserCommunitiesRequest } from "../../features/communities/services/communities.service";
 
 function Rows({ count = 2, height }) {
   return (
@@ -30,10 +31,20 @@ function ErrorBox({ message, onRetry }) {
 }
 
 /** "Quedadas" tab of her own profile: the upcoming events she is going to or organizes. */
-export function ProfileEvents() {
+export function ProfileEvents({ username = null }) {
   const navigate = useNavigate();
   const filters = useMemo(() => ({ from: new Date().toISOString(), mine: true }), []);
-  const { events, setEvents, loading, loadingMore, hasMore, loadMore, error, refetch } = useEvents(filters);
+  const ownEvents = useEvents(filters, !username);
+  // Another user's profile: what she organizes and I can see (never her attendance, D-023)
+  const theirs = useSearchSection(
+    (page) => getUserEventsRequest(username, { page, from: new Date().toISOString() }),
+    `events:${username}`,
+    Boolean(username),
+  );
+  const { events, setEvents, loading, loadingMore, hasMore, loadMore, error, refetch } = username
+    ? { events: theirs.items, setEvents: () => {}, loading: theirs.loading, loadingMore: theirs.loadingMore,
+        hasMore: theirs.hasMore, loadMore: theirs.loadMore, error: theirs.error, refetch: theirs.retry }
+    : ownEvents;
   const replace = (updated) =>
     setEvents((prev) => prev.map((e) => (e.id === updated.id ? { ...e, ...updated } : e)));
 
@@ -44,9 +55,9 @@ export function ProfileEvents() {
       {!loading && !error && events.length === 0 && (
         <EmptyState
           icon={<FaCalendarAlt />}
-          title="Aún no tienes quedadas"
-          description="Apúntate a una y aparecerá aquí."
-          action={<Button variant="primary" onClick={() => navigate("/events")}>Ver quedadas</Button>}
+          title={username ? "No hay quedadas a la vista" : "Aún no tienes quedadas"}
+          description={username ? "Cuando organice una que puedas ver, aparecerá aquí." : "Apúntate a una y aparecerá aquí."}
+          action={username ? undefined : <Button variant="primary" onClick={() => navigate("/events")}>Ver quedadas</Button>}
         />
       )}
       {!loading && !error && events.map((event) => (
@@ -62,11 +73,11 @@ export function ProfileEvents() {
 }
 
 /** "Comunidades" tab of her own profile. */
-export function ProfileCommunities() {
+export function ProfileCommunities({ username = null }) {
   const navigate = useNavigate();
   const { items, loading, loadingMore, hasMore, error, loadMore, retry } = useSearchSection(
-    (page) => getMyCommunitiesRequest({ page }),
-    "mine",
+    (page) => (username ? getUserCommunitiesRequest(username, { page }) : getMyCommunitiesRequest({ page })),
+    username ? `communities:${username}` : "mine",
   );
 
   return (
@@ -76,9 +87,9 @@ export function ProfileCommunities() {
       {!loading && !error && items.length === 0 && (
         <EmptyState
           icon={<FaUsers />}
-          title="Aún no estás en ninguna comunidad"
-          description="Únete a una para correr acompañada."
-          action={<Button variant="primary" onClick={() => navigate("/communities")}>Descubrir comunidades</Button>}
+          title={username ? "Sin comunidades públicas" : "Aún no estás en ninguna comunidad"}
+          description={username ? "Aquí solo se ven sus comunidades públicas." : "Únete a una para correr acompañada."}
+          action={username ? undefined : <Button variant="primary" onClick={() => navigate("/communities")}>Descubrir comunidades</Button>}
         />
       )}
       {!loading && !error && items.map((community) => <CommunityRow key={community.id} community={community} />)}

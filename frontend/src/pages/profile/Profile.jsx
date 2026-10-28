@@ -221,10 +221,12 @@ function Profile({
         )}
       </div>
 
-      {isOwnProfile && (
+      {(isOwnProfile || !isBlockedByMe) && (
         <>
           <Tabs tabs={tabs} value={tab} onChange={setTab} label="Contenido del perfil" idPrefix="profile" className="pf-tabs" />
-          {tab === "events" ? <ProfileEvents /> : <ProfileCommunities />}
+          {tab === "events"
+            ? <ProfileEvents username={isOwnProfile ? null : username} />
+            : <ProfileCommunities username={isOwnProfile ? null : username} />}
         </>
       )}
 
