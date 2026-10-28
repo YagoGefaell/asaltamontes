@@ -49,7 +49,7 @@ function RecommendedCommunities({ items }) {
         {items.map((community) => (
           <li key={community.id} className="home-rail__item">
             <Link to={communityPath(community)} className="home-rail__link">
-              <Avatar src={community.imageUrl} name={community.name} size="lg" />
+              <Avatar src={community.imageUrl} name={community.name} size="xl" />
               <span className="home-rail__name">{community.name}</span>
               <span className="home-rail__meta">{community.city || `${community.memberCount} miembros`}</span>
             </Link>
@@ -73,7 +73,7 @@ function SuggestedUsers({ items }) {
         {items.map((user) => (
           <li key={user.username} className="home-rail__item">
             <Link to={`/users/${user.username}`} className="home-rail__link">
-              <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="lg" />
+              <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="xl" />
               <span className="home-rail__name">{user.fullName || user.username}</span>
               <span className="home-rail__meta">@{user.username}</span>
             </Link>

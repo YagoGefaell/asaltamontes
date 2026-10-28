@@ -85,6 +85,17 @@
   color: var(--text-muted);
 }
 
+/* Seguir / Unirse más discretos dentro de la tarjeta: la foto manda.
+   .home-rail__item adds specificity over the buttons' own rules (.follow-user-button.not-following…) */
+.home-rail__item .follow-user-button.follow-user-button,
+.home-rail__item .community-join-button.community-join-button {
+  min-width: 0;
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
 /* ===== CABECERA (T29g) ===== */
 .home-header__logo {
   display: block;
