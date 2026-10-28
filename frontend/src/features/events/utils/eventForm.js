@@ -14,7 +14,7 @@ export const EMPTY_FORM = {
   type: 'MEETUP',
   startsAt: '',
   endsAt: '',
-  // IANA zone of the event (D-019): the browser's by default, changeable under "Avanzado"
+  // IANA zone of the event (D-019): the browser's by default, changeable under "Más opciones"
   timezone: browserTimeZone(),
   meetingPointName: '',
   latitude: null,

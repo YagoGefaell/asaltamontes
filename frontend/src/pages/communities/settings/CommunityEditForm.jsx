@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Button from "../../../shared/forms/Button";
 import FormError from "../../../shared/forms/FormError";
+import Input from "../../../shared/forms/Input";
+import SectionCard from "../../../shared/ui/SectionCard";
 import ImageUploader from "../../../shared/ui/ImageUploader";
 import { useToast } from "../../../shared/ui/Toast";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service";
@@ -59,73 +61,69 @@ export default function CommunityEditForm({ community, onSaved }) {
 
   return (
     <form className="moderation-form" onSubmit={handleSubmit}>
-      <label className="moderation-label" htmlFor="community-edit-name">Nombre</label>
-      <input
-        id="community-edit-name"
-        className="moderation-input"
-        value={name}
-        maxLength={80}
-        onChange={(e) => setName(e.target.value)}
-        disabled={saving}
-      />
-
-      <label className="moderation-label" htmlFor="community-edit-description">Descripción</label>
-      <textarea
-        id="community-edit-description"
-        className="moderation-input moderation-textarea"
-        rows="4"
-        value={description}
-        maxLength={500}
-        onChange={(e) => setDescription(e.target.value)}
-        disabled={saving}
-      />
-
-      <div className="moderation-row-fields">
-        <div>
-          <label className="moderation-label" htmlFor="community-edit-city">Ciudad</label>
-          <input id="community-edit-city" className="moderation-input" value={city} maxLength={80}
+      <SectionCard title="Datos de la comunidad">
+        <Input
+          id="community-edit-name"
+          label="Nombre"
+          value={name}
+          maxLength={80}
+          onChange={(e) => setName(e.target.value)}
+          disabled={saving}
+        />
+        <Input
+          as="textarea"
+          id="community-edit-description"
+          label="Descripción"
+          rows="4"
+          value={description}
+          maxLength={500}
+          onChange={(e) => setDescription(e.target.value)}
+          disabled={saving}
+        />
+        <div className="moderation-row-fields">
+          <Input id="community-edit-city" label="Ciudad" value={city} maxLength={80}
             onChange={(e) => setCity(e.target.value)} disabled={saving} />
-        </div>
-        <div>
-          <label className="moderation-label" htmlFor="community-edit-province">Provincia</label>
-          <input id="community-edit-province" className="moderation-input" value={province} maxLength={80}
+          <Input id="community-edit-province" label="Provincia" value={province} maxLength={80}
             onChange={(e) => setProvince(e.target.value)} disabled={saving} />
         </div>
-      </div>
+      </SectionCard>
 
-      <label className="moderation-label" htmlFor="community-edit-visibility">Visibilidad</label>
-      <select
-        id="community-edit-visibility"
-        className="moderation-input"
-        value={visibility}
-        onChange={(e) => setVisibility(e.target.value)}
-        disabled={saving || !isOwner}
-      >
-        <option value="PUBLIC">Pública: cualquiera puede unirse</option>
-        <option value="PRIVATE">Privada: hay que solicitar el acceso</option>
-      </select>
-      {!isOwner && <p className="moderation-hint">Solo la propietaria puede cambiar la visibilidad.</p>}
-      {isOwner && visibility === "PRIVATE" && (
-        <p className="moderation-hint">
-          Quien no sea miembro solo verá el nombre, la imagen, la descripción y el número de miembros.
-        </p>
-      )}
+      <SectionCard title="Visibilidad">
+        <Input
+          as="select"
+          id="community-edit-visibility"
+          label="Quién puede unirse"
+          value={visibility}
+          onChange={(e) => setVisibility(e.target.value)}
+          disabled={saving || !isOwner}
+        >
+          <option value="PUBLIC">Pública: cualquiera puede unirse</option>
+          <option value="PRIVATE">Privada: hay que solicitar el acceso</option>
+        </Input>
+        {!isOwner && <p className="moderation-hint">Solo la propietaria puede cambiar la visibilidad.</p>}
+        {isOwner && visibility === "PRIVATE" && (
+          <p className="moderation-hint">
+            Quien no sea miembro solo verá el nombre, la imagen, la descripción y el número de miembros.
+          </p>
+        )}
+      </SectionCard>
 
-      <span className="moderation-label">Imagen</span>
-      <ImageUploader
-        value={imageUrl}
-        onChange={(url, mediaId) => {
-          setImageUrl(url);
-          setCoverMediaId(mediaId || null);
-        }}
-        onUploadingChange={setUploading}
-        purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
-        label="Imagen de la comunidad"
-        chooseLabel="Elegir imagen"
-        changeLabel="Cambiar imagen"
-        shape="wide"
-        disabled={saving}
-      />
+      <SectionCard title="Imagen">
+        <ImageUploader
+          value={imageUrl}
+          onChange={(url, mediaId) => {
+            setImageUrl(url);
+            setCoverMediaId(mediaId || null);
+          }}
+          onUploadingChange={setUploading}
+          purpose={MEDIA_PURPOSE.COMMUNITY_COVER}
+          label="Imagen de la comunidad"
+          chooseLabel="Elegir imagen"
+          changeLabel="Cambiar imagen"
+          shape="wide"
+          disabled={saving}
+        />
+      </SectionCard>
 
       <FormError message={error} />
       <Button type="submit" loading={saving} disabled={uploading}>Guardar cambios</Button>
