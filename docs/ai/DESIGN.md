@@ -21,14 +21,15 @@ Principios, por orden:
 
 | Token | Valor | Uso |
 |---|---|---|
-| `--primary` | `#178B9F` turquesa (montañas) | Acción principal, enlaces, pestaña activa, foco |
-| `--secondary` | `#FFA61A` naranja (cabra) | **Lo propio de quedadas**: fecha destacada, "Apuntarme", plazas, insignias. Con moderación |
-| `--accent` | `#FFDA58` amarillo (sol) | Detalles puntuales (anillo de "quedada hoy", destacados). Nunca texto sobre blanco |
+| `--primary` | `#178B9F` turquesa (montañas) | **Color principal.** Acción principal, enlaces, pestaña activa, foco, iconos de acción de la cabecera de Inicio |
+| `--accent` | `#FFDA58` amarillo (sol) | **Color secundario.** Contadores de no leídos, anillo de "quedada hoy", destacados. Siempre como fondo con el texto en `--on-accent`; nunca texto amarillo sobre blanco |
+| `--secondary` | `#FFA61A` naranja (cabra) | **Tercer color, el de menos uso.** Solo el bloque de fecha de las tarjetas de quedada. Ante la duda, amarillo o turquesa |
 | `--background` / `--surface` | gris muy claro / blanco | Fondo de página / tarjetas, hojas y barras |
 | `--text-color` / `--text-muted` | casi negro / gris | Texto principal / secundario. `--text-soft` solo para texto grande o deshabilitado (contraste) |
 | `--error`, `--success`, `--warning`, `--info` | semánticos | Solo para estados, nunca decorativos |
 
-  - Proporción orientativa: 85 % neutros, 10 % turquesa, 5 % naranja/amarillo. Si una pantalla parece "toda turquesa", sobra color (p. ej. avatares de iniciales grandes y botones rellenos repetidos).
+  - Jerarquía de la marca (Yago, 2026-10-28): **turquesa → amarillo → naranja**. Los nombres de los tokens son históricos: `--accent` (amarillo) es el secundario y `--secondary` (naranja) el tercero; no los renombres sin una tarea propia.
+  - Proporción orientativa: 85 % neutros, 10 % turquesa, ~4 % amarillo, ~1 % naranja. Si una pantalla parece "toda turquesa", sobra color (p. ej. avatares de iniciales grandes y botones rellenos repetidos).
   - Texto sobre `--primary` → `--on-primary`. Modo oscuro por `prefers-color-scheme`: todo con tokens y se revisa en la captura oscura.
 - **Tipografía**: Inter / system-ui. Escala de `tokens.css` (`--text-xs` … `--text-2xl`). Títulos de pantalla `--text-xl` o `--text-2xl` en negrita; cuerpo `--text-base`; metadatos `--text-sm` en `--text-muted`. Nada de MAYÚSCULAS en botones o etiquetas (hoy "GUARDAR CAMBIOS", "PRINCIPIANTE": a corregir).
 - **Iconos**: `react-icons/fa` (como `NavBar`). No mezclar con emojis como iconos de interfaz (el feed de `Home` usa 🤍💬📤: a sustituir).
