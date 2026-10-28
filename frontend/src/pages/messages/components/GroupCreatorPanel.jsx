@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { FaUsers } from "react-icons/fa";
 import Button from "../../../shared/forms/Button.jsx";
 import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
 import PageHeader from "../../../shared/ui/PageHeader.jsx";
@@ -153,18 +154,6 @@ const GroupCreatorPanel = ({
       <PageHeader title="Crear grupo" onBack={handleClose} backDisabled={creatingGroup} backLabel="Volver a contactos" />
 
       <form className="group-creator-form" onSubmit={handleSubmit}>
-          <label className="group-creator-label" htmlFor="group-name-input">Nombre del grupo</label>
-          <input
-            id="group-name-input"
-            type="text"
-            className="group-creator-input"
-            value={groupName}
-            onChange={(event) => setGroupName(event.target.value)}
-            maxLength={80}
-            disabled={creatingGroup}
-          />
-
-          <span className="group-creator-label">Imagen del grupo (opcional)</span>
           <ImageUploader
             value={groupImage}
             onChange={(url, mediaId) => {
@@ -176,6 +165,19 @@ const GroupCreatorPanel = ({
             label="Imagen del grupo"
             chooseLabel="Elegir imagen"
             changeLabel="Cambiar imagen"
+            disabled={creatingGroup}
+            tapToChoose
+            emptyIcon={<FaUsers />}
+          />
+
+          <label className="group-creator-label" htmlFor="group-name-input">Nombre del grupo</label>
+          <input
+            id="group-name-input"
+            type="text"
+            className="group-creator-input"
+            value={groupName}
+            onChange={(event) => setGroupName(event.target.value)}
+            maxLength={80}
             disabled={creatingGroup}
           />
 

@@ -10,6 +10,7 @@ import "./ImageUploader.css";
  * barra de progreso, errores en español y reintento. `onChange(url, mediaId)` recibe la URL de vista previa
  * (`urls.medium`) y el id de la media subida (lo que hay que enviar al backend), o ("", null) si se quita. `onUploadingChange` permite al formulario bloquear el envío mientras sube.
  * Con `tapToChoose` la propia imagen (grande y centrada) es el botón para elegirla, sin botón aparte (foto de perfil).
+ * `emptyIcon` se pinta dentro del hueco cuando aún no hay imagen ni `fallbackSrc` (p. ej. el icono de grupo).
  */
 export default function ImageUploader({
   value,
@@ -22,6 +23,7 @@ export default function ImageUploader({
   shape = "round",
   disabled = false,
   tapToChoose = false,
+  emptyIcon = null,
   onUploadingChange,
 }) {
   const toast = useToast();
@@ -95,7 +97,7 @@ export default function ImageUploader({
   const preview = shown ? (
     <img src={shown} alt={tapToChoose ? "" : label} className="image-uploader__preview" />
   ) : (
-    <div className="image-uploader__preview image-uploader__preview--empty" aria-hidden="true" />
+    <div className="image-uploader__preview image-uploader__preview--empty" aria-hidden="true">{emptyIcon}</div>
   );
   const choose = () => inputRef.current?.click();
 
