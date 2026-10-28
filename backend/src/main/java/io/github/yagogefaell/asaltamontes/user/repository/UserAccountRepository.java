@@ -56,6 +56,62 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
     """)
     Page<UserSearchDto> searchAllUsers(@Param("userId") Long userId, Pageable pageable);
     
+    /**
+     * Users to follow (T31b): followed by someone {@code userId} follows, or in a community with her. Never herself,
+     * anyone she already follows or has a block with in either direction. Most followed first.
+     */
+    @Query(value = """
+        SELECT new io.github.yagogefaell.asaltamontes.user.dto.UserSearchDto(
+            u.username,
+            p.fullName,
+            p.profilePictureUrl,
+            false
+        )
+        FROM UserAccount u
+        LEFT JOIN u.profile p
+        WHERE u.id <> :userId
+        AND NOT EXISTS (SELECT 1 FROM UserFollow own WHERE own.follower.id = :userId AND own.following.id = u.id)
+        AND NOT EXISTS (
+            SELECT 1 FROM UserBlock bl
+            WHERE (bl.blocker.id = :userId AND bl.blocked.id = u.id) OR (bl.blocked.id = :userId AND bl.blocker.id = u.id)
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM UserFollow mine, UserFollow theirs
+                WHERE mine.follower.id = :userId AND theirs.follower.id = mine.following.id AND theirs.following.id = u.id
+            )
+            OR EXISTS (
+                SELECT 1 FROM CommunityMember mm, CommunityMember om
+                WHERE mm.userAccount.id = :userId AND om.community.id = mm.community.id AND om.userAccount.id = u.id
+                AND mm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+                AND om.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+            )
+        )
+        ORDER BY COALESCE(p.followersCount, 0) DESC, u.username ASC
+    """, countQuery = """
+        SELECT COUNT(u)
+        FROM UserAccount u
+        WHERE u.id <> :userId
+        AND NOT EXISTS (SELECT 1 FROM UserFollow own WHERE own.follower.id = :userId AND own.following.id = u.id)
+        AND NOT EXISTS (
+            SELECT 1 FROM UserBlock bl
+            WHERE (bl.blocker.id = :userId AND bl.blocked.id = u.id) OR (bl.blocked.id = :userId AND bl.blocker.id = u.id)
+        )
+        AND (
+            EXISTS (
+                SELECT 1 FROM UserFollow mine, UserFollow theirs
+                WHERE mine.follower.id = :userId AND theirs.follower.id = mine.following.id AND theirs.following.id = u.id
+            )
+            OR EXISTS (
+                SELECT 1 FROM CommunityMember mm, CommunityMember om
+                WHERE mm.userAccount.id = :userId AND om.community.id = mm.community.id AND om.userAccount.id = u.id
+                AND mm.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+                AND om.status <> io.github.yagogefaell.asaltamontes.community.domain.MemberStatus.BANNED
+            )
+        )
+    """)
+    Page<UserSearchDto> findSuggestions(@Param("userId") Long userId, Pageable pageable);
+
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END 
         FROM UserAccount u 

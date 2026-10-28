@@ -20,6 +20,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
+import io.github.yagogefaell.asaltamontes.common.exceptions.UserNotFoundException;
 import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityMember;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
@@ -40,6 +41,7 @@ import io.github.yagogefaell.asaltamontes.event.dto.UpdateEventDto;
 import io.github.yagogefaell.asaltamontes.event.repository.EventAttendeeRepository;
 import io.github.yagogefaell.asaltamontes.event.repository.EventRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.BlockService;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import jakarta.persistence.EntityManager;
@@ -66,6 +68,7 @@ public class EventService {
     private final ApplicationEventPublisher eventPublisher;
     private final EntityManager entityManager;
     private final UserActionLimiter limiter;
+    private final BlockService blockService;
     private final EventChatService eventChat;
 
     /** Creates the event; the organizer is its first attendee (GOING). */
@@ -138,6 +141,21 @@ public class EventService {
         return eventRepository.search(user.getId(), from, filter, page);
     }
 
+    /**
+     * Upcoming events another user organizes that the caller can see (D-023): the usual visibility rules, in the
+     * query. Never her attendance. Unknown or blocked in either direction: the same 404 (D-022).
+     */
+    @Transactional(readOnly = true)
+    public Page<EventSummaryDto> searchByOrganizer(String username, UserAccount user, Instant from, Instant to,
+            Pageable pageable) {
+        Long organizerId = userAccountRepository.findByUsernameIgnoreCase(username)
+                .filter(u -> !blockService.isBlockedEitherWay(user.getId(), u.getId()))
+                .orElseThrow(() -> new UserNotFoundException(username)).getId();
+        EventFilter byOrganizer = new EventFilter(from, to, null, null, null, null, null, null, null, null, null, null,
+                false, false, null, false, organizerId);
+        return search(user, byOrganizer, pageable);
+    }
+
     /** Upcoming events of a community, with the same visibility rules as the general listing. */
     @Transactional(readOnly = true)
     public Page<EventSummaryDto> searchByCommunity(String slug, UserAccount user, EventFilter filter, Pageable pageable) {
@@ -145,7 +163,8 @@ public class EventService {
                 .orElseThrow(() -> new NotFoundException("Comunidad no encontrada")).id();
         EventFilter inCommunity = new EventFilter(filter.from(), filter.to(), filter.type(), filter.level(), communityId,
                 filter.city(), filter.minDistance(), filter.maxDistance(), filter.minLat(), filter.maxLat(),
-                filter.minLng(), filter.maxLng(), filter.organizerMe(), filter.attendingMe(), filter.q());
+                filter.minLng(), filter.maxLng(), filter.organizerMe(), filter.attendingMe(), filter.q(),
+                filter.followedByMe(), filter.organizerKey());
         return search(user, inCommunity, pageable);
     }
 
