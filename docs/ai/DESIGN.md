@@ -29,7 +29,7 @@ Principios, por orden:
 | `--error`, `--success`, `--warning`, `--info` | semánticos | Solo para estados, nunca decorativos |
 
   - Jerarquía de la marca (Yago, 2026-10-28): **turquesa → naranja → amarillo**, que coincide con los nombres de los tokens (`--primary`, `--secondary`, `--accent`).
-  - Iconos de interfaz (cabeceras, acciones) en el color del texto (`--text-color`: negro en claro, blanco en oscuro), no en turquesa. El turquesa en un icono indica estado activo (barra inferior) o que es un botón principal.
+  - Iconos de interfaz (cabecera y barra inferior) en gris medio (`--text-muted`), todos iguales, nunca en turquesa ni en negro; los títulos de la cabecera, en `--text-color`. El turquesa en un icono indica estado activo (barra inferior) o que es un botón principal.
   - Proporción orientativa: 85 % neutros, 10 % turquesa, ~4 % naranja, ~1 % amarillo. Si una pantalla parece "toda turquesa", sobra color (p. ej. avatares de iniciales grandes y botones rellenos repetidos).
   - Texto sobre `--primary` → `--on-primary`. Modo oscuro por `prefers-color-scheme`: todo con tokens y se revisa en la captura oscura.
 - **Tipografía**: Inter / system-ui. Escala de `tokens.css` (`--text-xs` … `--text-2xl`). Títulos de pantalla `--text-xl` o `--text-2xl` en negrita; cuerpo `--text-base`; metadatos `--text-sm` en `--text-muted`. Nada de MAYÚSCULAS en botones o etiquetas (hoy "GUARDAR CAMBIOS", "PRINCIPIANTE": a corregir).

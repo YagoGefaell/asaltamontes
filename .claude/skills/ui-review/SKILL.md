@@ -48,7 +48,7 @@ Para cada captura, comprueba y anota lo que falla:
 - [ ] Una acción principal; botones sin mayúsculas; textos en femenino y sin jerga.
 - [ ] Nada cortado ni desbordado a 360 px; el último elemento no queda bajo la barra inferior.
 - [ ] Objetivos táctiles ≥ 44 px; contraste correcto en **oscuro** (texto pequeño legible, sin blancos sueltos).
-- [ ] Color: mayoría de neutros; turquesa para acciones, naranja para contadores y fechas de quedada, amarillo casi nunca; iconos en color de texto.
+- [ ] Color: mayoría de neutros; turquesa para acciones, naranja para contadores y fechas de quedada, amarillo casi nunca; iconos de cabecera y barra inferior en gris `--text-muted`.
 - [ ] `console-errors.txt` vacío (o errores explicados).
 
 Corrige y repite las capturas hasta que la lista salga limpia. Si algo de la guía no se puede cumplir, explícalo en la PR.
