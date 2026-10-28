@@ -123,14 +123,9 @@ const CommunityCreatorPanel = ({
 
         <FormError message={createCommunityError} />
 
-        <div className="community-creator-actions">
-          <Button variant="outline" onClick={handleClose} disabled={creatingCommunity}>
-            Cancelar
-          </Button>
-          <Button type="submit" loading={creatingCommunity} disabled={uploadingImage}>
-            Crear comunidad
-          </Button>
-        </div>
+        <Button type="submit" loading={creatingCommunity} disabled={uploadingImage}>
+          Crear comunidad
+        </Button>
       </form>
     </div>
   );
