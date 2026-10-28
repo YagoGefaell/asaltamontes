@@ -63,6 +63,8 @@
   overflow-x: auto;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
+  /* Snapping aligns cards with the scrollport edge: keep them on the same gutter as the titles */
+  scroll-padding-inline: var(--space-4);
 }
 
 .home-rail::-webkit-scrollbar {
