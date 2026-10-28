@@ -24,6 +24,7 @@ import io.github.yagogefaell.asaltamontes.community.domain.Community;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
 import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.BlockService;
 
 /**
  * T15c: filters of GET /api/events and GET /api/communities/{slug}/events. Every test uses its own city or
@@ -33,6 +34,7 @@ class EventSearchIT extends AbstractIntegrationTest {
 
     @Autowired private CommunityService communityService;
     @Autowired private JdbcTemplate jdbcTemplate;
+    @Autowired private BlockService blocks;
 
     private static final Instant BASE = Instant.now().plus(10, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS);
 
@@ -66,6 +68,39 @@ class EventSearchIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.totalElements").value(4));
         // no match
         titles(ana, "city", city, "type", "TRIP").andExpect(jsonPath("$.content").value(empty()));
+    }
+
+    @Test
+    void blockedUsersInEitherDirection_areHiddenFromTheGeneralAndCommunityListings() throws Exception {
+        UserAccount me = testData.createUser();
+        UserAccount blockedByMe = testData.createUser();
+        UserAccount blockingMe = testData.createUser();
+        UserAccount other = testData.createUser();
+        Community community = testData.createCommunity(other);
+        Community ofBlockedByMe = testData.createCommunity(blockedByMe);
+        Community ofBlockingMe = testData.createCommunity(blockingMe);
+        String city = testData.uniqueName("Bloqueos");
+        create(other, ev("de-otra", city, 0, Map.of()));
+        create(blockedByMe, ev("bloqueada-por-mi", city, 1, Map.of()));
+        create(blockingMe, ev("me-bloquea", city, 2, Map.of()));
+        create(me, ev("mia", city, 3, Map.of()));
+        create(other, ev("com-otra", city, 4, Map.of("communityId", community.getPublicId())));
+        create(blockedByMe, ev("com-bloqueada", city, 5, Map.of("communityId", ofBlockedByMe.getPublicId())));
+        create(blockingMe, ev("com-me-bloquea", city, 6, Map.of("communityId", ofBlockingMe.getPublicId())));
+        blocks.block(me.getId(), blockedByMe.getUsername());
+        blocks.block(blockingMe.getId(), me.getUsername());
+
+        titles(me, "city", city).andExpect(jsonPath("$.content[*].title")
+                .value(contains(t(city, "de-otra"), t(city, "mia"), t(city, "com-otra"))))
+                .andExpect(jsonPath("$.totalElements").value(3));
+        mockMvc.perform(get("/api/communities/" + community.getSlug() + "/events").with(auth.bearer(me)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].title").value(contains(t(city, "com-otra"))));
+        for (Community hidden : new Community[] { ofBlockedByMe, ofBlockingMe }) {
+            mockMvc.perform(get("/api/communities/" + hidden.getSlug() + "/events").with(auth.bearer(me)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.content").value(empty()));
+        }
     }
 
     @Test

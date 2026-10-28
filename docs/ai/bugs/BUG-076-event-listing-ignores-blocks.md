@@ -1,6 +1,6 @@
 # BUG-076 — El listado general de quedadas no oculta a las usuarias bloqueadas
 
-- **Estado:** abierto
+- **Estado:** resuelto (fix/BUG-076-event-listing-blocks)
 - **Severidad:** baja
 - **Confianza:** confirmado
 - **Área:** backend/events
