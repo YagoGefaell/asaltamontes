@@ -9,6 +9,7 @@ import io.github.yagogefaell.asaltamontes.notification.domain.NotificationType;
 
 /** A notification joined with its actor, as the queries return it. {@code recipientId} is internal. */
 public record NotificationRow(UUID publicId, Long recipientId, NotificationType type, String actorUsername,
-                              String actorFullName, String actorPicture, NotificationTargetType targetType,
+                              String actorFullName, String actorPicture, boolean actorFollowedByRecipient,
+                              NotificationTargetType targetType,
                               String targetRef, Map<String, Object> payload, Instant readAt, Instant createdAt) {
 }

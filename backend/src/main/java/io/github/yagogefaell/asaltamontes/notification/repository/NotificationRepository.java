@@ -20,6 +20,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     String ROW = """
         SELECT new io.github.yagogefaell.asaltamontes.notification.repository.NotificationRow(
             n.publicId, n.recipientId, n.type, a.username, p.fullName, p.profilePictureUrl,
+            CASE WHEN EXISTS (SELECT 1 FROM UserFollow f WHERE f.follower.id = n.recipientId AND f.following.id = n.actorId) THEN true ELSE false END,
             n.targetType, n.targetRef, n.payload, n.readAt, n.createdAt)
         FROM Notification n
         LEFT JOIN UserAccount a ON a.id = n.actorId

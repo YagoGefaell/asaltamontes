@@ -63,6 +63,18 @@ class NotificationsIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void follow_actorCarriesWhetherTheRecipientFollowsHerBack() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+
+        follow(ana, bea);
+        assertThat(awaitItems(bea, 1).get(0).get("actor").get("followedByMe").asBoolean()).isFalse();
+
+        follow(bea, ana);
+        assertThat(items(bea).get(0).get("actor").get("followedByMe").asBoolean()).isTrue();
+    }
+
+    @Test
     void followUnfollowFollow_doesNotPileUpUnreadNotifications_norPingAgainAfterReadingIt() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
