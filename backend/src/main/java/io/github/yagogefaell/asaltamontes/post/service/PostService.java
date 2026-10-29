@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -45,8 +46,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Publications (T22a1): create, read, list and delete. Who sees what is decided by the query
  * ({@link PostQueryRepository}); anything the viewer may not see answers the same 404 as a post that does not exist.
- * Posting needs an active membership (a muted member is silenced everywhere in the community, as in its chat; an
- * expelled one or an outsider gets the 404 of a missing community).
+ * In a community only the owner and the moderators post (D-025); anybody posts on her own profile.
  */
 @Service
 @RequiredArgsConstructor
@@ -93,11 +93,11 @@ public class PostService {
         if (dto.communitySlug() != null && !dto.communitySlug().isBlank()) {
             communityId = communityRepository.findIdBySlug(dto.communitySlug())
                     .orElseThrow(() -> new NotFoundException(COMMUNITY_NOT_FOUND));
-            MemberStatus status = memberRepository.findStatus(communityId, user.getId())
-                    .filter(s -> s != MemberStatus.BANNED)
-                    .orElseThrow(() -> new NotFoundException(COMMUNITY_NOT_FOUND));
-            if (status == MemberStatus.MUTED) {
-                throw new ForbiddenException("Estás silenciada en esta comunidad y no puedes publicar");
+            // Only the owner and the moderators publish in a community (D-025)
+            if (!memberRepository.isModerator(communityId, user.getId())) {
+                // Whoever cannot even see the community gets its 404; the rest, a 403
+                requireVisible(communityId, user.getId());
+                throw new ForbiddenException("Solo la propietaria y las moderadoras publican en esta comunidad");
             }
         }
 
@@ -129,14 +129,12 @@ public class PostService {
     @Transactional(readOnly = true)
     public CursorPageDto<PostDto> ofCommunity(UserAccount viewer, String slug, String before, Integer limit) {
         Long communityId = communityRepository.findIdBySlug(slug).orElseThrow(() -> new NotFoundException(COMMUNITY_NOT_FOUND));
-        // Only members see the wall; the rest get the 404 of a community that does not exist
-        memberRepository.findStatus(communityId, viewer.getId())
-                .filter(s -> s != MemberStatus.BANNED)
-                .orElseThrow(() -> new NotFoundException(COMMUNITY_NOT_FOUND));
+        // Public: any user with a session; private: members only. Banned users get the 404 of a missing community
+        requireVisible(communityId, viewer.getId());
         return page(Scope.COMMUNITY, viewer, communityId, before, limit);
     }
 
-    /** Posts on the profile of {@code username}: her followers (and she) see them, anybody else gets an empty page. */
+    /** Posts on the profile of {@code username}; who may see them is decided in {@link PostQueryRepository} (D-025). */
     @Transactional(readOnly = true)
     public CursorPageDto<PostDto> ofUser(UserAccount viewer, String username, String before, Integer limit) {
         UserAccount author = userAccountRepository.findByUsernameIgnoreCase(username)
@@ -161,6 +159,15 @@ public class PostService {
         // The photos are released; whatever nothing else references is deleted (files after the commit)
         postRepository.deleteMedia(row.postId());
         mediaIds.forEach(id -> mediaCleanup.deleteIfUnreferenced(id, null));
+    }
+
+    /** Public community: any user who is not banned; private: its members who are not banned. Else the 404 of a missing one. */
+    private void requireVisible(Long communityId, Long userId) {
+        Optional<MemberStatus> status = memberRepository.findStatus(communityId, userId);
+        if (status.filter(s -> s == MemberStatus.BANNED).isPresent()
+                || status.isEmpty() && !communityRepository.isPublic(communityId)) {
+            throw new NotFoundException(COMMUNITY_NOT_FOUND);
+        }
     }
 
     private CursorPageDto<PostDto> page(Scope scope, UserAccount viewer, Long scopeId, String before, Integer limit) {

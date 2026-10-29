@@ -2067,8 +2067,8 @@
     },
     "/api/posts": {
       "post": {
-        "summary": "Publish text with 0-4 photos on her profile or in a community she belongs to (T22a1)",
-        "description": "communitySlug omitted/null = her profile (her followers and she see it). With communitySlug only active members may post: a muted member gets 403, an outsider or banned member the 404 of a missing community. mediaIds are ids from POST /api/media with purpose POST_IMAGE, owned by the caller. The text is plain text (never HTML). Limit per user: asaltamontes.rate-limit.posts-per-day (20).",
+        "summary": "Publish text with 0-4 photos on her profile or, if she is its owner or a moderator, in a community (T22a1, D-025)",
+        "description": "communitySlug omitted/null = her own profile (anybody may post there). With communitySlug only the owner and the moderators of that community may post: any other user who can see the community (a plain or muted member, or a non-member of a public community) gets 403; a banned user, or a non-member of a private community, gets the 404 of a missing community. mediaIds are ids from POST /api/media with purpose POST_IMAGE, owned by the caller. The text is plain text (never HTML). Limit per user: asaltamontes.rate-limit.posts-per-day (20).",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["body"], "properties": {
@@ -2078,8 +2078,8 @@
         "responses": {
           "201": { "description": "Post created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Post" } } } },
           "400": { "description": "Empty or too long text, more than 4 or repeated photos, photo of another purpose" },
-          "403": { "description": "Muted in that community" },
-          "404": { "description": "Community not found / not a member / banned; or a photo that is missing or not hers" },
+          "403": { "description": "Not the owner or a moderator of that community" },
+          "404": { "description": "Community not found / banned / private and she is not a member; or a photo that is missing or not hers" },
           "429": { "description": "Too many posts today. Retry-After in seconds" }
         }
       }
@@ -2087,7 +2087,7 @@
     "/api/posts/{postId}": {
       "get": {
         "summary": "One post, if the caller may see it (T22a1)",
-        "description": "Community posts: members who are not banned. Profile posts: the author and her followers. A block in either direction hides it. Anything not visible is the same 404 as a post that does not exist.",
+        "description": "Community posts: any user with a session if the community is public, only its members if it is private; banned users never. Profile posts: any user with a session (every profile is public until T23; then private profiles show to accepted followers only). A block in either direction hides it. Anything not visible is the same 404 as a post that does not exist.",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
@@ -2112,7 +2112,7 @@
     "/api/feed": {
       "get": {
         "summary": "Home feed: posts of her communities and of the people she follows (and hers), newest first (T22a1)",
-        "description": "Same visibility as GET /api/posts/{postId}, decided in the query. Fan-out on read: one query for the posts and one for their photos, whatever the page size.",
+        "description": "Same visibility as GET /api/posts/{postId}, decided in the query, restricted to the communities she belongs to, her own posts and the people she follows. Fan-out on read: one query for the posts and one for their photos, whatever the page size.",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -2128,7 +2128,7 @@
     "/api/communities/{slug}/posts": {
       "get": {
         "summary": "Wall of a community: its posts, newest first (T22a1)",
-        "description": "Members who are not banned only.",
+        "description": "Public community: any user with a session who is not banned; private: its members who are not banned.",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -2139,14 +2139,14 @@
         "responses": {
           "200": { "description": "Page of Post, newest first", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }, "nextBefore": { "type": "string", "nullable": true, "description": "Opaque cursor for the next page (pass it as before); null on the last page" } } } } } },
           "400": { "description": "Invalid cursor" },
-          "404": { "description": "Community not found, or the caller is not an active member" }
+          "404": { "description": "Community not found, banned caller, or private community and the caller is not a member" }
         }
       }
     },
     "/api/users/{username}/posts": {
       "get": {
         "summary": "Posts on a user's own profile, newest first (T22a1)",
-        "description": "Her followers and she see them; anybody else gets an empty page. Community posts are not listed here.",
+        "description": "Any user with a session sees them (every profile is public until T23, which will restrict private profiles to accepted followers). Community posts are not listed here.",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [

@@ -38,7 +38,7 @@ Inicio sin feed real todavía. Sustituirlo por contenido real: publicaciones de 
 ### Backend (T22a)
 - Migración nueva (V17 o la siguiente libre): `posts(id bigint, public_id uuid, author_id, community_id null, body text ≤ 2000, like_count, comment_count, created_at, deleted_at)`, `post_media(post_id, media_id, position)` (máx. 4), `post_likes(post_id, user_id, PK compuesta)`, `post_comments(id, public_id, post_id, author_id, body ≤ 1000, created_at, deleted_at)`.
   Índices: `(community_id, created_at DESC, id DESC)`, `(author_id, created_at DESC, id DESC)`, parcial `WHERE deleted_at IS NULL`. `media_id` con FK `ON DELETE SET NULL` y las referencias registradas en `MediaReferenceService` para que la limpieza de huérfanos no borre fotos en uso.
-- `community_id` nulo = publicación en el perfil personal; la ven quienes siguen a la autora (y ella). Con `community_id`, la ven los miembros (no baneadas); en comunidades públicas el texto solo lo ven miembros (decisión conservadora hasta que Yago diga otra cosa).
+- `community_id` nulo = publicación en el perfil personal (visible según el perfil, ver D-025 abajo). Con `community_id`: públicas, cualquier usuaria; privadas, miembros no baneadas.
 - Endpoints (todo paginado con cursor opaco, ids públicos):
   - `POST /api/posts` (`communitySlug` opcional, `body`, `mediaIds`), `DELETE /api/posts/{publicId}` (autora, o propietaria/moderadora de la comunidad; borrado lógico).
   - `GET /api/communities/{slug}/posts`, `GET /api/users/{username}/posts`, `GET /api/posts/{publicId}`.
@@ -59,15 +59,16 @@ La spec de T22a es demasiado grande para una PR revisable en 30 min, así que se
 | **T22a1** | Migración V18 **completa** (`posts`, `post_media`, `post_likes`, `post_comments`: el esquema se revisa una sola vez), `POST /api/posts`, `GET|DELETE /api/posts/{id}`, `GET /api/communities/{slug}/posts`, `GET /api/users/{username}/posts`, `GET /api/feed`, límite de publicaciones, fotos (`POST_IMAGE`) y su liberación al borrar. `PostDto` ya trae `likeCount`, `commentCount`, `likedByMe` (0/0/false hasta T22a2). |
 | **T22a2** | `PUT|DELETE /api/posts/{id}/like` (idempotentes, `UPDATE` atómico), `GET|POST|DELETE` de comentarios, límites de comentarios y likes, notificación `POST_COMMENT`, `GET /api/explore/posts`. |
 
-Decisiones tomadas en T22a1 (sin respuesta de Yago todavía; cambiarlas es barato):
-- **Texto solo para miembros**, también en comunidades públicas (la decisión conservadora de arriba). Hasta que Yago diga otra cosa, una comunidad pública no enseña publicaciones a quien no es miembro.
-- **Silenciadas (`MUTED`)** no publican en la comunidad (403), igual que en su chat. Publicar en su perfil sigue siendo suyo. Baneadas y ajenas: 404 como una comunidad inexistente.
-- **Perfil ajeno**: `GET /api/users/{username}/posts` lista solo las publicaciones *del perfil* (no las de comunidades) y devuelve página vacía a quien no la sigue; 404 si hay bloqueo. `is_public_profile` no se usa todavía (no hay perfiles privados implementados en seguidoras); entrará con Explorar.
-- **Borrar**: la autora, o propietaria/moderadora en publicaciones de comunidad. Borrado lógico, `post_media` se elimina y las fotos que nada más referencia se borran (los ficheros, tras el commit).
+Decisiones de Yago (2026-10-29, D-025) aplicadas en T22a1:
+- **Quién publica**: en una comunidad, **solo la propietaria y las moderadoras**; una miembro normal (también silenciada) recibe 403, y una no miembro de una comunidad pública también (403). Baneada, o no miembro de una privada: 404 como una comunidad inexistente. En su perfil publica cualquier usuaria. No hay regla de «silenciadas no publican» (sobra). El front de T22b solo mostrará «Publicar» en la comunidad a propietaria y moderadoras.
+- **Quién ve una publicación de comunidad**: comunidad pública, cualquier usuaria con sesión (miembro o no); privada, solo las miembros; baneadas nunca. Bloqueos en ambas direcciones: 404 uniforme. El feed de Inicio solo trae las de *mis* comunidades.
+- **Perfil personal, como Instagram**: si es público lo ve cualquier usuaria con sesión. Hasta T23 **todos** los perfiles son públicos (no se usa `is_public_profile`, que hoy vale `false` por defecto sin significar «privado»). `GET /api/users/{username}/posts` ya no devuelve página vacía a quien no sigue; 404 si hay bloqueo. **Para T23a**: la regla vive en un único punto, la constante `PROFILE_VISIBLE` de `PostQueryRepository`; con T23 pasa a «perfil público, o seguidora aceptada, o la propia autora». El feed sigue mostrando solo las de quienes sigo.
+- **Autora que se va de la comunidad**: sus publicaciones siguen visibles; ya no puede publicar (deja de ser staff).
+- **Borrar**: la autora, o propietaria/moderadora en publicaciones de comunidad (también si la autora ya se fue). Borrado lógico, `post_media` se elimina y las fotos que nada más referencia se borran (los ficheros, tras el commit).
 - **Orden y cursor**: `(created_at DESC, public_id DESC)` (UUID v7), porque el cursor opaco solo lleva el id público.
 - **Cuenta borrada**: las FK `ON DELETE CASCADE` eliminan publicaciones, fotos enlazadas, likes y comentarios; las publicaciones no añaden trabajo a BUG-065 (que sigue abierto: `deleteUser` falla si la cuenta tiene seguidoras/seguidos).
 - **Feed**: fan-out on read; el umbral para pasar a fan-out on write está en el Javadoc de `PostQueryRepository`.
-- Pregunta abierta para T22a2 (Explorar): la spec dice «comunidades públicas y perfiles públicos», pero el texto de comunidad es solo para miembros. Hay que decidir si la cuadrícula muestra fotos de comunidades públicas a no miembros (se filtraría el contenido que aquí es privado).
+- Explorar (T22a2): con D-025 el texto de una comunidad pública lo ve cualquier usuaria, así que la cuadrícula puede mostrar fotos de comunidades públicas y perfiles públicos sin filtrar nada privado.
 
 ### Frontend (T22b y T22c)
 - Crear publicación: pantalla aparte (`/posts/new`). Acceso: botón `+` en la cabecera de Inicio y, desde una comunidad, «Publicar» preseleccionando la comunidad. No se añade pestaña a la barra inferior (DESIGN: 5 pestañas).
@@ -82,12 +83,12 @@ Decisiones tomadas en T22a1 (sin respuesta de Yago todavía; cambiarlas es barat
 Ranking algorítmico, menciones, hashtags, compartir/repostear, edición de publicaciones, vídeos, denuncias (T23), notificación de likes, fijar publicaciones.
 
 ## Criterios de aceptación
-- [ ] Una usuaria publica en su perfil y en una comunidad suya, con 0–4 fotos; no puede publicar en comunidades donde no es miembro ni en las que está baneada.
+- [ ] Una usuaria publica en su perfil y en una comunidad suya, con 0–4 fotos; en una comunidad solo publican propietaria y moderadoras (miembros normales: 403).
 - [ ] El feed muestra solo lo que debe verse, paginado, sin duplicados entre páginas, y sin bloqueadas.
 - [ ] Like y comentario son idempotentes y los contadores cuadran bajo concurrencia.
 - [ ] Una foto en uso no la borra la limpieza de huérfanos; al borrar la publicación se libera.
 - [ ] Ninguna respuesta incluye ids numéricos.
 
 ## Tests requeridos
-- Integración: visibilidad (pública, privada, perfil, seguidoras, bloqueo, baneada), paginación con cursor, permisos de borrado, límites 429, likes concurrentes, número de consultas del feed constante (sin N+1).
+- Integración: visibilidad (pública, privada, perfil, bloqueo, baneada, autora que se fue) y permisos de publicación, paginación con cursor, permisos de borrado, límites 429, likes concurrentes, número de consultas del feed constante (sin N+1).
 - Front: tarjeta, creación (validaciones y subida), scroll infinito de Inicio, cuadrícula de Buscar.

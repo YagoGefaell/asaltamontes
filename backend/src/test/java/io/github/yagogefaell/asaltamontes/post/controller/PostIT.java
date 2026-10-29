@@ -97,32 +97,43 @@ class PostIT extends AbstractIntegrationTest {
     }
 
     @Test
-    void postingInACommunity_needsAnActiveMembership() throws Exception {
+    void postingInACommunity_isOnlyForTheOwnerAndTheModerators() throws Exception {
         UserAccount owner = testData.createUser();
+        UserAccount mod = testData.createUser();
         UserAccount member = testData.createUser();
         UserAccount muted = testData.createUser();
         UserAccount banned = testData.createUser();
         UserAccount outsider = testData.createUser();
         Community community = testData.createCommunity(owner);
-        for (UserAccount u : List.of(member, muted, banned)) {
+        for (UserAccount u : List.of(mod, member, muted, banned)) {
             mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
         }
+        makeModerator(owner, community, mod);
         moderate(owner, community, muted, "mute", null);
         moderate(owner, community, banned, "ban", "{\"reason\":\"Spam\"}");
 
-        create(member, community.getSlug(), "hola", List.of()).andExpect(status().isCreated());
+        create(owner, community.getSlug(), "hola", List.of()).andExpect(status().isCreated());
+        create(mod, community.getSlug(), "hola", List.of()).andExpect(status().isCreated());
+        create(member, community.getSlug(), "hola", List.of()).andExpect(status().isForbidden());
         create(muted, community.getSlug(), "hola", List.of()).andExpect(status().isForbidden());
+        create(outsider, community.getSlug(), "hola", List.of()).andExpect(status().isForbidden());
         create(banned, community.getSlug(), "hola", List.of()).andExpect(status().isNotFound());
-        create(outsider, community.getSlug(), "hola", List.of()).andExpect(status().isNotFound());
         create(member, "no-existe", "hola", List.of()).andExpect(status().isNotFound());
-        // The profile is always hers
+        // On her own profile anybody posts
+        create(member, null, "en mi perfil", List.of()).andExpect(status().isCreated());
         create(banned, null, "en mi perfil", List.of()).andExpect(status().isCreated());
+
+        // In a private community, who cannot see it gets the 404 of a missing one
+        patchVisibility(owner, community, "PRIVATE");
+        create(outsider, community.getSlug(), "hola", List.of()).andExpect(status().isNotFound());
+        create(member, community.getSlug(), "hola", List.of()).andExpect(status().isForbidden());
+        create(mod, community.getSlug(), "hola", List.of()).andExpect(status().isCreated());
     }
 
     // ---------------------------------------------------------------- visibility
 
     @Test
-    void aCommunityPost_isSeenByMembersOnly_inEveryRead() throws Exception {
+    void aPublicCommunityPost_isSeenByAnyUser_aPrivateOneOnlyByItsMembers_neverByTheBanned() throws Exception {
         UserAccount owner = testData.createUser();
         UserAccount member = testData.createUser();
         UserAccount outsider = testData.createUser();
@@ -131,40 +142,69 @@ class PostIT extends AbstractIntegrationTest {
         for (UserAccount u : List.of(member, banned)) {
             mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
         }
-        String id = body(create(owner, community.getSlug(), "Solo socias", List.of())).get("id").asText();
+        String id = body(create(owner, community.getSlug(), "Para todas", List.of())).get("id").asText();
         moderate(owner, community, banned, "ban", "{\"reason\":\"Spam\"}");
 
+        // Public: members and outsiders read it (post and wall); only the feed is limited to her communities
+        for (UserAccount who : List.of(member, outsider)) {
+            getPost(who, id).andExpect(status().isOk());
+            assertThat(ids(wall(who, community))).containsExactly(id);
+        }
+        assertThat(ids(feed(member, null))).containsExactly(id);
+        assertThat(ids(feed(outsider, null))).isEmpty();
+        getPost(banned, id).andExpect(status().isNotFound());
+        wallRequest(banned, community).andExpect(status().isNotFound());
+        assertThat(ids(feed(banned, null))).isEmpty();
+
+        // Private: members only
+        patchVisibility(owner, community, "PRIVATE");
         getPost(member, id).andExpect(status().isOk());
         assertThat(ids(wall(member, community))).containsExactly(id);
-        assertThat(ids(feed(member, null))).containsExactly(id);
-
-        for (UserAccount nobody : List.of(outsider, banned)) {
-            getPost(nobody, id).andExpect(status().isNotFound());
-            wallRequest(nobody, community).andExpect(status().isNotFound());
-            assertThat(ids(feed(nobody, null))).isEmpty();
-        }
+        getPost(outsider, id).andExpect(status().isNotFound());
+        wallRequest(outsider, community).andExpect(status().isNotFound());
+        getPost(banned, id).andExpect(status().isNotFound());
+        wallRequest(banned, community).andExpect(status().isNotFound());
     }
 
     @Test
-    void aProfilePost_isSeenByFollowersAndHerself_notByOthers() throws Exception {
+    void thePostsOfSomebodyWhoLeftTheCommunity_stayVisible() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount mod = testData.createUser();
+        UserAccount member = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        for (UserAccount u : List.of(mod, member)) {
+            mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
+        }
+        makeModerator(owner, community, mod);
+        String id = body(create(mod, community.getSlug(), "antes de irme", List.of())).get("id").asText();
+        mockMvc.perform(post(url(community, "/leave")).with(auth.bearer(mod))).andExpect(status().is2xxSuccessful());
+
+        assertThat(ids(wall(member, community))).containsExactly(id);
+        getPost(member, id).andExpect(status().isOk());
+        // The owner still deletes it, and she can no longer post
+        create(mod, community.getSlug(), "ya no", List.of()).andExpect(status().isForbidden());
+        deletePost(owner, id).andExpect(status().isNoContent());
+    }
+
+    @Test
+    void aProfilePost_isSeenByAnyUser_untilT23_butTheFeedOnlyShowsTheFollowed() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount follower = testData.createUser();
         UserAccount stranger = testData.createUser();
         follow(follower, ana);
-        String id = body(create(ana, null, "Para mis seguidoras", List.of())).get("id").asText();
+        String id = body(create(ana, null, "Para quien quiera", List.of())).get("id").asText();
 
-        for (UserAccount who : List.of(ana, follower)) {
+        for (UserAccount who : List.of(ana, follower, stranger)) {
             getPost(who, id).andExpect(status().isOk());
             assertThat(ids(profile(who, ana, null))).containsExactly(id);
-            assertThat(ids(feed(who, null))).contains(id);
         }
-        getPost(stranger, id).andExpect(status().isNotFound());
-        assertThat(ids(profile(stranger, ana, null))).isEmpty();
+        assertThat(ids(feed(ana, null))).contains(id);
+        assertThat(ids(feed(follower, null))).contains(id);
         assertThat(ids(feed(stranger, null))).doesNotContain(id);
 
-        // Unfollowing takes it away again
+        // Unfollowing only takes it out of the feed
         mockMvc.perform(delete("/api/users/follow/" + ana.getUsername()).with(auth.bearer(follower))).andExpect(status().isNoContent());
-        getPost(follower, id).andExpect(status().isNotFound());
+        getPost(follower, id).andExpect(status().isOk());
         assertThat(ids(feed(follower, null))).doesNotContain(id);
 
         mockMvc.perform(get("/api/users/no_existe_nadie/posts").with(auth.bearer(ana))).andExpect(status().isNotFound());
@@ -179,6 +219,8 @@ class PostIT extends AbstractIntegrationTest {
         for (UserAccount u : List.of(ana, bea)) {
             mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
         }
+        makeModerator(owner, community, ana);
+        makeModerator(owner, community, bea);
         follow(bea, ana);
         follow(ana, bea);
         String anasCommunityPost = body(create(ana, community.getSlug(), "de ana", List.of())).get("id").asText();
@@ -298,19 +340,18 @@ class PostIT extends AbstractIntegrationTest {
         for (UserAccount u : List.of(mod, member, other)) {
             mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
         }
-        mockMvc.perform(put(url(community, "/members/" + mod.getUsername() + "/role")).with(auth.bearer(owner))
-                .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"MODERATOR\"}")).andExpect(status().isNoContent());
+        makeModerator(owner, community, mod);
 
-        String byMember = body(create(member, community.getSlug(), "mía", List.of())).get("id").asText();
+        String byMember = body(create(mod, community.getSlug(), "de la moderadora", List.of())).get("id").asText();
         JsonNode seenByOther = body(getPost(other, byMember).andExpect(status().isOk()));
         assertThat(seenByOther.get("canDelete").asBoolean()).isFalse();
         assertThat(body(getPost(mod, byMember)).get("canDelete").asBoolean()).isTrue();
         assertThat(body(getPost(owner, byMember)).get("canDelete").asBoolean()).isTrue();
 
         deletePost(other, byMember).andExpect(status().isForbidden());
-        deletePost(outsider, byMember).andExpect(status().isNotFound());
-        deletePost(mod, byMember).andExpect(status().isNoContent());
-        deletePost(mod, byMember).andExpect(status().isNotFound());
+        deletePost(outsider, byMember).andExpect(status().isForbidden());
+        deletePost(owner, byMember).andExpect(status().isNoContent());
+        deletePost(owner, byMember).andExpect(status().isNotFound());
         getPost(member, byMember).andExpect(status().isNotFound());
         assertThat(ids(wall(owner, community))).doesNotContain(byMember);
         assertThat(ids(feed(member, null))).doesNotContain(byMember);
@@ -318,7 +359,7 @@ class PostIT extends AbstractIntegrationTest {
         // The owner's post: a moderator may delete it too (staff), a plain member may not
         String byOwner = body(create(owner, community.getSlug(), "de la propietaria", List.of())).get("id").asText();
         deletePost(member, byOwner).andExpect(status().isForbidden());
-        deletePost(owner, byOwner).andExpect(status().isNoContent());
+        deletePost(mod, byOwner).andExpect(status().isNoContent());
 
         // A profile post: only her
         String profilePost = body(create(member, null, "perfil", List.of())).get("id").asText();
@@ -441,6 +482,17 @@ class PostIT extends AbstractIntegrationTest {
             request = request.contentType(MediaType.APPLICATION_JSON).content(payload);
         }
         mockMvc.perform(request).andExpect(status().isNoContent());
+    }
+
+    private void makeModerator(UserAccount owner, Community community, UserAccount target) throws Exception {
+        mockMvc.perform(put(url(community, "/members/" + target.getUsername() + "/role")).with(auth.bearer(owner))
+                .contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"MODERATOR\"}")).andExpect(status().isNoContent());
+    }
+
+    private void patchVisibility(UserAccount owner, Community community, String visibility) throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch(url(community, ""))
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"visibility\":\"" + visibility + "\"}")).andExpect(status().isOk());
     }
 
     private String url(Community community, String path) {
