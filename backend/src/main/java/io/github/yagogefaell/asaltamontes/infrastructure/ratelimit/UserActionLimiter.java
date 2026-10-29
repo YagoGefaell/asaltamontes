@@ -47,6 +47,10 @@ public class UserActionLimiter {
         check("event-message", userId, properties.getEventMessagesPerMinute(), MINUTE);
     }
 
+    public void postCreate(Long userId) {
+        check("post-create", userId, properties.getPostsPerDay(), DAY);
+    }
+
     private void check(String action, Long userId, int limit, Duration period) {
         if (!properties.isEnabled()) {
             return;

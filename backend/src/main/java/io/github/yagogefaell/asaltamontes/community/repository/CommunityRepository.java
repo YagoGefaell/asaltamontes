@@ -28,6 +28,9 @@ public interface CommunityRepository extends JpaRepository<Community, Long> {
     @Query("SELECT c.id FROM Community c WHERE c.publicId = :publicId")
     Optional<Long> findIdByPublicId(@Param("publicId") UUID publicId);
 
+    @Query("SELECT COUNT(c) > 0 FROM Community c WHERE c.id = :id AND c.visibility = io.github.yagogefaell.asaltamontes.community.domain.CommunityVisibility.PUBLIC")
+    boolean isPublic(@Param("id") Long id);
+
     @Query("SELECT c.id FROM Community c WHERE c.slug = :slug")
     Optional<Long> findIdBySlug(@Param("slug") String slug);
 

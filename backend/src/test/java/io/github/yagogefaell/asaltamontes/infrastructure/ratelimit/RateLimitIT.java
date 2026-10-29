@@ -27,7 +27,8 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
         "asaltamontes.rate-limit.group-member-adds-per-hour=2",
         "asaltamontes.rate-limit.follows-per-hour=3",
         "asaltamontes.rate-limit.community-messages-per-minute=2",
-        "asaltamontes.rate-limit.event-messages-per-minute=2"})
+        "asaltamontes.rate-limit.event-messages-per-minute=2",
+        "asaltamontes.rate-limit.posts-per-day=2"})
 class RateLimitIT extends AbstractIntegrationTest {
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -199,6 +200,24 @@ class RateLimitIT extends AbstractIntegrationTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> messageService.processIncomingMessage(chat, ana.getId(), "tres"))
                 .isInstanceOf(io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsException.class);
         messageService.processIncomingMessage(chat, bea.getId(), "hola");
+    }
+
+    @Test
+    void posting_isLimitedPerUser() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        for (int i = 0; i < 2; i++) {
+            publish(ana).andExpect(status().isCreated());
+        }
+
+        publish(ana).andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+        publish(bea).andExpect(status().isCreated());
+    }
+
+    private org.springframework.test.web.servlet.ResultActions publish(UserAccount by) throws Exception {
+        return mockMvc.perform(post("/api/posts").with(auth.bearer(by)).contentType(MediaType.APPLICATION_JSON)
+                .content(json(java.util.Map.of("body", "hola"))));
     }
 
     private org.springframework.test.web.servlet.ResultActions createGroup(UserAccount by, UserAccount member) throws Exception {

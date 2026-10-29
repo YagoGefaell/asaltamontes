@@ -2065,6 +2065,102 @@
         }
       }
     },
+    "/api/posts": {
+      "post": {
+        "summary": "Publish text with 0-4 photos on her profile or, if she is its owner or a moderator, in a community (T22a1, D-025)",
+        "description": "communitySlug omitted/null = her own profile (anybody may post there). With communitySlug only the owner and the moderators of that community may post: any other user who can see the community (a plain or muted member, or a non-member of a public community) gets 403; a banned user, or a non-member of a private community, gets the 404 of a missing community. mediaIds are ids from POST /api/media with purpose POST_IMAGE, owned by the caller. The text is plain text (never HTML). Limit per user: asaltamontes.rate-limit.posts-per-day (20).",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["body"], "properties": {
+          "communitySlug": { "type": "string", "nullable": true },
+          "body": { "type": "string", "minLength": 1, "maxLength": 2000 },
+          "mediaIds": { "type": "array", "maxItems": 4, "items": { "type": "string", "format": "uuid" } } } } } } },
+        "responses": {
+          "201": { "description": "Post created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Post" } } } },
+          "400": { "description": "Empty or too long text, more than 4 or repeated photos, photo of another purpose" },
+          "403": { "description": "Not the owner or a moderator of that community" },
+          "404": { "description": "Community not found / banned / private and she is not a member; or a photo that is missing or not hers" },
+          "429": { "description": "Too many posts today. Retry-After in seconds" }
+        }
+      }
+    },
+    "/api/posts/{postId}": {
+      "get": {
+        "summary": "One post, if the caller may see it (T22a1)",
+        "description": "Community posts: any user with a session if the community is public, only its members if it is private; banned users never. Profile posts: any user with a session (every profile is public until T23; then private profiles show to accepted followers only). A block in either direction hides it. Anything not visible is the same 404 as a post that does not exist.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "Post", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Post" } } } },
+          "404": { "description": "Not found or not visible" }
+        }
+      },
+      "delete": {
+        "summary": "Delete a post (logical delete; its photos are released) (T22a1)",
+        "description": "The author, or the owner or a moderator of the community for a community post (canDelete in Post tells the client). Deleting twice: the second is a 404.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "403": { "description": "She can see it but may not delete it" },
+          "404": { "description": "Not found or not visible" }
+        }
+      }
+    },
+    "/api/feed": {
+      "get": {
+        "summary": "Home feed: posts of her communities and of the people she follows (and hers), newest first (T22a1)",
+        "description": "Same visibility as GET /api/posts/{postId}, decided in the query, restricted to the communities she belongs to, her own posts and the people she follows. Fan-out on read: one query for the posts and one for their photos, whatever the page size.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "before", "in": "query", "schema": { "type": "string" }, "description": "Cursor (nextBefore of the previous page); a malformed one or one from another list is a 400" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Page of Post, newest first", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }, "nextBefore": { "type": "string", "nullable": true, "description": "Opaque cursor for the next page (pass it as before); null on the last page" } } } } } },
+          "400": { "description": "Invalid cursor" }
+        }
+      }
+    },
+    "/api/communities/{slug}/posts": {
+      "get": {
+        "summary": "Wall of a community: its posts, newest first (T22a1)",
+        "description": "Public community: any user with a session who is not banned; private: its members who are not banned.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "slug", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "before", "in": "query", "schema": { "type": "string" }, "description": "Cursor (nextBefore of the previous page); a malformed one or one from another list is a 400" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Page of Post, newest first", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }, "nextBefore": { "type": "string", "nullable": true, "description": "Opaque cursor for the next page (pass it as before); null on the last page" } } } } } },
+          "400": { "description": "Invalid cursor" },
+          "404": { "description": "Community not found, banned caller, or private community and the caller is not a member" }
+        }
+      }
+    },
+    "/api/users/{username}/posts": {
+      "get": {
+        "summary": "Posts on a user's own profile, newest first (T22a1)",
+        "description": "Any user with a session sees them (every profile is public until T23, which will restrict private profiles to accepted followers). Community posts are not listed here.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "username", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "before", "in": "query", "schema": { "type": "string" }, "description": "Cursor (nextBefore of the previous page); a malformed one or one from another list is a 400" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Page of Post, newest first", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }, "nextBefore": { "type": "string", "nullable": true, "description": "Opaque cursor for the next page (pass it as before); null on the last page" } } } } } },
+          "400": { "description": "Invalid cursor" },
+          "404": { "description": "User not found, or blocked in either direction" }
+        }
+      }
+    },
     "/api/media": {
       "post": {
         "summary": "Upload an image (T17a). Re-encoded as JPEG without EXIF/GPS in three sizes (longest side 128, 640, 1280 px; never enlarged). T17c: to use it, send its id as avatarMediaId (PATCH /api/users/me), coverMediaId (POST /api/communities, request field imageUrl still accepted with urls.medium) or groupMediaId (POST /api/conversations/group); the media must belong to the caller and have the matching purpose (AVATAR, COMMUNITY_COVER, GROUP_IMAGE), otherwise 404 (not hers or missing) or 400 (wrong purpose). Responses keep returning the URL of the medium variant in profilePictureUrl / imageUrl / groupImage. Images not linked to anything are deleted after 24 h; each user may store up to 50 MB",
@@ -2079,7 +2175,7 @@
                 "required": ["file", "purpose"],
                 "properties": {
                   "file": { "type": "string", "format": "binary", "description": "JPEG, PNG or WebP (checked by content), up to 10 MB, 64 to 8000 px per side" },
-                  "purpose": { "type": "string", "enum": ["AVATAR", "COMMUNITY_COVER", "GROUP_IMAGE", "EVENT_IMAGE"] }
+                  "purpose": { "type": "string", "enum": ["AVATAR", "COMMUNITY_COVER", "GROUP_IMAGE", "EVENT_IMAGE", "POST_IMAGE"] }
                 }
               }
             }
@@ -2118,6 +2214,22 @@
   },
   "components": {
     "schemas": {
+      "Post": {
+        "type": "object",
+        "description": "A publication as the caller sees it (T22a1). No numeric ids; likeCount/commentCount/likedByMe are 0/0/false until likes and comments arrive (T22a2)",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "body": { "type": "string", "description": "Plain text, render it as text" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "author": { "type": "object", "properties": { "username": { "type": "string" }, "fullName": { "type": "string", "nullable": true }, "profilePictureUrl": { "type": "string", "nullable": true } } },
+          "community": { "type": "object", "nullable": true, "description": "null for a post on a profile", "properties": { "slug": { "type": "string" }, "name": { "type": "string" } } },
+          "media": { "type": "array", "maxItems": 4, "items": { "type": "object", "properties": { "thumb": { "type": "string" }, "medium": { "type": "string" }, "large": { "type": "string" } } } },
+          "likeCount": { "type": "integer" },
+          "commentCount": { "type": "integer" },
+          "likedByMe": { "type": "boolean" },
+          "canDelete": { "type": "boolean", "description": "She is the author, or the owner/moderator of the community" }
+        }
+      },
       "MyCommunity": {
       "type": "object",
       "description": "CommunitySearch fields plus chat and nextEvent",

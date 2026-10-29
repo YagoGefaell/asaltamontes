@@ -36,6 +36,7 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
               and not exists (select 1 from UserProfile p where p.avatarMediaId = m.id)
               and not exists (select 1 from Community c where c.coverMediaId = m.id)
               and not exists (select 1 from Conversation v where v.groupMediaId = m.id)
+              and not exists (select 1 from PostMedia pm where pm.mediaId = m.id)
             order by m.createdAt
             """)
     List<UUID> findUnreferencedCreatedBefore(@Param("before") Instant before, Pageable pageable);
@@ -45,6 +46,7 @@ public interface MediaRepository extends JpaRepository<Media, UUID> {
                 exists (select 1 from UserProfile p where p.avatarMediaId = :id)
                 or exists (select 1 from Community c where c.coverMediaId = :id)
                 or exists (select 1 from Conversation v where v.groupMediaId = :id)
+                or exists (select 1 from PostMedia pm where pm.mediaId = :id)
             then true else false end
             from Media m where m.id = :id
             """)
