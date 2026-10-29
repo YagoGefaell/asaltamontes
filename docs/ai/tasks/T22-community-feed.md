@@ -92,3 +92,10 @@ Ranking algorítmico, menciones, hashtags, compartir/repostear, edición de publ
 ## Tests requeridos
 - Integración: visibilidad (pública, privada, perfil, bloqueo, baneada, autora que se fue) y permisos de publicación, paginación con cursor, permisos de borrado, límites 429, likes concurrentes, número de consultas del feed constante (sin N+1).
 - Front: tarjeta, creación (validaciones y subida), scroll infinito de Inicio, cuadrícula de Buscar.
+
+## Decisiones de Yago (2026-10-29, D-025) — sustituyen a lo anterior donde choquen
+- **Publicar en una comunidad: solo propietaria y moderadoras** (403 a las miembros); en el perfil propio, cualquier usuaria. T22b: el botón «Publicar» de la comunidad solo se muestra a propietaria y moderadoras.
+- **Visibilidad:** comunidad pública → cualquier usuaria con sesión; privada → miembros. Perfil público → cualquier usuaria con sesión (con T23, el privado solo seguidoras aceptadas; la comprobación está en un único punto para enchufar T23a). Bloqueos en ambas direcciones. Sin página vacía en `/users/{u}/posts`.
+- **Las publicaciones de quien abandona la comunidad siguen visibles.** Borran la autora, la propietaria y las moderadoras.
+- **T22a2:** miembros de la comunidad dan like y comentan; no miembros solo ven; silenciada: like sí, comentar no. En publicaciones de perfil, like y comentarios para quien pueda verlas.
+- **Explorar** (`GET /api/explore/posts`): fotos de comunidades públicas y perfiles públicos.
