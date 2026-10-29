@@ -86,16 +86,12 @@
   white-space: nowrap;
 }
 
-/* Cover: photo or, without one, a block in the colour of the quedadas (orange) */
+/* Cover: only when the event has a photo */
 .event-detail__cover {
   display: block;
   width: 100%;
-  height: 120px;
+  height: 160px;
   object-fit: cover;
-}
-
-.event-detail__cover--plain {
-  background: var(--secondary);
 }
 
 .event-detail__actions {

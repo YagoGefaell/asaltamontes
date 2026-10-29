@@ -69,6 +69,16 @@ describe('EventDetail (T29m)', () => {
     await waitFor(() => expect(getEventAttendeesRequest).toHaveBeenCalled())
   })
 
+  it('shows a cover only when the event has an image', async () => {
+    const { container, unmount } = renderPage()
+    expect(container.querySelector('.event-detail__cover')).toBeNull()
+    await waitFor(() => expect(getEventAttendeesRequest).toHaveBeenCalled())
+    unmount()
+    const second = renderPage({ imageUrl: '/media/e.jpg' })
+    expect(second.container.querySelector('.event-detail__cover')).toHaveAttribute('src', '/media/e.jpg')
+    await waitFor(() => expect(getEventAttendeesRequest).toHaveBeenCalled())
+  })
+
   it('lists the attendees as stacked avatars with "Ver todas"', async () => {
     renderPage()
     expect(await screen.findByRole('button', { name: /Ver todas las asistentes/ })).toBeInTheDocument()

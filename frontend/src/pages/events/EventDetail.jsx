@@ -176,11 +176,7 @@ export default function EventDetail() {
         <h1 className="event-detail__header-title">{event.title}</h1>
       </PageHeader>
 
-      {event.imageUrl ? (
-        <img className="event-detail__cover" src={event.imageUrl} alt="" />
-      ) : (
-        <div className="event-detail__cover event-detail__cover--plain" aria-hidden="true" />
-      )}
+      {event.imageUrl && <img className="event-detail__cover" src={event.imageUrl} alt="" />}
 
       <div className="event-detail__content">
         {event.status === 'CANCELLED' && (
