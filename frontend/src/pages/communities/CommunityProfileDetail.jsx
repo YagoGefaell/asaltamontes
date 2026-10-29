@@ -96,11 +96,16 @@ function CommunityProfile() {
             {formatters.getInitial(community.name, community.name)}
           </div>
         )}
+
+        <div className="profile-stats">
+          <div className="stat">
+            <strong>{community.memberCount || 0}</strong>
+            <span className="label">Miembros</span>
+          </div>
+        </div>
       </div>
 
       <div className="profile-main">
-        <h2 className="username">{community.name}</h2>
-        
         {community.description && (
           <p className="bio">{community.description}</p>
         )}
@@ -112,13 +117,6 @@ function CommunityProfile() {
             {[community.city, community.province].filter(Boolean).join(", ")}
           </p>
         )}
-
-        <div className="profile-stats">
-          <div className="stat">
-            <strong>{community.memberCount || 0}</strong>
-            <span className="label">Miembros</span>
-          </div>
-        </div>
 
         <div className="profile-actions">
           {community.visibility === "PRIVATE" && !community.role ? (
