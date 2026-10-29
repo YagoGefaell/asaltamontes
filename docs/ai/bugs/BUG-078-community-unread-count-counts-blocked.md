@@ -1,6 +1,6 @@
 # BUG-078 — `unreadCount` de `/api/communities/me` cuenta mensajes de usuarias bloqueadas
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado
 - **Área:** backend/community
@@ -12,3 +12,7 @@ El último mensaje de una usuaria bloqueada (D-022) se oculta en la tarjeta, per
 
 ## Arreglo propuesto
 Excluir de `unreadCount` los mensajes de usuarias bloqueadas en cualquier dirección, o documentar que el contador es del chat completo, y alinear con el contador de la lista de chats.
+
+## Resolución
+`incrementUnreadExceptSender` ya no suma a quien tiene un bloqueo con la remitente, en cualquier dirección. El contador es el mismo de la lista de chats, así que ambos quedan alineados. Test: `MyCommunitiesIT.messagesFromABlockedUser_doNotCountAsUnread_inEitherDirection`.
+Limitación asumida: los mensajes recibidos **antes** del bloqueo siguen contados hasta que abra el chat (el contador es persistido, no se recalcula).

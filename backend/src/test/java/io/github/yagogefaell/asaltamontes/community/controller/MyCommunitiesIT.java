@@ -105,6 +105,32 @@ class MyCommunitiesIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void messagesFromABlockedUser_doNotCountAsUnread_inEitherDirection() throws Exception {
+        UserAccount me = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UserAccount cris = testData.createUser();
+        UserAccount dani = testData.createUser();
+        Community community = testData.createCommunity(bea);
+        communityService.joinCommunity(community.getPublicId(), me);
+        communityService.joinCommunity(community.getPublicId(), cris);
+        communityService.joinCommunity(community.getPublicId(), dani);
+        blocks.block(me.getId(), bea.getUsername());   // I blocked bea
+        blocks.block(dani.getId(), me.getUsername());  // dani blocked me
+
+        say(community, bea, "de bea");
+        say(community, cris, "de cris");
+        say(community, me, "mia");
+
+        mockMvc.perform(get("/api/communities/me").with(auth.bearer(me)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].chat.unreadCount").value(1));
+        // bea does not see my block either: my message and cris's count for her, but not mine for dani
+        mockMvc.perform(get("/api/communities/me").with(auth.bearer(dani)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].chat.unreadCount").value(2));
+    }
+
+    @Test
     void myCommunities_doNotRunOneQueryPerRow() throws Exception {
         UserAccount me = testData.createUser();
         var stats = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();

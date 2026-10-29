@@ -25,12 +25,17 @@ public interface ConversationParticipantRepository extends JpaRepository<Convers
     @Query("SELECT p.user.id FROM ConversationParticipant p WHERE p.conversation.publicId = :conversationPublicId")
     List<Long> findUserIdsByConversationPublicId(@Param("conversationPublicId") UUID conversationPublicId);
 
-    // Single atomic statement: concurrent messages never lose an increment
+    // Single atomic statement: concurrent messages never lose an increment.
+    // Whoever has a block with the sender, in either direction, is not counted (D-022, BUG-078): the counter
+    // must match what she sees, and must not reveal activity of a blocked user.
     @Modifying
     @Query("""
         UPDATE ConversationParticipant p
         SET p.unreadCount = p.unreadCount + 1
         WHERE p.conversation.id = :conversationId AND p.user.id <> :senderId
+          AND NOT EXISTS (SELECT 1 FROM UserBlock b
+                          WHERE (b.blocker.id = p.user.id AND b.blocked.id = :senderId)
+                             OR (b.blocker.id = :senderId AND b.blocked.id = p.user.id))
     """)
     int incrementUnreadExceptSender(@Param("conversationId") Long conversationId, @Param("senderId") Long senderId);
 
