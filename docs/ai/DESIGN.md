@@ -104,7 +104,10 @@ Principios, por orden:
 - «Cerrar sesión» al final, en **texto rojo sin caja ni fondo**. Lo delicado de la cuenta (cerrar sesión en todos los dispositivos, cambiar contraseña, borrar cuenta) va en una subpantalla **Seguridad**.
 
 ### Diálogos y avisos
-- Confirmaciones destructivas: `Modal` (en móvil, como hoja inferior). Avisos de éxito o error de una acción: `Toast`. Nunca `alert()`/`confirm()`.
+**Ningún pop-up intrusivo, en ninguna parte** (Yago, 2026-10-29): ni avisos flotantes (`Toast`), ni ventanas en medio de la pantalla, ni `alert()`/`confirm()`.
+- **Éxito: sin aviso.** El resultado lo dice solo. Al crear algo (comunidad, quedada, grupo, publicación), entras directamente en lo creado. Al guardar, vuelves a la pantalla anterior con el cambio a la vista. Los controles cambian ellos mismos («Seguir» → «Siguiendo», el interruptor se mueve, la foto nueva aparece).
+- **Errores: en el sitio**, junto a lo que falló. En formularios, `FormError` encima del botón o el error del campo. En listas y botones sueltos, un texto rojo pequeño junto al control, que desaparece al reintentar. Sin conexión: el aviso inline que ya tiene el chat.
+- **Confirmar solo lo que no se puede deshacer** (borrar comunidad, transferir la propiedad, expulsar, salir de un grupo sin poder volver, borrar la cuenta). Se pregunta en una **hoja inferior** (`BottomSheet`), nunca en una ventana centrada. Lo reversible se hace al momento, sin preguntar: silenciar, bloquear o desbloquear, dejar de seguir, cerrar sesión.
 - Menús de "más opciones" (⋯): hoja inferior con la lista de acciones; la destructiva en rojo y al final.
 
 ### Táctil y accesibilidad
@@ -126,7 +129,7 @@ Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, 
 | `ui/SectionCard` | Bloque con título en ajustes y formularios |
 | `ui/ToggleSwitch` | Interruptor en ajustes |
 | `ui/EmptyState`, `ui/Skeleton` | Vacío y carga |
-| `ui/Modal`, `ui/ConfirmModal`, `ui/Toast` | Confirmaciones (`ConfirmModal` sustituye a `confirm()`) y avisos |
+| `ui/BottomSheet` (confirmación) | Confirmar lo irreversible (ver «Diálogos y avisos»). `Modal`, `ConfirmModal` y `Toast` se retiran en T29s: no usarlos en pantallas nuevas |
 | `ui/PageHeader`, `ui/Tabs`, `ui/Chip` + `ChipRow`, `ui/BottomSheet`, `ui/Fab` | Cabecera de pantalla, pestañas, fila de chips, hoja inferior y botón flotante (T29c) |
 | `ui/ImageUploader`, `ui/AvatarUploader` | Subida de imágenes |
 | `ui/NavBar`, `layouts/MainLayout`, `layouts/SettingsLayout` | Estructura |
@@ -149,7 +152,7 @@ Detectados en las capturas del 2026-10-27 (390×844):
 - Barra inferior con 7 iconos; mayúsculas en botones y etiquetas.
 - `window.confirm()` para cerrar sesión, desbloquear y dejar de seguir (`SettingsMenu`, `PrivacySettings`, `Profile`) en lugar de `Modal`.
 
-Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j–T29r):
+Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j–T29p):
 - Dos patrones de crear: `+` en la cabecera que abre un panel en Comunidades y botón flotante que abre otra pantalla en Quedadas.
 - Detalle de quedada con tres botones apilados a todo el ancho, uno de ellos deshabilitado («Eres la organizadora»).
 - Perfil de comunidad con todos los miembros en cuadrícula de avatares grandes en la portada.
@@ -157,6 +160,7 @@ Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j�
 - Tarjetas de sugerencias de Inicio tan grandes que dos filas llenan la pantalla.
 - Subtítulo de relleno «Todavía no hay mensajes» en cada comunidad; «Seguidores» en masculino; subpantalla de perfil titulada «Ajustes»; cerrar sesión en cajas rosas.
 - Páginas que se pueden desplazar ~80 px sin contenido debajo.
+- Avisos flotantes de éxito en 15 sitios («Comunidad creada», «Cambios guardados», «Imagen subida»…), unos 20 errores también flotantes y ventanas centradas para confirmar acciones reversibles.
 - Chat: `@usuaria` encima de cada mensaje en los grupos, botón «Enviar» de texto, «En linea» fijo en los privados (no hay presencia), «Toca para ver el grupo» junto a un icono ⓘ que hace lo mismo. Info del grupo con el nombre repetido (título + campo + «Guardar nombre») y «Hacer admin» / «Expulsar» en cada fila, partiendo los nombres letra a letra.
 
 ## 8. Verificación

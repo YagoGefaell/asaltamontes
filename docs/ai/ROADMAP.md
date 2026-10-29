@@ -105,7 +105,7 @@ T29b+ (una PR por pantalla, ver [T29](tasks/T29-design-system.md)): se hacen cua
 
 **Segunda ronda (2026-10-27)**: T29c → T29d → T29e → T29f → T29g → T29h, siguiendo [`DESIGN.md`](DESIGN.md). Prioridad alta, por delante de nuevas pantallas: las pantallas nuevas (T19b+, T20, T21) se hacen ya con la guía. T29g (barra inferior: Inicio · Buscar · Quedadas · Comunidades · Perfil; Notificaciones y Mensajes con contador en la cabecera de Inicio) tiene el OK de Yago (2026-10-27). [T31](tasks/T31-backend-for-ui.md) (backend para la UI) va por delante de T29f y T29h.
 
-**Tercera ronda (2026-10-29, revisión de Yago)**: T29j → T29r ([T29](tasks/T29-design-system.md), «Tercera ronda»). **Va por delante de T22b/c** (decisión de Yago): son arreglos pequeños que se notan mucho. T22a2 (backend) puede ir en paralelo.
+**Tercera ronda (2026-10-29, revisión de Yago)**: T29j → T29s; T29s (sin pop-ups) puede ir primero ([T29](tasks/T29-design-system.md), «Tercera ronda»). **Va por delante de T22b/c** (decisión de Yago): son arreglos pequeños que se notan mucho. T22a2 (backend) puede ir en paralelo.
 
 ## Descubrimiento y confianza (después de T22)
 
