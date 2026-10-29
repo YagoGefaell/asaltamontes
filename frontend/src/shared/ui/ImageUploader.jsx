@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FaCamera } from "react-icons/fa";
 import Button from "../forms/Button.jsx";
-import { useToast } from "./Toast.jsx";
 import { uploadImage, validateImageFile } from "../../features/media/services/media.service.js";
 import "./ImageUploader.css";
 
@@ -26,7 +25,6 @@ export default function ImageUploader({
   emptyIcon = null,
   onUploadingChange,
 }) {
-  const toast = useToast();
   const inputRef = useRef(null);
   const abortRef = useRef(null);
   const [localPreview, setLocalPreview] = useState(null);
@@ -61,7 +59,6 @@ export default function ImageUploader({
       const media = await uploadImage(file, purpose, { onProgress: setProgress, signal: controller.signal });
       onChange(media.urls.medium, media.id);
       replacePreview(null);
-      toast.success("Imagen subida");
     } catch (uploadError) {
       if (uploadError.name === "AbortError") return;
       setError(uploadError.message);
@@ -69,7 +66,7 @@ export default function ImageUploader({
     } finally {
       setBusy(false);
     }
-  }, [purpose, onChange, replacePreview, setBusy, toast]);
+  }, [purpose, onChange, replacePreview, setBusy]);
 
   const handleFile = (event) => {
     const file = event.target.files?.[0];

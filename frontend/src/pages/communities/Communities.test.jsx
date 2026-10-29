@@ -14,12 +14,12 @@ const navigate = vi.hoisted(() => vi.fn())
 vi.mock('react-router-dom', async (orig) => ({ ...(await orig()), useNavigate: () => navigate }))
 
 import Communities from './Communities.jsx'
-import { ToastProvider } from '../../shared/ui/Toast.jsx'
 import { UserProfileContext } from '../../features/users/hooks/user.context'
 import {
   getMyCommunitiesRequest,
   getPendingCommunitiesRequest,
   getCommunitiesRequest,
+  createCommunityRequest,
 } from '../../features/communities/services/communities.service.js'
 
 const page = (items, hasMore = false) => ({ items, hasMore })
@@ -33,11 +33,11 @@ const community = (over = {}) => ({
 function renderPage(profile = { city: 'Vigo' }) {
   return render(
     <MemoryRouter>
-      <ToastProvider>
+      
         <UserProfileContext.Provider value={{ userProfile: profile, setUserProfile: vi.fn(), loading: false }}>
           <Communities />
         </UserProfileContext.Provider>
-      </ToastProvider>
+      
     </MemoryRouter>,
   )
 }
@@ -147,3 +147,22 @@ describe('Communities: tus comunidades (T29i)', () => {
     await waitFor(() => expect(getCommunitiesRequest).not.toHaveBeenCalled())
   })
 })
+
+describe('Communities: crear sin avisos (T29s)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getMyCommunitiesRequest.mockResolvedValue(page([]))
+    getPendingCommunitiesRequest.mockResolvedValue({ toApprove: [], mine: [] })
+  })
+
+  it('goes straight into the community she has just created', async () => {
+    createCommunityRequest.mockResolvedValue({ id: 'c9', slug: 'nueva', name: 'Nueva' })
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Crear comunidad' }))
+    fireEvent.change(await screen.findByLabelText(/Nombre/), { target: { value: 'Nueva' } })
+    fireEvent.click(screen.getByRole('button', { name: /^Crear/ , hidden: false }))
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/communities/nueva'))
+    expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+

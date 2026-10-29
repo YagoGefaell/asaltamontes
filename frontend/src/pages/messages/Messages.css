@@ -717,3 +717,10 @@ body.chat-open .bottom-nav {
   font-weight: 600;
   line-height: 1.5;
 }
+
+.messages-page__notice {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--error);
+}

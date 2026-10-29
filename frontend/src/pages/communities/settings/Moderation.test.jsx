@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { ToastProvider } from '../../../shared/ui/Toast'
 import MemberAdminList from './MemberAdminList'
 import { BannedList, JoinRequestList } from './PersonRequestList'
 import CommunityRequestButton from '../../../shared/components/CommunityRequestButton'
@@ -21,7 +20,7 @@ vi.mock('../../../features/communities/services/communities.service', () => ({
   joinCommunityRequest: vi.fn(),
 }))
 
-const wrap = (ui) => render(<ToastProvider>{ui}</ToastProvider>)
+const wrap = (ui) => render(ui)
 const members = [
   { username: 'ana', fullName: 'Ana', role: 'MODERATOR', status: 'ACTIVE' },
   { username: 'eva', fullName: 'Eva', role: 'MEMBER', status: 'MUTED' },

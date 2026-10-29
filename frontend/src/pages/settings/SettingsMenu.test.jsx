@@ -1,8 +1,7 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import SettingsMenu from './SettingsMenu.jsx'
-import { ToastProvider } from '../../shared/ui/Toast.jsx'
 import { logoutEverywhereRequest } from '../../features/auth/services/auth.service'
 
 const logout = vi.fn()
@@ -22,31 +21,38 @@ describe('SettingsMenu', () => {
     logoutEverywhereRequest.mockReset()
   })
 
-  it('revokes every session, logs out and goes to the access page after confirming', async () => {
+  it('revokes every session, logs out and goes to the access page at once, without asking', async () => {
     logoutEverywhereRequest.mockResolvedValue()
     logout.mockResolvedValue()
 
-    render(<ToastProvider><MemoryRouter><SettingsMenu /></MemoryRouter></ToastProvider>)
+    render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
     fireEvent.click(screen.getByText('Cerrar sesión en todos los dispositivos'))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cerrar sesión' }))
 
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/access'))
     expect(logoutEverywhereRequest).toHaveBeenCalledTimes(1)
     expect(logout).toHaveBeenCalledTimes(1)
   })
 
-  it('does nothing if the user cancels', () => {
-    render(<ToastProvider><MemoryRouter><SettingsMenu /></MemoryRouter></ToastProvider>)
-    fireEvent.click(screen.getByText('Cerrar sesión en todos los dispositivos'))
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Cancelar' }))
+  it('logs out at once, without a confirmation', async () => {
+    logout.mockResolvedValue()
+    render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
+    fireEvent.click(screen.getByText('Cerrar sesión'))
 
     expect(screen.queryByRole('dialog')).toBeNull()
-    expect(logoutEverywhereRequest).not.toHaveBeenCalled()
+    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/access'))
+  })
+
+  it('shows the error in place when closing every session fails', async () => {
+    logoutEverywhereRequest.mockRejectedValue(new Error('No se pudo'))
+    render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
+    fireEvent.click(screen.getByText('Cerrar sesión en todos los dispositivos'))
+
+    expect(await screen.findByText('No se pudo')).toBeTruthy()
     expect(logout).not.toHaveBeenCalled()
   })
 
   it('only lists entries that lead to an existing screen', () => {
-    render(<ToastProvider><MemoryRouter><SettingsMenu /></MemoryRouter></ToastProvider>)
+    render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
     for (const label of ['Perfil', 'Notificaciones', 'Ajustes de privacidad']) {
       fireEvent.click(screen.getByText(label))
     }

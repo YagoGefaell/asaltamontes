@@ -4,8 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { formatters } from "../../utils/helpers";
 import { formatMessageTime } from "../../features/messages/utils/messageDates";
-import { useToast } from "../../shared/ui/Toast";
-import ConfirmModal from "../../shared/ui/ConfirmModal";
+import ConfirmSheet from "../../shared/ui/ConfirmSheet";
 import { deleteMessageRequest, getGroupDetailsRequest } from "../../features/messages/services/messages.service";
 import ConversationsPane from "./components/ConversationsPanel";
 import ChatPane from "./components/ChatPanel";
@@ -16,7 +15,6 @@ import { ConversationsContext } from "../../features/messages/hooks/conversation
 
 const Messages = () => {
   const navigate = useNavigate();
-  const toast = useToast();
   const location = useLocation();
   const { currentUser, sendMessage, websocketConnected, websocketStatus } = useAuth();
 
@@ -76,6 +74,8 @@ const Messages = () => {
   const [moderationRole, setModerationRole] = useState(null);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+  const [removedNotice, setRemovedNotice] = useState("");
 
   const messagesEndRef = useRef(null);
 
@@ -128,16 +128,17 @@ const Messages = () => {
   const confirmDeleteMessage = useCallback(async () => {
     if (!messageToDelete || !selectedChatId) return;
     setDeletingMessage(true);
+    setDeleteError("");
     try {
       await deleteMessageRequest(selectedChatId, messageToDelete.id);
       markMessageDeleted?.({ conversationId: selectedChatId, messageId: messageToDelete.id });
+      setMessageToDelete(null);
     } catch (error) {
-      toast.error(error.message);
+      setDeleteError(error.message);
     } finally {
       setDeletingMessage(false);
-      setMessageToDelete(null);
     }
-  }, [messageToDelete, selectedChatId, markMessageDeleted, toast]);
+  }, [messageToDelete, selectedChatId, markMessageDeleted]);
 
   const handleLeaveChat = useCallback(() => {
     setIsGroupInfoOpen(false);
@@ -188,8 +189,7 @@ const Messages = () => {
     const leftId = selectedChat?.id;
     if (leftId) setChats((prevChats) => prevChats.filter((chat) => String(chat.id) !== String(leftId)));
     handleLeaveChat();
-    toast.success("Has salido del grupo");
-  }, [selectedChat?.id, setChats, handleLeaveChat, toast]);
+  }, [selectedChat?.id, setChats, handleLeaveChat]);
 
   // The server removed me from the open chat (expelled, or I left in another session)
   useEffect(() => {
@@ -198,10 +198,10 @@ const Messages = () => {
       setIsGroupInfoOpen(false);
       setSelectedChat(null);
       navigate("/messages", { replace: true, state: {} });
-      if (removedChat.reason === "REMOVED") toast.error("Ya no formas parte de este grupo");
+      setRemovedNotice(removedChat.reason === "REMOVED" ? "Ya no formas parte de este grupo." : "");
     }
     clearRemovedChat();
-  }, [removedChat, selectedChat?.id, clearRemovedChat, navigate, toast]);
+  }, [removedChat, selectedChat?.id, clearRemovedChat, navigate]);
 
   useEffect(() => {
     const className = "chat-open";
@@ -361,7 +361,6 @@ const Messages = () => {
 
       if (createdChat?.id) {
         setIsGroupCreatorOpen(false);
-        toast.success("Grupo creado");
         await handleEnterChat(createdChat);
       }
     } finally {
@@ -371,11 +370,14 @@ const Messages = () => {
     creatingGroup,
     createGroupConversation,
     handleEnterChat,
-    toast,
   ]);
 
   return (
     <div className="messages-page">
+      {!selectedChat && !isGroupCreatorOpen && removedNotice && (
+        <p className="messages-page__notice" role="status">{removedNotice}</p>
+      )}
+
       {!selectedChat && !isGroupCreatorOpen && (
         <ConversationsPane
           loadingChats={loadingChats}
@@ -448,14 +450,16 @@ const Messages = () => {
         />
       )}
 
-      <ConfirmModal
+      <ConfirmSheet
         open={Boolean(messageToDelete)}
         title="¿Eliminar este mensaje?"
         message="Se eliminará para todas las participantes y quedará registrado en el historial de moderación."
-        confirmLabel={deletingMessage ? "Eliminando…" : "Eliminar"}
+        confirmLabel="Eliminar"
+        loading={deletingMessage}
+        error={deleteError}
         destructive
         onConfirm={confirmDeleteMessage}
-        onCancel={() => !deletingMessage && setMessageToDelete(null)}
+        onCancel={() => { if (!deletingMessage) { setMessageToDelete(null); setDeleteError(""); } }}
       />
     </div>
   );

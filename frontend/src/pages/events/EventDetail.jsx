@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { FaPen } from 'react-icons/fa'
 import { useAuth } from '../../features/auth/hooks/useAuth.js'
@@ -16,7 +16,7 @@ import EmptyState from '../../shared/ui/EmptyState.jsx'
 import Skeleton from '../../shared/ui/Skeleton.jsx'
 import Button from '../../shared/forms/Button.jsx'
 import PageHeader from '../../shared/ui/PageHeader.jsx'
-import { useToast } from '../../shared/ui/Toast.jsx'
+import FormError from '../../shared/forms/FormError.jsx'
 import { communityPath } from '../../features/communities/utils/communityPath.js'
 import './EventDetail.css'
 
@@ -88,12 +88,15 @@ function Attendees({ eventId, count, refreshKey }) {
 export default function EventDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const toast = useToast()
   const { currentUser } = useAuth()
   const { event, setEvent, loading, error, refetch } = useEvent(id)
   const [waitlistPosition, setWaitlistPosition] = useState(null)
-  const onError = useCallback((message) => toast.error(message), [toast])
-  const { pending, join, leave } = useEventAttendance(event, setEvent, { onError })
+  const [attendError, setAttendError] = useState('')
+  const { pending, join, leave } = useEventAttendance(event, setEvent, { onError: setAttendError })
+  const attend = (action) => () => {
+    setAttendError('')
+    return action()
+  }
 
   const username = currentUser?.username
   const myStatus = event?.myStatus
@@ -177,14 +180,15 @@ export default function EventDetail() {
           <span>{formatPlaces(event.attendeeCount, event.capacity)}</span>
         </div>
 
+        <FormError message={attendError} />
         <div className="event-detail__action">
           <AttendButton
             event={event}
             waitlistPosition={waitlistPosition}
             isOrganizer={isOrganizer}
             pending={pending}
-            onJoin={join}
-            onLeave={leave}
+            onJoin={attend(join)}
+            onLeave={attend(leave)}
           />
           {myStatus === 'GOING' && <EventChatButton event={event} />}
           <AddToCalendarButton event={event} />

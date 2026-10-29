@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import BottomSheet from './BottomSheet.jsx'
-import ConfirmModal from './ConfirmModal.jsx'
+import ConfirmSheet from './ConfirmSheet.jsx'
 import { Chip, ChipRow } from './Chip.jsx'
 import Fab from './Fab.jsx'
 import PageHeader from './PageHeader.jsx'
@@ -164,18 +164,24 @@ describe('BottomSheet', () => {
   })
 })
 
-describe('ConfirmModal', () => {
+describe('ConfirmSheet', () => {
   it('confirms and cancels through its buttons', () => {
     const onConfirm = vi.fn()
     const onCancel = vi.fn()
     render(
-      <ConfirmModal open title="Bloquear" message="¿Seguro?" confirmLabel="Bloquear" destructive
+      <ConfirmSheet open title="Expulsar" message="¿Seguro?" confirmLabel="Expulsar" destructive
         onConfirm={onConfirm} onCancel={onCancel} />,
     )
+    expect(screen.getByRole('dialog', { name: 'Expulsar' })).toBeTruthy()
     expect(screen.getByText('¿Seguro?')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Bloquear' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expulsar' }))
     expect(onConfirm).toHaveBeenCalledTimes(1)
     fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows the failure inside the sheet', () => {
+    render(<ConfirmSheet open title="Borrar" message="x" error="No se pudo borrar" onConfirm={() => {}} onCancel={() => {}} />)
+    expect(screen.getByText('No se pudo borrar')).toBeTruthy()
   })
 })
