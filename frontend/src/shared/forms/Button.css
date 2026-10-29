@@ -74,3 +74,10 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* A disabled secondary button is a status ("Cancelado", "Eres la organizadora"): neutral and readable */
+.btn.secondary:disabled {
+  color: var(--text-muted);
+  border-color: var(--border-soft);
+  opacity: 1;
+}
