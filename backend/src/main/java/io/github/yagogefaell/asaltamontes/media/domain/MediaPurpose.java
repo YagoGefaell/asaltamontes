@@ -5,7 +5,8 @@ public enum MediaPurpose {
     AVATAR("avatar"),
     COMMUNITY_COVER("community-cover"),
     GROUP_IMAGE("group-image"),
-    EVENT_IMAGE("event-image");
+    EVENT_IMAGE("event-image"),
+    POST_IMAGE("post-image");
 
     private final String pathSegment;
 

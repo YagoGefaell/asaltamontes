@@ -25,6 +25,7 @@ public record OpaqueCursor(String kind, LocalDateTime order, UUID publicId) {
     public static final String MODERATION_LOG = "l";
     public static final String BANNED = "b";
     public static final String JOIN_REQUEST = "r";
+    public static final String POST = "p";
 
     private static final String INVALID = "Cursor no válido";
 

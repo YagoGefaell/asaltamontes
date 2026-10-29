@@ -1,6 +1,6 @@
 # T22 — Muro de comunidad y Home con feed real
 
-- **Estado:** pendiente (spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
+- **Estado:** pendiente (T22a1 en PR; spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
 - **Fase:** 2b — Comunidades
 - **Depende de:** T14, T17
 - **Rama sugerida:** `feat/T22-community-feed`
@@ -50,6 +50,24 @@ Inicio sin feed real todavía. Sustituirlo por contenido real: publicaciones de 
 - Reglas: bloqueos en cualquier dirección (D-022) ocultan publicaciones, comentarios y likes de esa usuaria (404 uniforme al abrir); comunidades privadas (T19) solo a miembros; baneadas fuera; límites por usuaria configurables con 429 + `Retry-After` (p. ej. 20 posts/día, 60 comentarios/h, 200 likes/h); texto sin HTML (se renderiza como texto en el front).
 - Notificaciones (T18): `POST_COMMENT` a la autora (con cooldown, no a ti misma ni si bloqueada). Likes sin notificación en v1.
 - Borrar cuenta (T23/BUG-065): las publicaciones de una cuenta borrada se eliminan; dejarlo anotado allí.
+
+### T22a partida en dos PRs (2026-10-29)
+La spec de T22a es demasiado grande para una PR revisable en 30 min, así que se parte:
+
+| PR | Contenido |
+|---|---|
+| **T22a1** | Migración V18 **completa** (`posts`, `post_media`, `post_likes`, `post_comments`: el esquema se revisa una sola vez), `POST /api/posts`, `GET|DELETE /api/posts/{id}`, `GET /api/communities/{slug}/posts`, `GET /api/users/{username}/posts`, `GET /api/feed`, límite de publicaciones, fotos (`POST_IMAGE`) y su liberación al borrar. `PostDto` ya trae `likeCount`, `commentCount`, `likedByMe` (0/0/false hasta T22a2). |
+| **T22a2** | `PUT|DELETE /api/posts/{id}/like` (idempotentes, `UPDATE` atómico), `GET|POST|DELETE` de comentarios, límites de comentarios y likes, notificación `POST_COMMENT`, `GET /api/explore/posts`. |
+
+Decisiones tomadas en T22a1 (sin respuesta de Yago todavía; cambiarlas es barato):
+- **Texto solo para miembros**, también en comunidades públicas (la decisión conservadora de arriba). Hasta que Yago diga otra cosa, una comunidad pública no enseña publicaciones a quien no es miembro.
+- **Silenciadas (`MUTED`)** no publican en la comunidad (403), igual que en su chat. Publicar en su perfil sigue siendo suyo. Baneadas y ajenas: 404 como una comunidad inexistente.
+- **Perfil ajeno**: `GET /api/users/{username}/posts` lista solo las publicaciones *del perfil* (no las de comunidades) y devuelve página vacía a quien no la sigue; 404 si hay bloqueo. `is_public_profile` no se usa todavía (no hay perfiles privados implementados en seguidoras); entrará con Explorar.
+- **Borrar**: la autora, o propietaria/moderadora en publicaciones de comunidad. Borrado lógico, `post_media` se elimina y las fotos que nada más referencia se borran (los ficheros, tras el commit).
+- **Orden y cursor**: `(created_at DESC, public_id DESC)` (UUID v7), porque el cursor opaco solo lleva el id público.
+- **Cuenta borrada**: las FK `ON DELETE CASCADE` eliminan publicaciones, fotos enlazadas, likes y comentarios; las publicaciones no añaden trabajo a BUG-065 (que sigue abierto: `deleteUser` falla si la cuenta tiene seguidoras/seguidos).
+- **Feed**: fan-out on read; el umbral para pasar a fan-out on write está en el Javadoc de `PostQueryRepository`.
+- Pregunta abierta para T22a2 (Explorar): la spec dice «comunidades públicas y perfiles públicos», pero el texto de comunidad es solo para miembros. Hay que decidir si la cuadrícula muestra fotos de comunidades públicas a no miembros (se filtraría el contenido que aquí es privado).
 
 ### Frontend (T22b y T22c)
 - Crear publicación: pantalla aparte (`/posts/new`). Acceso: botón `+` en la cabecera de Inicio y, desde una comunidad, «Publicar» preseleccionando la comunidad. No se añade pestaña a la barra inferior (DESIGN: 5 pestañas).

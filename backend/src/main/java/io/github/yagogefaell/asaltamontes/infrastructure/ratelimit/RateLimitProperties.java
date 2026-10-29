@@ -34,4 +34,6 @@ public class RateLimitProperties {
     private int communityMessagesPerMinute = 20;
     /** Per user: messages in event chats, where each one reaches every attendee (T21). */
     private int eventMessagesPerMinute = 20;
+    /** Per user: posts created (T22a). */
+    private int postsPerDay = 20;
 }
