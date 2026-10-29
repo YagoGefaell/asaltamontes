@@ -1,6 +1,6 @@
 # BUG-072 — `Retry-After` no es legible desde el navegador en peticiones entre orígenes
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable
 - **Área:** backend/infra (CORS)
