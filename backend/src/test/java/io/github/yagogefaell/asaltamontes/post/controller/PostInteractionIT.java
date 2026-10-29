@@ -337,6 +337,44 @@ class PostInteractionIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void onAProfilePost_itsAuthorDeletesAnyComment_butNotThroughABlock_andOthersStillCannot() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UserAccount carla = testData.createUser();
+        UserAccount dora = testData.createUser();
+        String id = body(create(ana, null, "perfil")).get("id").asText();
+        String byBea = body(comment(bea, id, "de bea")).get("id").asText();
+        String byCarla = body(comment(carla, id, "de carla")).get("id").asText();
+        String byDora = body(comment(dora, id, "de dora")).get("id").asText();
+
+        // canDelete: the owner of the profile on every comment, the others only on their own
+        JsonNode seenByAna = body(comments(ana, id, null, 20));
+        for (JsonNode item : seenByAna.get("items")) {
+            assertThat(item.get("canDelete").asBoolean()).isTrue();
+        }
+        JsonNode seenByBea = body(comments(bea, id, null, 20));
+        assertThat(seenByBea.get("items").get(0).get("canDelete").asBoolean()).isTrue();
+        assertThat(seenByBea.get("items").get(1).get("canDelete").asBoolean()).isFalse();
+        // Not the owner of the post, not the author of the comment: still 403
+        deleteComment(bea, id, byCarla).andExpect(status().isForbidden());
+
+        // Ana blocks Dora: the comment is hidden from Ana, so deleting it is a 404 (no D-026 bypass for profiles)
+        mockMvc.perform(post("/api/users/" + dora.getUsername() + "/block").with(auth.bearer(ana))).andExpect(status().is2xxSuccessful());
+        assertThat(ids(body(comments(ana, id, null, 20)))).containsExactly(byBea, byCarla);
+        deleteComment(ana, id, byDora).andExpect(status().isNotFound());
+
+        assertThat(counter(id, "comment_count")).isEqualTo(3);
+        deleteComment(ana, id, byBea).andExpect(status().isNoContent());
+        deleteComment(ana, id, byBea).andExpect(status().isNotFound());
+        deleteComment(ana, id, byCarla).andExpect(status().isNoContent());
+        assertThat(counter(id, "comment_count")).isEqualTo(1);
+        // Her own comment on her own post keeps working
+        String own = body(comment(ana, id, "gracias")).get("id").asText();
+        assertThat(body(comment(ana, id, "x")).get("canDelete").asBoolean()).isTrue();
+        deleteComment(ana, id, own).andExpect(status().isNoContent());
+    }
+
+    @Test
     void deletingAPost_hidesItsCommentsAndLikes() throws Exception {
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
