@@ -9,13 +9,17 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.github.yagogefaell.asaltamontes.community.dto.CursorPageDto;
+import io.github.yagogefaell.asaltamontes.post.dto.CommentDto;
+import io.github.yagogefaell.asaltamontes.post.dto.CreateCommentDto;
 import io.github.yagogefaell.asaltamontes.post.dto.CreatePostDto;
+import io.github.yagogefaell.asaltamontes.post.dto.LikeStateDto;
 import io.github.yagogefaell.asaltamontes.post.dto.PostDto;
 import io.github.yagogefaell.asaltamontes.post.service.PostService;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -69,5 +73,45 @@ public class PostController {
                                                          @RequestParam(required = false) String before,
                                                          @RequestParam(required = false) Integer limit) {
         return ResponseEntity.ok(postService.ofUser(currentUser, username, before, limit));
+    }
+
+    /** Grid of Search: posts with a photo from public communities and profiles, minus what she already has in Home. */
+    @GetMapping("/explore/posts")
+    public ResponseEntity<CursorPageDto<PostDto>> explore(@AuthenticationPrincipal UserAccount currentUser,
+                                                          @RequestParam(required = false) String before,
+                                                          @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(postService.explore(currentUser, before, limit));
+    }
+
+    @PutMapping("/posts/{publicId}/like")
+    public ResponseEntity<LikeStateDto> like(@AuthenticationPrincipal UserAccount currentUser, @PathVariable UUID publicId) {
+        return ResponseEntity.ok(postService.like(currentUser, publicId));
+    }
+
+    @DeleteMapping("/posts/{publicId}/like")
+    public ResponseEntity<LikeStateDto> unlike(@AuthenticationPrincipal UserAccount currentUser, @PathVariable UUID publicId) {
+        return ResponseEntity.ok(postService.unlike(currentUser, publicId));
+    }
+
+    @GetMapping("/posts/{publicId}/comments")
+    public ResponseEntity<CursorPageDto<CommentDto>> comments(@AuthenticationPrincipal UserAccount currentUser,
+                                                              @PathVariable UUID publicId,
+                                                              @RequestParam(required = false) String after,
+                                                              @RequestParam(required = false) Integer limit) {
+        return ResponseEntity.ok(postService.comments(currentUser, publicId, after, limit));
+    }
+
+    @PostMapping("/posts/{publicId}/comments")
+    public ResponseEntity<CommentDto> comment(@AuthenticationPrincipal UserAccount currentUser, @PathVariable UUID publicId,
+                                              @RequestBody CreateCommentDto dto) {
+        CommentDto created = postService.comment(currentUser, publicId, dto);
+        return ResponseEntity.created(URI.create("/api/posts/" + publicId + "/comments/" + created.id())).body(created);
+    }
+
+    @DeleteMapping("/posts/{publicId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@AuthenticationPrincipal UserAccount currentUser, @PathVariable UUID publicId,
+                                              @PathVariable UUID commentId) {
+        postService.deleteComment(currentUser, publicId, commentId);
+        return ResponseEntity.noContent().build();
     }
 }

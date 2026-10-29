@@ -30,6 +30,7 @@ import io.github.yagogefaell.asaltamontes.notification.domain.NotificationTarget
 import io.github.yagogefaell.asaltamontes.notification.domain.NotificationType;
 import io.github.yagogefaell.asaltamontes.notification.service.NotificationService.Delivery;
 import io.github.yagogefaell.asaltamontes.notification.service.NotificationService.NewNotification;
+import io.github.yagogefaell.asaltamontes.post.service.PostCommented;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.service.UserFollowed;
 
@@ -154,6 +155,18 @@ public class NotificationListener {
         Long actor = event.approved() ? event.actorId() : null;
         safely(type.name(), () -> deliver(new NewNotification(type, actor, NotificationTargetType.COMMUNITY,
                 event.communitySlug(), communityPayload(event.communityName())), List.of(event.requesterId())));
+    }
+
+    /** To the author of the post; the actor herself and blocks are filtered in {@link NotificationService#create}. */
+    @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onPostCommented(PostCommented event) {
+        safely("POST_COMMENT", () -> {
+            Map<String, Object> payload = new LinkedHashMap<>();
+            payload.put("excerpt", event.excerpt());
+            deliver(new NewNotification(NotificationType.POST_COMMENT, event.commenterId(), NotificationTargetType.POST,
+                    event.postPublicId().toString(), payload), List.of(event.postAuthorId()));
+        });
     }
 
     private static Map<String, Object> communityPayload(String communityName) {

@@ -57,6 +57,11 @@ describe('notificationText', () => {
       .toBe('Ana Ruiz te ha añadido al grupo «Domingueras»')
   })
 
+  it('comment on a post', () => {
+    expect(notificationText({ type: 'POST_COMMENT', actor: ana, payload: { excerpt: '¡Qué bonita ruta!' } }))
+      .toEqual({ text: 'Ana Ruiz ha comentado tu publicación', detail: '¡Qué bonita ruta!' })
+  })
+
   it('unknown types still render something', () => {
     expect(notificationText({ type: 'FUTURE_TYPE' }).text).toBe('Tienes una notificación nueva')
   })

@@ -51,6 +51,14 @@ public class UserActionLimiter {
         check("post-create", userId, properties.getPostsPerDay(), DAY);
     }
 
+    public void postLike(Long userId) {
+        check("post-like", userId, properties.getPostLikesPerHour(), HOUR);
+    }
+
+    public void postComment(Long userId) {
+        check("post-comment", userId, properties.getPostCommentsPerHour(), HOUR);
+    }
+
     private void check(String action, Long userId, int limit, Duration period) {
         if (!properties.isEnabled()) {
             return;

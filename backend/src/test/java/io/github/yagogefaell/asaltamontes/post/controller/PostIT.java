@@ -228,21 +228,77 @@ class PostIT extends AbstractIntegrationTest {
         String beasPost = body(create(bea, community.getSlug(), "de bea", List.of())).get("id").asText();
         assertThat(ids(feed(bea, null))).contains(anasCommunityPost, anasProfilePost);
 
-        // Bea blocks Ana: neither sees the other's posts (block is symmetric)
+        // Bea blocks Ana: outside moderating (profile, feed) neither sees the other's posts (block is symmetric)
         mockMvc.perform(post("/api/users/" + ana.getUsername() + "/block").with(auth.bearer(bea))).andExpect(status().is2xxSuccessful());
 
-        for (String hidden : List.of(anasCommunityPost, anasProfilePost)) {
-            getPost(bea, hidden).andExpect(status().isNotFound());
-        }
-        getPost(ana, beasPost).andExpect(status().isNotFound());
+        getPost(bea, anasProfilePost).andExpect(status().isNotFound());
         assertThat(ids(feed(bea, null))).doesNotContain(anasCommunityPost, anasProfilePost);
         assertThat(ids(feed(ana, null))).doesNotContain(beasPost);
-        assertThat(ids(wall(bea, community))).doesNotContain(anasCommunityPost);
-        assertThat(ids(wall(ana, community))).doesNotContain(beasPost);
         wallRequestProfile(bea, ana).andExpect(status().isNotFound());
         wallRequestProfile(ana, bea).andExpect(status().isNotFound());
-        // The others still see both
-        assertThat(ids(wall(owner, community))).contains(anasCommunityPost, beasPost);
+        // D-026: but both moderate this community, so inside it they see everything, whoever blocked whom
+        getPost(bea, anasCommunityPost).andExpect(status().isOk());
+        getPost(ana, beasPost).andExpect(status().isOk());
+        assertThat(ids(wall(bea, community))).contains(anasCommunityPost, beasPost);
+        assertThat(ids(wall(ana, community))).contains(anasCommunityPost, beasPost);
+        mockMvc.perform(delete("/api/users/" + ana.getUsername() + "/block").with(auth.bearer(bea))).andExpect(status().is2xxSuccessful());
+        mockMvc.perform(post("/api/users/" + bea.getUsername() + "/block").with(auth.bearer(ana))).andExpect(status().is2xxSuccessful());
+        getPost(bea, anasCommunityPost).andExpect(status().isOk());
+        getPost(ana, beasPost).andExpect(status().isOk());
+        assertThat(ids(wall(bea, community))).contains(anasCommunityPost, beasPost);
+        assertThat(ids(wall(ana, community))).contains(anasCommunityPost, beasPost);
+        assertThat(ids(feed(bea, null))).doesNotContain(anasCommunityPost);
+        assertThat(ids(feed(ana, null))).doesNotContain(beasPost);
+    }
+
+    @Test
+    void aBlock_stillHidesTheCommunityPostsFromAMemberWhoIsNotStaff() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount ana = testData.createUser();
+        UserAccount carla = testData.createUser();
+        UserAccount dave = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        for (UserAccount u : List.of(ana, carla, dave)) {
+            mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
+        }
+        makeModerator(owner, community, ana);
+        String anasPost = body(create(ana, community.getSlug(), "de ana", List.of())).get("id").asText();
+
+        // A plain member blocks the moderator, and the moderator blocks another plain member
+        mockMvc.perform(post("/api/users/" + ana.getUsername() + "/block").with(auth.bearer(carla))).andExpect(status().is2xxSuccessful());
+        mockMvc.perform(post("/api/users/" + dave.getUsername() + "/block").with(auth.bearer(ana))).andExpect(status().is2xxSuccessful());
+
+        for (UserAccount hidden : List.of(carla, dave)) {
+            getPost(hidden, anasPost).andExpect(status().isNotFound());
+            assertThat(ids(wall(hidden, community))).doesNotContain(anasPost);
+            assertThat(ids(feed(hidden, null))).doesNotContain(anasPost);
+        }
+        // The owner, who moderates, and the author see it
+        assertThat(ids(wall(owner, community))).contains(anasPost);
+        getPost(owner, anasPost).andExpect(status().isOk());
+    }
+
+    @Test
+    void theStaff_canDeleteThePostsOfSomebodyBlockedInEitherDirection() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount mod = testData.createUser();
+        UserAccount other = testData.createUser();
+        Community community = testData.createCommunity(owner);
+        for (UserAccount u : List.of(mod, other)) {
+            mockMvc.perform(post(url(community, "/join")).with(auth.bearer(u))).andExpect(status().isCreated());
+        }
+        makeModerator(owner, community, mod);
+        String first = body(create(mod, community.getSlug(), "uno", List.of())).get("id").asText();
+        String second = body(create(mod, community.getSlug(), "dos", List.of())).get("id").asText();
+
+        // The owner blocked the moderator
+        mockMvc.perform(post("/api/users/" + mod.getUsername() + "/block").with(auth.bearer(owner))).andExpect(status().is2xxSuccessful());
+        assertThat(body(getPost(owner, first)).get("canDelete").asBoolean()).isTrue();
+        deletePost(owner, first).andExpect(status().isNoContent());
+        // The moderator blocked the owner (the other direction)
+        mockMvc.perform(delete("/api/users/" + mod.getUsername() + "/block").with(auth.bearer(owner))).andExpect(status().is2xxSuccessful());
+        mockMvc.perform(post("/api/users/" + owner.getUsername() + "/block").with(auth.bearer(mod))).andExpect(status().is2xxSuccessful());
+        deletePost(owner, second).andExpect(status().isNoContent());
     }
 
     // ---------------------------------------------------------------- feed and pagination
