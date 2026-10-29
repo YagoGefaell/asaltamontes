@@ -93,6 +93,24 @@ describe('ConversationsProvider history loading (BUG-051)', () => {
   })
 })
 
+describe('ConversationsProvider older history failure (BUG-053)', () => {
+  it('flags the error when loading older messages fails and clears it on retry', async () => {
+    vi.clearAllMocks()
+    getConversationMessagesRequest.mockResolvedValueOnce({ items: [{ id: 1, content: 'a', senderUsername: 'bea', sentAt: '2026-10-22T10:00:00Z' }], hasMore: true, nextBefore: 'tok_1' })
+    const ctx = renderProvider()
+    await act(async () => { await ctx.current.loadConversationMessages(7) })
+
+    getConversationMessagesRequest.mockRejectedValueOnce(new Error('offline'))
+    await act(async () => { await ctx.current.loadOlderMessages(7) })
+    expect(ctx.current.historyPaging[7]).toMatchObject({ hasMore: true, loading: false, error: true })
+
+    getConversationMessagesRequest.mockResolvedValueOnce({ items: [], hasMore: false, nextBefore: null })
+    await act(async () => { await ctx.current.loadOlderMessages(7) })
+    expect(ctx.current.historyPaging[7].error).toBeFalsy()
+    expect(ctx.current.historyPaging[7].hasMore).toBe(false)
+  })
+})
+
 describe('ConversationsProvider active chat (BUG-052)', () => {
   beforeEach(() => {
     vi.clearAllMocks()

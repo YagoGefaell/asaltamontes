@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ChatPane from './ChatPanel.jsx'
 
 function renderPanel(props = {}) {
@@ -194,6 +194,52 @@ describe('ChatPanel', () => {
       renderPanel({ selectedChat: group, currentMessages: messages })
 
       expect(screen.getByText('Mensaje eliminado por moderación')).toBeInTheDocument()
+    })
+  })
+
+  describe('older history (BUG-053)', () => {
+    const observers = []
+    beforeEach(() => {
+      observers.length = 0
+      globalThis.IntersectionObserver = class {
+        constructor(cb) { this.cb = cb; observers.push(this) }
+        observe() { this.cb([{ isIntersecting: true }]) }
+        disconnect() {}
+      }
+    })
+    afterEach(() => { delete globalThis.IntersectionObserver })
+
+    it('does not auto-load again after a failure and offers a manual retry', () => {
+      const onLoadOlder = vi.fn()
+      renderPanel({ hasMoreHistory: true, olderError: true, onLoadOlder })
+
+      expect(onLoadOlder).not.toHaveBeenCalled()
+      expect(screen.getByRole('alert')).toHaveTextContent('No se pudieron cargar los mensajes anteriores')
+      fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+      expect(onLoadOlder).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not recreate the observer when only the callback identity changes', () => {
+      const { rerender } = renderPanel({ hasMoreHistory: true, onLoadOlder: vi.fn() })
+      const created = observers.length
+      rerender(
+        <ChatPane
+          selectedChat={{ id: 1, name: 'Bea', type: 'INDIVIDUAL' }}
+          currentMessages={[]}
+          currentUsername="ana"
+          draftMessage="h"
+          onDraftChange={vi.fn()}
+          onSendMessage={vi.fn()}
+          onLeaveChat={vi.fn()}
+          onOpenUserProfile={vi.fn()}
+          onSelectedAvatarError={vi.fn()}
+          websocketConnected
+          messagesEndRef={{ current: null }}
+          hasMoreHistory
+          onLoadOlder={vi.fn()}
+        />,
+      )
+      expect(observers.length).toBe(created)
     })
   })
 })

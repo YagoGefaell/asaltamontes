@@ -1,6 +1,6 @@
 # BUG-053 — Si falla la carga de mensajes anteriores, se reintenta en bucle sin pausa
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** probable (la lógica está confirmada por lectura; el bucle depende del comportamiento de `IntersectionObserver`: verificar con el backend parado)
 - **Área:** frontend/chat
