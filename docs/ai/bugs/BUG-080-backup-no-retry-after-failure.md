@@ -1,6 +1,6 @@
 # BUG-080 — Si la copia diaria falla, no se reintenta hasta el día siguiente
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** media
 - **Confianza:** confirmado
 - **Área:** infra
