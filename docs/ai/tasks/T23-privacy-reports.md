@@ -64,6 +64,6 @@ Cumplir la promesa de espacio seguro: los perfiles privados lo son de verdad, cu
 - Integración por cada endpoint afectado por la privacidad; solicitudes (idempotencia, cancelación, cambio de privacidad); rate limit de denuncias; permisos del panel (USER recibe 403); suspensión y revocación de sesiones.
 - Pasar `security-reviewer` en cada PR (todas tocan permisos o datos personales).
 
-## Preguntas para Yago
-- ¿Qué se ve de un perfil privado sin seguirlo (propuesta: nombre, avatar, bio, recuentos)?
-- ¿Suspensión temporal con duración libre o fija (7/30 días)? Propuesta: libre.
+## Decisiones de Yago (2026-10-29, D-025)
+- Perfil privado visto por quien no la sigue: nombre, avatar, bio, recuentos y botón «Seguir» (que envía una solicitud). **Ni publicaciones, ni quedadas que organiza, ni comunidades.** Por tanto la lista de la sección T23a «Sí se ven…» queda así y no se muestran quedadas ni comunidades en el perfil ajeno hasta aprobar.
+- Suspensión de cuentas: número libre de días, con atajos de 1, 7 y 30 (más «permanente»).
