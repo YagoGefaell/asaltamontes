@@ -11,7 +11,7 @@ Principios, por orden:
 2. **El contenido manda.** Personas, fotos, quedadas. Controles, filtros y cabeceras ocupan lo mínimo: **antes del primer resultado no puede haber más de ~20 % de la pantalla** (unos 170 px a 390×844, sin contar la barra inferior).
 3. **Coherencia antes que creatividad.** Si no sabes cómo hacer algo, copia el patrón de la pantalla más parecida que ya exista (§6). Nunca inventes un estilo nuevo de formulario, tarjeta o botón.
 4. **Una acción principal por pantalla**, al alcance del pulgar.
-5. **Cercana y en femenino.** Textos cortos, tuteo, en femenino ("Bienvenida", "Te has unido"), sin jerga técnica ("Error 403" → "No tienes acceso a esta comunidad").
+5. **Cercana y en femenino.** Textos cortos, tuteo, **siempre en femenino** ("Bienvenida", "Te has unido", "Seguidoras", "Usuarias", "Nombre de usuaria", "Eres la organizadora"; Yago, 2026-10-29), sin jerga técnica ("Error 403" → "No tienes acceso a esta comunidad").
 
 ## 2. Identidad
 
@@ -40,24 +40,27 @@ Principios, por orden:
 
 - **Barra inferior**: máximo **5 destinos** (como Instagram). Antes tenía 7 iconos; desde T29g (aprobada por Yago): **Inicio · Buscar · Quedadas · Comunidades · Perfil**, con **Notificaciones y Mensajes como iconos en la cabecera de Inicio** (arriba a la derecha, con su contador), igual que Instagram.
 - **Cabecera de pantalla**: una línea, 56 px como mucho: título (o logo en Inicio) a la izquierda, 1–2 iconos de acción a la derecha. En pantallas de detalle: flecha atrás + título. Nada de botones grandes rellenos en la cabecera ("Crear quedada" → icono `+` o botón flotante).
-- **Acción de crear**: un botón `+` en la cabecera o un botón flotante abajo a la derecha (por encima de la barra inferior), no un botón ancho que empuja el contenido.
+- **Acción de crear** (Yago, 2026-10-29): **siempre un `+` arriba a la derecha de la cabecera**, nunca botón flotante ni botón ancho. En Inicio, el `+` abre una hoja inferior con **Publicación · Quedada · Comunidad**; en Quedadas y Comunidades, el `+` lleva directo a crear eso. Toda creación es una **pantalla aparte** (`/events/new`, `/communities/new`, `/posts/new`), nunca un panel dentro de la lista.
+- **Sin atajos de búsqueda** en las pestañas: buscar se hace solo desde la pestaña Buscar.
+- **Barra inferior solo con iconos**, sin etiquetas (Yago, 2026-10-29).
 - **Zona segura**: la barra inferior y los botones fijos respetan `env(safe-area-inset-bottom)`; el contenido deja hueco para la barra (no queda tapado el último elemento).
 
 ## 4. Patrones obligatorios
 
 ### Buscar
 - **Un único buscador** en `/search`, como Instagram: un campo arriba y, al escribir, pestañas **Todo · Personas · Comunidades · Quedadas** (pestañas de texto, deslizables). "Todo" muestra unas pocas de cada tipo con "Ver todas". Sin texto: búsquedas recientes y sugerencias (comunidades cercanas, próximas quedadas), no una lista de todas las usuarias.
-- Las pantallas de Comunidades y Quedadas **no repiten buscadores propios** de varios campos: como mucho un icono de lupa que lleva a `/search` con la pestaña correspondiente.
+- Las pantallas de Comunidades y Quedadas **no tienen buscadores propios ni lupa**: se busca desde la pestaña Buscar (Yago, 2026-10-29).
 
 ### Filtros
 - **Máximo una fila de chips deslizable horizontalmente** (altura ~40 px). Los chips son los filtros de uso diario (p. ej. "Hoy", "Este finde", "Cerca de mí", "Mis quedadas").
 - Todo lo demás (tipo, nivel, ciudad, provincia, distancia…) va en una **hoja inferior** (bottom sheet) que se abre con un chip "Filtros" que muestra cuántos hay activos ("Filtros · 2"). La hoja tiene "Aplicar" y "Quitar filtros".
 - Prohibido: `<select>` o campos de texto sueltos como filtros visibles en la pantalla, varias filas de controles, campos de ciudad/provincia separados. Si un filtro casi nadie lo usa, se quita.
-- "Lista | Mapa" no es un control segmentado a todo el ancho: es un icono en la cabecera (mapa ↔ lista) o un botón flotante "Ver mapa".
+- "Lista | Mapa" no es un control segmentado a todo el ancho: es un icono en la cabecera (mapa ↔ lista), junto al `+`.
 
 ### Listas
 - **Personas** y **resultados**: filas (`UserCard`: avatar 44–48 px, nombre, @usuario, una acción a la derecha). No tarjetas en cuadrícula.
 - **Comunidades**: filas o tarjetas horizontales compactas (imagen 56 px, nombre, ciudad · miembros, botón Unirse pequeño). Una cuadrícula de 2 columnas con avatar enorme muestra 4 comunidades por pantalla: no.
+- **Conversaciones** (Mensajes): filas sin borde, como Comunidades; contador de no leídos (número) en lugar de un punto; en privados, el `@usuaria`.
 - **Quedadas**: tarjeta con la **fecha bien visible** (bloque día/mes en naranja), título, lugar, nivel y distancia/desnivel en una línea de metadatos, avatares de asistentes apilados y "Apuntarme". Es la tarjeta más característica de la app: cuidarla.
 - Carga: `Skeleton` con la forma real de la fila, nunca un spinner a pantalla completa. Paginación con scroll infinito o "Cargar más" (`Button` `ghost`).
 - Vacío: `EmptyState` con una frase y **una acción** ("Crear la primera quedada"). Error: mensaje + "Reintentar".
@@ -65,6 +68,19 @@ Principios, por orden:
 ### Perfil (propio y ajeno)
 - Como Instagram: cabecera compacta (avatar 80–96 px a la izquierda, contadores a la derecha: Quedadas · Seguidoras · Siguiendo), nombre, bio, nivel como etiqueta discreta, botón(es) de acción ("Editar perfil" / "Seguir" + "Mensaje").
 - Debajo, **pestañas de contenido** (p. ej. Quedadas · Comunidades; más adelante Publicaciones). Nunca textos de relleno ("Aquí podrías agregar logros…").
+
+### Perfil de comunidad
+- Mismo esqueleto que el perfil de usuaria: avatar a la izquierda, contadores (Miembros · Quedadas), descripción, ciudad, botones con el **mismo estilo** que Seguir/Mensaje (Unirse/Miembro + Chat).
+- Debajo, pestañas **Publicaciones · Quedadas · Miembros** (Publicaciones cuando exista T22). Miembros en filas (`UserCard`) con buscador si son muchas, nunca la cuadrícula completa de avatares en la portada.
+
+### Detalle de quedada
+- Cabecera con el título de la quedada (no «Quedada»). Arriba, foto de portada o, si no hay, un fondo con el color de quedadas.
+- **Un solo botón principal** (Apuntarme / Ya vas). Debajo, una fila de iconos con texto: Chat · Calendario · Compartir · Cómo llegar. «Eres la organizadora» es una etiqueta junto al título, nunca un botón deshabilitado.
+- Etiquetas (tipo, nivel, km · m+, plazas) en una sola línea de metadatos o una fila deslizable, sin saltar a una segunda línea.
+
+### Notificaciones
+- Como Instagram: **al entrar, todas cuentan como vistas** (el contador de Inicio se limpia); durante esa visita las nuevas siguen resaltadas. Sin botón «marcar todas como leídas».
+- Las filas con acción la llevan a la derecha: «Seguir también» / «Siguiendo» en «te ha empezado a seguir»; Aceptar / Rechazar en solicitudes. El resto de la fila abre el destino.
 
 ### Formularios
 **El estilo de referencia es el original de Yago**: `LoginForm`, `RegisterForm` y `EditProfile`, construidos con `shared/forms/Input` y `shared/forms/Button`.
@@ -77,6 +93,8 @@ Principios, por orden:
 
 ### Ajustes
 - `SettingsLayout` + `SectionCard` + filas con `ToggleSwitch` o con chevron que llevan a la subpantalla. Mismo patrón en ajustes de usuaria y de comunidad.
+- La subpantalla lleva su propio título («Editar perfil», «Privacidad»…), no «Ajustes».
+- «Cerrar sesión» al final, en **texto rojo sin caja ni fondo**. Lo delicado de la cuenta (cerrar sesión en todos los dispositivos, cambiar contraseña, borrar cuenta) va en una subpantalla **Seguridad**.
 
 ### Diálogos y avisos
 - Confirmaciones destructivas: `Modal` (en móvil, como hoja inferior). Avisos de éxito o error de una acción: `Toast`. Nunca `alert()`/`confirm()`.
@@ -123,6 +141,15 @@ Detectados en las capturas del 2026-10-27 (390×844):
 - **Perfil** con texto de relleno y sin contenido; **Inicio** con publicaciones e historias de mentira ("User 1", "120 likes" en inglés) y emojis como iconos.
 - Barra inferior con 7 iconos; mayúsculas en botones y etiquetas.
 - `window.confirm()` para cerrar sesión, desbloquear y dejar de seguir (`SettingsMenu`, `PrivacySettings`, `Profile`) en lugar de `Modal`.
+
+Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j–T29p):
+- Dos patrones de crear: `+` en la cabecera que abre un panel en Comunidades y botón flotante que abre otra pantalla en Quedadas.
+- Detalle de quedada con tres botones apilados a todo el ancho, uno de ellos deshabilitado («Eres la organizadora»).
+- Perfil de comunidad con todos los miembros en cuadrícula de avatares grandes en la portada.
+- Mensajes en tarjetas con borde mientras el resto de listas son filas.
+- Tarjetas de sugerencias de Inicio tan grandes que dos filas llenan la pantalla.
+- Subtítulo de relleno «Todavía no hay mensajes» en cada comunidad; «Seguidores» en masculino; subpantalla de perfil titulada «Ajustes»; cerrar sesión en cajas rosas.
+- Páginas que se pueden desplazar ~80 px sin contenido debajo.
 
 ## 8. Verificación
 

@@ -45,17 +45,17 @@ Inicio sin feed real todavía. Sustituirlo por contenido real: publicaciones de 
   - `PUT|DELETE /api/posts/{publicId}/like` (idempotentes; `UPDATE like_count` atómico, sin tocar si no cambió nada: lección de BUG-007/070).
   - `GET|POST /api/posts/{publicId}/comments`, `DELETE /api/posts/{publicId}/comments/{publicId}` (autora del comentario o moderación).
   - `GET /api/feed` (Inicio): posts de mis comunidades y de quienes sigo, por fecha. Una consulta con `UNION`/`OR` sobre los índices anteriores, sin N+1 (fotos y autora por proyección). Documentar en la PR el umbral para pasar a fan-out on write.
-  - `GET /api/explore/posts`: publicaciones **con foto** de comunidades públicas y perfiles públicos, para la cuadrícula de Buscar. Orden por fecha (el ranking queda fuera).
+  - `GET /api/explore/posts`: publicaciones **con foto** de comunidades públicas y perfiles públicos, para la cuadrícula de Buscar. Orden por fecha (el ranking queda fuera). Dirección acordada (Yago, 2026-10-29): Explorar es para **descubrir lo que no sigues**: excluye lo que ya sale en tu Inicio y, cuando exista [T32](T32-recommendations.md), se ordena por su puntuación.
 - DTO: `PostDto` con `likedByMe`, contadores, `author` (`username`, nombre, avatar), `community {slug, name}`, `media[] {thumb, medium, large}`, `canDelete`. Ninguna PK numérica.
 - Reglas: bloqueos en cualquier dirección (D-022) ocultan publicaciones, comentarios y likes de esa usuaria (404 uniforme al abrir); comunidades privadas (T19) solo a miembros; baneadas fuera; límites por usuaria configurables con 429 + `Retry-After` (p. ej. 20 posts/día, 60 comentarios/h, 200 likes/h); texto sin HTML (se renderiza como texto en el front).
 - Notificaciones (T18): `POST_COMMENT` a la autora (con cooldown, no a ti misma ni si bloqueada). Likes sin notificación en v1.
 - Borrar cuenta (T23/BUG-065): las publicaciones de una cuenta borrada se eliminan; dejarlo anotado allí.
 
 ### Frontend (T22b y T22c)
-- Crear publicación: pantalla aparte (`/posts/new`). Acceso: botón `+` en la cabecera de Inicio y, desde una comunidad, «Publicar» preseleccionando la comunidad. No se añade pestaña a la barra inferior (DESIGN: 5 pestañas).
+- Crear publicación: pantalla aparte (`/posts/new`). Acceso: la opción «Publicación» de la hoja del `+` de Inicio (T29k) y, desde una comunidad, «Publicar» preseleccionando la comunidad (solo propietaria y moderadoras, D-025). No se añade pestaña a la barra inferior (DESIGN: 5 pestañas).
 - Selector de destino: «Mi perfil» o una de mis comunidades. Hasta 4 fotos con el flujo de `features/media`. Contador de caracteres.
 - Tarjeta de publicación (`shared/ui` o `features/posts`): cabecera autora + comunidad, texto, fotos, like y comentarios; menú con «Eliminar» según `canDelete`.
-- Pestaña «Publicaciones» en comunidad y en perfil (propio y ajeno).
+- Pestaña «Publicaciones» en comunidad y en perfil (propio y ajeno). **Es la primera pestaña** (Yago, 2026-10-29): perfil Publicaciones · Quedadas · Comunidades; comunidad Publicaciones · Quedadas · Miembros (T29n). Se muestra en **lista** (publicación completa: texto, fotos, likes), no en cuadrícula.
 - Inicio: lista infinita con cursor; cada 5 publicaciones una fila deslizable (usuarias o comunidades sugeridas, ya existentes); estado vacío actual si no hay nada.
 - Buscar sin texto: cuadrícula de 3 columnas con miniaturas (`thumb`); al abrir, la tarjeta. Mantiene las pestañas al tocar el campo.
 - Siguen aplicando `DESIGN.md` y `/ui-review` (390 y 360, claro/oscuro).
