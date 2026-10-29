@@ -7,6 +7,13 @@ description: Sesión autónoma larga en el servidor de casa. Encadena start-sess
 
 Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas: `CLAUDE.md`, `docs/ai/WORKFLOW.md` (incluido §10, servidor compartido con producción) y `docs/ai/DECISIONS.md` (sobre todo D-012, la arquitectura de Yago) siguen siendo obligatorios.
 
+## Cómo se lanza: `/loop /autopilot`
+En la Pi el autopilot corre dentro de `/loop` (modo sin intervalo): cada vez que terminas un turno, `/loop` te vuelve a despertar con `/autopilot`. Por eso:
+- Al despertar, **retoma** desde STATUS y GitHub (`/start-session` rápido); no repitas trabajo ya hecho.
+- Cuando no haya nada que hacer ahora (WIP lleno sin alternativas, o esperando a Yago), **no pares el bucle**: programa la siguiente vuelta con `ScheduleWakeup` de 1200–1800 s y `noop: true`, para ver si Yago ha mergeado o comentado.
+- Para el bucle (`ScheduleWakeup` con `stop: true`) **solo** con los frenos de consumo o una parada obligatoria (abajo), después de `/end-session`.
+- Si no estás dentro de `/loop` (lanzado a mano con `/autopilot`), aplica lo mismo dentro de un único turno: no lo cierres mientras quede trabajo.
+
 ## Bucle
 0. **Antes de cada unidad de trabajo nueva**, comprueba los frenos de consumo (sección siguiente).
 1. `/start-session` (sincronizar, leer STATUS y log, reconciliar con GitHub).
@@ -17,6 +24,14 @@ Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas
    - **Límite WIP** (4 PRs sin revisar, o el valor que Yago ponga en STATUS como `WIP: n`): si se alcanza, no abras más PRs de código. Haz, en este orden: refinar las specs 🔍 de las siguientes tareas del roadmap (PR `docs/`), `/bug-hunt` de un área no revisada recientemente, o preparar trabajo apilado **solo** si su base está en PR y es claramente correcta.
 3. Tras cada PR abierta: actualiza `.ai/STATUS.md` (checkpoint) antes de seguir.
 4. Cada ~3 unidades de trabajo, o si el contexto crece mucho: añade una entrada intermedia a `.ai/SESSION_LOG.md`.
+5. **No cierres el turno con un resumen mientras haya trabajo.** Tras abrir una PR, el siguiente paso es empezar la siguiente unidad, no informar a Yago: los informes van a STATUS y SESSION_LOG. Un mensaje final solo tiene sentido al parar (sección "Al terminar").
+6. **Si lo siguiente de la cola está bloqueado** (depende de otra tarea, espera a Yago) **o es grande sin refinar**, no pares: coge la siguiente tarea desbloqueada del ROADMAP, divide la grande en sub-PRs refinando su spec (PR `docs/`) o haz `/bug-hunt`. "Lo siguiente está bloqueado" nunca es motivo de parada por sí solo.
+
+## STATUS fiable
+STATUS es lo que lees al despertar: si miente, eliges mal. En cada `/start-session`:
+- La tabla "En revisión" contiene **exactamente** las PRs abiertas según `gh pr list` (quita las mergeadas o cerradas; añade las que falten).
+- "Siguiente en la cola" se reescribe con lo que de verdad queda según el ROADMAP y el `Estado` de las specs en `origin/main` (no arrastres entradas de sesiones anteriores ya hechas).
+- "Hecho recientemente": como mucho las 10 últimas entradas; el histórico vive en SESSION_LOG.
 
 ## Frenos de consumo (cuota del plan de Claude de Yago)
 Yago quiere conservar cuota para otros usos (2026-10-21):
@@ -39,4 +54,4 @@ Yago quiere conservar cuota para otros usos (2026-10-21):
 - Instalar servicios en el sistema o cambiar la configuración del servidor fuera del repo.
 
 ## Al terminar
-`/end-session`. El mensaje final para Yago debe ser corto y accionable: PRs listas para revisar (por orden de prioridad), bugs nuevos importantes y preguntas abiertas.
+Solo al parar de verdad (freno de consumo o parada obligatoria): `/end-session` y, dentro de `/loop`, `ScheduleWakeup` con `stop: true`. El mensaje final para Yago debe ser corto y accionable: PRs listas para revisar (por orden de prioridad), bugs nuevos importantes y preguntas abiertas.
