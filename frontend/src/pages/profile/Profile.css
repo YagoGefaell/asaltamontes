@@ -136,7 +136,8 @@
 
 /* Button and FollowUserButton side by side: same size, border and type (element selector wins over .btn.medium) */
 .pf-actions button.btn,
-.pf-actions button.follow-user-button {
+.pf-actions button.follow-user-button,
+.pf-actions button.community-join-button {
   width: 100%;
   min-height: var(--touch-min);
   padding: var(--space-2) var(--space-3);
