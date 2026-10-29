@@ -82,6 +82,13 @@ Principios, por orden:
 - Como Instagram: **al entrar, todas cuentan como vistas** (el contador de Inicio se limpia); durante esa visita las nuevas siguen resaltadas. Sin botón «marcar todas como leídas».
 - Las filas con acción la llevan a la derecha: «Seguir también» / «Siguiendo» en «te ha empezado a seguir»; Aceptar / Rechazar en solicitudes. El resto de la fila abre el destino.
 
+### Chat
+- Burbujas: las mías a la derecha en el color principal; las de otras a la izquierda.
+- En grupos, los mensajes seguidos de la misma autora (< 5 min, sin separador de día ni mensaje del sistema por medio) forman un bloque con un **avatar pequeño a la izquierda de la primera burbuja, sin nombre ni @**. Al tocar el avatar se abre el perfil. Sin etiquetas de rol en el chat.
+- Enviar: botón redondo con la flecha de enviar, apagado sin texto. El campo crece con el texto.
+- Cabecera: avatar + nombre; debajo, `@usuaria` (privado) o los participantes (grupo). Tocar la cabecera abre el perfil o la info. Nunca estados falsos («En línea» sin presencia real).
+- Info del grupo como WhatsApp: foto y nombre centrados y editables en el sitio, ajustes en filas, participantes con acciones en una hoja inferior al tocar la fila.
+
 ### Formularios
 **El estilo de referencia es el original de Yago**: `LoginForm`, `RegisterForm` y `EditProfile`, construidos con `shared/forms/Input` y `shared/forms/Button`.
 - Siempre `Input` (también `as="select"` y `as="textarea"`), con `label` visible encima del campo y el error debajo (`FormError`, ya incluido en `Input`). Nunca `<input>`/`<select>` con clases propias por pantalla (`community-creator-*`, `moderation-input`…).
@@ -142,7 +149,7 @@ Detectados en las capturas del 2026-10-27 (390×844):
 - Barra inferior con 7 iconos; mayúsculas en botones y etiquetas.
 - `window.confirm()` para cerrar sesión, desbloquear y dejar de seguir (`SettingsMenu`, `PrivacySettings`, `Profile`) en lugar de `Modal`.
 
-Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j–T29p):
+Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j–T29r):
 - Dos patrones de crear: `+` en la cabecera que abre un panel en Comunidades y botón flotante que abre otra pantalla en Quedadas.
 - Detalle de quedada con tres botones apilados a todo el ancho, uno de ellos deshabilitado («Eres la organizadora»).
 - Perfil de comunidad con todos los miembros en cuadrícula de avatares grandes en la portada.
@@ -150,6 +157,7 @@ Detectados en las capturas del 2026-10-29 (auditoría de la tercera ronda, T29j�
 - Tarjetas de sugerencias de Inicio tan grandes que dos filas llenan la pantalla.
 - Subtítulo de relleno «Todavía no hay mensajes» en cada comunidad; «Seguidores» en masculino; subpantalla de perfil titulada «Ajustes»; cerrar sesión en cajas rosas.
 - Páginas que se pueden desplazar ~80 px sin contenido debajo.
+- Chat: `@usuaria` encima de cada mensaje en los grupos, botón «Enviar» de texto, «En linea» fijo en los privados (no hay presencia), «Toca para ver el grupo» junto a un icono ⓘ que hace lo mismo. Info del grupo con el nombre repetido (título + campo + «Guardar nombre») y «Hacer admin» / «Expulsar» en cada fila, partiendo los nombres letra a letra.
 
 ## 8. Verificación
 
