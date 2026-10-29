@@ -36,7 +36,7 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 - Sin verificar: se puede entrar y usar lectura, chat con quien ya te sigue y apuntarse a quedadas; **no** crear comunidades ni quedadas, ni abrir DMs nuevos, ni publicar (T22). Una única comprobación central (`VerifiedGuard`), no repartida por servicios.
 - Cuentas de Google: `isVerified = true` al crearlas (ya comprobamos `email_verified`, BUG-024).
 - Reset de contraseña revoca todas las `RefreshSession` (T06) y avisa por correo del cambio. Cuentas solo-Google no tienen contraseña: «olvidé» responde igual pero no envía enlace de reset (envía aviso de «entra con Google»).
-- Borrado: anonimización en lugar de borrado físico donde hay contenido ajeno (mensajes de grupo → «Usuaria eliminada»); borrado físico de perfil, follows, bloqueos, notificaciones, medias y sesiones. Periodo de gracia de 14 días con cuenta desactivada y posibilidad de cancelar (propuesta; decidir con Yago).
+- Borrado: anonimización en lugar de borrado físico donde hay contenido ajeno (mensajes de grupo → «Usuaria eliminada»); borrado físico de perfil, follows, bloqueos, notificaciones, medias y sesiones, tras 14 días de gracia (confirmado).
 - Exportación: ZIP/JSON generado bajo demanda, límite de una por día, enlace enviado por correo si tarda (asíncrono); solo datos propios (no mensajes de otras).
 
 ### Frontend
@@ -52,7 +52,7 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 ## Tests requeridos
 - Integración de los flujos completos con `MailSender` falso; caducidad y reutilización; rate limits; guardia de verificación en cada endpoint limitado; borrado con otras filas dependientes (BUG-065/068); exportación sin datos ajenos.
 
-## Preguntas para Yago
-- ¿Proveedor de correo y dominio remitente para la demo?
-- ¿Periodo de gracia de 14 días al borrar la cuenta, o borrado inmediato?
-- ¿Qué se limita exactamente a cuentas sin verificar (propuesta arriba)?
+## Decisiones de Yago (2026-10-29, D-025)
+- **Correo:** Resend (plan gratuito) vía SMTP genérico, variables `MAIL_*`. Resend exige un dominio verificado y aún no lo hay: si `MAIL_HOST` está vacío, los correos **se escriben en el log** en lugar de enviarse (implementación `LoggingMailSender`, activa por defecto). El README documenta cómo dar de alta Resend (dominio, claves API, registros DNS, valores de `MAIL_*`).
+- **Borrar la cuenta (T24c):** 14 días de gracia. La cuenta queda **desactivada y oculta** (no aparece en búsquedas, perfiles ni listados; sesiones revocadas) y, si vuelve a iniciar sesión dentro del plazo, se recupera. Pasado el plazo, un job hace el borrado definitivo (anonimización/borrado según la sección anterior).
+- **Cuentas sin verificar:** se aplican los límites propuestos arriba (no crear comunidades ni quedadas, ni abrir DMs nuevos, ni publicar). **Debe poder apagarse por configuración** (p. ej. `app.verification.enforce=false`, por defecto apagado mientras no haya correo real) para que en la demo nadie quede bloqueada sin poder verificarse.
