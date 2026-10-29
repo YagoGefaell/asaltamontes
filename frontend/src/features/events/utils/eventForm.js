@@ -6,6 +6,9 @@ export const DESCRIPTION_MAX = 4000
 export const MEETING_POINT_MAX = 200
 export const CITY_MAX = 80
 
+// Coordinates with ~1 m precision are plenty and keep the payload tidy
+export const roundCoordinate = (n) => Math.round(n * 1e6) / 1e6
+
 export const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone
 
 export const EMPTY_FORM = {

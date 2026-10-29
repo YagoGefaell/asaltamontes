@@ -1,15 +1,29 @@
 import { lazy, Suspense, useState } from 'react'
+import { FaLocationArrow } from 'react-icons/fa'
 import Input from '../../../shared/forms/Input.jsx'
 import FormError from '../../../shared/forms/FormError.jsx'
 import Button from '../../../shared/forms/Button.jsx'
 import Skeleton from '../../../shared/ui/Skeleton.jsx'
 import { EVENT_LEVELS, EVENT_TYPES } from '../utils/eventFormat.js'
 import {
-  CITY_MAX, DESCRIPTION_MAX, MEETING_POINT_MAX, TITLE_MAX, browserTimeZone, validateEventForm,
+  CITY_MAX, DESCRIPTION_MAX, MEETING_POINT_MAX, TITLE_MAX, browserTimeZone, roundCoordinate, validateEventForm,
 } from '../utils/eventForm.js'
 import { zoneLabel } from '../utils/timeZones.js'
+import { useHomeArea } from '../hooks/useHomeArea.js'
+import PlaceAutocomplete from './PlaceAutocomplete.jsx'
 import TimeZoneSelect from './TimeZoneSelect.jsx'
 import './EventForm.css'
+
+// Below this zoom the map shows a region too wide to rank place suggestions by
+const NEAR_MIN_ZOOM = 9
+
+// The browser only gives the position on HTTPS (or localhost)
+const canLocate = () => typeof window !== 'undefined' && window.isSecureContext && 'geolocation' in navigator
+
+const LOCATE_ERRORS = {
+  1: 'Has denegado el permiso de ubicación. Puedes activarlo en los ajustes del navegador.',
+  default: 'No se ha podido obtener tu ubicación. Marca el punto en el mapa.',
+}
 
 // Leaflet only downloads when the form is opened
 const LocationPicker = lazy(() => import('./LocationPicker.jsx'))
@@ -25,6 +39,12 @@ export default function EventForm({
 }) {
   const timeZone = values.timezone || browserTimeZone()
   const [submitted, setSubmitted] = useState(false)
+  // Where the map should fly after a place is picked, and the area she is looking at (to rank suggestions)
+  const [mapFocus, setMapFocus] = useState(null)
+  const [mapView, setMapView] = useState(null)
+  const [locating, setLocating] = useState(false)
+  const [locateError, setLocateError] = useState(null)
+  const homeArea = useHomeArea()
   const errors = submitted ? { ...serverErrors, ...validateEventForm(values, { timeZone, original }) } : serverErrors
   const set = (patch) => onChange({ ...values, ...patch })
   const field = (name) => ({
@@ -40,6 +60,41 @@ export default function EventForm({
   }
 
   const hasPoint = values.latitude != null && values.longitude != null
+  // Rank suggestions near her point, the area she zoomed into or, failing that, the city in her profile
+  const near = hasPoint
+    ? { latitude: values.latitude, longitude: values.longitude }
+    : mapView?.zoom >= NEAR_MIN_ZOOM ? mapView : homeArea
+
+  const placePoint = (latitude, longitude) => {
+    set({ latitude, longitude })
+    setMapFocus({ latitude, longitude })
+  }
+
+  const locateMe = () => {
+    setLocating(true)
+    setLocateError(null)
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setLocating(false)
+        placePoint(roundCoordinate(coords.latitude), roundCoordinate(coords.longitude))
+      },
+      (error) => {
+        setLocating(false)
+        setLocateError(LOCATE_ERRORS[error.code] || LOCATE_ERRORS.default)
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    )
+  }
+
+  const pickPlace = (place) => {
+    set({
+      meetingPointName: place.name.slice(0, MEETING_POINT_MAX),
+      city: place.city ? place.city.slice(0, CITY_MAX) : values.city,
+      latitude: place.latitude,
+      longitude: place.longitude,
+    })
+    setMapFocus({ latitude: place.latitude, longitude: place.longitude })
+  }
   const otherZone = timeZone !== browserTimeZone()
   const moreHasError = ['distanceKm', 'elevationGainM', 'capacity', 'timezone'].some((name) => errors[name])
 
@@ -66,14 +121,29 @@ export default function EventForm({
       </p>
       <fieldset className="event-form__place">
         <legend>Punto de encuentro</legend>
-        <Input label="Nombre del lugar" aria-label="Lugar" maxLength={MEETING_POINT_MAX} placeholder="Ej.: Parking del Teleférico" {...field('meetingPointName')} />
+        <PlaceAutocomplete
+          value={values.meetingPointName}
+          onChange={(text) => set({ meetingPointName: text })}
+          onPick={pickPlace}
+          near={near}
+          error={errors.meetingPointName}
+          maxLength={MEETING_POINT_MAX}
+        />
         <Input label="Ciudad" aria-label="Ciudad" maxLength={CITY_MAX} {...field('city')} />
-        <p className="event-form__hint">Toca el mapa para marcar el punto y arrastra la chincheta para ajustarlo.</p>
+        <p className="event-form__hint">Elige un lugar de la lista o toca el mapa para marcar el punto. Arrastra la chincheta para ajustarlo.</p>
+        {canLocate() && (
+          <Button variant="ghost" size="small" className="event-form__locate" onClick={locateMe} loading={locating}>
+            <FaLocationArrow aria-hidden="true" /> Usar mi ubicación
+          </Button>
+        )}
+        <FormError message={locateError} />
         <Suspense fallback={<Skeleton height="280px" />}>
           <LocationPicker
             latitude={values.latitude}
             longitude={values.longitude}
             onChange={(latitude, longitude) => set({ latitude, longitude })}
+            focus={mapFocus}
+            onViewChange={setMapView}
           />
         </Suspense>
         {hasPoint && (

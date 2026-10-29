@@ -8,30 +8,11 @@
   color: var(--text-color);
 }
 
-/* Search input - same style as Search page */
-.search-input-container {
-  padding: 1rem;
+/* Buscador: mismo campo y márgenes que la barra de Search */
+.follow-list__search {
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--border-color);
-}
-
-.search-input-container input {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-base);
-  background: var(--input-bg);
-  color: var(--text-color);
-  outline: none;
-  transition: border-color 0.2s ease;
-}
-
-.search-input-container input:focus {
-  border-color: var(--primary);
-}
-
-.search-input-container input::placeholder {
-  color: var(--text-muted);
+  background: var(--surface);
 }
 
 .followers-results,
@@ -139,10 +120,6 @@
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-  .search-input-container {
-    padding: 0.75rem;
-  }
-  
   .results-count {
     font-size: var(--text-sm);
     padding: 0.5rem 0;

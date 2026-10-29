@@ -31,6 +31,7 @@
 .input-wrapper textarea,
 .input-wrapper select {
   flex: 1;
+  min-width: 0; /* a long option or a narrow grid column must not push the field out of its card */
   border: none;
   background: transparent;
 

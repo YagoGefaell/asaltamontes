@@ -106,6 +106,14 @@
   box-shadow: none;
 }
 
+.image-uploader--tap .image-uploader__preview--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: calc(var(--text-2xl) * 1.5);
+}
+
 .image-uploader__tap-badge {
   position: absolute;
   right: 2px;

@@ -40,6 +40,13 @@ describe('Avatar', () => {
     fireEvent.error(screen.getByRole('img'))
     expect(screen.getByRole('img', { name: 'Marta' })).toHaveTextContent('M')
   })
+
+  it('takes a named size or a number of pixels', () => {
+    const { rerender } = render(<Avatar name="Ana" size="lg" />)
+    expect(screen.getByRole('img')).toHaveStyle({ width: '64px', height: '64px' })
+    rerender(<Avatar name="Ana" size={80} />)
+    expect(screen.getByRole('img')).toHaveStyle({ width: '80px', height: '80px' })
+  })
 })
 
 describe('EmptyState', () => {

@@ -10,11 +10,12 @@ function initialOf(name) {
 
 /**
  * Imagen de perfil con iniciales de respaldo si no hay imagen o falla la carga.
+ * `size`: sm | md | lg | xl, o un número de píxeles para un caso puntual.
  */
 export default function Avatar({ src, name, size = "md", className = "" }) {
   const [failedSrc, setFailedSrc] = useState(null);
   const showImage = Boolean(src) && failedSrc !== src;
-  const px = SIZES[size] ?? SIZES.md;
+  const px = typeof size === "number" ? size : SIZES[size] ?? SIZES.md;
   const classes = ["avatar", className].filter(Boolean).join(" ");
 
   if (showImage) {

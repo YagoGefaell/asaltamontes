@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import UserCard from "../../shared/ui/UserCard";
 import PageHeader from "../../shared/ui/PageHeader";
+import SearchField from "../../shared/ui/SearchField";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import Loading from "../../shared/components/Loading";
 import "./FollowersFollowing.css";
 
@@ -14,6 +16,7 @@ function FollowListPage({
   username = null
 }) {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -63,7 +66,7 @@ function FollowListPage({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [fetchFunction, type]);
+  }, [fetchFunction, type, username]);
 
   useEffect(() => {
     fetchUsers(0, true);
@@ -84,12 +87,13 @@ function FollowListPage({
     <div className={`${type}-page`}>
       <PageHeader title={title} onBack={() => navigate(-1)} />
 
-      <div className="search-input-container">
-        <input
-          type="text"
-          placeholder={searchPlaceholder}
+      <div className="follow-list__search">
+        <SearchField
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={setSearchTerm}
+          onClear={() => setSearchTerm("")}
+          label={searchPlaceholder}
+          placeholder="Buscar"
         />
       </div>
 
@@ -114,8 +118,8 @@ function FollowListPage({
                     fullName={user.fullName}
                     username={user.username}
                     profilePictureUrl={user.profilePictureUrl}
-                    showFollowButton={user.isFollowing ? true : false}
-                    isFollowing={user.isFollowing}
+                    showFollowButton={user.username !== currentUser?.username}
+                    isFollowing={Boolean(user.isFollowing)}
                   />
                 ))}
                 

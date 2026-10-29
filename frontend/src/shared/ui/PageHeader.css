@@ -43,8 +43,8 @@
   border: 0;
   border-radius: var(--radius-pill);
   background: transparent;
-  color: inherit;
-  font-size: var(--text-lg);
+  color: var(--text-muted);
+  font-size: var(--text-xl);
   cursor: pointer;
 }
 
@@ -69,8 +69,8 @@
   min-height: var(--touch-min);
   border: 0;
   background: transparent;
-  color: inherit;
-  font-size: var(--text-lg);
+  color: var(--text-muted);
+  font-size: var(--text-xl);
   cursor: pointer;
 }
 

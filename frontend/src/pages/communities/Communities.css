@@ -101,15 +101,6 @@
   background: var(--background);
 }
 
-.community-creator-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.community-creator-actions > * {
-  flex: 1;
-}
-
 .communities-load-more {
   display: block;
   margin: 8px auto 24px;

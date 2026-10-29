@@ -1,0 +1,80 @@
+/* The suggestions sit in the flow, under the field: no z-index fights with the map below */
+.place-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.place-search__panel {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.place-search__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.place-search__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.place-search__option + .place-search__option {
+  border-top: 1px solid var(--border-soft);
+}
+
+.place-search__option[aria-selected="true"],
+.place-search__option:hover {
+  background: var(--hover-color);
+}
+
+.place-search__icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.place-search__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.place-search__name,
+.place-search__detail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.place-search__name {
+  font-weight: 600;
+}
+
+.place-search__detail,
+.place-search__status,
+.place-search__credit {
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.place-search__status {
+  margin: 0;
+  padding: var(--space-3);
+}
+
+.place-search__credit {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  border-top: 1px solid var(--border-soft);
+  font-size: var(--text-xs);
+  text-align: right;
+}

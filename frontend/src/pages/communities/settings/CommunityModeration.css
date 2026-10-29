@@ -11,6 +11,10 @@
   gap: var(--space-3);
 }
 
+.moderation-row-fields > * {
+  min-width: 0;
+}
+
 .moderation-hint {
   margin: 0;
   font-size: var(--text-sm);

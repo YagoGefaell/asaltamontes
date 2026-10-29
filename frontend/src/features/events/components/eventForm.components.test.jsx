@@ -1,17 +1,26 @@
 import { useState } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EventForm from './EventForm.jsx'
 import CommunityEvents from './CommunityEvents.jsx'
 import { EMPTY_FORM } from '../utils/eventForm.js'
 import { getCommunityEventsRequest } from '../services/events.service.js'
+import { locateCity, searchPlaces } from '../services/places.service.js'
 
 // Leaflet needs a real browser layout: the picker is replaced by a stub that "taps" a point
 vi.mock('./LocationPicker.jsx', () => ({
-  default: ({ onChange }) => <button type="button" onClick={() => onChange(40.5, -3.7)}>mapa</button>,
+  default: ({ onChange, focus }) => (
+    <>
+      <button type="button" onClick={() => onChange(40.5, -3.7)}>mapa</button>
+      {focus && <span>{`mapa centrado en ${focus.latitude}, ${focus.longitude}`}</span>}
+    </>
+  ),
 }))
 vi.mock('../services/events.service.js', () => ({ getCommunityEventsRequest: vi.fn() }))
+vi.mock('../services/places.service.js', () => ({ searchPlaces: vi.fn(), locateCity: vi.fn() }))
+const session = vi.hoisted(() => ({ currentUser: { username: 'yo', city: '' } }))
+vi.mock('../../auth/hooks/useAuth', () => ({ useAuth: () => session }))
 
 function Harness({ onSubmit, initial = EMPTY_FORM, ...props }) {
   const [values, setValues] = useState(initial)
@@ -42,6 +51,103 @@ describe('EventForm', () => {
     expect(screen.getByText('40.50000, -3.70000')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ title: 'Rodaje', latitude: 40.5, longitude: -3.7 }))
+  })
+
+  it('suggests places as she types and fills the name, the city and the point with the one she picks', async () => {
+    searchPlaces.mockResolvedValue([
+      { id: 'W1', name: 'Centro Comercial Vialia', detail: 'Vigo, Galicia, España', city: 'Vigo', latitude: 42.2338, longitude: -8.7114 },
+    ])
+    const onSubmit = await renderForm()
+    const field = screen.getByRole('combobox', { name: 'Lugar' })
+    fireEvent.focus(field)
+    fireEvent.change(field, { target: { value: 'vialia' } })
+    const option = await screen.findByRole('option', { name: /Centro Comercial Vialia/ })
+    expect(searchPlaces).toHaveBeenCalledWith('vialia', expect.objectContaining({ near: null }))
+
+    fireEvent.click(option)
+    expect(field).toHaveValue('Centro Comercial Vialia')
+    expect(screen.getByLabelText('Ciudad')).toHaveValue('Vigo')
+    expect(screen.getByText('42.23380, -8.71140')).toBeInTheDocument()
+    expect(screen.getByText('mapa centrado en 42.2338, -8.7114')).toBeInTheDocument()
+    expect(screen.queryByRole('listbox')).toBeNull()
+
+    fireEvent.change(screen.getByLabelText('Título'), { target: { value: 'Rodaje' } })
+    fireEvent.change(screen.getByLabelText('Empieza'), { target: { value: '2999-01-02T09:30' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
+    expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
+      meetingPointName: 'Centro Comercial Vialia', city: 'Vigo', latitude: 42.2338, longitude: -8.7114,
+    }))
+  })
+
+  it('keeps a free-text place, picks with the keyboard and says when nothing is found', async () => {
+    searchPlaces.mockResolvedValueOnce([])
+    await renderForm()
+    const field = screen.getByRole('combobox', { name: 'Lugar' })
+    fireEvent.focus(field)
+    fireEvent.change(field, { target: { value: 'Fuente de la Teja' } })
+    expect(await screen.findByText(/Sin resultados/)).toBeInTheDocument()
+    expect(field).toHaveValue('Fuente de la Teja')
+
+    searchPlaces.mockResolvedValueOnce([
+      { id: 'N1', name: 'Jaca', detail: 'Aragón', city: 'Jaca', latitude: 42.57, longitude: -0.55 },
+    ])
+    fireEvent.change(field, { target: { value: 'jaca' } })
+    await screen.findByRole('option', { name: /Jaca/ })
+    fireEvent.keyDown(field, { key: 'ArrowDown' })
+    expect(screen.getByRole('option', { name: /Jaca/ })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.keyDown(field, { key: 'Enter' })
+    expect(screen.getByLabelText('Ciudad')).toHaveValue('Jaca')
+  })
+
+  it('ranks the suggestions near the city of her profile until she marks a point', async () => {
+    session.currentUser.city = 'Vigo'
+    locateCity.mockResolvedValue({ latitude: 42.23, longitude: -8.72 })
+    searchPlaces.mockResolvedValue([])
+    try {
+      await renderForm()
+      await waitFor(() => expect(locateCity).toHaveBeenCalledWith('Vigo', expect.anything()))
+      const field = screen.getByRole('combobox', { name: 'Lugar' })
+      fireEvent.focus(field)
+      fireEvent.change(field, { target: { value: 'vialia' } })
+      await waitFor(() => expect(searchPlaces).toHaveBeenCalledWith('vialia', expect.objectContaining({
+        near: { latitude: 42.23, longitude: -8.72 },
+      })))
+    } finally {
+      session.currentUser.city = ''
+    }
+  })
+
+  describe('"Usar mi ubicación"', () => {
+    const getCurrentPosition = vi.fn()
+    beforeEach(() => {
+      Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true })
+      Object.defineProperty(navigator, 'geolocation', { value: { getCurrentPosition }, configurable: true })
+    })
+    afterEach(() => {
+      delete window.isSecureContext
+      delete navigator.geolocation
+      getCurrentPosition.mockReset()
+    })
+
+    it('marks her position on the map', async () => {
+      getCurrentPosition.mockImplementation((ok) => ok({ coords: { latitude: 42.2345678, longitude: -8.7123456 } }))
+      await renderForm()
+      fireEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación' }))
+      expect(screen.getByText('42.23457, -8.71235')).toBeInTheDocument()
+      expect(screen.getByText('mapa centrado en 42.234568, -8.712346')).toBeInTheDocument()
+    })
+
+    it('explains when she denies the permission', async () => {
+      getCurrentPosition.mockImplementation((ok, fail) => fail({ code: 1 }))
+      await renderForm()
+      fireEvent.click(screen.getByRole('button', { name: 'Usar mi ubicación' }))
+      expect(screen.getByText(/Has denegado el permiso de ubicación/)).toBeInTheDocument()
+    })
+  })
+
+  it('hides "Usar mi ubicación" when the browser cannot locate her', async () => {
+    await renderForm()
+    expect(screen.queryByRole('button', { name: 'Usar mi ubicación' })).toBeNull()
   })
 
   it('defaults to the device zone and lets her pick another under "Más opciones" with a search box', async () => {

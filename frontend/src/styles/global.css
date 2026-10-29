@@ -22,6 +22,7 @@
   
   --accent: #FFDA58;
   --on-accent: #222;
+  --on-secondary: #222;
 
   --pressed-color: #116b7a;
   --hover-color: var(--primary-soft);
@@ -63,6 +64,7 @@
     
     --accent: #FFDA58;
     --on-accent: #222;
+    --on-secondary: #222;
 
     --pressed-color: #2cb2c7;
     --hover-color: #2a2a2a;
@@ -88,4 +90,11 @@ body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   margin: 0;
   padding: 0;
+}
+/* Form controls don't inherit the font by default (textareas fall back to monospace) */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
