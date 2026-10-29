@@ -10,8 +10,10 @@ Yago te da libertad para trabajar sin supervisión. Eso **no** cambia las reglas
 ## Cómo se lanza: `/loop /autopilot`
 En la Pi el autopilot corre dentro de `/loop` (modo sin intervalo): cada vez que terminas un turno, `/loop` te vuelve a despertar con `/autopilot`. Por eso:
 - Al despertar, **retoma** desde STATUS y GitHub (`/start-session` rápido); no repitas trabajo ya hecho.
-- Cuando no haya nada que hacer ahora (WIP lleno sin alternativas, o esperando a Yago), **no pares el bucle**: programa la siguiente vuelta con `ScheduleWakeup` de 1200–1800 s y `noop: true`, para ver si Yago ha mergeado o comentado.
-- Para el bucle (`ScheduleWakeup` con `stop: true`) **solo** con los frenos de consumo o una parada obligatoria (abajo), después de `/end-session`.
+- Mientras quede trabajo que no dependa de la revisión de Yago, **no cierres el turno con un resumen**: sigue con la siguiente unidad.
+- Cuando no quede trabajo así (WIP lleno sin alternativas, o esperando a Yago), haz `/end-session` y **para el bucle** con `ScheduleWakeup` `stop: true`. **Nada de `ScheduleWakeup` de espera, ni comprobar cada 20–30 min si Yago ha mergeado o comentado** (preferencia fija de Yago, D-025): él avisa cuándo seguir.
+- `ScheduleWakeup` con `stop: true` también con los frenos de consumo o una parada obligatoria (abajo), siempre después de `/end-session`.
+- No dejes agentes colgados esperando a la CI: que empujen, comprueben `gh pr checks` una vez y devuelvan su informe.
 - Si no estás dentro de `/loop` (lanzado a mano con `/autopilot`), aplica lo mismo dentro de un único turno: no lo cierres mientras quede trabajo.
 
 ## Bucle
