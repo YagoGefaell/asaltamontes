@@ -9,6 +9,7 @@ export const NOTIFICATION_TYPE_LABELS = {
   WAITLIST_PROMOTED: 'Consigo plaza desde la lista de espera',
   EVENT_REMINDER: 'Recordatorio de una quedada en la que estoy (24 h y 2 h antes)',
   ADDED_TO_GROUP: 'Me añaden a un grupo',
+  POST_COMMENT: 'Comentan una publicación mía',
 }
 
 const FALLBACK = 'Tienes una notificación nueva'
@@ -71,6 +72,8 @@ export function notificationText(notification, options = {}) {
       }
     case 'ADDED_TO_GROUP':
       return { text: `${actorName(notification)} te ha añadido al grupo «${payload.groupName || 'sin nombre'}»`, detail: '' }
+    case 'POST_COMMENT':
+      return { text: `${actorName(notification)} ha comentado tu publicación`, detail: payload.excerpt || '' }
     case 'COMMUNITY_JOIN_REQUEST':
       return { text: `${actorName(notification)} quiere unirse a «${payload.communityName || 'tu comunidad'}»`, detail: '' }
     case 'COMMUNITY_JOIN_APPROVED':

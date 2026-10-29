@@ -788,7 +788,7 @@
     "/api/notifications": {
       "get": {
         "summary": "One page of the caller's notifications (T18)",
-        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Notifications whose actor was blocked by the caller are hidden when reading (list and unread-count) and come back if she unblocks (T18); nothing is deleted. Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, EVENT_REMINDER (hoursBefore: 24 or 2; to the people going, no actor, created by a job every 5 minutes, once per event and kind; moving the start re-arms them), ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor).",
+        "description": "Newest first (createdAt DESC, id DESC). No text: the client composes the message from type + payload. Event payloads carry title, startsAt (UTC instant) and timeZone (the event's IANA zone, D-019). Notifications whose actor was blocked by the caller are hidden when reading (list and unread-count) and come back if she unblocks (T18); nothing is deleted. Types: NEW_FOLLOWER, EVENT_JOINED (waitlisted), EVENT_UPDATED (changed: startsAt | timezone | city | meetingPoint), EVENT_CANCELLED (reason), WAITLIST_PROMOTED, EVENT_REMINDER (hoursBefore: 24 or 2; to the people going, no actor, created by a job every 5 minutes, once per event and kind; moving the start re-arms them), ADDED_TO_GROUP (groupName), COMMUNITY_JOIN_REQUEST / COMMUNITY_JOIN_APPROVED / COMMUNITY_JOIN_REJECTED (communityName; target COMMUNITY with the slug; a rejection carries no actor), POST_COMMENT (excerpt: the first 80 characters of the comment; target POST with the post id; to the author of the post, one unread per commenter and post, never to herself).",
         "tags": ["Notifications"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -2087,7 +2087,7 @@
     "/api/posts/{postId}": {
       "get": {
         "summary": "One post, if the caller may see it (T22a1)",
-        "description": "Community posts: any user with a session if the community is public, only its members if it is private; banned users never. Profile posts: any user with a session (every profile is public until T23; then private profiles show to accepted followers only). A block in either direction hides it. Anything not visible is the same 404 as a post that does not exist.",
+        "description": "Community posts: any user with a session if the community is public, only its members if it is private; banned users never. Profile posts: any user with a session (every profile is public until T23; then private profiles show to accepted followers only). A block in either direction hides it, except from the owner and the moderators of the community of the post, who see and may delete every post of their community (D-026). Anything not visible is the same 404 as a post that does not exist.",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
@@ -2125,10 +2125,100 @@
         }
       }
     },
+    "/api/posts/{postId}/like": {
+      "put": {
+        "summary": "Like a post (idempotent) (T22a2)",
+        "description": "Members of the community of the post like it (a muted member too); non-members only look and get 403. On a profile post, anybody who can see it. Liking twice leaves one like and the counter moves once. A block in either direction, a ban or a private community the caller is not in: the 404 of a missing post. Limit per user shared with unlike: asaltamontes.rate-limit.post-likes-per-hour (200).",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "State after the call", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LikeState" } } } },
+          "403": { "description": "She can see the post but is not a member of its community" },
+          "404": { "description": "Not found or not visible" },
+          "429": { "description": "Too many likes this hour. Retry-After in seconds" }
+        }
+      },
+      "delete": {
+        "summary": "Remove her like (idempotent) (T22a2)",
+        "description": "Whoever can still see the post may withdraw her like; removing one that is not there changes nothing.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "State after the call", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LikeState" } } } },
+          "404": { "description": "Not found or not visible" },
+          "429": { "description": "Too many likes this hour. Retry-After in seconds" }
+        }
+      }
+    },
+    "/api/posts/{postId}/comments": {
+      "get": {
+        "summary": "Comments of a post, oldest first (T22a2)",
+        "description": "Whoever can see the post reads the comments. The comments of a user blocked in either direction are left out, except for the owner and the moderators of the community of the post, who see all of them (D-026).",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } },
+          { "name": "after", "in": "query", "schema": { "type": "string" }, "description": "Cursor (nextBefore of the previous page); a malformed one or one from another list is a 400" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Page of Comment, oldest first", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } }, "nextBefore": { "type": "string", "nullable": true, "description": "Opaque cursor for the next page; null on the last page" } } } } } },
+          "400": { "description": "Invalid cursor" },
+          "404": { "description": "Post not found or not visible" }
+        }
+      },
+      "post": {
+        "summary": "Comment on a post (one level) (T22a2)",
+        "description": "Members of the community of the post comment (owner and moderators included); a muted member and a non-member get 403. On a profile post, anybody who can see it. Plain text, 1-1000 characters. The author of the post gets a POST_COMMENT notification. Limit per user: asaltamontes.rate-limit.post-comments-per-hour (60).",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["body"], "properties": { "body": { "type": "string", "minLength": 1, "maxLength": 1000 } } } } } },
+        "responses": {
+          "201": { "description": "Comment created", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Comment" } } } },
+          "400": { "description": "Empty or too long text" },
+          "403": { "description": "Muted in the community, or not a member of it" },
+          "404": { "description": "Not found or not visible (also a banned user)" },
+          "429": { "description": "Too many comments this hour. Retry-After in seconds" }
+        }
+      }
+    },
+    "/api/posts/{postId}/comments/{commentId}": {
+      "delete": {
+        "summary": "Delete a comment (logical) (T22a2)",
+        "description": "The author of the comment, or the owner or a moderator of the community of the post, also when there is a block between them and the author (D-026). The post's counter goes down once; deleting twice: the second is a 404.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "postId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }, { "name": "commentId", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "204": { "description": "Deleted" },
+          "403": { "description": "She can see the comment but may not delete it" },
+          "404": { "description": "Post or comment not found or not visible" }
+        }
+      }
+    },
+    "/api/explore/posts": {
+      "get": {
+        "summary": "Grid of Search: posts with a photo from public communities and profiles (T22a2)",
+        "description": "To discover what she does not follow: only posts with at least one photo, from public communities (she is not banned from) and from profiles she may see (every profile until T23), without what is already in her home feed (her communities, herself and the people she follows) and without users blocked in either direction (D-026 does not apply here). Newest first. Posts of private communities never appear, not even for their members.",
+        "tags": ["Posts"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "before", "in": "query", "schema": { "type": "string" }, "description": "Cursor (nextBefore of the previous page); a malformed one or one from another list is a 400" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 50 } }
+        ],
+        "responses": {
+          "200": { "description": "Page of Post, newest first", "content": { "application/json": { "schema": { "type": "object", "properties": { "items": { "type": "array", "items": { "$ref": "#/components/schemas/Post" } }, "nextBefore": { "type": "string", "nullable": true, "description": "Opaque cursor for the next page; null on the last page" } } } } } },
+          "400": { "description": "Invalid cursor" }
+        }
+      }
+    },
     "/api/communities/{slug}/posts": {
       "get": {
         "summary": "Wall of a community: its posts, newest first (T22a1)",
-        "description": "Public community: any user with a session who is not banned; private: its members who are not banned.",
+        "description": "Public community: any user with a session who is not banned; private: its members who are not banned. The owner and the moderators see every post of the community whoever blocked whom (D-026); everybody else does not see the posts of a user blocked in either direction.",
         "tags": ["Posts"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -2216,7 +2306,7 @@
     "schemas": {
       "Post": {
         "type": "object",
-        "description": "A publication as the caller sees it (T22a1). No numeric ids; likeCount/commentCount/likedByMe are 0/0/false until likes and comments arrive (T22a2)",
+        "description": "A publication as the caller sees it (T22a1). No numeric ids; likeCount/commentCount are denormalised counters; likedByMe is the caller's own like (T22a2)",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "body": { "type": "string", "description": "Plain text, render it as text" },
@@ -2229,6 +2319,21 @@
           "likedByMe": { "type": "boolean" },
           "canDelete": { "type": "boolean", "description": "She is the author, or the owner/moderator of the community" }
         }
+      },
+      "Comment": {
+        "type": "object",
+        "description": "A comment on a post (T22a2). No numeric ids",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "body": { "type": "string", "description": "Plain text, render it as text" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "author": { "type": "object", "properties": { "username": { "type": "string" }, "fullName": { "type": "string", "nullable": true }, "profilePictureUrl": { "type": "string", "nullable": true } } },
+          "canDelete": { "type": "boolean", "description": "She wrote it, or she is the owner/moderator of the community of the post" }
+        }
+      },
+      "LikeState": {
+        "type": "object",
+        "properties": { "likedByMe": { "type": "boolean" }, "likeCount": { "type": "integer" } }
       },
       "MyCommunity": {
       "type": "object",
@@ -2358,7 +2463,7 @@
         "type": "object",
         "properties": {
           "id": { "type": "string", "format": "uuid" },
-          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "EVENT_REMINDER", "ADDED_TO_GROUP", "COMMUNITY_JOIN_REQUEST", "COMMUNITY_JOIN_APPROVED", "COMMUNITY_JOIN_REJECTED"] },
+          "type": { "type": "string", "enum": ["NEW_FOLLOWER", "EVENT_JOINED", "EVENT_UPDATED", "EVENT_CANCELLED", "WAITLIST_PROMOTED", "EVENT_REMINDER", "ADDED_TO_GROUP", "COMMUNITY_JOIN_REQUEST", "COMMUNITY_JOIN_APPROVED", "COMMUNITY_JOIN_REJECTED", "POST_COMMENT"] },
           "actor": {
             "type": "object",
             "nullable": true,
@@ -2369,7 +2474,7 @@
             "type": "object",
             "nullable": true,
             "description": "Where to go: EVENT and CONVERSATION carry the public UUID, COMMUNITY the slug, USER the username",
-            "properties": { "type": { "type": "string", "enum": ["EVENT", "COMMUNITY", "CONVERSATION", "USER"] }, "ref": { "type": "string" } }
+            "properties": { "type": { "type": "string", "enum": ["EVENT", "COMMUNITY", "CONVERSATION", "USER", "POST"] }, "ref": { "type": "string" } }
           },
           "payload": { "type": "object", "additionalProperties": true },
           "readAt": { "type": "string", "format": "date-time", "nullable": true },

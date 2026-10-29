@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,12 @@ import io.github.yagogefaell.asaltamontes.media.service.MediaCleanupService;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
 import io.github.yagogefaell.asaltamontes.media.storage.MediaStorage;
 import io.github.yagogefaell.asaltamontes.post.domain.Post;
+import io.github.yagogefaell.asaltamontes.post.domain.PostComment;
+import io.github.yagogefaell.asaltamontes.post.dto.CommentDto;
+import io.github.yagogefaell.asaltamontes.post.dto.CreateCommentDto;
+import io.github.yagogefaell.asaltamontes.post.dto.LikeStateDto;
+import io.github.yagogefaell.asaltamontes.post.repository.PostCommentRepository;
+import io.github.yagogefaell.asaltamontes.post.repository.PostQueryRepository.CommentRow;
 import io.github.yagogefaell.asaltamontes.post.domain.PostMedia;
 import io.github.yagogefaell.asaltamontes.post.dto.CreatePostDto;
 import io.github.yagogefaell.asaltamontes.post.dto.PostDto;
@@ -55,9 +62,11 @@ public class PostService {
     public static final int DEFAULT_PAGE = 20;
     public static final int MAX_PAGE = 50;
     public static final int MAX_MEDIA = 4;
+    public static final int MAX_COMMENT = 1000;
 
     private static final String POST_NOT_FOUND = "Publicación no encontrada";
     private static final String COMMUNITY_NOT_FOUND = "Comunidad no encontrada";
+    private static final String COMMENT_NOT_FOUND = "Comentario no encontrado";
     private static final String USER_NOT_FOUND = "Usuaria no encontrada";
 
     private final PostRepository postRepository;
@@ -71,6 +80,8 @@ public class PostService {
     private final MediaCleanupService mediaCleanup;
     private final MediaStorage storage;
     private final UserActionLimiter limiter;
+    private final PostCommentRepository commentRepository;
+    private final ApplicationEventPublisher events;
 
     @Transactional
     public PostDto create(UserAccount user, CreatePostDto dto) {
@@ -117,7 +128,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public PostDto get(UserAccount viewer, UUID publicId) {
-        PostRow row = queries.one(viewer.getId(), publicId).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
+        PostRow row = queries.one(viewer.getId(), publicId, true).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
         return assemble(List.of(row)).get(0);
     }
 
@@ -148,7 +159,7 @@ public class PostService {
     /** The author, or the owner or a moderator of the community for a community post. */
     @Transactional
     public void delete(UserAccount user, UUID publicId) {
-        PostRow row = queries.one(user.getId(), publicId).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
+        PostRow row = queries.one(user.getId(), publicId, true).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
         if (!row.canDelete()) {
             throw new ForbiddenException("No puedes borrar esta publicación");
         }
@@ -159,6 +170,129 @@ public class PostService {
         // The photos are released; whatever nothing else references is deleted (files after the commit)
         postRepository.deleteMedia(row.postId());
         mediaIds.forEach(id -> mediaCleanup.deleteIfUnreferenced(id, null));
+    }
+
+    /** Posts with a photo from public communities and profiles that are not already in her home feed (T22a2). */
+    @Transactional(readOnly = true)
+    public CursorPageDto<PostDto> explore(UserAccount viewer, String before, Integer limit) {
+        return page(Scope.EXPLORE, viewer, null, before, limit);
+    }
+
+    // ---------------------------------------------------------------- likes (T22a2)
+
+    /**
+     * Idempotent. Members of the community (muted ones too) like; non-members only look (403). On a profile post,
+     * whoever can see it. The counter moves only when the like row was really inserted, in the same transaction.
+     */
+    @Transactional
+    public LikeStateDto like(UserAccount user, UUID publicId) {
+        limiter.postLike(user.getId());
+        PostRow row = interactable(user, publicId);
+        requireMember(row, user, false);
+        if (postRepository.insertLike(row.postId(), user.getId()) == 1) {
+            postRepository.addToLikeCount(row.postId(), 1);
+        } else if (!postRepository.isLikedBy(row.postId(), user.getId())) {
+            // Not a duplicate: the statement refused it (she was banned a moment ago, or the post was just deleted)
+            throw new NotFoundException(POST_NOT_FOUND);
+        }
+        return new LikeStateDto(true, postRepository.likeCountOf(row.postId()));
+    }
+
+    /** Idempotent; whoever can still see the post may withdraw her like. */
+    @Transactional
+    public LikeStateDto unlike(UserAccount user, UUID publicId) {
+        limiter.postLike(user.getId());
+        PostRow row = interactable(user, publicId);
+        if (postRepository.deleteLike(row.postId(), user.getId()) == 1) {
+            postRepository.addToLikeCount(row.postId(), -1);
+        }
+        return new LikeStateDto(false, postRepository.likeCountOf(row.postId()));
+    }
+
+    // ---------------------------------------------------------------- comments (T22a2)
+
+    /** Oldest first. The owner and the moderators of the community also see the comments a block would hide (D-026). */
+    @Transactional(readOnly = true)
+    public CursorPageDto<CommentDto> comments(UserAccount viewer, UUID publicId, String after, Integer limit) {
+        PostRow row = queries.one(viewer.getId(), publicId, true).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
+        int size = limit == null ? DEFAULT_PAGE : Math.clamp(limit, 1, MAX_PAGE);
+        OpaqueCursor cursor = OpaqueCursor.decode(after, OpaqueCursor.COMMENT);
+        if (cursor != null && cursor.order() == null) {
+            throw new BadRequestException("Cursor no válido");
+        }
+        List<CommentRow> rows = queries.comments(row.postId(), viewer.getId(), row.staff(), cursor, size + 1);
+        boolean hasMore = rows.size() > size;
+        List<CommentRow> items = rows.subList(0, Math.min(size, rows.size()));
+        String next = null;
+        if (hasMore) {
+            CommentRow last = items.get(items.size() - 1);
+            next = OpaqueCursor.encode(OpaqueCursor.COMMENT, LocalDateTime.ofInstant(last.createdAt(), ZoneOffset.UTC), last.publicId());
+        }
+        return new CursorPageDto<>(items.stream().map(PostService::toDto).toList(), next);
+    }
+
+    /**
+     * Members of the community comment (the owner and moderators included); a muted member and a non-member get 403.
+     * On a profile post, whoever can see it. Notifies the author of the post after the commit (POST_COMMENT).
+     */
+    @Transactional
+    public CommentDto comment(UserAccount user, UUID publicId, CreateCommentDto dto) {
+        limiter.postComment(user.getId());
+        String text = dto == null || dto.body() == null ? "" : dto.body().strip();
+        if (text.isEmpty()) {
+            throw new BadRequestException("Escribe algo para comentar");
+        }
+        if (text.length() > MAX_COMMENT) {
+            throw new BadRequestException("El comentario no puede superar los " + MAX_COMMENT + " caracteres");
+        }
+        PostRow row = interactable(user, publicId);
+        requireMember(row, user, true);
+        PostComment saved = commentRepository.saveAndFlush(new PostComment(row.postId(), user.getId(), text));
+        postRepository.addToCommentCount(row.postId(), 1);
+        events.publishEvent(new PostCommented(row.publicId(), row.authorId(), user.getId(),
+                text.length() > 80 ? text.substring(0, 80) + "…" : text));
+        return toDto(queries.comment(saved.getPublicId(), user.getId(), false));
+    }
+
+    /** The author of the comment, or the owner or a moderator of the community of the post (D-026: also through blocks). */
+    @Transactional
+    public void deleteComment(UserAccount user, UUID publicId, UUID commentId) {
+        PostRow row = queries.one(user.getId(), publicId, true).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
+        PostComment comment = commentRepository.findLive(commentId, row.postId())
+                .orElseThrow(() -> new NotFoundException(COMMENT_NOT_FOUND));
+        if (!comment.getAuthorId().equals(user.getId()) && !row.staff()) {
+            throw new ForbiddenException("No puedes borrar este comentario");
+        }
+        // Only the request that flips the row moves the counter
+        if (commentRepository.markDeleted(comment.getId(), Instant.now()) == 0) {
+            throw new NotFoundException(COMMENT_NOT_FOUND);
+        }
+        postRepository.addToCommentCount(row.postId(), -1);
+    }
+
+    /** The post as seen when interacting: a block in either direction hides it, also from the moderators (D-026 is for moderating). */
+    private PostRow interactable(UserAccount user, UUID publicId) {
+        return queries.one(user.getId(), publicId, false).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
+    }
+
+    /** Community posts: only members interact; {@code writing} also rules out the muted. Profile posts: nothing more to check. */
+    private void requireMember(PostRow row, UserAccount user, boolean writing) {
+        if (row.communityId() == null) {
+            return;
+        }
+        MemberStatus status = memberRepository.findStatus(row.communityId(), user.getId())
+                .orElseThrow(() -> new ForbiddenException("Solo las miembros de la comunidad pueden participar"));
+        if (status == MemberStatus.BANNED) {
+            throw new NotFoundException(POST_NOT_FOUND);
+        }
+        if (writing && status == MemberStatus.MUTED) {
+            throw new ForbiddenException("Estás silenciada en esta comunidad y no puedes comentar");
+        }
+    }
+
+    private static CommentDto toDto(CommentRow r) {
+        return new CommentDto(r.publicId(), r.body(), r.createdAt(),
+                new PostDto.Author(r.authorUsername(), r.authorFullName(), r.authorPicture()), r.canDelete());
     }
 
     /** Public community: any user who is not banned; private: its members who are not banned. Else the 404 of a missing one. */

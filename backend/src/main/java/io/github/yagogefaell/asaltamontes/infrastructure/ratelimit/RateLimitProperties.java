@@ -36,4 +36,8 @@ public class RateLimitProperties {
     private int eventMessagesPerMinute = 20;
     /** Per user: posts created (T22a). */
     private int postsPerDay = 20;
+    /** Per user: likes and unlikes (T22a2). */
+    private int postLikesPerHour = 200;
+    /** Per user: comments written (T22a2). */
+    private int postCommentsPerHour = 60;
 }

@@ -1,6 +1,6 @@
 # T22 — Muro de comunidad y Home con feed real
 
-- **Estado:** pendiente (T22a1 en PR; spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
+- **Estado:** pendiente (T22a1 mergeada, T22a2 en PR; spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
 - **Fase:** 2b — Comunidades
 - **Depende de:** T14, T17
 - **Rama sugerida:** `feat/T22-community-feed`
@@ -99,3 +99,10 @@ Ranking algorítmico, menciones, hashtags, compartir/repostear, edición de publ
 - **Las publicaciones de quien abandona la comunidad siguen visibles.** Borran la autora, la propietaria y las moderadoras.
 - **T22a2:** miembros de la comunidad dan like y comentan; no miembros solo ven; silenciada: like sí, comentar no. En publicaciones de perfil, like y comentarios para quien pueda verlas.
 - **Explorar** (`GET /api/explore/posts`): fotos de comunidades públicas y perfiles públicos.
+
+## D-026 y detalles de T22a2 (Yago, 2026-10-29)
+- **Moderar ignora el bloqueo (D-026):** dentro de su comunidad, la propietaria y las moderadoras ven y borran **todas** las publicaciones y comentarios, aunque haya bloqueo en cualquier dirección. Fuera de moderar (Inicio, perfil, Explorar, mensajes, notificaciones, dar like y comentar) el bloqueo funciona como hasta ahora. Aplicado a T22a1 (muro de la comunidad, abrir y borrar publicaciones) y a los comentarios de T22a2.
+- **Comentarios:** una sola capa, de más antiguo a más nuevo, paginados con cursor (`after`). Los puede borrar su autora y la propietaria/moderadoras. En publicaciones de perfil solo la autora del comentario (pregunta abierta: ¿la dueña del perfil debería poder borrar comentarios en sus publicaciones?).
+- **Likes y comentarios:** `PUT|DELETE /api/posts/{id}/like` devuelven `{likedByMe, likeCount}`; el contador solo se mueve si la fila del like cambió. Límites 200 likes/h y 60 comentarios/h por usuaria (429 + `Retry-After`).
+- **Notificación `POST_COMMENT`:** a la autora de la publicación, una sin leer por comentarista y publicación (índice único parcial en V19), nunca a sí misma ni con bloqueo. Target `POST` con el id público; el front no tiene pantalla de publicación hasta T22b, así que de momento el clic no navega.
+- **Explorar:** solo publicaciones con foto de comunidades públicas (a las privadas no entra ni su gente) y de perfiles visibles (`PROFILE_VISIBLE`), sin lo que ya está en Inicio y sin bloqueadas. Índice `idx_posts_created` (V19).

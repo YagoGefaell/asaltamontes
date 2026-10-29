@@ -5,5 +5,6 @@ public enum NotificationTargetType {
     EVENT,
     COMMUNITY,
     CONVERSATION,
-    USER
+    USER,
+    POST
 }

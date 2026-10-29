@@ -1,8 +1,10 @@
 package io.github.yagogefaell.asaltamontes.infrastructure.ratelimit;
 
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -28,7 +30,9 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
         "asaltamontes.rate-limit.follows-per-hour=3",
         "asaltamontes.rate-limit.community-messages-per-minute=2",
         "asaltamontes.rate-limit.event-messages-per-minute=2",
-        "asaltamontes.rate-limit.posts-per-day=2"})
+        "asaltamontes.rate-limit.posts-per-day=2",
+        "asaltamontes.rate-limit.post-likes-per-hour=3",
+        "asaltamontes.rate-limit.post-comments-per-hour=2"})
 class RateLimitIT extends AbstractIntegrationTest {
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -213,6 +217,32 @@ class RateLimitIT extends AbstractIntegrationTest {
         publish(ana).andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
         publish(bea).andExpect(status().isCreated());
+    }
+
+    @Test
+    void likingAndCommenting_areLimitedPerUser() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        String id = objectMapper.readTree(publish(ana).andExpect(status().isCreated()).andReturn().getResponse().getContentAsString())
+                .get("id").asText();
+
+        // Likes and unlikes share the limit, and a repeated (no-op) like counts too
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(put("/api/posts/" + id + "/like").with(auth.bearer(bea))).andExpect(status().isOk());
+        }
+        mockMvc.perform(delete("/api/posts/" + id + "/like").with(auth.bearer(bea))).andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+        mockMvc.perform(put("/api/posts/" + id + "/like").with(auth.bearer(ana))).andExpect(status().isOk());
+
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/posts/" + id + "/comments").with(auth.bearer(bea)).contentType(MediaType.APPLICATION_JSON)
+                    .content(json(java.util.Map.of("body", "hola")))).andExpect(status().isCreated());
+        }
+        mockMvc.perform(post("/api/posts/" + id + "/comments").with(auth.bearer(bea)).contentType(MediaType.APPLICATION_JSON)
+                .content(json(java.util.Map.of("body", "hola")))).andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+        mockMvc.perform(post("/api/posts/" + id + "/comments").with(auth.bearer(ana)).contentType(MediaType.APPLICATION_JSON)
+                .content(json(java.util.Map.of("body", "hola")))).andExpect(status().isCreated());
     }
 
     private org.springframework.test.web.servlet.ResultActions publish(UserAccount by) throws Exception {

@@ -142,3 +142,8 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 - **Cuentas sin verificar:** límites propuestos en T24, apagables por configuración mientras no haya correo real.
 - **Forma de trabajar (preferencia fija):** sin trabajo que no dependa de la revisión de Yago, o con el límite WIP alcanzado, `/end-session` y parar. Nada de `ScheduleWakeup` de espera ni comprobar periódicamente si se ha mergeado; Yago avisa cuándo seguir.
 
+
+## D-026 · Moderación dentro de la comunidad: la propietaria y las moderadoras lo ven y borran todo, aunque haya bloqueo (2026-10-29)
+- **Decisión (Yago):** dentro de su comunidad, la propietaria y las moderadoras (que no estén baneadas) ven y pueden borrar **todas** las publicaciones y comentarios, aunque haya un bloqueo entre ellas y quien los escribió, **en cualquier dirección** (D-022). Moderar es su responsabilidad y un bloqueo personal no la deja ciega.
+- **Fuera de moderar, el bloqueo funciona como hasta ahora:** Inicio, perfiles, mensajes, notificaciones, Explorar y las acciones de participar (dar like, comentar) siguen ocultando lo de la usuaria bloqueada o que te bloqueó.
+- **Consecuencias:** `PostQueryRepository` aplica la excepción solo en el muro de la comunidad y al abrir/borrar una publicación (`moderating`), y en la lista de comentarios para quien modera. Una miembro que no es del equipo de moderación no gana nada: sigue sin ver lo de quien bloqueó o la bloqueó. Aplica a T22a1 (ver y borrar publicaciones en la comunidad, #132) y T22a2 (comentarios).

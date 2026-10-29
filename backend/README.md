@@ -110,7 +110,7 @@ Chat: messages are trimmed and limited to 2000 characters; groups to `asaltamont
 
 Rate limiting (in memory, per minute): `POST /auth/login` 5 per IP and 5 per username, `/auth/register` 3 per IP, `/auth/refresh` 30 per IP → `429` with `Retry-After`. Tune with `asaltamontes.rate-limit.*` (`enabled`, `login-per-minute`, `register-per-minute`, `refresh-per-minute`); disabled in the `test` profile.
 
-Per-user limits (in memory, same `429` + `Retry-After`; T18): `PATCH /api/events/{id}` 30 per hour (`event-edits-per-hour`), `POST /api/conversations/group` 10 per day (`groups-created-per-day`), `POST /api/conversations/{id}/participants` 60 per hour (`group-member-adds-per-hour`), `POST /api/users/follow/{username}` 100 per hour (`follows-per-hour`), `POST /api/posts` 20 per day (`posts-per-day`, T22a; in a community only its owner and moderators may post, anybody on her own profile: D-025), all under `asaltamontes.rate-limit.*` (set via environment as `ASALTAMONTES_RATE_LIMIT_FOLLOWS_PER_HOUR`, etc.). After a rejected request to join a private community the user waits `asaltamontes.community.join-request-cooldown` (default `7d`; `0` disables it) before asking again (`429`).
+Per-user limits (in memory, same `429` + `Retry-After`; T18): `PATCH /api/events/{id}` 30 per hour (`event-edits-per-hour`), `POST /api/conversations/group` 10 per day (`groups-created-per-day`), `POST /api/conversations/{id}/participants` 60 per hour (`group-member-adds-per-hour`), `POST /api/users/follow/{username}` 100 per hour (`follows-per-hour`), `POST /api/posts` 20 per day (`posts-per-day`, T22a; in a community only its owner and moderators may post, anybody on her own profile: D-025), `PUT|DELETE /api/posts/{id}/like` 200 per hour (`post-likes-per-hour`, T22a2), `POST /api/posts/{id}/comments` 60 per hour (`post-comments-per-hour`, T22a2), all under `asaltamontes.rate-limit.*` (set via environment as `ASALTAMONTES_RATE_LIMIT_FOLLOWS_PER_HOUR`, etc.). After a rejected request to join a private community the user waits `asaltamontes.community.join-request-cooldown` (default `7d`; `0` disables it) before asking again (`429`).
 
 Every response carries an `X-Request-Id` header (the incoming one if valid, otherwise generated); the same id appears in every log line of that request.
 
@@ -171,6 +171,7 @@ The backend exposes REST endpoints and WebSocket channels for authentication, us
 - `POST /api/auth/login` — Login and token issuance
 - `GET /api/users/{username}` — Public user profile
 - `POST /api/users/follow/{username}` — Follow user
+- `PUT|DELETE /api/posts/{id}/like`, `GET|POST /api/posts/{id}/comments`, `DELETE /api/posts/{id}/comments/{commentId}`, `GET /api/explore/posts` — likes, comments and the Explore grid (T22a2; members like and comment, the muted only like, non-members only look; owner and moderators see and delete everything in their community through blocks: D-026)
 - `GET /api/messages/chats` — List active conversations
 
 ### WebSocket (STOMP)
