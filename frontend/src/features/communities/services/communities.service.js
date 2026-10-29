@@ -4,11 +4,12 @@ export const COMMUNITIES_PAGE_SIZE = 20
 
 // -------- GET ALL COMMUNITIES --------
 // One page (Spring Page) of the communities, or of those whose name contains `query` (T14)
-export async function getCommunitiesRequest({ page = 0, query = '', city = '', province = '' } = {}) {
+export async function getCommunitiesRequest({ page = 0, query = '', city = '', province = '', sort = '' } = {}) {
   const params = new URLSearchParams({ page: String(page), size: String(COMMUNITIES_PAGE_SIZE) })
   if (query.trim()) params.set('query', query.trim())
   if (city.trim()) params.set('city', city.trim())
   if (province.trim()) params.set('province', province.trim())
+  if (sort) params.set('sort', sort) // e.g. 'memberCount,desc'
   try {
     const response = await apiClient.get(`/api/communities?${params}`)
     return {

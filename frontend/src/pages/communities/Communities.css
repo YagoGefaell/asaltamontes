@@ -205,14 +205,6 @@
   font-weight: 600;
 }
 
-.my-community__event {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .my-community__chat {
   position: relative;
@@ -248,4 +240,87 @@
 
 .communities-section .communities-list {
   padding: 0;
+}
+
+/* Fila deslizable «Sugeridas para ti» (T29l) */
+.communities-section--rail {
+  padding-inline: 0;
+}
+
+.communities-section--rail .communities-section__title {
+  padding-inline: var(--space-4);
+}
+
+.suggested-rail {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 var(--space-4) var(--space-2);
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--space-4);
+}
+
+.suggested-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.suggested-rail__item {
+  flex: 0 0 160px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  scroll-snap-align: start;
+}
+
+.suggested-rail__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--touch-min);
+  color: var(--text-color);
+  text-decoration: none;
+}
+
+.suggested-rail__link:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: 2px;
+}
+
+.suggested-rail__name,
+.suggested-rail__meta {
+  width: 100%;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.suggested-rail__name {
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+.suggested-rail__meta {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+.suggested-rail__item .community-join-button.community-join-button {
+  min-width: 0;
+  min-height: 2rem;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
 }

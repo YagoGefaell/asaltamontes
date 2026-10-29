@@ -74,7 +74,7 @@ describe('Communities: tus comunidades (T29i)', () => {
     const link = await screen.findByRole('link', { name: /Trail Vigo/ })
     expect(link).toHaveAttribute('href', '/communities/trail-vigo')
     expect(link).toHaveTextContent('bea: quedamos')
-    expect(link).toHaveTextContent('Próxima quedada')
+    expect(link).not.toHaveTextContent('Próxima quedada')
     expect(link.querySelector('button')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Abrir el chat de Trail Vigo, 3 sin leer' }))
     expect(navigate).toHaveBeenCalledWith('/messages', {
@@ -136,15 +136,45 @@ describe('Communities: tus comunidades (T29i)', () => {
     expect(await screen.findByText('Aún no estás en ninguna comunidad')).toBeInTheDocument()
     expect(await screen.findByText('Cabras de Vigo')).toBeInTheDocument()
     expect(screen.queryByText('Ya soy miembro')).not.toBeInTheDocument()
-    expect(getCommunitiesRequest).toHaveBeenCalledWith({ city: 'Vigo' })
+    expect(getCommunitiesRequest).toHaveBeenCalledWith({ city: 'Vigo', sort: 'memberCount,desc' })
     // the + of the header goes straight to the create screen; the empty state has its button
     expect(screen.getByRole('link', { name: 'Crear comunidad' })).toHaveAttribute('href', '/communities/new')
     expect(screen.getByRole('button', { name: 'Crear comunidad' })).toBeInTheDocument()
   })
 
-  it('with none and no city on the profile: no suggestions request', async () => {
+  it('with none and no city on the profile: only the biggest communities are requested', async () => {
     renderPage({ city: '' })
     await screen.findByText('Aún no estás en ninguna comunidad')
-    await waitFor(() => expect(getCommunitiesRequest).not.toHaveBeenCalled())
+    await waitFor(() => expect(getCommunitiesRequest).toHaveBeenCalledWith({ sort: 'memberCount,desc' }))
+    expect(getCommunitiesRequest).not.toHaveBeenCalledWith(expect.objectContaining({ city: expect.anything() }))
+  })
+
+  it('suggests, even with communities, her city first, then the biggest, without duplicates or her own', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([community()]))
+    const c = (id, over = {}) => ({ id, name: `Com ${id}`, slug: id, role: null, memberCount: 5, city: 'Lugo', visibility: 'PUBLIC', ...over })
+    getCommunitiesRequest.mockImplementation(async ({ city }) =>
+      page(city ? [c('local', { city: 'Vigo' })] : [c('big'), c('local', { city: 'Vigo' }), c('mine', { role: 'MEMBER' })]))
+    renderPage({ city: 'Vigo' })
+    const section = await screen.findByRole('region', { name: 'Sugeridas para ti' })
+    const names = [...section.querySelectorAll('.suggested-rail__name')].map((n) => n.textContent)
+    expect(names).toEqual(['Com local', 'Com big'])
+    expect(screen.queryByText('Tus comunidades')).not.toBeInTheDocument()
+  })
+
+  it('shows the members and the next meetup when the chat has no messages, the last message otherwise', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([
+      community({
+        id: 'a', name: 'Sin mensajes', slug: 'a', memberCount: 8,
+        chat: { conversationId: 'x', lastMessage: null, lastSender: null, lastMessageAt: null, unreadCount: 0 },
+        nextEvent: { id: 'e1', title: 'T', startsAt: '2030-05-04T08:00:00Z', timezone: 'Europe/Madrid' },
+      }),
+      community({
+        id: 'b', name: 'Sin nada', slug: 'b', memberCount: 1,
+        chat: { conversationId: 'y', lastMessage: null, lastSender: null, lastMessageAt: null, unreadCount: 0 },
+      }),
+    ]))
+    renderPage()
+    expect(await screen.findByText(/^8 miembros · Próxima quedada sáb\.? 4$/)).toBeInTheDocument()
+    expect(screen.getByText('1 miembro')).toBeInTheDocument()
   })
 })

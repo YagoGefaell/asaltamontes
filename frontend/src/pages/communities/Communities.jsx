@@ -20,13 +20,15 @@ import Avatar from "../../shared/ui/Avatar";
 import Skeleton from "../../shared/ui/Skeleton";
 
 const SKELETON_ROWS = 4;
-const SUGGESTIONS = 5;
+const SUGGESTIONS = 8;
 
-const formatEventDate = (event) =>
+/** "sáb 31": day of the week and of the month, in the event's time zone. */
+const formatEventDay = (event) =>
   new Intl.DateTimeFormat("es-ES", {
-    weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
-    timeZone: event.timezone || undefined,
-  }).format(new Date(event.startsAt));
+    weekday: "short", day: "numeric", timeZone: event.timezone || undefined,
+  }).format(new Date(event.startsAt)).replace(".", "");
+
+const membersLabel = (count) => `${count} ${count === 1 ? "miembro" : "miembros"}`;
 
 /** Short time of the last message: the hour today, the day otherwise. */
 function formatActivity(dateLike) {
@@ -34,6 +36,12 @@ function formatActivity(dateLike) {
   if (!date) return "";
   if (date.toDateString() === new Date().toDateString()) return formatMessageTime(dateLike);
   return new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" }).format(date);
+}
+
+/** Last message if there is one; otherwise "8 miembros · Próxima quedada sáb 31". */
+function rowSubtitle({ chat, memberCount, nextEvent }) {
+  if (chat?.lastMessageAt) return chatPreview(chat);
+  return [membersLabel(memberCount ?? 0), nextEvent && `Próxima quedada ${formatEventDay(nextEvent)}`].filter(Boolean).join(" · ");
 }
 
 function chatPreview(chat) {
@@ -82,7 +90,7 @@ function PendingSection({ pending }) {
 }
 
 function MyCommunityRow({ community, onOpenChat }) {
-  const { chat, nextEvent } = community;
+  const { chat } = community;
   const unread = chat?.unreadCount ?? 0;
   return (
     <li className="my-community">
@@ -94,11 +102,8 @@ function MyCommunityRow({ community, onOpenChat }) {
             <span className="my-community__time">{formatActivity(chat?.lastMessageAt)}</span>
           </span>
           <span className={`my-community__preview${unread > 0 ? " my-community__preview--unread" : ""}`}>
-            {chatPreview(chat)}
+            {rowSubtitle(community)}
           </span>
-          {nextEvent && (
-            <span className="my-community__event">Próxima quedada · {formatEventDate(nextEvent)}</span>
-          )}
         </span>
       </Link>
       {chat?.conversationId && (
@@ -116,38 +121,47 @@ function MyCommunityRow({ community, onOpenChat }) {
   );
 }
 
-function Suggestions({ city }) {
-  const fetchPage = useCallback(async () => {
-    const result = await getCommunitiesRequest({ city });
-    return { items: result.items.filter((c) => !c.role).slice(0, SUGGESTIONS), hasMore: false };
-  }, [city]);
-  const { items } = useSearchSection(fetchPage, city, !!city);
+/** Not-yet-member communities: first those of her city, then the biggest ones. */
+async function fetchSuggested(city) {
+  const bySize = { sort: "memberCount,desc" };
+  const [local, all] = await Promise.all([
+    city ? getCommunitiesRequest({ city, ...bySize }).catch(() => ({ items: [] })) : { items: [] },
+    getCommunitiesRequest(bySize),
+  ]);
+  const seen = new Set();
+  const items = [...local.items, ...all.items].filter((c) => {
+    if (c.role || seen.has(c.id)) return false;
+    seen.add(c.id);
+    return true;
+  });
+  return { items: items.slice(0, SUGGESTIONS), hasMore: false };
+}
+
+function Suggested({ city }) {
+  const fetchPage = useCallback(() => fetchSuggested(city), [city]);
+  const { items } = useSearchSection(fetchPage, city);
   if (items.length === 0) return null;
   return (
-    <section className="communities-section" aria-label={`Comunidades en ${city}`}>
-      <h2 className="communities-section__title">En {city}</h2>
-      <div className="communities-list">
+    <section className="communities-section communities-section--rail" aria-label="Sugeridas para ti">
+      <h2 className="communities-section__title">Sugeridas para ti</h2>
+      <ul className="suggested-rail">
         {items.map((community) => (
-          <div key={community.id} className="community-row">
-            <Link to={communityPath(community)} className="community-row__link">
+          <li key={community.id} className="suggested-rail__item">
+            <Link to={communityPath(community)} className="suggested-rail__link">
               <Avatar src={community.imageUrl} name={community.name} size="lg" />
-              <span className="community-row__text">
-                <span className="community-row__name">{community.name}</span>
-                <span className="community-members">
-                  {[community.city, `${community.memberCount} ${community.memberCount === 1 ? "miembro" : "miembros"}`].filter(Boolean).join(" · ")}
-                </span>
+              <span className="suggested-rail__name">{community.name}</span>
+              <span className="suggested-rail__meta">
+                {[community.city, membersLabel(community.memberCount ?? 0)].filter(Boolean).join(" · ")}
               </span>
             </Link>
-            <div className="community-row__action">
-              {community.visibility === "PRIVATE" ? (
-                <CommunityRequestButton communityId={community.id} />
-              ) : (
-                <CommunityJoinButton communityId={community.id} role={community.role} joinLabel="Unirse" memberLabel="Miembro" />
-              )}
-            </div>
-          </div>
+            {community.visibility === "PRIVATE" ? (
+              <CommunityRequestButton communityId={community.id} />
+            ) : (
+              <CommunityJoinButton communityId={community.id} role={community.role} joinLabel="Unirse" memberLabel="Miembro" />
+            )}
+          </li>
         ))}
-      </div>
+      </ul>
     </section>
   );
 }
@@ -199,7 +213,6 @@ const Communities = () => {
       <PendingSection pending={pending} />
 
       <section className="communities-section" aria-label="Tus comunidades" aria-busy={mine.loading || undefined}>
-        {!empty && <h2 className="communities-section__title">Tus comunidades</h2>}
 
         {mine.loading && (
           <ul className="my-communities">
@@ -245,7 +258,7 @@ const Communities = () => {
           action={<Button onClick={() => navigate("/communities/new")}>Crear comunidad</Button>}
         />
       )}
-      {empty && <Suggestions city={userProfile?.city?.trim() || ""} />}
+      <Suggested city={userProfile?.city?.trim() || ""} />
     </div>
   );
 };
