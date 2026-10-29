@@ -245,7 +245,8 @@ public class NotificationService {
 
     static NotificationDto toDto(NotificationRow row) {
         ActorDto actor = row.actorUsername() == null ? null
-                : new ActorDto(row.actorUsername(), row.actorFullName(), row.actorPicture());
+                : new ActorDto(row.actorUsername(), row.actorFullName(), row.actorPicture(),
+                        row.actorFollowedByRecipient());
         TargetDto target = row.targetType() == null ? null : new TargetDto(row.targetType(), row.targetRef());
         return new NotificationDto(row.publicId(), row.type(), actor, target,
                 row.payload() == null ? Map.of() : row.payload(), row.readAt(), row.createdAt());

@@ -1,19 +1,29 @@
 import "./Notifications.css";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaCheckDouble } from "react-icons/fa";
 import { useNotifications } from "../../features/notifications/hooks/useNotifications";
 import {
   formatAge,
   notificationDestination,
   notificationText,
 } from "../../features/notifications/utils/notificationText";
+import FollowUserButton from "../../shared/components/FollowUserButton";
 import Avatar from "../../shared/ui/Avatar";
 import EmptyState from "../../shared/ui/EmptyState";
 import PageHeader from "../../shared/ui/PageHeader";
 
 const Notifications = () => {
   const navigate = useNavigate();
-  const { items, unreadCount, hasMore, loading, error, loadMore, refresh, markRead, markAllRead } = useNotifications();
+  const { items, hasMore, loading, error, loadMore, refresh, markRead, markAllRead } = useNotifications();
+
+  // Everything is marked as read on entering (the Home counter clears), but what was new stays highlighted for the visit
+  const [fresh, setFresh] = useState(() => new Set());
+  const unseen = items.filter((n) => !n.readAt && !fresh.has(n.id)).map((n) => n.id);
+  if (unseen.length > 0) setFresh(new Set([...fresh, ...unseen]));
+  const hasUnread = items.some((n) => !n.readAt);
+  useEffect(() => {
+    if (hasUnread) markAllRead();
+  }, [hasUnread, markAllRead]);
 
   const open = (notification) => {
     markRead(notification);
@@ -26,11 +36,6 @@ const Notifications = () => {
       <PageHeader
         title="Notificaciones"
         onBack={() => navigate(-1)}
-        actions={unreadCount > 0 && (
-          <button type="button" onClick={markAllRead} aria-label="Marcar todas como leídas" title="Marcar todas como leídas">
-            <FaCheckDouble aria-hidden="true" />
-          </button>
-        )}
       />
 
       {error && (
@@ -47,15 +52,11 @@ const Notifications = () => {
       <ul className="notifications-list">
         {items.map((notification) => {
           const { text, detail } = notificationText(notification);
-          const unread = !notification.readAt;
+          const unread = fresh.has(notification.id) || !notification.readAt;
           const actor = notification.actor;
           return (
-            <li key={notification.id}>
-              <button
-                type="button"
-                className={`notification-item${unread ? " unread" : ""}`}
-                onClick={() => open(notification)}
-              >
+            <li key={notification.id} className={`notification-item${unread ? " unread" : ""}`}>
+              <button type="button" className="notif-main" onClick={() => open(notification)}>
                 {actor ? (
                   <Avatar src={actor.profilePictureUrl} name={actor.fullName || actor.username} size="sm" />
                 ) : (
@@ -66,8 +67,18 @@ const Notifications = () => {
                   {detail && <span className="notif-detail">{detail}</span>}
                   <span className="notif-time">{formatAge(notification.createdAt)}</span>
                 </span>
-                {unread && <span className="notif-dot" aria-label="Sin leer" />}
+                {unread && <span className="notif-dot" aria-label="Nueva" />}
               </button>
+              {notification.type === "NEW_FOLLOWER" && actor && (
+                <div className="notif-action">
+                  <FollowUserButton
+                    userId={actor.username}
+                    initialIsFollowing={Boolean(actor.followedByMe)}
+                    followLabel="Seguir también"
+                    unfollowLabel="Siguiendo"
+                  />
+                </div>
+              )}
             </li>
           );
         })}

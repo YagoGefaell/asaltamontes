@@ -4,6 +4,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Notifications from './Notifications.jsx'
 import { NotificationsContext } from '../../features/notifications/hooks/notifications.context'
 
+vi.mock('../../shared/components/FollowUserButton', () => ({
+  default: ({ userId, initialIsFollowing, followLabel, unfollowLabel }) => (
+    <button type="button">{initialIsFollowing ? unfollowLabel : followLabel} {userId}</button>
+  ),
+}))
+
 const actions = { loadMore: vi.fn(), refresh: vi.fn(), markRead: vi.fn(), markAllRead: vi.fn() }
 
 function renderPage(value) {
@@ -36,21 +42,29 @@ describe('Notifications page', () => {
     expect(screen.getByText('No tienes notificaciones')).toBeTruthy()
   })
 
-  it('lists them, highlights the unread ones and offers to mark all as read', () => {
+  it('lists them and keeps the new ones highlighted while marking everything as read on entering', () => {
     renderPage({ items: [follower, cancelled], unreadCount: 1 })
 
     expect(screen.getByText('Ana Ruiz ha empezado a seguirte')).toBeTruthy()
     expect(screen.getByText('«Trail» se ha cancelado')).toBeTruthy()
-    expect(screen.getByText('Ana Ruiz ha empezado a seguirte').closest('button').className).toContain('unread')
-    expect(screen.getByText('«Trail» se ha cancelado').closest('button').className).not.toContain('unread')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Marcar todas como leídas' }))
-    expect(actions.markAllRead).toHaveBeenCalled()
+    expect(screen.getByText('Ana Ruiz ha empezado a seguirte').closest('li').className).toContain('unread')
+    expect(screen.getByText('«Trail» se ha cancelado').closest('li').className).not.toContain('unread')
+    expect(actions.markAllRead).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('button', { name: 'Marcar todas como leídas' })).toBeNull()
   })
 
-  it('hides "mark all" when nothing is unread', () => {
+  it('does not mark anything when nothing is unread', () => {
     renderPage({ items: [cancelled] })
-    expect(screen.queryByRole('button', { name: 'Marcar todas como leídas' })).toBeNull()
+    expect(actions.markAllRead).not.toHaveBeenCalled()
+  })
+
+  it('a new follower gets a follow-back button, or "Siguiendo" if already followed', () => {
+    const followed = { ...follower, id: 'n3', actor: { ...follower.actor, username: 'bea', followedByMe: true } }
+    renderPage({ items: [follower, followed, cancelled] })
+
+    expect(screen.getByText('Seguir también ana')).toBeTruthy()
+    expect(screen.getByText('Siguiendo bea')).toBeTruthy()
+    expect(screen.getAllByText(/Seguir también|Siguiendo/)).toHaveLength(2)
   })
 
   it('a click marks it as read and goes to its target', () => {

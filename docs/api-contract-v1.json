@@ -2468,7 +2468,7 @@
             "type": "object",
             "nullable": true,
             "description": "Who did it; null for system notifications (WAITLIST_PROMOTED, EVENT_REMINDER)",
-            "properties": { "username": { "type": "string" }, "fullName": { "type": "string", "nullable": true }, "profilePictureUrl": { "type": "string", "nullable": true } }
+            "properties": { "username": { "type": "string" }, "fullName": { "type": "string", "nullable": true }, "profilePictureUrl": { "type": "string", "nullable": true }, "followedByMe": { "type": "boolean", "description": "Whether the caller already follows the actor" } }
           },
           "target": {
             "type": "object",
