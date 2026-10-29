@@ -261,6 +261,10 @@ public class PostService {
         PostComment comment = commentRepository.findLive(commentId, row.postId())
                 .orElseThrow(() -> new NotFoundException(COMMENT_NOT_FOUND));
         if (!comment.getAuthorId().equals(user.getId()) && !row.staff()) {
+            // A comment hidden from her by a block answers like one that does not exist
+            if (blockRepository.existsEitherWay(user.getId(), comment.getAuthorId())) {
+                throw new NotFoundException(COMMENT_NOT_FOUND);
+            }
             throw new ForbiddenException("No puedes borrar este comentario");
         }
         // Only the request that flips the row moves the counter

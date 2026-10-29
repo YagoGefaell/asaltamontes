@@ -320,6 +320,10 @@ class PostInteractionIT extends AbstractIntegrationTest {
 
         assertThat(body(comments(bea, id, null, 20)).get("items").get(0).get("canDelete").asBoolean()).isFalse();
         deleteComment(bea, id, byAna).andExpect(status().isForbidden());
+        // Once Bea blocks Ana, Ana's comment is invisible to her: same 404 as a missing one
+        mockMvc.perform(post("/api/users/" + ana.getUsername() + "/block").with(auth.bearer(bea))).andExpect(status().is2xxSuccessful());
+        deleteComment(bea, id, byAna).andExpect(status().isNotFound());
+        mockMvc.perform(delete("/api/users/" + ana.getUsername() + "/block").with(auth.bearer(bea))).andExpect(status().is2xxSuccessful());
         deleteComment(ana, id, UUID.randomUUID().toString()).andExpect(status().isNotFound());
         deleteComment(ana, id, byAna).andExpect(status().isNoContent());
         assertThat(counter(id, "comment_count")).isZero();
