@@ -155,6 +155,16 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
                 cb.and(cb.equal(e.get("organizer").get("id"), userId), cb.isNull(e.get("community"))),
                 cb.exists(member)));
 
+        // D-022: no events of users blocked in either direction (one NOT EXISTS on the PK-indexed user_blocks)
+        Subquery<Integer> blocked = query.subquery(Integer.class);
+        Root<UserBlock> block = blocked.from(UserBlock.class);
+        blocked.select(cb.literal(1)).where(cb.or(
+                cb.and(cb.equal(block.get("blocker").get("id"), userId),
+                        cb.equal(block.get("blocked"), e.get("organizer"))),
+                cb.and(cb.equal(block.get("blocked").get("id"), userId),
+                        cb.equal(block.get("blocker"), e.get("organizer")))));
+        where.add(cb.not(cb.exists(blocked)));
+
         if (f.to() != null) {
             where.add(cb.lessThanOrEqualTo(e.get("startsAt"), f.to()));
         }
@@ -210,15 +220,6 @@ public class EventSearchRepositoryImpl implements EventSearchRepository {
                     cb.equal(follow.get("follower").get("id"), userId),
                     cb.equal(follow.get("following"), e.get("organizer")));
             where.add(cb.exists(followed));
-            // A block removes the follow, but the listing must not depend on that
-            Subquery<Integer> blocked = query.subquery(Integer.class);
-            Root<UserBlock> block = blocked.from(UserBlock.class);
-            blocked.select(cb.literal(1)).where(cb.or(
-                    cb.and(cb.equal(block.get("blocker").get("id"), userId),
-                            cb.equal(block.get("blocked"), e.get("organizer"))),
-                    cb.and(cb.equal(block.get("blocked").get("id"), userId),
-                            cb.equal(block.get("blocker"), e.get("organizer")))));
-            where.add(cb.not(cb.exists(blocked)));
         }
         return where;
     }
