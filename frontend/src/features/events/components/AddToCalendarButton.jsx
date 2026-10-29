@@ -1,16 +1,16 @@
 import { useState } from 'react'
-import Button from '../../../shared/forms/Button.jsx'
-import FormError from '../../../shared/forms/FormError.jsx'
+import { FaRegCalendarPlus } from 'react-icons/fa'
 import { getEventCalendarRequest } from '../services/events.service.js'
+import './EventActions.css'
 
-// Downloads the .ics of the event (T21) so the calendar app of her phone or computer opens it
-export default function AddToCalendarButton({ event }) {
+// Downloads the .ics of the event (T21) so the calendar app of her phone or computer opens it.
+// Icon-with-text action of the detail row (T29m); the error is shown by the parent through `onError`.
+export default function AddToCalendarButton({ event, onError }) {
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
   const handleClick = async () => {
     setLoading(true)
-    setError('')
+    onError?.('')
     try {
       const text = await getEventCalendarRequest(event.id)
       const url = URL.createObjectURL(new Blob([text], { type: 'text/calendar;charset=utf-8' }))
@@ -22,18 +22,16 @@ export default function AddToCalendarButton({ event }) {
       link.remove()
       URL.revokeObjectURL(url)
     } catch (err) {
-      setError(err.message)
+      onError?.(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <>
-      <Button variant="outline" onClick={handleClick} loading={loading}>
-        Añadir al calendario
-      </Button>
-      <FormError message={error} />
-    </>
+    <button type="button" className="event-action" onClick={handleClick} disabled={loading} aria-label="Añadir al calendario">
+      <FaRegCalendarPlus aria-hidden="true" />
+      <span>Calendario</span>
+    </button>
   )
 }

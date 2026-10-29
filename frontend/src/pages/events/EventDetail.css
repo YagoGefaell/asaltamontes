@@ -11,13 +11,6 @@
   padding: var(--space-4);
 }
 
-.event-detail__title {
-  margin: 0;
-  font-size: var(--text-xl);
-  font-weight: 700;
-  overflow-wrap: anywhere;
-}
-
 .event-detail__content {
   display: flex;
   flex-direction: column;
@@ -48,18 +41,86 @@
   text-transform: uppercase;
 }
 
-.event-detail__tags {
+.event-detail__title-row {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-.event-detail__tags span {
-  font-size: var(--text-sm);
+.event-detail__title-row .event-detail__when {
+  white-space: nowrap;
+}
+
+.event-detail__organizer-label {
+  flex-shrink: 0;
   padding: 2px var(--space-3);
   border-radius: var(--radius-pill);
   background: var(--surface);
   border: 1px solid var(--border-soft);
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+/* Type · level · km · places in one line; scrolls sideways instead of wrapping (DESIGN «Detalle de quedada») */
+.event-detail__meta {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.event-detail__meta::-webkit-scrollbar {
+  display: none;
+}
+
+.event-detail__header-title {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Cover: photo or, without one, a block in the colour of the quedadas (orange) */
+.event-detail__cover {
+  display: block;
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.event-detail__cover--plain {
+  background: var(--secondary);
+}
+
+.event-detail__actions {
+  display: flex;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.event-detail__stack-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.event-detail__stack {
+  display: flex;
+}
+
+.event-detail__stack-avatar {
+  border: 2px solid var(--background);
+}
+
+.event-detail__stack-avatar + .event-detail__stack-avatar {
+  margin-left: -12px;
 }
 
 .event-detail__action {
@@ -88,14 +149,6 @@
 .event-detail__section h3,
 .event-detail__section p {
   margin: 0;
-}
-
-.event-detail__directions {
-  color: var(--primary);
-  font-weight: 600;
-  min-height: var(--touch-min);
-  display: inline-flex;
-  align-items: center;
 }
 
 .event-detail__muted {
