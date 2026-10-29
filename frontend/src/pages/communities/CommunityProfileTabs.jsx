@@ -37,18 +37,24 @@ function ErrorBox({ message, onRetry }) {
 export function CommunityEventsTab({ community, section }) {
   const navigate = useNavigate();
   const { items, loading, loadingMore, hasMore, error, loadMore, retry } = section;
+  const canCreate = isStaff(community.role);
+  const createButton = (
+    <Button size="small" onClick={() => navigate(`/events/new?community=${community.id}`)}>Crear quedada</Button>
+  );
 
   return (
     <div className="pf-panel" role="tabpanel" id="community-panel-events" aria-labelledby="community-events" aria-busy={loading || undefined}>
-      {isStaff(community.role) && (
-        <div className="pf-item">
-          <Button size="small" onClick={() => navigate(`/events/new?community=${community.id}`)}>Crear quedada</Button>
-        </div>
+      {canCreate && items.length > 0 && (
+        <div className="pf-item">{createButton}</div>
       )}
       {loading && <Rows height="104px" />}
       {!loading && error && <ErrorBox message={error} onRetry={retry} />}
       {!loading && !error && items.length === 0 && (
-        <EmptyState icon={<FaCalendarAlt />} title="Todavía no hay quedadas programadas" />
+        <EmptyState
+          icon={<FaCalendarAlt />}
+          title="Todavía no hay quedadas programadas"
+          action={canCreate ? createButton : undefined}
+        />
       )}
       {!loading && !error && items.map((event) => (
         <div className="pf-item" key={event.id}>

@@ -27,6 +27,13 @@ describe('CommunityEventsTab', () => {
     expect(screen.getByRole('button', { name: 'Crear quedada' })).toBeInTheDocument()
   })
 
+  it('puts "Crear quedada" under the empty message, centered, when staff has no events', () => {
+    renderIn(<CommunityEventsTab community={{ ...community, role: 'OWNER' }} section={section()} />)
+    const button = screen.getByRole('button', { name: 'Crear quedada' })
+    expect(button.closest('.empty-state__action')).not.toBeNull()
+    expect(screen.getAllByRole('button', { name: 'Crear quedada' })).toHaveLength(1)
+  })
+
   it('hides "Crear quedada" for plain members and explains when there are no events', () => {
     renderIn(<CommunityEventsTab community={community} section={section()} />)
     expect(screen.getByText('Todavía no hay quedadas programadas')).toBeInTheDocument()
