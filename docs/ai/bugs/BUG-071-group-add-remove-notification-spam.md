@@ -1,6 +1,6 @@
 # BUG-071 — Añadir y quitar a alguien de un grupo en bucle genera notificaciones sin límite
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** probable
 - **Área:** backend/message

@@ -24,6 +24,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
         "asaltamontes.rate-limit.enabled=true",
         "asaltamontes.rate-limit.event-edits-per-hour=2",
         "asaltamontes.rate-limit.groups-created-per-day=2",
+        "asaltamontes.rate-limit.group-member-adds-per-hour=2",
         "asaltamontes.rate-limit.follows-per-hour=3",
         "asaltamontes.rate-limit.community-messages-per-minute=2",
         "asaltamontes.rate-limit.event-messages-per-minute=2"})
@@ -121,6 +122,26 @@ class RateLimitIT extends AbstractIntegrationTest {
         createGroup(ana, bea).andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
         createGroup(bea, ana).andExpect(status().isOk());
+    }
+
+    @Test
+    void addingAndExpellingTheSameMember_isLimitedPerUser() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        java.util.UUID group = testData.createGroup(ana, testData.createUser());
+        String body = json(java.util.Map.of("usernames", java.util.List.of(bea.getUsername())));
+        for (int i = 0; i < 2; i++) {
+            mockMvc.perform(post("/api/conversations/" + group + "/participants").with(auth.bearer(ana))
+                    .contentType(MediaType.APPLICATION_JSON).content(body)).andExpect(status().isOk());
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                    .delete("/api/conversations/" + group + "/participants/" + bea.getUsername()).with(auth.bearer(ana)))
+                    .andExpect(status().isNoContent());
+        }
+
+        mockMvc.perform(post("/api/conversations/" + group + "/participants").with(auth.bearer(ana))
+                .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
     }
 
     @Test
