@@ -129,3 +129,16 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 - **Consecuencias:** la instancia pública `photon.komoot.io` es de uso razonable y sin garantías; vale para la demo. Con tráfico real, autoalojar Photon o pasar a un proveedor (MapTiler, Geoapify…), cambiando solo `places.service.js`. Atribución a OpenStreetMap visible bajo las sugerencias.
 - **Referencia de ubicación:** las sugerencias se ordenan cerca del punto marcado, de la zona ampliada del mapa o, en su defecto, de la ciudad del perfil (localizada en segundo plano al abrir el formulario). El botón «Usar mi ubicación» pide permiso al navegador solo cuando ella lo pulsa (requiere HTTPS).
 - **Pendiente (Yago, 2026-10-28):** la instancia pública es lenta: **1,2-1,6 s por búsqueda**, casi todo tiempo de servidor (medido). Se acepta para la demo, pero conviene migrar a una opción mejor: Geoapify (~0,2-0,3 s, 3.000 peticiones/día gratis) o MapTiler (100.000/mes, y sirve también para los tiles de D-005), con la clave en una variable `VITE_` restringida al dominio, o Photon autoalojado.
+
+## D-025 · Publicaciones, visibilidad, cuentas y correo: respuestas de Yago (2026-10-29)
+- **Quién publica:** en una comunidad, **solo la propietaria y las moderadoras**; una miembro recibe 403. En su propio perfil publica cualquier usuaria. El botón «Publicar» de la comunidad solo lo ven propietaria y moderadoras (T22b).
+- **Quién ve:** comunidad pública → cualquier usuaria con sesión; privada → solo miembros (no baneadas). Perfil personal como Instagram: público lo ve cualquier usuaria con sesión (hasta T23 todos lo son); con T23, uno privado solo lo ven seguidoras aceptadas. Bloqueos respetados en ambas direcciones. Las publicaciones de quien se va de la comunidad siguen visibles; borran la autora, la propietaria y las moderadoras.
+- **Interacción (T22a2):** en publicaciones de comunidad, las miembros pueden dar like y comentar; las no miembros solo ven; una silenciada puede dar like pero no comentar. En publicaciones de perfil, like y comentarios para quien pueda verlas.
+- **Explorar:** muestra fotos de comunidades públicas y de perfiles públicos.
+- **Perfil privado (T23):** a quien no la sigue le muestra nombre, avatar, bio, recuentos y botón Seguir (envía solicitud); ni publicaciones, ni quedadas que organiza, ni comunidades.
+- **Suspensión (T23):** número libre de días, con atajos de 1, 7 y 30.
+- **Correo (T24):** Resend (plan gratuito) por SMTP genérico, variables `MAIL_*`. Sin dominio verificado todavía: con `MAIL_HOST` vacío los correos se escriben en el log.
+- **Borrar cuenta (T24):** 14 días de gracia con la cuenta desactivada y oculta; si vuelve a entrar, la recupera; después, borrado definitivo.
+- **Cuentas sin verificar:** límites propuestos en T24, apagables por configuración mientras no haya correo real.
+- **Forma de trabajar (preferencia fija):** sin trabajo que no dependa de la revisión de Yago, o con el límite WIP alcanzado, `/end-session` y parar. Nada de `ScheduleWakeup` de espera ni comprobar periódicamente si se ha mergeado; Yago avisa cuándo seguir.
+
