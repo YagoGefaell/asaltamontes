@@ -351,7 +351,7 @@ export const ConversationsProvider = ({ children }) => {
     const paging = historyPaging[conversationId];
     if (!conversationId || !paging?.hasMore || paging.loading) return;
 
-    setHistoryPaging((prev) => ({ ...prev, [conversationId]: { ...paging, loading: true } }));
+    setHistoryPaging((prev) => ({ ...prev, [conversationId]: { ...paging, loading: true, error: false } }));
     try {
       const page = await getConversationMessagesRequest(conversationId, paging.nextBefore);
       setChatMessages((prev) => ({
@@ -363,7 +363,8 @@ export const ConversationsProvider = ({ children }) => {
         [conversationId]: { hasMore: page.hasMore, nextBefore: page.nextBefore, loading: false },
       }));
     } catch {
-      setHistoryPaging((prev) => ({ ...prev, [conversationId]: { ...paging, loading: false } }));
+      // Flag the failure so the chat stops auto-loading and offers a manual retry (BUG-053)
+      setHistoryPaging((prev) => ({ ...prev, [conversationId]: { ...paging, loading: false, error: true } }));
     }
   }, [historyPaging]);
 

@@ -429,6 +429,7 @@ const Messages = () => {
           sendError={sendError}
           hasMoreHistory={Boolean(selectedChat && historyPaging[selectedChat.id]?.hasMore)}
           loadingOlder={Boolean(selectedChat && historyPaging[selectedChat.id]?.loading)}
+          olderError={Boolean(selectedChat && historyPaging[selectedChat.id]?.error)}
           onLoadOlder={() => selectedChat?.id && loadOlderMessages(selectedChat.id)}
           historyStatus={historyStatus}
           onRetryHistory={() => selectedChat?.id && loadConversationMessages(selectedChat.id)}

@@ -29,6 +29,7 @@ const ChatPane = ({
   sendError,
   hasMoreHistory = false,
   loadingOlder = false,
+  olderError = false,
   onLoadOlder,
   historyStatus = "loaded",
   onRetryHistory,
@@ -49,21 +50,28 @@ const ChatPane = ({
   const heightBeforeLoadRef = useRef(null);
   const oldestMessageId = currentMessages.length > 0 ? currentMessages[0].id : null;
 
+  // Keep the latest callback in a ref so the observer is not recreated on every render
+  const onLoadOlderRef = useRef(onLoadOlder);
+  useEffect(() => {
+    onLoadOlderRef.current = onLoadOlder;
+  });
+  const canLoadOlder = Boolean(onLoadOlder);
+
   // Load older messages when the top of the list becomes visible (infinite scroll upwards)
   useEffect(() => {
     const sentinel = topSentinelRef.current;
-    if (!sentinel || !hasMoreHistory || !onLoadOlder || typeof IntersectionObserver === "undefined") return;
+    if (!sentinel || !hasMoreHistory || !canLoadOlder || olderError || typeof IntersectionObserver === "undefined") return;
 
     const observer = new IntersectionObserver((entries) => {
       if (entries.some((entry) => entry.isIntersecting) && !loadingOlder) {
         heightBeforeLoadRef.current = containerRef.current?.scrollHeight ?? null;
-        onLoadOlder();
+        onLoadOlderRef.current?.();
       }
     }, { root: containerRef.current, rootMargin: "200px 0px 0px 0px" });
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMoreHistory, loadingOlder, onLoadOlder, oldestMessageId]);
+  }, [hasMoreHistory, loadingOlder, canLoadOlder, olderError, oldestMessageId]);
 
   // After prepending a page, shift the scroll by the added height so nothing jumps
   useLayoutEffect(() => {
@@ -139,6 +147,12 @@ const ChatPane = ({
         {hasMoreHistory && (
           <div ref={topSentinelRef} className="messages-load-older" aria-live="polite">
             {loadingOlder ? "Cargando mensajes anteriores…" : ""}
+            {olderError && !loadingOlder && (
+              <>
+                <span role="alert">No se pudieron cargar los mensajes anteriores.</span>{" "}
+                <Button variant="secondary" size="small" onClick={() => onLoadOlder?.()}>Reintentar</Button>
+              </>
+            )}
           </div>
         )}
         {historyStatus === "error" && currentMessages.length === 0 && (
