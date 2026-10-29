@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.jsx'
@@ -7,8 +7,6 @@ import { ConversationsContext } from '../../features/messages/hooks/conversation
 import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
 import { getSuggestionsRequest } from '../../features/users/services/users.service'
 
-const navigate = vi.hoisted(() => vi.fn())
-vi.mock('react-router-dom', async (orig) => ({ ...(await orig()), useNavigate: () => navigate }))
 vi.mock('../../features/communities/services/communities.service', () => ({
   getCommunitiesRequest: vi.fn(),
 }))
@@ -65,23 +63,10 @@ describe('Home header', () => {
   })
 })
 
-describe('Home: crear con el +', () => {
-  it('opens a sheet with Quedada and Comunidad that go to their create screens', () => {
+describe('Home: sin botón de crear', () => {
+  it('has no + in the header: creating lives in Quedadas and Comunidades', () => {
     renderHome()
-    expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
-    expect(screen.getByRole('dialog', { name: 'Crear' })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /Publicación/ })).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Comunidad' }))
-    expect(navigate).toHaveBeenCalledWith('/communities/new')
-    expect(screen.queryByRole('dialog')).toBeNull()
-  })
-
-  it('goes to the event form from the sheet', () => {
-    renderHome()
-    fireEvent.click(screen.getByRole('button', { name: 'Crear' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Quedada' }))
-    expect(navigate).toHaveBeenCalledWith('/events/new')
+    expect(screen.queryByRole('button', { name: 'Crear' })).toBeNull()
   })
 })
 

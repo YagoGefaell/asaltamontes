@@ -1,13 +1,12 @@
 import "./Home.css";
-import { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaBell, FaCalendarAlt, FaChevronRight, FaComment, FaMountain, FaPen, FaPlus } from "react-icons/fa";
+import { useContext } from "react";
+import { Link } from "react-router-dom";
+import { FaBell, FaComment, FaPen } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
-import BottomSheet from "../../shared/ui/BottomSheet";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
 import FollowUserButton from "../../shared/components/FollowUserButton";
 import { getSuggestionsRequest } from "../../features/users/services/users.service";
@@ -29,35 +28,6 @@ function HeaderLink({ to, label, count, children }) {
         <span className="home-header__badge" aria-hidden="true">{formatCount(count)}</span>
       )}
     </Link>
-  );
-}
-
-/** Hoja del «+»: qué quiere crear. «Publicación» se añade con T22b. */
-function CreateSheet({ open, onClose }) {
-  const navigate = useNavigate();
-  const go = (to) => {
-    onClose();
-    navigate(to);
-  };
-  return (
-    <BottomSheet open={open} title="Crear" onClose={onClose}>
-      <ul className="home-create">
-        <li>
-          <button type="button" className="home-create__option" onClick={() => go("/events/new")}>
-            <FaCalendarAlt aria-hidden="true" />
-            <span>Quedada</span>
-            <FaChevronRight aria-hidden="true" className="home-create__chevron" />
-          </button>
-        </li>
-        <li>
-          <button type="button" className="home-create__option" onClick={() => go("/communities/new")}>
-            <FaMountain aria-hidden="true" />
-            <span>Comunidad</span>
-            <FaChevronRight aria-hidden="true" className="home-create__chevron" />
-          </button>
-        </li>
-      </ul>
-    </BottomSheet>
   );
 }
 
@@ -120,7 +90,6 @@ function SuggestedUsers({ items }) {
 // Home is for posts (T22), with suggestions between them. Until posts exist: an empty feed and
 // the suggestion rows. Events live in their own tab; creating a post will be its own screen.
 const Home = () => {
-  const [creating, setCreating] = useState(false);
   const { totalUnreadCount } = useContext(ConversationsContext);
   const { unreadCount: unreadNotifications } = useNotifications();
 
@@ -139,9 +108,6 @@ const Home = () => {
         title={<img className="home-header__logo" src={logo} alt="Asaltamontes Female" />}
         actions={
           <>
-            <button type="button" aria-label="Crear" title="Crear" onClick={() => setCreating(true)}>
-              <FaPlus aria-hidden="true" />
-            </button>
             <HeaderLink to="/notifications" label="Notificaciones" count={unreadNotifications}>
               <FaBell aria-hidden="true" />
             </HeaderLink>
@@ -160,8 +126,6 @@ const Home = () => {
 
       {!people.loading && people.items.length > 0 && <SuggestedUsers items={people.items} />}
       {!suggested.loading && suggested.items.length > 0 && <RecommendedCommunities items={suggested.items} />}
-
-      <CreateSheet open={creating} onClose={() => setCreating(false)} />
     </div>
   );
 };
