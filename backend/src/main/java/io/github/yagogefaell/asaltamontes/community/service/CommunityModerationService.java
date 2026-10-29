@@ -359,8 +359,8 @@ public class CommunityModerationService {
         return page(before, limit, OpaqueCursor.JOIN_REQUEST,
                 cursor -> joinRequestRepository.findByPublicIdAndCommunityId(cursor.publicId(), communityId)
                         .map(r -> new Position(r.getCreatedAt(), r.getId())),
-                fetch -> joinRequestRepository.findFirstPage(communityId, fetch),
-                (position, fetch) -> joinRequestRepository.findPageBefore(communityId, position.at(), position.id(), fetch),
+                fetch -> joinRequestRepository.findFirstPage(communityId, user.getId(), fetch),
+                (position, fetch) -> joinRequestRepository.findPageBefore(communityId, user.getId(), position.at(), position.id(), fetch),
                 JoinRequestDto::requestedAt, JoinRequestDto::id);
     }
 

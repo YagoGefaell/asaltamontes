@@ -179,6 +179,57 @@ class MyCommunitiesIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.mine[0].username").doesNotExist());
     }
 
+    @Test
+    void requestsList_leavesOutBlockedUsers_likePending_andABannedModeratorSeesNoToApprove() throws Exception {
+        UserAccount owner = testData.createUser();
+        UserAccount mod = testData.createUser();
+        UserAccount ana = testData.createUser();
+        UserAccount blockedByMod = testData.createUser();
+        UserAccount blockingMod = testData.createUser();
+        Community secret = communityService.create(new CreateCommunityDto(testData.uniqueName("privada"), "x", null, null,
+                CommunityVisibility.PRIVATE, null, null), owner);
+        communityService.joinCommunity(secret.getPublicId(), mod);
+        mockMvc.perform(post("/api/communities/" + secret.getPublicId() + "/requests/" + mod.getUsername() + "/approve")
+                .with(auth.bearer(owner))).andExpect(status().is2xxSuccessful());
+        mockMvc.perform(put("/api/communities/" + secret.getPublicId() + "/members/" + mod.getUsername() + "/role")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{\"role\":\"MODERATOR\"}"))
+                .andExpect(status().is2xxSuccessful());
+        for (UserAccount applicant : new UserAccount[] {ana, blockedByMod, blockingMod}) {
+            communityService.joinCommunity(secret.getPublicId(), applicant);
+        }
+        blocks.block(mod.getId(), blockedByMod.getUsername());
+        blocks.block(blockingMod.getId(), mod.getUsername());
+
+        String url = "/api/communities/" + secret.getPublicId() + "/requests";
+        mockMvc.perform(get(url).with(auth.bearer(owner)))
+                .andExpect(jsonPath("$.items.length()").value(3));
+        mockMvc.perform(get(url).with(auth.bearer(mod)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(1))
+                .andExpect(jsonPath("$.items[0].username").value(ana.getUsername()));
+        mockMvc.perform(get("/api/communities/me/pending").with(auth.bearer(mod)))
+                .andExpect(jsonPath("$.toApprove[0].pendingCount").value(1));
+
+        mockMvc.perform(post("/api/communities/" + secret.getPublicId() + "/members/" + mod.getUsername() + "/ban")
+                .with(auth.bearer(owner)).contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"spam\"}"))
+                .andExpect(status().is2xxSuccessful());
+        mockMvc.perform(get("/api/communities/me/pending").with(auth.bearer(mod)))
+                .andExpect(jsonPath("$.toApprove").isEmpty());
+    }
+
+    @Test
+    void myCommunities_sortedByMemberCount_breaksTiesById() throws Exception {
+        UserAccount me = testData.createUser();
+        Community first = testData.createCommunity(me);
+        Community second = testData.createCommunity(me);
+        Community third = testData.createCommunity(me);
+
+        mockMvc.perform(get("/api/communities/me?sort=memberCount,desc").with(auth.bearer(me)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[*].slug").value(contains(
+                        first.getSlug(), second.getSlug(), third.getSlug())));
+    }
+
     // ---- helpers ----
 
     private void say(Community community, UserAccount sender, String text) {

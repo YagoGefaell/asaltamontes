@@ -54,7 +54,7 @@ public class MyCommunitiesService {
         Pageable page = pageable.getSort().isUnsorted()
                 ? PageRequest.of(pageable.getPageNumber(), size,
                         JpaSort.unsafe(Sort.Direction.DESC, ACTIVITY).and(JpaSort.unsafe(Sort.Direction.ASC, "c.id")))
-                : SORT.apply(PageRequest.of(pageable.getPageNumber(), size, pageable.getSort()));
+                : withStableTieBreak(SORT.apply(PageRequest.of(pageable.getPageNumber(), size, pageable.getSort())));
         Page<MyCommunityRow> rows = memberRepository.findMyCommunities(me.getId(), page);
 
         Set<Long> blockedSenders = blockService.blockedEitherWayAmong(me.getId(), rows.stream()
@@ -66,6 +66,12 @@ public class MyCommunitiesService {
                     .forEach(e -> nextEvents.putIfAbsent(e.communityInternalId(), e));
         }
         return rows.map(r -> toDto(r, blockedSenders, nextEvents.get(r.communityInternalId())));
+    }
+
+    /** Ties on name or memberCount fall back to the id, so pages do not shuffle (BUG-079). */
+    private static Pageable withStableTieBreak(Pageable page) {
+        return PageRequest.of(page.getPageNumber(), page.getPageSize(),
+                page.getSort().and(JpaSort.unsafe(Sort.Direction.ASC, "c.id")));
     }
 
     private static MyCommunityDto toDto(MyCommunityRow r, Set<Long> blockedSenders, NextEventRow next) {
