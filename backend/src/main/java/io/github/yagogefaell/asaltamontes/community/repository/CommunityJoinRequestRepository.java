@@ -40,17 +40,23 @@ public interface CommunityJoinRequestRepository extends JpaRepository<CommunityJ
         FROM CommunityJoinRequest r
         JOIN UserAccount u ON u.id = r.userId
         WHERE r.communityId = :communityId
+          AND NOT EXISTS (
+              SELECT 1 FROM UserBlock bl
+              WHERE (bl.blocker.id = :viewerId AND bl.blocked.id = r.userId)
+                 OR (bl.blocked.id = :viewerId AND bl.blocker.id = r.userId))
         """;
 
+    /** Requests from users with a block against the viewer in either direction are left out (D-022, BUG-079). */
     @Query(PENDING + " ORDER BY r.createdAt DESC, r.id DESC")
-    List<JoinRequestDto> findFirstPage(@Param("communityId") Long communityId, Limit limit);
+    List<JoinRequestDto> findFirstPage(@Param("communityId") Long communityId, @Param("viewerId") Long viewerId,
+                                       Limit limit);
 
     @Query(PENDING + """
           AND (r.createdAt < :beforeAt OR (r.createdAt = :beforeAt AND r.id < :beforeId))
         ORDER BY r.createdAt DESC, r.id DESC
         """)
-    List<JoinRequestDto> findPageBefore(@Param("communityId") Long communityId, @Param("beforeAt") Instant beforeAt,
-                                        @Param("beforeId") Long beforeId, Limit limit);
+    List<JoinRequestDto> findPageBefore(@Param("communityId") Long communityId, @Param("viewerId") Long viewerId,
+                                        @Param("beforeAt") Instant beforeAt, @Param("beforeId") Long beforeId, Limit limit);
 
     /**
      * Communities where {@code userId} is owner or moderator (not banned) with undecided requests, newest activity

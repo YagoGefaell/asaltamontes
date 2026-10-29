@@ -1,6 +1,6 @@
 # BUG-079 — `/api/communities/{slug}/requests` lista solicitudes de usuarias bloqueadas
 
-- **Estado:** abierto
+- **Estado:** resuelto
 - **Severidad:** baja
 - **Confianza:** confirmado
 - **Área:** backend/community
