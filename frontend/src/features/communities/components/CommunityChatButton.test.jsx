@@ -13,16 +13,15 @@ vi.mock('react-router-dom', async (importOriginal) => ({
 }))
 
 import CommunityChatButton from './CommunityChatButton.jsx'
-import { ToastProvider } from '../../../shared/ui/Toast.jsx'
 
 const community = { id: 'c-1', name: 'Trail Vigo', imageUrl: '/media/c.png' }
 
 function renderButton() {
   return render(
     <MemoryRouter>
-      <ToastProvider>
+      
         <CommunityChatButton community={community} />
-      </ToastProvider>
+      
     </MemoryRouter>,
   )
 }

@@ -5,7 +5,6 @@ import FormError from "../../../shared/forms/FormError";
 import Input from "../../../shared/forms/Input";
 import SectionCard from "../../../shared/ui/SectionCard";
 import ImageUploader from "../../../shared/ui/ImageUploader";
-import { useToast } from "../../../shared/ui/Toast";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service";
 import { updateCommunityRequest } from "../../../features/communities/services/communities.service";
 import { communityErrorMessage } from "../../../features/communities/utils/communityErrors";
@@ -15,7 +14,6 @@ const orNull = (text) => text.trim() || null;
 
 /** Edit name, description, place, cover and (owner only) visibility. Only the changed fields are sent (D-020). */
 export default function CommunityEditForm({ community, onSaved }) {
-  const toast = useToast();
   const isOwner = community.role === "OWNER";
   const [name, setName] = useState(community.name || "");
   const [description, setDescription] = useState(community.description || "");
@@ -43,7 +41,7 @@ export default function CommunityEditForm({ community, onSaved }) {
     if (isOwner && visibility !== community.visibility) changes.visibility = visibility;
     if (coverMediaId) changes.coverMediaId = coverMediaId;
     if (Object.keys(changes).length === 0) {
-      toast.info("No hay cambios que guardar");
+      setError("No has cambiado nada.");
       return;
     }
     setSaving(true);
@@ -52,7 +50,6 @@ export default function CommunityEditForm({ community, onSaved }) {
       const updated = await updateCommunityRequest(community.id, changes);
       setCoverMediaId(null);
       onSaved?.(updated);
-      toast.success("Comunidad actualizada");
     } catch (err) {
       setError(err.status === 409 ? "Ya existe otra comunidad con ese nombre." : communityErrorMessage(err));
     } finally {

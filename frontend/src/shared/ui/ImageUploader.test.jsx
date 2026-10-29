@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ImageUploader from './ImageUploader.jsx'
-import { ToastProvider } from './Toast.jsx'
 import { uploadImage } from '../../features/media/services/media.service.js'
 
 vi.mock('../../features/media/services/media.service.js', async (importOriginal) => {
@@ -13,9 +12,9 @@ function setup(props = {}) {
   const onChange = vi.fn()
   const onUploadingChange = vi.fn()
   render(
-    <ToastProvider>
+    
       <ImageUploader value="" onChange={onChange} onUploadingChange={onUploadingChange} purpose="AVATAR" {...props} />
-    </ToastProvider>,
+    ,
   )
   return { onChange, onUploadingChange, input: screen.getByTestId('image-uploader-input') }
 }

@@ -19,7 +19,6 @@ import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
 import Skeleton from "../../shared/ui/Skeleton";
-import { useToast } from "../../shared/ui/Toast";
 import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 
 const SKELETON_ROWS = 4;
@@ -156,7 +155,6 @@ function Suggestions({ city }) {
 }
 
 const Communities = () => {
-  const toast = useToast();
   const navigate = useNavigate();
   const { userProfile } = useUserProfile();
   const mine = useSearchSection(useCallback((page) => getMyCommunitiesRequest({ page }), []), "mine");
@@ -184,15 +182,14 @@ const Communities = () => {
       if (creatingCommunity) return;
       setCreatingCommunity(true);
       try {
-        await createCommunityRequest(communityData);
-        setIsCreatorOpen(false);
-        toast.success("Comunidad creada");
-        await mine.retry();
+        const created = await createCommunityRequest(communityData);
+        // Success needs no notice: she lands in the community she just created
+        navigate(communityPath(created));
       } finally {
         setCreatingCommunity(false);
       }
     },
-    [creatingCommunity, mine, toast]
+    [creatingCommunity, navigate]
   );
 
   const openChat = useCallback(

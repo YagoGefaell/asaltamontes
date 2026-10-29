@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Button from "../../../shared/forms/Button.jsx";
 import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
-import Modal from "../../../shared/ui/Modal.jsx";
+import ConfirmSheet from "../../../shared/ui/ConfirmSheet.jsx";
 import ToggleSwitch from "../../../shared/ui/ToggleSwitch.jsx";
 import Skeleton from "../../../shared/ui/Skeleton.jsx";
 import PageHeader from "../../../shared/ui/PageHeader.jsx";
@@ -321,19 +321,17 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
         </div>
       )}
 
-      <Modal
+      <ConfirmSheet
         open={confirmLeave}
         title="¿Salir del grupo?"
-        onClose={() => setConfirmLeave(false)}
-        footer={(
-          <>
-            <Button variant="secondary" onClick={() => setConfirmLeave(false)} disabled={busy}>Cancelar</Button>
-            <Button onClick={leave} disabled={busy}>Salir</Button>
-          </>
-        )}
-      >
-        <p>Dejarás de recibir los mensajes de este grupo y no podrás volver a leer el historial salvo que te vuelvan a añadir.</p>
-      </Modal>
+        message="Dejarás de recibir los mensajes de este grupo y no podrás volver a leer el historial salvo que te vuelvan a añadir."
+        confirmLabel="Salir"
+        destructive
+        loading={busy}
+        error={actionError || ""}
+        onConfirm={leave}
+        onCancel={() => !busy && setConfirmLeave(false)}
+      />
     </div>
   );
 };

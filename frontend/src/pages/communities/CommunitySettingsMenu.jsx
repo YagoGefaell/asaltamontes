@@ -4,9 +4,8 @@ import { useCommunityDetail } from "../../features/communities/hooks/useCommunit
 import { communityPath } from "../../features/communities/utils/communityPath";
 import { deleteCommunityRequest, getCommunityChatRequest, setCommunityChatEnabledRequest } from "../../features/communities/services/communities.service";
 import { useEffect, useState } from "react";
-import Modal from "../../shared/ui/Modal";
-import Button from "../../shared/forms/Button";
-import { useToast } from "../../shared/ui/Toast";
+import ConfirmSheet from "../../shared/ui/ConfirmSheet";
+import FormError from "../../shared/forms/FormError";
 import { isStaff } from "../../features/communities/utils/communityErrors";
 import Loading from "../../shared/components/Loading";
 import { useAuth } from "../../features/auth/hooks/useAuth";
@@ -16,7 +15,7 @@ export default function CommunitySettingsMenu() {
   const navigate = useNavigate();
   const { community, loading } = useCommunityDetail(slug);
   const { currentUser } = useAuth();
-  const toast = useToast();
+  const [error, setError] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   // null until known: the chat of the community can be switched off by the moderation (T20)
@@ -33,12 +32,12 @@ export default function CommunitySettingsMenu() {
 
   const handleToggleChat = async () => {
     const next = !chatEnabled;
+    setError("");
     try {
       await setCommunityChatEnabledRequest(community.id, next);
       setChatEnabled(next);
-      toast.success(next ? "Chat activado" : "Chat desactivado");
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -53,17 +52,17 @@ export default function CommunitySettingsMenu() {
 
   const handleDeleteCommunity = async () => {
     setDeleting(true);
+    setError("");
     try {
       if (community?.id) {
         await deleteCommunityRequest(community.id);
         navigate("/communities");
       }
-    } catch (error) {
-      console.error("Error al borrar la comunidad:", error);
-      toast.error("Error al borrar la comunidad: " + error.message);
+    } catch (err) {
+      console.error("Error al borrar la comunidad:", err);
+      setError("No se ha podido borrar la comunidad: " + err.message);
     } finally {
       setDeleting(false);
-      setConfirmingDelete(false);
     }
   };
 
@@ -120,23 +119,18 @@ export default function CommunitySettingsMenu() {
           </ul>
         </div>
       ))}
-      <Modal
+      <FormError message={confirmingDelete ? "" : error} />
+      <ConfirmSheet
         open={confirmingDelete}
         title="Borrar comunidad"
-        onClose={() => !deleting && setConfirmingDelete(false)}
-        footer={
-          <>
-            <Button variant="outline" size="small" onClick={() => setConfirmingDelete(false)} disabled={deleting}>
-              Cancelar
-            </Button>
-            <Button variant="danger" size="small" onClick={handleDeleteCommunity} loading={deleting}>
-              Borrar
-            </Button>
-          </>
-        }
-      >
-        ¿Estás segura de que quieres borrar la comunidad? Esta acción es irreversible.
-      </Modal>
+        message="¿Seguro que quieres borrar la comunidad? No se puede deshacer."
+        confirmLabel="Borrar"
+        destructive
+        loading={deleting}
+        error={error}
+        onConfirm={handleDeleteCommunity}
+        onCancel={() => { if (!deleting) { setConfirmingDelete(false); setError(""); } }}
+      />
     </div>
   );
 }

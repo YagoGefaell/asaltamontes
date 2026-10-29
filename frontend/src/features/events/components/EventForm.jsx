@@ -35,7 +35,7 @@ const LocationPicker = lazy(() => import('./LocationPicker.jsx'))
  */
 export default function EventForm({
   values, onChange, onSubmit, submitting = false, mode = 'create', communities = [], communityName = null,
-  original = null, serverErrors = {}, submitLabel,
+  original = null, serverErrors = {}, formError = null, submitLabel,
 }) {
   const timeZone = values.timezone || browserTimeZone()
   const [submitted, setSubmitted] = useState(false)
@@ -197,6 +197,7 @@ export default function EventForm({
         <p className="event-form__hint">Comunidad: {communityName}. La comunidad y la visibilidad no se pueden cambiar.</p>
       )}
 
+      <FormError message={formError} />
       <Button type="submit" loading={submitting}>{submitLabel ?? (mode === 'edit' ? 'Guardar cambios' : 'Crear quedada')}</Button>
     </form>
   )

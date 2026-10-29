@@ -45,7 +45,13 @@ export default function CommunitySettingsSection() {
       <Link to={settingsPath} className="moderation-back">‹ Ajustes de la comunidad</Link>
       <h2 className="moderation-section-title">{definition.title}</h2>
       {section === "edit" && (
-        <CommunityEditForm community={community} onSaved={(updated) => setCommunity((prev) => ({ ...prev, ...updated }))} />
+        <CommunityEditForm
+          community={community}
+          onSaved={(updated) => {
+            setCommunity((prev) => ({ ...prev, ...updated }));
+            navigate(settingsPath);
+          }}
+        />
       )}
       {section === "members" && <MemberAdminList community={community} onOwnershipTransferred={refetch} />}
       {section === "requests" && <JoinRequestList community={community} />}

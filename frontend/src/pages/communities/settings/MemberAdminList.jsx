@@ -3,10 +3,9 @@ import Avatar from "../../../shared/ui/Avatar";
 import Button from "../../../shared/forms/Button";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Input from "../../../shared/forms/Input";
-import Modal from "../../../shared/ui/Modal";
+import ConfirmSheet from "../../../shared/ui/ConfirmSheet";
 import Skeleton from "../../../shared/ui/Skeleton";
 import FormError from "../../../shared/forms/FormError";
-import { useToast } from "../../../shared/ui/Toast";
 import {
   getCommunityMembersPageRequest,
   setMemberRoleRequest,
@@ -26,7 +25,6 @@ const REASON_MAX = 300;
  * (the backend enforces it too; here the buttons just are not offered).
  */
 export default function MemberAdminList({ community, onOwnershipTransferred }) {
-  const toast = useToast();
   const isOwner = community.role === "OWNER";
   const [members, setMembers] = useState([]);
   const [page, setPage] = useState(0);
@@ -39,6 +37,7 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
   const [reason, setReason] = useState("");
   const [transferTarget, setTransferTarget] = useState(null);
   const [dialogError, setDialogError] = useState(null);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -65,7 +64,7 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
       setHasMore(result.hasMore);
       setPage(page + 1);
     } catch (err) {
-      toast.error(communityErrorMessage(err));
+      setActionError(communityErrorMessage(err));
     } finally {
       setLoadingMore(false);
     }
@@ -77,11 +76,12 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
 
   const run = async (username, action, onDone) => {
     setBusy(username);
+    setActionError("");
     try {
       await action();
       onDone();
     } catch (err) {
-      toast.error(communityErrorMessage(err));
+      setActionError(communityErrorMessage(err));
     } finally {
       setBusy(null);
     }
@@ -91,7 +91,6 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
     const next = member.role === "MODERATOR" ? "MEMBER" : "MODERATOR";
     run(member.username, () => setMemberRoleRequest(community.id, member.username, next), () => {
       patch(member.username, { role: next });
-      toast.success(next === "MODERATOR" ? `@${member.username} ahora es moderadora` : `@${member.username} ya no es moderadora`);
     });
   };
 
@@ -102,7 +101,6 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
       () => (muted ? unmuteMemberRequest(community.id, member.username) : muteMemberRequest(community.id, member.username)),
       () => {
         patch(member.username, { status: muted ? "ACTIVE" : "MUTED" });
-        toast.success(muted ? `@${member.username} ya puede participar` : `@${member.username} silenciada`);
       },
     );
   };
@@ -121,7 +119,6 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
     try {
       await banMemberRequest(community.id, target.username, reason);
       setMembers((prev) => prev.filter((m) => m.username !== target.username));
-      toast.success(`@${target.username} expulsada`);
       setBanTarget(null);
       setReason("");
     } catch (err) {
@@ -137,7 +134,6 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
     setDialogError(null);
     try {
       await transferOwnershipRequest(community.id, target.username);
-      toast.success(`@${target.username} es ahora la propietaria`);
       setTransferTarget(null);
       onOwnershipTransferred?.();
     } catch (err) {
@@ -159,6 +155,7 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
 
   return (
     <>
+      <FormError message={actionError} />
       <ul className="moderation-list">
         {members.map((member) => {
           const isModerator = member.role === "MODERATOR";
@@ -204,18 +201,17 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
         <Button variant="secondary" onClick={loadMore} loading={loadingMore}>Cargar más</Button>
       )}
 
-      <Modal
+      <ConfirmSheet
         open={!!banTarget}
         title={banTarget ? `Expulsar a @${banTarget.username}` : ""}
-        onClose={closeBan}
-        footer={
-          <>
-            <Button variant="outline" size="small" onClick={closeBan} disabled={!!busy}>Cancelar</Button>
-            <Button variant="danger" size="small" onClick={confirmBan} loading={!!busy}>Expulsar</Button>
-          </>
-        }
+        message="Dejará de ver la comunidad como miembro y no podrá volver a unirse hasta que la readmitas."
+        confirmLabel="Expulsar"
+        destructive
+        loading={!!busy}
+        error={dialogError || ""}
+        onConfirm={confirmBan}
+        onCancel={closeBan}
       >
-        <p>Dejará de ver la comunidad como miembro y no podrá volver a unirse hasta que la readmitas.</p>
         <Input
           as="textarea"
           id="ban-reason"
@@ -226,28 +222,19 @@ export default function MemberAdminList({ community, onOwnershipTransferred }) {
           onChange={(e) => setReason(e.target.value)}
           placeholder="Queda en el registro de moderación"
         />
-        <FormError message={dialogError} />
-      </Modal>
+      </ConfirmSheet>
 
-      <Modal
+      <ConfirmSheet
         open={!!transferTarget}
         title="Transferir la propiedad"
-        onClose={() => { if (!busy) { setTransferTarget(null); setDialogError(null); } }}
-        footer={
-          <>
-            <Button variant="outline" size="small" onClick={() => { setTransferTarget(null); setDialogError(null); }} disabled={!!busy}>
-              Cancelar
-            </Button>
-            <Button variant="danger" size="small" onClick={confirmTransfer} loading={!!busy}>Transferir</Button>
-          </>
-        }
-      >
-        <p>
-          @{transferTarget?.username} pasará a ser la propietaria de la comunidad y tú serás moderadora.
-          Solo ella podrá devolvértela.
-        </p>
-        <FormError message={dialogError} />
-      </Modal>
+        message={`@${transferTarget?.username} pasará a ser la propietaria de la comunidad y tú serás moderadora. Solo ella podrá devolvértela.`}
+        confirmLabel="Transferir"
+        destructive
+        loading={!!busy}
+        error={dialogError || ""}
+        onConfirm={confirmTransfer}
+        onCancel={() => { if (!busy) { setTransferTarget(null); setDialogError(null); } }}
+      />
     </>
   );
 }

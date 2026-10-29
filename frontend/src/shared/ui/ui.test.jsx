@@ -1,11 +1,8 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
-import { useState } from 'react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 import Avatar from './Avatar.jsx'
 import EmptyState from './EmptyState.jsx'
-import Modal from './Modal.jsx'
 import SectionCard from './SectionCard.jsx'
-import { ToastProvider, useToast } from './Toast.jsx'
 import Button from '../forms/Button.jsx'
 
 describe('Button', () => {
@@ -55,73 +52,6 @@ describe('EmptyState', () => {
     expect(screen.getByText('Sin datos')).toBeInTheDocument()
     expect(screen.getByText('Prueba otra búsqueda')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Reintentar' })).toBeInTheDocument()
-  })
-})
-
-describe('Modal', () => {
-  function Harness({ onClose }) {
-    const [open, setOpen] = useState(true)
-    return (
-      <>
-        <button>fuera</button>
-        <Modal open={open} title="Confirmar" onClose={() => { onClose(); setOpen(false) }}>
-          <button>Aceptar</button>
-          <button>Cancelar</button>
-        </Modal>
-      </>
-    )
-  }
-
-  it('is an accessible dialog and closes with Escape', () => {
-    const onClose = vi.fn()
-    render(<Harness onClose={onClose} />)
-    const dialog = screen.getByRole('dialog', { name: 'Confirmar' })
-    expect(dialog).toHaveAttribute('aria-modal', 'true')
-    fireEvent.keyDown(document, { key: 'Escape' })
-    expect(onClose).toHaveBeenCalledTimes(1)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-
-  it('moves focus inside, traps Tab and restores focus on close', () => {
-    render(<Harness onClose={() => {}} />)
-    const accept = screen.getByRole('button', { name: 'Aceptar' })
-    const cancel = screen.getByRole('button', { name: 'Cancelar' })
-    expect(accept).toHaveFocus()
-    cancel.focus()
-    fireEvent.keyDown(document, { key: 'Tab' })
-    expect(accept).toHaveFocus()
-    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true })
-    expect(cancel).toHaveFocus()
-  })
-
-  it('renders nothing when closed', () => {
-    render(<Modal open={false} title="x" onClose={() => {}}>cuerpo</Modal>)
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-  })
-})
-
-describe('Toast', () => {
-  afterEach(() => vi.useRealTimers())
-
-  function Trigger() {
-    const toast = useToast()
-    return <button onClick={() => toast.error('Algo falló')}>lanzar</button>
-  }
-
-  it('shows a toast and removes it after the duration', () => {
-    vi.useFakeTimers()
-    render(<ToastProvider duration={1000}><Trigger /></ToastProvider>)
-    fireEvent.click(screen.getByText('lanzar'))
-    expect(screen.getByRole('alert')).toHaveTextContent('Algo falló')
-    act(() => { vi.advanceTimersByTime(1100) })
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-  })
-
-  it('can be dismissed manually', () => {
-    render(<ToastProvider><Trigger /></ToastProvider>)
-    fireEvent.click(screen.getByText('lanzar'))
-    fireEvent.click(screen.getByRole('button', { name: 'Cerrar aviso' }))
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 })
 

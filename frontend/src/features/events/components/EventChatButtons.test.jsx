@@ -3,9 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const navigate = vi.fn()
-const toast = { error: vi.fn() }
 vi.mock('react-router-dom', async (importOriginal) => ({ ...(await importOriginal()), useNavigate: () => navigate }))
-vi.mock('../../../shared/ui/Toast.jsx', () => ({ useToast: () => toast }))
 vi.mock('../services/events.service.js', () => ({
   getEventChatRequest: vi.fn(),
   getEventCalendarRequest: vi.fn(),
@@ -40,7 +38,7 @@ describe('EventChatButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Chat de la quedada' }))
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Chat no encontrado'))
+    expect(await screen.findByText('Chat no encontrado')).toBeTruthy()
     expect(navigate).not.toHaveBeenCalled()
   })
 })
@@ -68,6 +66,6 @@ describe('AddToCalendarButton', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Añadir al calendario' }))
 
-    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Evento no encontrado'))
+    expect(await screen.findByText('Evento no encontrado')).toBeTruthy()
   })
 })

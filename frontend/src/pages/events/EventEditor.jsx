@@ -11,7 +11,6 @@ import EmptyState from '../../shared/ui/EmptyState.jsx'
 import Skeleton from '../../shared/ui/Skeleton.jsx'
 import Button from '../../shared/forms/Button.jsx'
 import PageHeader from '../../shared/ui/PageHeader.jsx'
-import { useToast } from '../../shared/ui/Toast.jsx'
 import './EventDetail.css'
 
 function Header({ title }) {
@@ -29,32 +28,33 @@ function fieldErrors(error) {
 
 /** Shared by both modes: sends the request and reports the outcome. */
 function useSave(save, onDone) {
-  const toast = useToast()
   const [submitting, setSubmitting] = useState(false)
   const [serverErrors, setServerErrors] = useState({})
+  const [formError, setFormError] = useState(null)
   const submit = async () => {
     setSubmitting(true)
     setServerErrors({})
+    setFormError(null)
     try {
       onDone(await save())
     } catch (error) {
       const errors = fieldErrors(error)
       setServerErrors(errors)
-      // Without a field to blame (403, 409, past start…), say it in a toast
-      if (Object.keys(errors).length === 0) toast.error(error.message)
+      // Without a field to blame (403, 409, past start…), say it above the button
+      if (Object.keys(errors).length === 0) setFormError(error.message)
     } finally {
       setSubmitting(false)
     }
   }
-  return { submitting, serverErrors, submit }
+  return { submitting, serverErrors, formError, submit }
 }
 
 function CreateEvent() {
   const navigate = useNavigate()
-  const toast = useToast()
   const [searchParams] = useSearchParams()
   const [values, setValues] = useState({ ...EMPTY_FORM, communityId: searchParams.get('community') ?? '' })
   const [communities, setCommunities] = useState([])
+  const [loadError, setLoadError] = useState(null)
 
   useEffect(() => {
     let active = true
@@ -65,17 +65,16 @@ function CreateEvent() {
         // A community id in the link only counts if she can organize in it
         setValues((prev) => (list.some((c) => String(c.id) === prev.communityId) ? prev : { ...prev, communityId: '' }))
       })
-      .catch(() => toast.error('No se han podido cargar tus comunidades: la quedada será abierta.'))
+      .catch(() => active && setLoadError('No se han podido cargar tus comunidades: la quedada será abierta.'))
     return () => {
       active = false
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [])
 
-  const { submitting, serverErrors, submit } = useSave(
+  const { submitting, serverErrors, formError, submit } = useSave(
     () => createEventRequest(toCreatePayload(values)),
     (event) => {
-      toast.success('Quedada creada')
       navigate(`/events/${event.id}`, { replace: true })
     },
   )
@@ -90,6 +89,7 @@ function CreateEvent() {
         submitting={submitting}
         communities={communities}
         serverErrors={serverErrors}
+        formError={formError || loadError}
       />
     </div>
   )
@@ -97,14 +97,12 @@ function CreateEvent() {
 
 function EditForm({ event }) {
   const navigate = useNavigate()
-  const toast = useToast()
   const [original] = useState(() => formFromEvent(event))
   const [values, setValues] = useState(original)
 
-  const { submitting, serverErrors, submit } = useSave(
+  const { submitting, serverErrors, formError, submit } = useSave(
     () => updateEventRequest(event.id, toUpdatePayload(values, original)),
     () => {
-      toast.success('Cambios guardados')
       navigate(`/events/${event.id}`, { replace: true })
     },
   )
@@ -119,6 +117,7 @@ function EditForm({ event }) {
       original={original}
       communityName={event.communityName}
       serverErrors={serverErrors}
+      formError={formError}
     />
   )
 }

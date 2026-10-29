@@ -12,8 +12,7 @@ import PageHeader from "../../shared/ui/PageHeader";
 import Tabs from "../../shared/ui/Tabs";
 import BottomSheet from "../../shared/ui/BottomSheet";
 import { ProfileEvents, ProfileCommunities } from "./ProfileTabs";
-import { useToast } from "../../shared/ui/Toast";
-import ConfirmModal from "../../shared/ui/ConfirmModal";
+import FormError from "../../shared/forms/FormError";
 import { blockUserRequest, unblockUserRequest } from "../../features/users/services/users.service";
 
 function Profile({ 
@@ -28,9 +27,8 @@ function Profile({
   const navigate = useNavigate();
   const [openChatLoading, setOpenChatLoading] = useState(false);
   const [tab, setTab] = useState("events");
-  const toast = useToast();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [blockConfirm, setBlockConfirm] = useState(null); // isBlocked actual cuando se pide confirmar
+  const [blockError, setBlockError] = useState("");
   // Local override after (un)blocking; null = what the server said
   const [blockedOverride, setBlockedOverride] = useState(null);
 
@@ -68,15 +66,11 @@ function Profile({
     }
   };
   
-  const askToggleBlock = (isBlocked) => {
-    setMenuOpen(false);
-    setBlockConfirm({ isBlocked });
-  };
-
+  // Reversible: no confirmation. A failure is shown inside the sheet, which stays open to retry
   const handleToggleBlock = async (isBlocked) => {
-    setBlockConfirm(null);
     const username = profileData?.username;
     if (!username) return;
+    setBlockError("");
     try {
       if (isBlocked) {
         await unblockUserRequest(username);
@@ -84,9 +78,9 @@ function Profile({
         await blockUserRequest(username);
       }
       setBlockedOverride(!isBlocked);
-      toast.success(isBlocked ? "Usuaria desbloqueada" : "Usuaria bloqueada");
+      setMenuOpen(false);
     } catch (err) {
-      toast.error(err.message);
+      setBlockError(err.message);
     }
   };
 
@@ -230,23 +224,12 @@ function Profile({
         </>
       )}
 
-      <BottomSheet open={menuOpen} title={`@${username}`} onClose={() => setMenuOpen(false)}>
-        <button type="button" className="pf-sheet-action pf-sheet-action--danger" onClick={() => askToggleBlock(isBlockedByMe)}>
+      <BottomSheet open={menuOpen} title={`@${username}`} onClose={() => { setMenuOpen(false); setBlockError(""); }}>
+        <FormError message={blockError} />
+        <button type="button" className="pf-sheet-action pf-sheet-action--danger" onClick={() => handleToggleBlock(isBlockedByMe)}>
           {isBlockedByMe ? "Desbloquear" : "Bloquear"}
         </button>
       </BottomSheet>
-
-      <ConfirmModal
-        open={blockConfirm !== null}
-        title={blockConfirm?.isBlocked ? "Desbloquear" : "Bloquear"}
-        message={blockConfirm?.isBlocked
-          ? `¿Desbloquear a @${username}?`
-          : `¿Bloquear a @${username}? Dejaréis de seguiros y no podréis escribiros mensajes privados.`}
-        confirmLabel={blockConfirm?.isBlocked ? "Desbloquear" : "Bloquear"}
-        destructive={!blockConfirm?.isBlocked}
-        onConfirm={() => handleToggleBlock(blockConfirm.isBlocked)}
-        onCancel={() => setBlockConfirm(null)}
-      />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import Avatar from '../../../shared/ui/Avatar.jsx'
 import Button from '../../../shared/forms/Button.jsx'
 import { useAuth } from '../../auth/hooks/useAuth.js'
-import { useToast } from '../../../shared/ui/Toast.jsx'
+import { useState } from 'react'
 import { useEventAttendance } from '../hooks/useEventAttendance.js'
 import { EVENT_LEVELS, formatDateBadge, formatDistance, formatEventDateTime, formatPlaces, isFull } from '../utils/eventFormat.js'
 import './EventCard.css'
@@ -11,22 +11,32 @@ const MAX_AVATARS = 3
 
 /** Small join / leave button of the card. Only mounted when the list can update the event (`onChange`). */
 function CardAttend({ event, onChange }) {
-  const toast = useToast()
   const { currentUser } = useAuth()
-  const { pending, join, leave } = useEventAttendance(event, onChange, { onError: toast.error })
+  const [error, setError] = useState('')
+  const { pending, join, leave } = useEventAttendance(event, onChange, { onError: setError })
+  const attempt = (action) => () => {
+    setError('')
+    return action()
+  }
   const username = currentUser?.username
   if (event.status === 'CANCELLED' || event.status === 'FINISHED') return null
   if (username && event.organizerUsername === username) return <span className="event-card__badge">Organizas</span>
+  const withError = (button) => (
+    <>
+      {button}
+      {error && <span className="event-card__error" role="alert">{error}</span>}
+    </>
+  )
   if (event.myStatus === 'GOING') {
-    return <Button size="small" variant="outline" onClick={leave} disabled={pending} aria-label="Estás dentro. Pulsa para salir de la quedada">Estás dentro ✓</Button>
+    return withError(<Button size="small" variant="outline" onClick={attempt(leave)} disabled={pending} aria-label="Estás dentro. Pulsa para salir de la quedada">Estás dentro ✓</Button>)
   }
   if (event.myStatus === 'WAITLIST') {
-    return <Button size="small" variant="outline" onClick={leave} disabled={pending}>En lista de espera</Button>
+    return withError(<Button size="small" variant="outline" onClick={attempt(leave)} disabled={pending}>En lista de espera</Button>)
   }
-  return (
-    <Button size="small" variant="secondary" className="event-card__join" onClick={join} disabled={pending}>
+  return withError(
+    <Button size="small" variant="secondary" className="event-card__join" onClick={attempt(join)} disabled={pending}>
       {isFull(event) ? 'Lista de espera' : 'Apuntarme'}
-    </Button>
+    </Button>,
   )
 }
 

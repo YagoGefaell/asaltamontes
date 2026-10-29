@@ -3,8 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
 import { getBlockedUsersRequest, unblockUserRequest } from "../../features/users/services/users.service";
 import Avatar from "../../shared/ui/Avatar";
-import { useToast } from "../../shared/ui/Toast";
-import ConfirmModal from "../../shared/ui/ConfirmModal";
+import FormError from "../../shared/forms/FormError";
 
 const DM_POLICY_OPTIONS = [
   { value: "EVERYONE", label: "Cualquier usuaria" },
@@ -15,8 +14,7 @@ const DM_POLICY_OPTIONS = [
 
 export default function PrivacySettings() {
   const { userProfile, updateUserProfile } = useUserProfile();
-  const toast = useToast();
-  const [toUnblock, setToUnblock] = useState(null);
+  const [error, setError] = useState("");
   const [blocked, setBlocked] = useState([]);
   const [hasMore, setHasMore] = useState(false);
   const [page, setPage] = useState(0);
@@ -24,17 +22,18 @@ export default function PrivacySettings() {
 
   const load = useCallback(async (pageToLoad) => {
     setLoading(true);
+    setError("");
     try {
       const result = await getBlockedUsersRequest(pageToLoad);
       setBlocked((current) => (pageToLoad === 0 ? result.content : [...current, ...result.content]));
       setHasMore(!result.last);
       setPage(pageToLoad);
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   useEffect(() => {
     load(0);
@@ -42,26 +41,24 @@ export default function PrivacySettings() {
   }, []);
 
   const handlePolicyChange = async (event) => {
+    setError("");
     const updated = await updateUserProfile({ dmPolicy: event.target.value });
-    if (updated) {
-      toast.success("Preferencia guardada");
-    } else {
-      toast.error("No se ha podido guardar la preferencia");
-    }
+    if (!updated) setError("No se ha podido guardar la preferencia");
   };
 
   const handleUnblock = async (username) => {
-    setToUnblock(null);
+    setError("");
     try {
       await unblockUserRequest(username);
       setBlocked((current) => current.filter((user) => user.username !== username));
-    } catch (error) {
-      toast.error(error.message);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
   return (
     <div className="privacy-settings">
+      <FormError message={error} />
       <section>
         <h3>Quién puede escribirme</h3>
         <p className="privacy-hint">
@@ -88,7 +85,7 @@ export default function PrivacySettings() {
             <li key={user.username}>
               <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="sm" />
               <span className="blocked-name">@{user.username}</span>
-              <button type="button" onClick={() => setToUnblock(user.username)}>Desbloquear</button>
+              <button type="button" onClick={() => handleUnblock(user.username)}>Desbloquear</button>
             </li>
           ))}
         </ul>
@@ -97,14 +94,6 @@ export default function PrivacySettings() {
         )}
       </section>
 
-      <ConfirmModal
-        open={toUnblock !== null}
-        title="Desbloquear"
-        message={`¿Desbloquear a @${toUnblock}?`}
-        confirmLabel="Desbloquear"
-        onConfirm={() => handleUnblock(toUnblock)}
-        onCancel={() => setToUnblock(null)}
-      />
     </div>
   );
 }

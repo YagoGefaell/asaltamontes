@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import NotificationSettings from './NotificationSettings.jsx'
-import { ToastProvider } from '../../shared/ui/Toast.jsx'
 import {
   getNotificationPreferencesRequest,
   updateNotificationPreferencesRequest,
@@ -12,7 +11,7 @@ vi.mock('../../features/notifications/services/notifications.service', () => ({
   updateNotificationPreferencesRequest: vi.fn(),
 }))
 
-const renderPage = () => render(<ToastProvider><NotificationSettings /></ToastProvider>)
+const renderPage = () => render(<NotificationSettings />)
 
 describe('NotificationSettings', () => {
   beforeEach(() => {

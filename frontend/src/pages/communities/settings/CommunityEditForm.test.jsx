@@ -1,7 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import CommunityEditForm from './CommunityEditForm.jsx'
-import { ToastProvider } from '../../../shared/ui/Toast.jsx'
 
 vi.mock('../../../features/communities/services/communities.service', () => ({ updateCommunityRequest: vi.fn() }))
 
@@ -10,9 +9,9 @@ const community = { id: 'c1', name: 'Trail Vigo', role: 'OWNER', visibility: 'PU
 describe('CommunityEditForm', () => {
   it('starts with the round picture to tap, as in the creator, before the data', () => {
     const { container } = render(
-      <ToastProvider>
+      
         <CommunityEditForm community={community} />
-      </ToastProvider>,
+      ,
     )
     const picture = screen.getByRole('button', { name: 'Cambiar imagen: imagen de la comunidad' })
     expect(container.querySelector('form').firstElementChild).toBe(picture.closest('.image-uploader'))

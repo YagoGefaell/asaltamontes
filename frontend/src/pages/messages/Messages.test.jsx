@@ -17,7 +17,6 @@ const service = vi.hoisted(() => ({
 }))
 vi.mock('../../features/messages/services/messages.service', () => service)
 
-import { ToastProvider } from '../../shared/ui/Toast.jsx'
 import Messages from './Messages.jsx'
 import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
 
@@ -45,7 +44,7 @@ describe('Messages (BUG-052)', () => {
     }
     const { unmount } = render(
       <MemoryRouter>
-        <ToastProvider><ConversationsContext.Provider value={value}><Messages /></ConversationsContext.Provider></ToastProvider>
+        <ConversationsContext.Provider value={value}><Messages /></ConversationsContext.Provider>
       </MemoryRouter>,
     )
     expect(setActiveChatId).not.toHaveBeenCalled()
@@ -85,7 +84,7 @@ describe('Messages (BUG-052)', () => {
       }
       render(
         <MemoryRouter initialEntries={[{ pathname: '/messages', state: { selectedConversation: { conversationId: 'c1', type: 'GROUP' } } }]}>
-          <ToastProvider><ConversationsContext.Provider value={value}><Messages /></ConversationsContext.Provider></ToastProvider>
+          <ConversationsContext.Provider value={value}><Messages /></ConversationsContext.Provider>
         </MemoryRouter>,
       )
       return markMessageDeleted

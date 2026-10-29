@@ -10,8 +10,8 @@ vi.mock('../../features/auth/hooks/useAuth', () => ({
 }))
 vi.mock('../../features/users/hooks/useUserProfile', () => ({ useUserProfile: () => ({ userProfile: null, loading: false }) }))
 vi.mock('../../features/users/services/users.service', () => ({ blockUserRequest: vi.fn(), unblockUserRequest: vi.fn() }))
+import { blockUserRequest } from '../../features/users/services/users.service'
 vi.mock('../../shared/components/FollowUserButton', () => ({ default: () => <button>Seguir</button> }))
-vi.mock('../../shared/ui/Toast', () => ({ useToast: () => ({ success: vi.fn(), error: vi.fn() }) }))
 vi.mock('./ProfileTabs', () => ({
   ProfileEvents: () => <div>tab-eventos</div>,
   ProfileCommunities: () => <div>tab-comunidades</div>,
@@ -72,12 +72,22 @@ describe('Profile (someone else)', () => {
     expect(navigate).toHaveBeenCalledWith('/users/ana/followers')
   })
 
-  it('asks for confirmation from the options sheet before blocking', async () => {
+  it('blocks at once from the options sheet, without asking, and shows the result in place', async () => {
+    blockUserRequest.mockResolvedValue({})
     renderProfile({ userData: data, isOwnProfile: false, onBack: vi.fn() })
     fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
-    const options = await screen.findAllByRole('button', { name: 'Bloquear' })
-    fireEvent.click(options[0])
-    await waitFor(() => expect(screen.getByText(/¿Bloquear a @ana\?/)).toBeTruthy())
+    fireEvent.click(await screen.findByRole('button', { name: 'Bloquear' }))
+    await waitFor(() => expect(blockUserRequest).toHaveBeenCalledWith('ana'))
+    expect(await screen.findByText('Has bloqueado a esta usuaria.')).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('keeps the sheet open and shows the error inside when blocking fails', async () => {
+    blockUserRequest.mockRejectedValue(new Error('No se pudo bloquear'))
+    renderProfile({ userData: data, isOwnProfile: false, onBack: vi.fn() })
+    fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Bloquear' }))
+    expect(await screen.findByText('No se pudo bloquear')).toBeTruthy()
   })
 
   it('hides the actions when she is blocked', () => {
