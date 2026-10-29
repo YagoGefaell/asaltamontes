@@ -1,0 +1,4 @@
+.confirm-sheet__message {
+  margin: 0 0 var(--space-3);
+  color: var(--text-color);
+}

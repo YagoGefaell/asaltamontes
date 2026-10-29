@@ -1,6 +1,7 @@
 import BottomSheet from "./BottomSheet";
 import Button from "../forms/Button";
 import FormError from "../forms/FormError";
+import "./ConfirmSheet.css";
 
 /**
  * Confirmación de lo irreversible en una hoja inferior (DESIGN.md «Diálogos y avisos»).
@@ -32,7 +33,7 @@ export default function ConfirmSheet({
         </>
       )}
     >
-      {message}
+      <p className="confirm-sheet__message">{message}</p>
       {children}
     </BottomSheet>
   );
