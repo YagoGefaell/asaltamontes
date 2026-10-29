@@ -35,9 +35,11 @@ describe('Events page views', () => {
     expect(useEvents).toHaveBeenLastCalledWith(expect.objectContaining({ type: 'RACE' }), false)
   })
 
-  it('creates an event from the floating button', () => {
+  it('creates an event from the + of the header, with no floating button and no search shortcut', () => {
     renderPage()
-    expect(screen.getByRole('button', { name: 'Crear quedada' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Crear quedada' })).toHaveAttribute('href', '/events/new')
+    expect(screen.queryByRole('button', { name: 'Crear quedada' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Buscar/ })).not.toBeInTheDocument()
   })
 
   it('goes back to the list', () => {

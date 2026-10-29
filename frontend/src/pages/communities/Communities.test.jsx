@@ -6,7 +6,6 @@ vi.mock('../../features/communities/services/communities.service.js', () => ({
   getMyCommunitiesRequest: vi.fn(),
   getPendingCommunitiesRequest: vi.fn(),
   getCommunitiesRequest: vi.fn(),
-  createCommunityRequest: vi.fn(),
 }))
 vi.mock('../../shared/components/CommunityJoinButton', () => ({ default: () => <button type="button">Unirse</button> }))
 vi.mock('../../shared/components/CommunityRequestButton', () => ({ default: () => <button type="button">Solicitar</button> }))
@@ -19,7 +18,6 @@ import {
   getMyCommunitiesRequest,
   getPendingCommunitiesRequest,
   getCommunitiesRequest,
-  createCommunityRequest,
 } from '../../features/communities/services/communities.service.js'
 
 const page = (items, hasMore = false) => ({ items, hasMore })
@@ -119,10 +117,12 @@ describe('Communities: tus comunidades (T29i)', () => {
     expect(await screen.findByText('Trail Vigo')).toBeInTheDocument()
   })
 
-  it('always links to the search to discover communities, and has no filters', async () => {
+  it('has no search shortcut and no filters', async () => {
     getMyCommunitiesRequest.mockResolvedValue(page([community()]))
     renderPage()
-    expect(await screen.findByRole('link', { name: /Descubrir comunidades cerca de ti/ })).toHaveAttribute('href', '/search?tab=communities')
+    await screen.findByText('Trail Vigo')
+    expect(screen.queryByRole('link', { name: /Descubrir/ })).not.toBeInTheDocument()
+    expect(document.querySelector('a[href^="/search"]')).toBeNull()
     expect(screen.queryByRole('button', { name: /Filtros/ })).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Provincia')).not.toBeInTheDocument()
   })
@@ -137,8 +137,9 @@ describe('Communities: tus comunidades (T29i)', () => {
     expect(await screen.findByText('Cabras de Vigo')).toBeInTheDocument()
     expect(screen.queryByText('Ya soy miembro')).not.toBeInTheDocument()
     expect(getCommunitiesRequest).toHaveBeenCalledWith({ city: 'Vigo' })
-    // the + of the header and the empty state's button
-    expect(screen.getAllByRole('button', { name: 'Crear comunidad' })).toHaveLength(2)
+    // the + of the header goes straight to the create screen; the empty state has its button
+    expect(screen.getByRole('link', { name: 'Crear comunidad' })).toHaveAttribute('href', '/communities/new')
+    expect(screen.getByRole('button', { name: 'Crear comunidad' })).toBeInTheDocument()
   })
 
   it('with none and no city on the profile: no suggestions request', async () => {
@@ -147,22 +148,3 @@ describe('Communities: tus comunidades (T29i)', () => {
     await waitFor(() => expect(getCommunitiesRequest).not.toHaveBeenCalled())
   })
 })
-
-describe('Communities: crear sin avisos (T29s)', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    getMyCommunitiesRequest.mockResolvedValue(page([]))
-    getPendingCommunitiesRequest.mockResolvedValue({ toApprove: [], mine: [] })
-  })
-
-  it('goes straight into the community she has just created', async () => {
-    createCommunityRequest.mockResolvedValue({ id: 'c9', slug: 'nueva', name: 'Nueva' })
-    renderPage()
-    fireEvent.click(await screen.findByRole('button', { name: 'Crear comunidad' }))
-    fireEvent.change(await screen.findByLabelText(/Nombre/), { target: { value: 'Nueva' } })
-    fireEvent.click(screen.getByRole('button', { name: /^Crear/ , hidden: false }))
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/communities/nueva'))
-    expect(screen.queryByRole('status')).toBeNull()
-  })
-})
-
