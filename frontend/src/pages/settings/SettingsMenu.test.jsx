@@ -44,4 +44,17 @@ describe('SettingsMenu', () => {
     expect(logoutEverywhereRequest).not.toHaveBeenCalled()
     expect(logout).not.toHaveBeenCalled()
   })
+
+  it('only lists entries that lead to an existing screen', () => {
+    render(<ToastProvider><MemoryRouter><SettingsMenu /></MemoryRouter></ToastProvider>)
+    for (const label of ['Perfil', 'Notificaciones', 'Ajustes de privacidad']) {
+      fireEvent.click(screen.getByText(label))
+    }
+    expect(navigate.mock.calls.map(([path]) => path)).toEqual([
+      '/settings/profile', '/settings/notifications', '/settings/privacy',
+    ])
+    for (const gone of ['Cursos', 'Score en LinkedIn', 'Duolingo for Schools', 'Escoge un plan', 'Centro de ayuda']) {
+      expect(screen.queryByText(gone)).toBeNull()
+    }
+  })
 })

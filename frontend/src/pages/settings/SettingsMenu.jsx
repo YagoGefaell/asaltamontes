@@ -42,23 +42,10 @@ export default function SettingsMenu() {
     {
       title: "Cuenta",
       items: [
-        { label: "Preferencias", path: "/settings/preferences" },
         { label: "Perfil", path: "/settings/profile" },
         { label: "Notificaciones", path: "/settings/notifications" },
-        { label: "Cursos", path: "/settings/courses" },
-        { label: "Score en LinkedIn", path: "/settings/linkedin" },
-        { label: "Duolingo for Schools", path: "/settings/schools" },
-        { label: "Redes sociales", path: "/settings/social" },
         { label: "Ajustes de privacidad", path: "/settings/privacy" },
       ],
-    },
-    {
-      title: "Suscripción",
-      items: [{ label: "Escoge un plan", path: "/settings/plan" }],
-    },
-    {
-      title: "Soporte",
-      items: [{ label: "Centro de ayuda", path: "/settings/help" }],
     },
     {
       title: "Sesión",
