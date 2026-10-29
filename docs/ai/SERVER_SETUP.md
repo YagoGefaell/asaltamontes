@@ -89,7 +89,8 @@ Dentro de Claude Code:
 0. Tailscale (para T07, cuando quieras): `curl -fsSL https://tailscale.com/install.sh | sh && sudo tailscale up`. No requiere abrir puertos en el router.
 1. Modo de permisos: **auto** (Shift+Tab hasta "auto mode"). Las reglas de `.claude/settings.json` bloquean igualmente lo peligroso: push a main, merge, `docker compose down`, borrar volúmenes, `rm -rf`.
 2. Opcional: `/remote-control` para seguirlo y contestarle desde el móvil.
-3. Escribe **`/autopilot`**. Trabajará hasta quedarse sin trabajo seguro, bloqueado o en el límite de PRs, y dejará todo registrado.
+3. Escribe **`/loop /autopilot`**. `/loop` lo vuelve a despertar cada vez que termina un turno; si no hay trabajo, revisa cada 20–30 min si has mergeado o comentado algo. Se para solo con `AUTOPILOT: STOP` en STATUS, con el freno del 80 % semanal o ante un bloqueo, y deja todo registrado.
+   Desde SSH: `tmux new-session -d -s claude -c ~/work/asaltamontes "bash -lc \"~/.local/bin/claude --model sonnet --permission-mode auto \\\"/loop /autopilot\\\"; exec bash\""`
 
 ## 7. Tu rutina de revisión
 - Revisa las PRs en GitHub (comentarios en línea o generales) y mergea con **Squash**.
