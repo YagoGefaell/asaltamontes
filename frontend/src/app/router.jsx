@@ -16,6 +16,7 @@ import Search from "../pages/search/Search.jsx";
 import Messages from "../pages/messages/Messages.jsx";
 import Notifications from "../pages/notifications/Notifications.jsx";
 import Communities from "../pages/communities/Communities.jsx";
+import CommunityCreate from "../pages/communities/CommunityCreate.jsx";
 import CommunityProfileDetail from "../pages/communities/CommunityProfileDetail.jsx";
 import CommunitySettingsMenu from "../pages/communities/CommunitySettingsMenu.jsx";
 import Events from "../pages/events/Events.jsx";
@@ -57,6 +58,7 @@ export function AppRouter() {
           <Route path="messages" element={<Messages />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="communities" element={<Communities />} />
+          <Route path="communities/new" element={<CommunityCreate />} />
           <Route path="communities/:slug" element={<CommunityProfileDetail />} />
           <Route path="events" element={<Events />} />
           <Route path="events/new" element={<EventEditor />} />

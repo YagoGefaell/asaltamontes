@@ -117,7 +117,7 @@ Principios, por orden:
 
 ## 5. Componentes disponibles (`frontend/src/shared/`)
 
-Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, `Tabs`, `Chip`, `PageHeader`, `Fab`), créalo en `shared/ui/` con test, en su propia PR o en la primera que lo necesite, y úsalo en todas partes.
+Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, `Tabs`, `Chip`, `PageHeader`), créalo en `shared/ui/` con test, en su propia PR o en la primera que lo necesite, y úsalo en todas partes.
 
 | Componente | Para qué |
 |---|---|
@@ -130,7 +130,7 @@ Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, 
 | `ui/ToggleSwitch` | Interruptor en ajustes |
 | `ui/EmptyState`, `ui/Skeleton` | Vacío y carga |
 | `ui/BottomSheet` (confirmación) | Confirmar lo irreversible (ver «Diálogos y avisos»). `Modal`, `ConfirmModal` y `Toast` se retiran en T29s: no usarlos en pantallas nuevas |
-| `ui/PageHeader`, `ui/Tabs`, `ui/Chip` + `ChipRow`, `ui/BottomSheet`, `ui/Fab` | Cabecera de pantalla, pestañas, fila de chips, hoja inferior y botón flotante (T29c) |
+| `ui/PageHeader`, `ui/Tabs`, `ui/Chip` + `ChipRow`, `ui/BottomSheet` | Cabecera de pantalla, pestañas, fila de chips y hoja inferior (T29c; el botón flotante se retiró en T29k) |
 | `ui/ImageUploader`, `ui/AvatarUploader` | Subida de imágenes |
 | `ui/NavBar`, `layouts/MainLayout`, `layouts/SettingsLayout` | Estructura |
 

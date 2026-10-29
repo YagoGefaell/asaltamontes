@@ -9,7 +9,6 @@ import PageHeader from "../../../shared/ui/PageHeader.jsx";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 
 const CommunityCreatorPanel = ({
-  isOpen,
   creatingCommunity,
   onClose,
   onSubmitCommunity,
@@ -54,8 +53,6 @@ const CommunityCreatorPanel = ({
           description: communityDescription.trim() || null,
           coverMediaId,
         });
-        resetState();
-        onClose();
       } catch (error) {
         setCreateCommunityError(error?.message || "No se pudo crear la comunidad");
       }
@@ -67,17 +64,12 @@ const CommunityCreatorPanel = ({
       communityDescription,
       coverMediaId,
       onSubmitCommunity,
-      onClose,
     ]
   );
 
-  if (!isOpen) {
-    return null;
-  }
-
   return (
     <div className="community-creator-page" aria-label="Crear comunidad">
-      <PageHeader title="Crear comunidad" onBack={handleClose} backDisabled={creatingCommunity} backLabel="Volver a comunidades" />
+      <PageHeader title="Crear comunidad" onBack={handleClose} backDisabled={creatingCommunity} backLabel="Volver" />
 
       <form className="community-creator-form" onSubmit={handleSubmit}>
         <ImageUploader

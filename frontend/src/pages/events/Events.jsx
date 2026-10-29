@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { FaList, FaMapMarkedAlt, FaPlus, FaSearch } from 'react-icons/fa'
+import { Link } from 'react-router-dom'
+import { FaList, FaMapMarkedAlt, FaPlus } from 'react-icons/fa'
 import { useEvents } from '../../features/events/hooks/useEvents.js'
 import EventCard from '../../features/events/components/EventCard.jsx'
 import EventsMapSection from '../../features/events/components/EventsMapSection.jsx'
@@ -9,13 +9,11 @@ import { EMPTY_FILTERS, hasActiveFilters, toQueryFilters } from '../../features/
 import EmptyState from '../../shared/ui/EmptyState.jsx'
 import Skeleton from '../../shared/ui/Skeleton.jsx'
 import PageHeader from '../../shared/ui/PageHeader.jsx'
-import Fab from '../../shared/ui/Fab.jsx'
 import Button from '../../shared/forms/Button.jsx'
 import './Events.css'
 
 
 export default function Events() {
-  const navigate = useNavigate()
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [view, setView] = useState('list')
   const mapView = view === 'map'
@@ -46,7 +44,6 @@ export default function Events() {
         title="Quedadas"
         actions={
           <>
-            <Link to="/search?tab=events" aria-label="Buscar quedadas"><FaSearch aria-hidden="true" /></Link>
             <button
               type="button"
               aria-label={mapView ? 'Ver lista' : 'Ver mapa'}
@@ -54,6 +51,7 @@ export default function Events() {
             >
               {mapView ? <FaList aria-hidden="true" /> : <FaMapMarkedAlt aria-hidden="true" />}
             </button>
+            <Link to="/events/new" aria-label="Crear quedada" title="Crear quedada"><FaPlus aria-hidden="true" /></Link>
           </>
         }
       />
@@ -90,7 +88,6 @@ export default function Events() {
           </>
         )}
       </div>}
-      <Fab icon={<FaPlus aria-hidden="true" />} label="Crear quedada" onClick={() => navigate('/events/new')} />
     </div>
   )
 }

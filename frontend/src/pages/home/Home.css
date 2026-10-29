@@ -133,3 +133,41 @@
   align-items: center;
   justify-content: center;
 }
+
+/* Hoja del «+» de la cabecera: una fila por cosa que se puede crear */
+.home-create {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-create__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: var(--space-3) 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-color);
+  font: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.home-create__option > span {
+  flex: 1;
+}
+
+.home-create__option:focus-visible {
+  outline: var(--focus-outline);
+  outline-offset: -2px;
+}
+
+.home-create__chevron {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}

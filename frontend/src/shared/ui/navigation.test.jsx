@@ -4,7 +4,6 @@ import { describe, expect, it, vi } from 'vitest'
 import BottomSheet from './BottomSheet.jsx'
 import ConfirmSheet from './ConfirmSheet.jsx'
 import { Chip, ChipRow } from './Chip.jsx'
-import Fab from './Fab.jsx'
 import PageHeader from './PageHeader.jsx'
 import Tabs from './Tabs.jsx'
 
@@ -82,15 +81,6 @@ describe('Chip', () => {
     expect(screen.getByRole('button', { name: 'Hoy' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: 'Este finde' })).toHaveAttribute('aria-pressed', 'false')
     fireEvent.click(screen.getByRole('button', { name: 'Hoy' }))
-    expect(onClick).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe('Fab', () => {
-  it('is an icon button named by its label', () => {
-    const onClick = vi.fn()
-    render(<Fab icon={<span>+</span>} label="Crear quedada" onClick={onClick} />)
-    fireEvent.click(screen.getByRole('button', { name: 'Crear quedada' }))
     expect(onClick).toHaveBeenCalledTimes(1)
   })
 })
