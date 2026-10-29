@@ -173,13 +173,14 @@ public class PostQueryRepository {
     /**
      * Comments of a post, oldest first, keyset after {@code cursor}. A comment of somebody blocked in either
      * direction is left out, unless the viewer moderates the community of the post ({@code staff}, D-026): then
-     * she sees and may delete them all. One query whatever the page size.
+     * she sees and may delete them all. {@code postOwner}: she wrote the profile post, so she may delete any
+     * comment on it (D-027), but a block still hides it. One query whatever the page size.
      */
-    public List<CommentRow> comments(Long postId, Long viewerId, boolean staff, OpaqueCursor cursor, int limit) {
+    public List<CommentRow> comments(Long postId, Long viewerId, boolean staff, boolean postOwner, OpaqueCursor cursor, int limit) {
         StringBuilder jpql = new StringBuilder("""
                 SELECT new io.github.yagogefaell.asaltamontes.post.repository.PostQueryRepository$CommentRow(
                     cm.publicId, cm.body, cm.createdAt, u.username, pr.fullName, pr.profilePictureUrl,
-                    (CASE WHEN cm.authorId = :viewer OR :staff = true THEN true ELSE false END))
+                    (CASE WHEN cm.authorId = :viewer OR :staff = true OR :postOwner = true THEN true ELSE false END))
                 FROM PostComment cm
                 JOIN UserAccount u ON u.id = cm.authorId
                 LEFT JOIN u.profile pr
@@ -196,6 +197,7 @@ public class PostQueryRepository {
         TypedQuery<CommentRow> query = entityManager.createQuery(jpql.toString(), CommentRow.class)
                 .setParameter("viewer", viewerId)
                 .setParameter("staff", staff)
+                .setParameter("postOwner", postOwner)
                 .setParameter("postId", postId)
                 .setMaxResults(limit);
         if (cursor != null) {
@@ -206,16 +208,17 @@ public class PostQueryRepository {
     }
 
     /** One comment (for the answer to the one who just wrote it). */
-    public CommentRow comment(UUID publicId, Long viewerId, boolean staff) {
+    public CommentRow comment(UUID publicId, Long viewerId, boolean staff, boolean postOwner) {
         return entityManager.createQuery("""
                 SELECT new io.github.yagogefaell.asaltamontes.post.repository.PostQueryRepository$CommentRow(
                     cm.publicId, cm.body, cm.createdAt, u.username, pr.fullName, pr.profilePictureUrl,
-                    (CASE WHEN cm.authorId = :viewer OR :staff = true THEN true ELSE false END))
+                    (CASE WHEN cm.authorId = :viewer OR :staff = true OR :postOwner = true THEN true ELSE false END))
                 FROM PostComment cm JOIN UserAccount u ON u.id = cm.authorId LEFT JOIN u.profile pr
                 WHERE cm.publicId = :publicId
                 """, CommentRow.class)
                 .setParameter("viewer", viewerId)
                 .setParameter("staff", staff)
+                .setParameter("postOwner", postOwner)
                 .setParameter("publicId", publicId)
                 .getSingleResult();
     }

@@ -220,7 +220,7 @@ public class PostService {
         if (cursor != null && cursor.order() == null) {
             throw new BadRequestException("Cursor no válido");
         }
-        List<CommentRow> rows = queries.comments(row.postId(), viewer.getId(), row.staff(), cursor, size + 1);
+        List<CommentRow> rows = queries.comments(row.postId(), viewer.getId(), row.staff(), isProfileOwner(row, viewer), cursor, size + 1);
         boolean hasMore = rows.size() > size;
         List<CommentRow> items = rows.subList(0, Math.min(size, rows.size()));
         String next = null;
@@ -251,10 +251,18 @@ public class PostService {
         postRepository.addToCommentCount(row.postId(), 1);
         events.publishEvent(new PostCommented(row.publicId(), row.authorId(), user.getId(),
                 text.length() > 80 ? text.substring(0, 80) + "…" : text));
-        return toDto(queries.comment(saved.getPublicId(), user.getId(), false));
+        return toDto(queries.comment(saved.getPublicId(), user.getId(), false, isProfileOwner(row, user)));
     }
 
-    /** The author of the comment, or the owner or a moderator of the community of the post (D-026: also through blocks). */
+    /** She wrote a post on her own profile (no community): she may delete any comment on it (D-027, blocks still hide). */
+    private static boolean isProfileOwner(PostRow row, UserAccount user) {
+        return row.communityId() == null && row.authorId().equals(user.getId());
+    }
+
+    /**
+     * The author of the comment, or the owner or a moderator of the community of the post (D-026: also through
+     * blocks), or the author of a profile post (D-027: not through blocks).
+     */
     @Transactional
     public void deleteComment(UserAccount user, UUID publicId, UUID commentId) {
         PostRow row = queries.one(user.getId(), publicId, true).orElseThrow(() -> new NotFoundException(POST_NOT_FOUND));
@@ -265,8 +273,17 @@ public class PostService {
             if (blockRepository.existsEitherWay(user.getId(), comment.getAuthorId())) {
                 throw new NotFoundException(COMMENT_NOT_FOUND);
             }
+            if (isProfileOwner(row, user)) {
+                // D-027: the author of the profile post removes any visible comment on it
+                markCommentDeleted(row, comment);
+                return;
+            }
             throw new ForbiddenException("No puedes borrar este comentario");
         }
+        markCommentDeleted(row, comment);
+    }
+
+    private void markCommentDeleted(PostRow row, PostComment comment) {
         // Only the request that flips the row moves the counter
         if (commentRepository.markDeleted(comment.getId(), Instant.now()) == 0) {
             throw new NotFoundException(COMMENT_NOT_FOUND);
