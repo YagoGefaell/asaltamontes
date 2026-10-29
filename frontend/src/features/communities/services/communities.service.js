@@ -131,6 +131,20 @@ export async function getMyCommunitiesRequest({ page = 0, size = COMMUNITIES_PAG
   }
 }
 
+// -------- PENDING (T31c) --------
+// { toApprove: [{ community, pendingCount, latestRequestAt }], mine: [{ id, community, requestedAt }] }
+export async function getPendingCommunitiesRequest() {
+  try {
+    const response = await apiClient.get('/api/communities/me/pending')
+    return {
+      toApprove: Array.isArray(response?.toApprove) ? response.toApprove : [],
+      mine: Array.isArray(response?.mine) ? response.mine : [],
+    }
+  } catch (error) {
+    throw new Error(error.message || 'Error obteniendo lo pendiente')
+  }
+}
+
 // -------- PUBLIC COMMUNITIES OF ANOTHER USER (T31b) --------
 export async function getUserCommunitiesRequest(username, { page = 0, size = COMMUNITIES_PAGE_SIZE } = {}) {
   try {

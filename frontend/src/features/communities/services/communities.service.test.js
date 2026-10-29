@@ -35,3 +35,13 @@ describe('community chat requests (T20)', () => {
     await expect(getCommunityChatRequest('c-1')).rejects.toThrow('Comunidad no encontrada')
   })
 })
+
+
+describe("pending communities (T31c)", () => {
+  it("normalizes the answer", async () => {
+    const { getPendingCommunitiesRequest } = await import("./communities.service.js")
+    get.mockResolvedValue({ toApprove: [{ pendingCount: 1 }] })
+    await expect(getPendingCommunitiesRequest()).resolves.toEqual({ toApprove: [{ pendingCount: 1 }], mine: [] })
+    expect(get).toHaveBeenCalledWith("/api/communities/me/pending")
+  })
+})

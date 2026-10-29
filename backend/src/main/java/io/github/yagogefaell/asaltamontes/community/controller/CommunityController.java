@@ -23,6 +23,9 @@ import io.github.yagogefaell.asaltamontes.community.dto.CommunitySearchDto;
 import io.github.yagogefaell.asaltamontes.community.dto.CreateCommunityDto;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityModerationService;
 import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
+import io.github.yagogefaell.asaltamontes.community.service.MyCommunitiesService;
+import io.github.yagogefaell.asaltamontes.community.dto.MyCommunityDto;
+import io.github.yagogefaell.asaltamontes.community.dto.PendingCommunitiesDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 
@@ -33,9 +36,11 @@ public class CommunityController {
     private final CommunityService communityService;
     private final CommunityModerationService moderationService;
     private final CommunityChatService communityChat;
+    private final MyCommunitiesService myCommunities;
 
     public CommunityController(CommunityService communityService, CommunityModerationService moderationService,
-                               CommunityChatService communityChat) {
+                               CommunityChatService communityChat, MyCommunitiesService myCommunities) {
+        this.myCommunities = myCommunities;
         this.communityService = communityService;
         this.moderationService = moderationService;
         this.communityChat = communityChat;
@@ -64,11 +69,16 @@ public class CommunityController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Page<CommunitySearchDto>> getMyCommunities(
+    public ResponseEntity<Page<MyCommunityDto>> getMyCommunities(
             @AuthenticationPrincipal UserAccount currentUser,
             @PageableDefault(size = 20) Pageable pageable) {
-        Page<CommunitySearchDto> communities = communityService.getMyCommunities(currentUser, pageable);
-        return ResponseEntity.ok(communities);
+        return ResponseEntity.ok(myCommunities.myCommunities(currentUser, pageable));
+    }
+
+    /** Join requests waiting for her approval (as owner/moderator) and her own undecided ones (T31c). */
+    @GetMapping("/me/pending")
+    public ResponseEntity<PendingCommunitiesDto> getPending(@AuthenticationPrincipal UserAccount currentUser) {
+        return ResponseEntity.ok(myCommunities.pending(currentUser));
     }
 
     @GetMapping("/{slug}")

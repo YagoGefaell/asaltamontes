@@ -1,100 +1,149 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const hookState = vi.hoisted(() => ({ value: null }))
-
-vi.mock('../../features/communities/hooks/useCommunities.js', () => ({
-  useCommunities: () => hookState.value,
+vi.mock('../../features/communities/services/communities.service.js', () => ({
+  getMyCommunitiesRequest: vi.fn(),
+  getPendingCommunitiesRequest: vi.fn(),
+  getCommunitiesRequest: vi.fn(),
+  createCommunityRequest: vi.fn(),
 }))
-vi.mock('../../shared/components/CommunityJoinButton', () => ({
-  default: () => <button type="button">Unirse</button>,
-}))
+vi.mock('../../shared/components/CommunityJoinButton', () => ({ default: () => <button type="button">Unirse</button> }))
+vi.mock('../../shared/components/CommunityRequestButton', () => ({ default: () => <button type="button">Solicitar</button> }))
+const navigate = vi.hoisted(() => vi.fn())
+vi.mock('react-router-dom', async (orig) => ({ ...(await orig()), useNavigate: () => navigate }))
 
 import Communities from './Communities.jsx'
 import { ToastProvider } from '../../shared/ui/Toast.jsx'
+import { UserProfileContext } from '../../features/users/hooks/user.context'
+import {
+  getMyCommunitiesRequest,
+  getPendingCommunitiesRequest,
+  getCommunitiesRequest,
+} from '../../features/communities/services/communities.service.js'
 
-function state(overrides = {}) {
-  return {
-    communities: [],
-    setCommunities: vi.fn(),
-    loading: false,
-    loadingMore: false,
-    hasMore: false,
-    loadMore: vi.fn(),
-    error: null,
-    refetch: vi.fn(),
-    ...overrides,
-  }
-}
+const page = (items, hasMore = false) => ({ items, hasMore })
+const community = (over = {}) => ({
+  id: 'c1', name: 'Trail Vigo', slug: 'trail-vigo', role: 'MEMBER', memberCount: 4, imageUrl: null,
+  chat: { conversationId: 'chat-1', lastMessage: 'quedamos', lastSender: 'bea', lastMessageAt: '2020-01-01T10:00:00', unreadCount: 0 },
+  nextEvent: null,
+  ...over,
+})
 
-function renderPage() {
+function renderPage(profile = { city: 'Vigo' }) {
   return render(
     <MemoryRouter>
       <ToastProvider>
-        <Communities />
+        <UserProfileContext.Provider value={{ userProfile: profile, setUserProfile: vi.fn(), loading: false }}>
+          <Communities />
+        </UserProfileContext.Provider>
       </ToastProvider>
     </MemoryRouter>,
   )
 }
 
-describe('Communities (T29b)', () => {
+describe('Communities: tus comunidades (T29i)', () => {
   beforeEach(() => {
-    hookState.value = state()
+    vi.clearAllMocks()
+    getMyCommunitiesRequest.mockResolvedValue(page([]))
+    getPendingCommunitiesRequest.mockResolvedValue({ toApprove: [], mine: [] })
+    getCommunitiesRequest.mockResolvedValue(page([]))
   })
 
-  it('shows skeleton cards while loading', () => {
-    hookState.value = state({ loading: true })
+  it('shows skeleton rows while loading', () => {
+    getMyCommunitiesRequest.mockReturnValue(new Promise(() => {}))
     renderPage()
     expect(screen.getAllByTestId('community-skeleton').length).toBeGreaterThan(0)
   })
 
-  it('shows the error with a retry button', () => {
-    hookState.value = state({ error: 'Error obteniendo comunidades' })
+  it('shows the error with a retry button', async () => {
+    getMyCommunitiesRequest.mockRejectedValueOnce(new Error('Error obteniendo tus comunidades'))
     renderPage()
-    expect(screen.getByRole('alert')).toHaveTextContent('Error obteniendo comunidades')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Error obteniendo tus comunidades')
+    getMyCommunitiesRequest.mockResolvedValueOnce(page([community()]))
     fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
-    expect(hookState.value.refetch).toHaveBeenCalled()
+    expect(await screen.findByText('Trail Vigo')).toBeInTheDocument()
   })
 
-  it('offers to create a community when there are none', () => {
+  it('lists each community with its last message, unread count and next meetup', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([
+      community({
+        chat: { conversationId: 'chat-1', lastMessage: 'quedamos', lastSender: 'bea', lastMessageAt: '2020-01-01T10:00:00', unreadCount: 3 },
+        nextEvent: { id: 'e1', title: 'Tirada larga', startsAt: '2030-05-04T08:00:00Z', timezone: 'Europe/Madrid' },
+      }),
+    ]))
     renderPage()
-    expect(screen.getByText('Todavía no hay comunidades')).toBeInTheDocument()
+    const link = await screen.findByRole('link', { name: /Trail Vigo/ })
+    expect(link).toHaveAttribute('href', '/communities/trail-vigo')
+    expect(link).toHaveTextContent('bea: quedamos')
+    expect(link).toHaveTextContent('Próxima quedada')
+    expect(link.querySelector('button')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir el chat de Trail Vigo, 3 sin leer' }))
+    expect(navigate).toHaveBeenCalledWith('/messages', {
+      state: { selectedConversation: expect.objectContaining({ conversationId: 'chat-1', displayName: 'Trail Vigo' }) },
+    })
+  })
+
+  it('does not show text written by a blocked user', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([
+      community({ chat: { conversationId: 'chat-1', lastMessage: null, lastSender: null, lastMessageAt: '2020-01-01T10:00:00', unreadCount: 0 } }),
+    ]))
+    renderPage()
+    expect(await screen.findByText('Mensaje de una usuaria bloqueada')).toBeInTheDocument()
+  })
+
+  it('hides Pendiente when there is nothing pending', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([community()]))
+    renderPage()
+    await screen.findByText('Trail Vigo')
+    expect(screen.queryByText('Pendiente')).not.toBeInTheDocument()
+  })
+
+  it('links the pending items: requests to approve and her own', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([community()]))
+    getPendingCommunitiesRequest.mockResolvedValue({
+      toApprove: [{ community: { id: 'p1', name: 'Privada', slug: 'privada' }, pendingCount: 2 }],
+      mine: [{ id: 'r1', community: { id: 'p2', name: 'Otra', slug: 'otra' } }],
+    })
+    renderPage()
+    expect(await screen.findByText('2 solicitudes por aprobar')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /Privada/ })).toHaveAttribute('href', '/communities/privada/settings/requests')
+    expect(screen.getByRole('link', { name: /Otra/ })).toHaveAttribute('href', '/communities/otra')
+    expect(screen.getByText('Tu solicitud está esperando respuesta')).toBeInTheDocument()
+  })
+
+  it('keeps working if the pending request fails', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([community()]))
+    getPendingCommunitiesRequest.mockRejectedValue(new Error('boom'))
+    renderPage()
+    expect(await screen.findByText('Trail Vigo')).toBeInTheDocument()
+  })
+
+  it('always links to the search to discover communities, and has no filters', async () => {
+    getMyCommunitiesRequest.mockResolvedValue(page([community()]))
+    renderPage()
+    expect(await screen.findByRole('link', { name: /Descubrir comunidades cerca de ti/ })).toHaveAttribute('href', '/search?tab=communities')
+    expect(screen.queryByRole('button', { name: /Filtros/ })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Provincia')).not.toBeInTheDocument()
+  })
+
+  it('with none: empty state, create button and suggestions from her profile city', async () => {
+    getCommunitiesRequest.mockResolvedValue(page([
+      { id: 's1', name: 'Cabras de Vigo', slug: 'cabras', role: null, memberCount: 9, city: 'Vigo', visibility: 'PUBLIC' },
+      { id: 's2', name: 'Ya soy miembro', slug: 'miembro', role: 'MEMBER', memberCount: 3, city: 'Vigo', visibility: 'PUBLIC' },
+    ]))
+    renderPage({ city: 'Vigo' })
+    expect(await screen.findByText('Aún no estás en ninguna comunidad')).toBeInTheDocument()
+    expect(await screen.findByText('Cabras de Vigo')).toBeInTheDocument()
+    expect(screen.queryByText('Ya soy miembro')).not.toBeInTheDocument()
+    expect(getCommunitiesRequest).toHaveBeenCalledWith({ city: 'Vigo' })
+    // the + of the header and the empty state's button
     expect(screen.getAllByRole('button', { name: 'Crear comunidad' })).toHaveLength(2)
   })
 
-  it('links each card to its community without nesting buttons in the link', () => {
-    hookState.value = state({
-      communities: [{ id: 1, name: 'Trail Madrid', slug: 'trail-madrid', memberCount: 1, role: null, imageUrl: null }],
-    })
-    renderPage()
-    const link = screen.getByRole('link', { name: /Trail Madrid/ })
-    expect(link).toHaveAttribute('href', '/communities/trail-madrid')
-    expect(link).toHaveTextContent('1 miembro')
-    expect(link).toHaveTextContent('Trail Madrid')
-    expect(link.querySelector('button')).toBeNull()
-  })
-
-  it('puts city and province in a sheet and counts them', () => {
-    renderPage()
-    expect(screen.queryByLabelText('Ciudad')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Filtros' }))
-    fireEvent.change(screen.getByLabelText('Ciudad'), { target: { value: 'Madrid' } })
-    fireEvent.change(screen.getByLabelText('Provincia'), { target: { value: 'Madrid' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Aplicar' }))
-    expect(screen.getByRole('button', { name: 'Filtros · 2' })).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Filtros · 2' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Quitar filtros' }))
-    expect(screen.getByRole('button', { name: 'Filtros' })).toBeInTheDocument()
-  })
-
-  it('disables load more while loading the next page', () => {
-    hookState.value = state({
-      communities: [{ id: 1, name: 'A', slug: 'a', memberCount: 2, role: null }],
-      hasMore: true,
-      loadingMore: true,
-    })
-    renderPage()
-    expect(screen.getByRole('button', { name: /Cargando/ })).toBeDisabled()
+  it('with none and no city on the profile: no suggestions request', async () => {
+    renderPage({ city: '' })
+    await screen.findByText('Aún no estás en ninguna comunidad')
+    await waitFor(() => expect(getCommunitiesRequest).not.toHaveBeenCalled())
   })
 })
