@@ -29,6 +29,7 @@ Formato: contexto → decisión → consecuencias. Las nuevas se añaden **al fi
 ## D-006 · App móvil como PWA (2026-10-21)
 - **Decisión:** la app se hace instalable como PWA. Una app nativa se valorará después de la demo.
 - **Consecuencias:** diseño mobile first y HTTPS obligatorio en el servidor para el service worker.
+- **Actualización (2026-10-30):** la app nativa, cuando toque, se hará con **Capacitor** reutilizando el frontend React (no React Native). Spec en [T34](tasks/T34-native-app.md).
 
 ## D-007 · WebSocket con SimpleBroker mientras haya una sola instancia (2026-10-21)
 - **Decisión:** se mantiene el broker STOMP en memoria. Cuando haga falta más de una instancia del backend, se pasará a un relay (RabbitMQ STOMP o Redis pub/sub).

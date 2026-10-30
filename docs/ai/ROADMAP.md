@@ -96,6 +96,7 @@
 - Redis: caché, rate limiting distribuido, relay de STOMP para varias instancias del backend.
 - Migración a hosting (VPS público/gestionado), CDN para imágenes (Cloudflare R2).
 - Push notifications (Web Push / FCM).
+- App nativa iOS y Android con Capacitor (reutiliza el frontend), tras T26 y con el backend ya en internet: [T34](tasks/T34-native-app.md).
 - Monetización: perfiles de marca, posts y eventos patrocinados, analítica para marcas.
 - GPX de rutas, integración con Strava.
 
