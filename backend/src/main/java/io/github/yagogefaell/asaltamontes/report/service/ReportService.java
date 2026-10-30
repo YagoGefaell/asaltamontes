@@ -1,5 +1,8 @@
 package io.github.yagogefaell.asaltamontes.report.service;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReportService {
 
+    /** After a dismissal, the same reporter cannot report the same target again for this long (T23c). */
+    static final Duration DISMISSED_COOLDOWN = Duration.ofDays(7);
+
     private final ReportRepository reportRepository;
     private final ReportTargetResolver resolver;
     private final UserActionLimiter limiter;
@@ -44,6 +50,11 @@ public class ReportService {
         ResolvedTarget target = resolver.resolve(reporter, dto.targetType(), dto.target());
         if (reportRepository.existsOpen(reporter.getId(), dto.targetType(), target.targetId())) {
             throw alreadyReported();
+        }
+
+        // Once the moderation has dismissed her report she cannot insist on the same target for a while
+        if (reportRepository.existsDismissedSince(reporter.getId(), dto.targetType(), target.targetId(), Instant.now().minus(DISMISSED_COOLDOWN))) {
+            throw new ConflictException("Ya revisamos tu denuncia sobre esto y no encontramos motivo para actuar");
         }
 
         Report report = new Report();

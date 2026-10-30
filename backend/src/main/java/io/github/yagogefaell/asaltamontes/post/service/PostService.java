@@ -175,6 +175,36 @@ public class PostService {
         mediaIds.forEach(id -> mediaCleanup.deleteIfUnreferenced(id, null));
     }
 
+    /**
+     * Removal by the moderation panel (T23c), after the permission check of the panel. Same effect as the author deleting
+     * it. Returns false if it was already gone.
+     */
+    @Transactional
+    public boolean removeForModeration(Long postId) {
+        List<UUID> mediaIds = postRepository.findMediaIds(postId);
+        if (postRepository.markDeleted(postId, Instant.now()) == 0) {
+            return false;
+        }
+        postRepository.deleteMedia(postId);
+        mediaIds.forEach(id -> mediaCleanup.deleteIfUnreferenced(id, null));
+        return true;
+    }
+
+    /** Removal of a comment by the moderation panel (T23c). Returns false if it was already gone. */
+    @Transactional
+    public boolean removeCommentForModeration(Long commentId) {
+        PostComment comment = commentRepository.findById(commentId).orElse(null);
+        if (comment == null || comment.getDeletedAt() != null) {
+            return false;
+        }
+        Long postId = comment.getPostId();
+        if (commentRepository.markDeleted(commentId, Instant.now()) == 0) {
+            return false;
+        }
+        postRepository.addToCommentCount(postId, -1);
+        return true;
+    }
+
     /** Posts with a photo from public communities and profiles that are not already in her home feed (T22a2). */
     @Transactional(readOnly = true)
     public CursorPageDto<PostDto> explore(UserAccount viewer, String before, Integer limit) {

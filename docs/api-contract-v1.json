@@ -2260,6 +2260,69 @@
         }
       }
     },
+    "/api/admin/reports": {
+      "get": {
+        "summary": "Moderation queue (T23c1). ADMIN or MODERATOR only",
+        "description": "Cursor paginated (limit default 20, max 50). With status=OPEN the queue is oldest first; any other filter, or none, newest first. details and contentSnapshot are free text written by users: show them as plain text, never as HTML. Both become null some days after the report is resolved (asaltamontes.reports.retention-days, default 30). target is the username for USER and the public id for the rest. contentAvailable is only filled in the detail.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["OPEN", "DISMISSED", "ACTIONED"] } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["USER", "MESSAGE", "POST", "COMMENT", "EVENT", "COMMUNITY"] } },
+          { "name": "before", "in": "query", "schema": { "type": "string" }, "description": "Opaque cursor (nextBefore of the previous page)" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Page of reports", "content": { "application/json": { "schema": { "type": "object", "properties": {
+            "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminReport" } },
+            "nextBefore": { "type": "string", "nullable": true } } } } } },
+          "400": { "description": "Invalid cursor" },
+          "403": { "description": "Not staff" }
+        }
+      }
+    },
+    "/api/admin/reports/{id}": {
+      "get": {
+        "summary": "Report detail (T23c1)",
+        "description": "Includes who reported, the reported account, how many open reports the same target has and whether the content still exists.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "403": { "description": "Not staff" },
+          "404": { "description": "Unknown report" }
+        }
+      }
+    },
+    "/api/admin/reports/{id}/dismiss": {
+      "post": {
+        "summary": "Dismiss a report (T23c1)",
+        "description": "Closes only this report as DISMISSED. The reporter cannot report the same target again for 7 days (409). Audited. Optional body {resolution} (max 1000), a note for the record.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report, now DISMISSED", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "403": { "description": "Not staff" },
+          "404": { "description": "Unknown report" },
+          "409": { "description": "Already resolved" }
+        }
+      }
+    },
+    "/api/admin/reports/{id}/remove-content": {
+      "post": {
+        "summary": "Remove the reported content and close every open report about it (T23c1)",
+        "description": "POST and COMMENT are soft-deleted, MESSAGE is deleted, EVENT is cancelled, COMMUNITY is deleted (ADMIN only, 403 for MODERATOR). A USER report cannot be resolved this way (400): accounts are handled with the suspension (T23c2). Audited. Optional body {resolution}.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report, now ACTIONED", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "400": { "description": "USER report" },
+          "403": { "description": "Not staff, or a MODERATOR on a community" },
+          "404": { "description": "Unknown report" },
+          "409": { "description": "Already resolved" }
+        }
+      }
+    },
     "/api/posts/{postId}/comments": {
       "get": {
         "summary": "Comments of a post, oldest first (T22a2)",
@@ -2412,6 +2475,26 @@
   },
   "components": {
     "schemas": {
+      "AdminReport": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "targetType": { "type": "string" },
+          "target": { "type": "string", "nullable": true },
+          "reason": { "type": "string" },
+          "details": { "type": "string", "nullable": true, "description": "Plain text" },
+          "contentSnapshot": { "type": "string", "nullable": true, "description": "Plain text" },
+          "status": { "type": "string", "enum": ["OPEN", "DISMISSED", "ACTIONED"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "reporterUsername": { "type": "string" },
+          "reportedUsername": { "type": "string", "nullable": true },
+          "openReportsOnTarget": { "type": "integer" },
+          "contentAvailable": { "type": "boolean", "nullable": true },
+          "handledByUsername": { "type": "string", "nullable": true },
+          "handledAt": { "type": "string", "format": "date-time", "nullable": true },
+          "resolution": { "type": "string", "nullable": true }
+        }
+      },
       "Post": {
         "type": "object",
         "description": "A publication as the caller sees it (T22a1). No numeric ids; likeCount/commentCount are denormalised counters; likedByMe is the caller's own like (T22a2)",

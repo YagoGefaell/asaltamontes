@@ -171,6 +171,34 @@ public class MessageService {
         eventPublisher.publishEvent(new MessageDeletedEvent(conversationPublicId, messagePublicId));
     }
 
+    /**
+     * Removal of a user message by the moderation panel (T23c), after its permission check; any chat. Same effects as a
+     * moderator deleting it: the list preview is recomputed and the participants are told. False if it was already gone.
+     */
+    @Transactional
+    public boolean removeForModeration(Long messageId) {
+        Message message = messageRepository.findById(messageId).orElse(null);
+        if (message == null) {
+            return false;
+        }
+        Long conversationId = message.getConversation().getId();
+        UUID conversationPublicId = message.getConversation().getPublicId();
+        UUID messagePublicId = message.getPublicId();
+        if (messageRepository.deleteByIdReturningCount(messageId) == 0) {
+            return false;
+        }
+        Message last = messageRepository.findFirstByConversationIdOrderByIdDesc(conversationId).orElse(null);
+        if (last == null) {
+            conversationRepository.replaceLastMessage(conversationId, null, null, null);
+        } else if (last.getType() == MessageType.USER) {
+            conversationRepository.replaceLastMessage(conversationId, preview(last.getContent()), last.getSentAt(), last.getSender());
+        } else {
+            conversationRepository.replaceLastMessage(conversationId, last.getContent(), last.getSentAt(), null);
+        }
+        eventPublisher.publishEvent(new MessageDeletedEvent(conversationPublicId, messagePublicId));
+        return true;
+    }
+
     /** The text shown in the chat list for the last message. */
     static String preview(String text) {
         return text.length() > PREVIEW_LENGTH ? text.substring(0, PREVIEW_LENGTH).trim() + "..." : text;
