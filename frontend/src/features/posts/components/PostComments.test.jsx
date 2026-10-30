@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PostComments from './PostComments.jsx'
 import { createCommentRequest, deleteCommentRequest, getCommentsRequest } from '../services/posts.service'
 
+const auth = vi.hoisted(() => ({ currentUser: { username: 'yo' } }))
+vi.mock('../../auth/hooks/useAuth', () => ({ useAuth: () => auth }))
 vi.mock('../services/posts.service', () => ({
   COMMENT_BODY_MAX: 1000,
   getCommentsRequest: vi.fn(),
@@ -76,5 +78,17 @@ describe('PostComments', () => {
     await waitFor(() => expect(screen.queryByText('texto c1')).toBeNull())
     expect(deleteCommentRequest).toHaveBeenCalledWith('p1', 'c1')
     expect(onCountChange).toHaveBeenCalledWith(-1)
+  })
+
+  it('offers «Denunciar comentario» on other people\'s comments and not on her own', async () => {
+    getCommentsRequest.mockResolvedValue({
+      items: [comment('c1'), comment('c2', { author: author('yo') })],
+      nextBefore: null,
+    })
+    renderComments()
+    await screen.findByText('texto c1')
+    expect(screen.getAllByRole('button', { name: 'Denunciar comentario' })).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Denunciar comentario' }))
+    expect(screen.getByLabelText('Motivo')).toBeInTheDocument()
   })
 })

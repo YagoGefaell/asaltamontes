@@ -18,6 +18,7 @@ import Skeleton from '../../shared/ui/Skeleton.jsx'
 import Button from '../../shared/forms/Button.jsx'
 import PageHeader from '../../shared/ui/PageHeader.jsx'
 import FormError from '../../shared/forms/FormError.jsx'
+import ReportMenu from '../../features/reports/components/ReportMenu.jsx'
 import { communityPath } from '../../features/communities/utils/communityPath.js'
 import '../../features/events/components/EventActions.css'
 import './EventDetail.css'
@@ -167,10 +168,17 @@ export default function EventDetail() {
       <PageHeader
         onBack={() => navigate('/events')}
         backLabel="Volver a las quedadas"
-        actions={event.canEdit && event.status !== 'CANCELLED' && (
-          <button type="button" onClick={() => navigate(`/events/${event.id}/edit`)} aria-label="Editar quedada" title="Editar quedada">
-            <FaPen aria-hidden="true" />
-          </button>
+        actions={(
+          <>
+            {event.canEdit && event.status !== 'CANCELLED' && (
+              <button type="button" onClick={() => navigate(`/events/${event.id}/edit`)} aria-label="Editar quedada" title="Editar quedada">
+                <FaPen aria-hidden="true" />
+              </button>
+            )}
+            {!isOrganizer && (
+              <ReportMenu menuTitle="Quedada" reportTitle="Denunciar quedada" actionLabel="Denunciar quedada" targetType="EVENT" target={event.id} />
+            )}
+          </>
         )}
       >
         <h1 className="event-detail__header-title">{event.title}</h1>

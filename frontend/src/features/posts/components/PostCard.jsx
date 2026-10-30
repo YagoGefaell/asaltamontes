@@ -4,6 +4,8 @@ import { FaEllipsisH, FaHeart, FaRegComment, FaRegHeart } from "react-icons/fa";
 import Avatar from "../../../shared/ui/Avatar";
 import BottomSheet from "../../../shared/ui/BottomSheet";
 import ConfirmSheet from "../../../shared/ui/ConfirmSheet";
+import ReportSheet from "../../reports/components/ReportSheet";
+import { useAuth } from "../../auth/hooks/useAuth";
 import PostComments from "./PostComments";
 import { communityPath } from "../../communities/utils/communityPath";
 import { deletePostRequest, likePostRequest, unlikePostRequest } from "../services/posts.service";
@@ -21,13 +23,16 @@ export default function PostCard({ post, openComments = false, onDeleted }) {
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [likeError, setLikeError] = useState("");
   const [liking, setLiking] = useState(false);
+  const { currentUser } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
   const { author, community, media = [] } = post;
   const name = author.fullName || author.username;
+  const canReport = Boolean(currentUser) && author.username !== currentUser.username;
 
   // The server answers with the state after the call, so a double tap cannot drift the counter
   const toggleLike = async () => {
@@ -79,7 +84,7 @@ export default function PostCard({ post, openComments = false, onDeleted }) {
             {formatAge(post.createdAt)}
           </span>
         </div>
-        {post.canDelete && (
+        {(post.canDelete || canReport) && (
           <button type="button" className="post-card__more" onClick={() => setMenuOpen(true)} aria-label="Más opciones" aria-haspopup="dialog">
             <FaEllipsisH aria-hidden="true" />
           </button>
@@ -121,14 +126,22 @@ export default function PostCard({ post, openComments = false, onDeleted }) {
         />
       </BottomSheet>
       <BottomSheet open={menuOpen} title="Publicación" onClose={() => setMenuOpen(false)}>
-        <button
-          type="button"
-          className="post-card__sheet-action"
-          onClick={() => { setMenuOpen(false); setDeleteError(""); setConfirmOpen(true); }}
-        >
-          Eliminar publicación
-        </button>
+        {post.canDelete && (
+          <button
+            type="button"
+            className="post-card__sheet-action"
+            onClick={() => { setMenuOpen(false); setDeleteError(""); setConfirmOpen(true); }}
+          >
+            Eliminar publicación
+          </button>
+        )}
+        {canReport && (
+          <button type="button" className="post-card__sheet-action" onClick={() => { setMenuOpen(false); setReportOpen(true); }}>
+            Denunciar publicación
+          </button>
+        )}
       </BottomSheet>
+      <ReportSheet open={reportOpen} title="Denunciar publicación" targetType="POST" target={post.id} onClose={() => setReportOpen(false)} />
       <ConfirmSheet
         open={confirmOpen}
         title="Eliminar publicación"

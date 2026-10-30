@@ -6,6 +6,7 @@ import Button from "../../../shared/forms/Button";
 import PageHeader from "../../../shared/ui/PageHeader";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Skeleton from "../../../shared/ui/Skeleton";
+import ReportMenu from "../../../features/reports/components/ReportMenu";
 import { systemMessageText } from "../../../features/messages/utils/systemMessage";
 import { formatDayLabel, formatMessageTime, isSameDay, parseMessageDate } from "../../../features/messages/utils/messageDates";
 import { groupSubtitle } from "../../../features/messages/utils/groupSubtitle";
@@ -268,6 +269,16 @@ const ChatPane = ({
                       {message.content}
                     </div>
                   </div>
+                  {!isSent && Boolean(message.senderUsername) && (
+                    <ReportMenu
+                      className="message-delete-btn"
+                      menuTitle="Mensaje"
+                      reportTitle="Denunciar mensaje"
+                      actionLabel="Denunciar mensaje"
+                      targetType="MESSAGE"
+                      target={message.id}
+                    />
+                  )}
                   {onDeleteMessage && canDeleteMessage(message, { moderationRole, currentUsername }) && (
                     <button
                       type="button"
