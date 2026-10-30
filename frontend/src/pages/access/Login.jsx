@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth.js";
 import LoginForm from "../../features/auth/components/LoginForm.jsx";
 import { GoogleLoginButton } from '../../shared/components/GoogleLoginButton.jsx';
@@ -30,6 +30,10 @@ function Login() {
       <p className="login-subtitle">Bienvenida de nuevo 💖</p>
 
       <LoginForm onSubmit={handleLogin} errorMessage={errorMessage} />
+
+      <p className="login-forgot">
+        <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
+      </p>
 
       <div className="login-divider">
         <span>o</span>

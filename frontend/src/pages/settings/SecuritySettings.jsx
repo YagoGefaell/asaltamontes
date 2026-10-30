@@ -26,6 +26,10 @@ export default function SecuritySettings() {
   return (
     <div className="settings-menu">
       <ul className="section-list">
+        <li className="settings-item" onClick={() => navigate("/settings/email")}>
+          <span>Cambiar email</span>
+          <span className="arrow">›</span>
+        </li>
         <li className="settings-item" onClick={handleLogoutEverywhere}>
           <span>Cerrar sesión en todos los dispositivos</span>
           <span className="arrow">›</span>

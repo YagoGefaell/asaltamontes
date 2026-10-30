@@ -21,3 +21,13 @@
   text-align: center;
   color: var(--text-muted);
 }
+
+.verify-email__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--touch-min);
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
