@@ -17,5 +17,8 @@
 1. Registrar `x@test.com` con contraseña `A` (sin verificar).
 2. Entrar con Google como `x@test.com`: la sesión es de la cuenta registrada en 1, y `A` sigue funcionando.
 
+## Avance en T24b
+«Olvidé mi contraseña» ya existe y, al usarse, marca la cuenta como verificada y revoca sesiones: la dueña real puede recuperar una cuenta pre-registrada con su email. **El arreglo de `findOrCreateGoogleUser` sigue sin hacer**, a la espera de la respuesta de Yago a la pregunta de abajo.
+
 ## Arreglo propuesto
 En `findOrCreateGoogleUser`, si la cuenta encontrada tiene `isVerified = false` y es de contraseña: Google demuestra la propiedad del email, así que se marca verificada, se **borra su `passwordHash`** (la dueña elige una nueva con «olvidé mi contraseña», T24b) y se revocan todas sus `RefreshSession`. Requiere T24b para no dejar sin contraseña a quien se registró de buena fe. Pregunta para Yago: ¿OK a que entrar con Google sobre una cuenta sin verificar elimine su contraseña?

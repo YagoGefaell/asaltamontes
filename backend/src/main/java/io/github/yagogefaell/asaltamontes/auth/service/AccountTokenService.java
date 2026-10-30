@@ -31,14 +31,22 @@ public class AccountTokenService {
 
     private final AccountTokenRepository repository;
 
+    /** A token that was used: who it belongs to and the data it carried. */
+    public record Consumed(Long userId, String payload) { }
+
     @Transactional
     public String issue(UserAccount user, AccountTokenPurpose purpose, Duration ttl) {
+        return issue(user, purpose, ttl, null);
+    }
+
+    @Transactional
+    public String issue(UserAccount user, AccountTokenPurpose purpose, Duration ttl, String payload) {
         byte[] bytes = new byte[32];
         RANDOM.nextBytes(bytes);
         String raw = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
         repository.deleteByUserAndPurpose(user.getId(), purpose);
-        repository.save(new AccountToken(user, purpose, hash(raw), LocalDateTime.now().plus(ttl)));
+        repository.save(new AccountToken(user, purpose, hash(raw), LocalDateTime.now().plus(ttl), payload));
         return raw;
     }
 
@@ -49,6 +57,22 @@ public class AccountTokenService {
             return Optional.empty();
         }
         return repository.consume(hash(raw), purpose.name(), LocalDateTime.now());
+    }
+
+    /** Like {@link #consume} but also returns the payload of the token. */
+    @Transactional
+    public Optional<Consumed> consumeWithPayload(String raw, AccountTokenPurpose purpose) {
+        if (raw == null || raw.isBlank() || raw.length() > 128) {
+            return Optional.empty();
+        }
+        return repository.consumeWithPayload(hash(raw), purpose.name(), LocalDateTime.now())
+                .map(row -> new Consumed(row.getUserId(), row.getPayload()));
+    }
+
+    /** Drops the live token of the user for this purpose, if any. */
+    @Transactional
+    public void invalidate(Long userId, AccountTokenPurpose purpose) {
+        repository.deleteByUserAndPurpose(userId, purpose);
     }
 
     @Transactional

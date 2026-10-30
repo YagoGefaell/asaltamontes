@@ -317,6 +317,27 @@ public class EventService {
     }
 
     /**
+     * Cancellation by the moderation panel (T23c), after its permission check. Same effects as the organizer cancelling it;
+     * false if it was already cancelled or does not exist.
+     */
+    @Transactional
+    public boolean cancelForModeration(Long eventId) {
+        Event event = eventRepository.findById(eventId).orElse(null);
+        if (event == null || event.getStatus() == EventStatus.CANCELLED) {
+            return false;
+        }
+        event.setStatus(EventStatus.CANCELLED);
+        event.setCancelledAt(Instant.now());
+        event.setCancelReason("Retirada por la moderación");
+        eventRepository.saveAndFlush(event);
+        // The organizer figures as the actor: the identity of the moderation never reaches the attendees
+        Long organizerId = event.getOrganizer().getId();
+        eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason(), organizerId));
+        eventChat.eventCancelled(event, organizerId);
+        return true;
+    }
+
+    /**
      * Joins the event (T15b): GOING if there is a free place, otherwise WAITLIST at the end. Idempotent: joining
      * again returns the current status. Everything runs with the event row locked, so places are never exceeded
      * and waitlist positions stay 1..n without gaps, however many people join at once.

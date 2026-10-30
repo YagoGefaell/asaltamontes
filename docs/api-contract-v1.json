@@ -287,6 +287,99 @@
         }
       }
     },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Ask for a password reset link (T24b). Public. Always 202 whether or not the address has an account (no enumeration); an account that only has Google gets an email saying so, with no link. The link (valid 30 min, single use, a new request replaces it) goes to /reset-password?token=...",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["email"], "properties": { "email": { "type": "string", "maxLength": 255 } } }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "If the address has an account, the email is on its way" },
+          "400": { "description": "Not an email address" },
+          "429": { "description": "Too many requests from this IP (5/min) or for this address (3/hour, counted whether or not it exists); see Retry-After" }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Set a new password with the token of the reset link (T24b). Public: the token is the proof. Revokes every refresh session of the account, marks the email as verified and sends a \"your password changed\" notice. The password is validated before the token is spent",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token", "password", "confirmPassword"],
+                "properties": {
+                  "token": { "type": "string", "maxLength": 128 },
+                  "password": { "type": "string", "minLength": 8, "maxLength": 100 },
+                  "confirmPassword": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Password changed; log in again" },
+          "400": { "description": "Invalid password, or the link is not valid or has expired (unknown, used, replaced or expired: same answer)" },
+          "409": { "description": "The two passwords do not match" },
+          "429": { "description": "Too many attempts from this IP; see Retry-After" }
+        }
+      }
+    },
+    "/api/users/me/email-change": {
+      "post": {
+        "summary": "Ask to change the account email (T24b, BUG-042). Needs the current password. Nothing changes until the link sent to the NEW address is used (/confirm-email-change?token=..., valid 24 h); the old address is warned. Not available for accounts that only use Google",
+        "tags": ["Users"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["newEmail", "currentPassword"],
+                "properties": { "newEmail": { "type": "string", "maxLength": 255 }, "currentPassword": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": { "description": "The confirmation email is on its way to the new address" },
+          "400": { "description": "Invalid address" },
+          "401": { "description": "Not authenticated" },
+          "403": { "description": "The current password is not correct" },
+          "409": { "description": "The address is already in use, is the current one, or the account has no password (Google); or too many emails were sent to that address" },
+          "429": { "description": "More than 5 requests per hour (every attempt counts, also wrong passwords); see Retry-After" }
+        }
+      }
+    },
+    "/auth/confirm-email-change": {
+      "post": {
+        "summary": "Apply an email change with the token sent to the new address (T24b). Public: the token is the proof. The new email counts as verified and the old address is notified",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["token"], "properties": { "token": { "type": "string", "maxLength": 128 } } }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Email changed" },
+          "400": { "description": "The link is not valid or has expired (also if the address was taken meanwhile, or a password reset cancelled the change)" },
+          "429": { "description": "Too many attempts from this IP; see Retry-After" }
+        }
+      }
+    },
     "/auth/refresh": {
       "post": {
         "summary": "Refresh access token",
@@ -359,7 +452,7 @@
         }
       },
       "patch": {
-        "summary": "Update authenticated user profile",
+        "summary": "Update authenticated user profile. The email is NOT changed here any more (an \"email\" property is ignored): use POST /api/users/me/email-change (T24b, BUG-042)",
         "tags": ["Users"],
         "security": [{ "bearerAuth": [] }],
         "requestBody": {
@@ -370,7 +463,6 @@
                 "type": "object",
                 "properties": {
                   "username": { "type": "string", "example": "newusername" },
-                  "email": { "type": "string", "example": "newemail@example.com" },
                   "fullName": { "type": "string", "example": "María Runner Updated" },
                   "bio": { "type": "string", "example": "New bio" },
                   "city": { "type": "string", "example": "Barcelona" },
@@ -2260,6 +2352,69 @@
         }
       }
     },
+    "/api/admin/reports": {
+      "get": {
+        "summary": "Moderation queue (T23c1). ADMIN or MODERATOR only",
+        "description": "Cursor paginated (limit default 20, max 50). With status=OPEN the queue is oldest first; any other filter, or none, newest first. details and contentSnapshot are free text written by users: show them as plain text, never as HTML. Both become null some days after the report is resolved (asaltamontes.reports.retention-days, default 30). target is the username for USER and the public id for the rest. contentAvailable is only filled in the detail.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["OPEN", "DISMISSED", "ACTIONED"] } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["USER", "MESSAGE", "POST", "COMMENT", "EVENT", "COMMUNITY"] } },
+          { "name": "before", "in": "query", "schema": { "type": "string" }, "description": "Opaque cursor (nextBefore of the previous page)" },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "description": "Page of reports", "content": { "application/json": { "schema": { "type": "object", "properties": {
+            "items": { "type": "array", "items": { "$ref": "#/components/schemas/AdminReport" } },
+            "nextBefore": { "type": "string", "nullable": true } } } } } },
+          "400": { "description": "Invalid cursor" },
+          "403": { "description": "Not staff" }
+        }
+      }
+    },
+    "/api/admin/reports/{id}": {
+      "get": {
+        "summary": "Report detail (T23c1)",
+        "description": "Includes who reported, the reported account, how many open reports the same target has and whether the content still exists.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "403": { "description": "Not staff" },
+          "404": { "description": "Unknown report" }
+        }
+      }
+    },
+    "/api/admin/reports/{id}/dismiss": {
+      "post": {
+        "summary": "Dismiss a report (T23c1)",
+        "description": "Closes only this report as DISMISSED. The reporter cannot report the same target again for 7 days (409). Audited. Optional body {resolution} (max 1000), a note for the record.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report, now DISMISSED", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "403": { "description": "Not staff" },
+          "404": { "description": "Unknown report" },
+          "409": { "description": "Already resolved" }
+        }
+      }
+    },
+    "/api/admin/reports/{id}/remove-content": {
+      "post": {
+        "summary": "Remove the reported content and close every open report about it (T23c1)",
+        "description": "POST and COMMENT are soft-deleted, MESSAGE is deleted, EVENT is cancelled, COMMUNITY is deleted (ADMIN only, 403 for MODERATOR). A USER report cannot be resolved this way (400): accounts are handled with the suspension (T23c2). Audited. Optional body {resolution}.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report, now ACTIONED", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "400": { "description": "USER report" },
+          "403": { "description": "Not staff, or a MODERATOR on a community" },
+          "404": { "description": "Unknown report" },
+          "409": { "description": "Already resolved" }
+        }
+      }
+    },
     "/api/posts/{postId}/comments": {
       "get": {
         "summary": "Comments of a post, oldest first (T22a2)",
@@ -2412,6 +2567,26 @@
   },
   "components": {
     "schemas": {
+      "AdminReport": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "targetType": { "type": "string" },
+          "target": { "type": "string", "nullable": true },
+          "reason": { "type": "string" },
+          "details": { "type": "string", "nullable": true, "description": "Plain text" },
+          "contentSnapshot": { "type": "string", "nullable": true, "description": "Plain text" },
+          "status": { "type": "string", "enum": ["OPEN", "DISMISSED", "ACTIONED"] },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "reporterUsername": { "type": "string" },
+          "reportedUsername": { "type": "string", "nullable": true },
+          "openReportsOnTarget": { "type": "integer" },
+          "contentAvailable": { "type": "boolean", "nullable": true },
+          "handledByUsername": { "type": "string", "nullable": true },
+          "handledAt": { "type": "string", "format": "date-time", "nullable": true },
+          "resolution": { "type": "string", "nullable": true }
+        }
+      },
       "Post": {
         "type": "object",
         "description": "A publication as the caller sees it (T22a1). No numeric ids; likeCount/commentCount are denormalised counters; likedByMe is the caller's own like (T22a2)",

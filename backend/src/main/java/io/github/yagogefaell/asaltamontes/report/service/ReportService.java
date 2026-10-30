@@ -1,5 +1,8 @@
 package io.github.yagogefaell.asaltamontes.report.service;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +12,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import io.github.yagogefaell.asaltamontes.report.domain.Report;
 import io.github.yagogefaell.asaltamontes.report.domain.ReportReason;
+import io.github.yagogefaell.asaltamontes.report.domain.ReportTargetType;
 import io.github.yagogefaell.asaltamontes.report.dto.CreateReportDto;
 import io.github.yagogefaell.asaltamontes.report.dto.ReportDto;
 import io.github.yagogefaell.asaltamontes.report.repository.ReportRepository;
@@ -23,6 +27,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class ReportService {
+
+    /** After a dismissal, the same reporter cannot report the same target again for this long (T23c). */
+    static final Duration DISMISSED_COOLDOWN = Duration.ofDays(7);
 
     private final ReportRepository reportRepository;
     private final ReportTargetResolver resolver;
@@ -44,6 +51,13 @@ public class ReportService {
         ResolvedTarget target = resolver.resolve(reporter, dto.targetType(), dto.target());
         if (reportRepository.existsOpen(reporter.getId(), dto.targetType(), target.targetId())) {
             throw alreadyReported();
+        }
+
+        // Once the moderation has dismissed her report she cannot insist on the same target for a while
+        // Not for accounts: a victim must be able to report again if the harassment goes on
+        if (dto.targetType() != ReportTargetType.USER
+                && reportRepository.existsDismissedSince(reporter.getId(), dto.targetType(), target.targetId(), Instant.now().minus(DISMISSED_COOLDOWN))) {
+            throw new ConflictException("Ya revisamos tu denuncia sobre esto y no encontramos motivo para actuar");
         }
 
         Report report = new Report();

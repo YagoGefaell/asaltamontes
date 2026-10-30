@@ -53,10 +53,6 @@ public class UserValidator {
             validateUsername(dto.username().trim(), userId, errors);
         }
 
-        if (dto.email() != null) {
-            validateEmail(dto.email().trim(), userId, errors);
-        }
-
         if (dto.fullName() != null) {
             validateFullName(dto.fullName().trim(), errors);
         }

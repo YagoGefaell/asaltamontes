@@ -11,13 +11,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.yagogefaell.asaltamontes.auth.dto.ForgotPasswordRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.GoogleLoginRequest;
+import io.github.yagogefaell.asaltamontes.auth.dto.ResetPasswordRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.LoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
 import io.github.yagogefaell.asaltamontes.auth.dto.VerifyEmailRequest;
 import io.github.yagogefaell.asaltamontes.auth.service.AuthService;
+import io.github.yagogefaell.asaltamontes.auth.service.EmailChangeService;
 import io.github.yagogefaell.asaltamontes.auth.service.EmailVerificationService;
+import io.github.yagogefaell.asaltamontes.auth.service.PasswordResetService;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieProperties;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -32,6 +36,8 @@ public class AuthController {
     private final AuthService authService;
     private final CookieProperties cookieProperties;
     private final EmailVerificationService verificationService;
+    private final PasswordResetService passwordResetService;
+    private final EmailChangeService emailChangeService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
@@ -75,6 +81,27 @@ public class AuthController {
     @PostMapping("/verify-email")
     public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         verificationService.verify(request.token());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** "I forgot my password". Always 202, whether or not the address has an account (no enumeration). */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        passwordResetService.requestReset(request.email());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** The link of the reset email: sets the new password and closes every session. */
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.reset(request.token(), request.password(), request.confirmPassword());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** The link sent to the new address of an email change. Public like verify-email: the token is the proof. */
+    @PostMapping("/confirm-email-change")
+    public ResponseEntity<Void> confirmEmailChange(@Valid @RequestBody VerifyEmailRequest request) {
+        emailChangeService.confirm(request.token());
         return ResponseEntity.noContent().build();
     }
 
