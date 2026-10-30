@@ -20,6 +20,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccountRole;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.dto.UserUpdateDto;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import io.github.yagogefaell.asaltamontes.user.repository.FollowRequestRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserFollowRepository;
 import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
 import io.github.yagogefaell.asaltamontes.user.dto.UserSelfDto;
@@ -35,6 +36,8 @@ public class UserService implements UserDetailsService {
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserFollowRepository userFollowRepository;
+    private final FollowRequestRepository followRequestRepository;
+    private final FollowService followService;
     private final BlockService blockService;
     private final UserValidator validator;
     private final UserProfileUpdater updater;
@@ -109,8 +112,13 @@ public class UserService implements UserDetailsService {
         UserProfile profile = userProfileRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
 
+        boolean wasPublic = Boolean.TRUE.equals(profile.getIsPublicProfile());
         updater.applyChanges(user, profile, dto);
         linkAvatar(profile, dto);
+        if (!wasPublic && Boolean.TRUE.equals(profile.getIsPublicProfile())) {
+            // Private to public (T23a): nobody has to wait for approval any more. The reverse expels nobody.
+            followService.approveAllPending(id);
+        }
 
         return assembler.toUserMe(user, profile);
     }
@@ -188,9 +196,13 @@ public class UserService implements UserDetailsService {
         }
 
         boolean isFollowing = userFollowRepository.existsByFollowerIdAndFollowingId(requesterId, user.getId());
+        boolean isFollowRequested = !isFollowing
+                && followRequestRepository.existsByFollowerIdAndFollowedId(requesterId, user.getId());
+        boolean canViewContent = requesterId.equals(user.getId())
+                || Boolean.TRUE.equals(profile.getIsPublicProfile()) || isFollowing;
         boolean isBlockedByMe = blockService.hasBlocked(requesterId, user.getId());
 
-        return assembler.toUserProfile(user, profile, isFollowing, isBlockedByMe);
+        return assembler.toUserProfile(user, profile, isFollowing, isFollowRequested, canViewContent, isBlockedByMe);
     }
 
     public Page<UserSearchDto> getAllUsers(Long userId, Pageable pageable) {

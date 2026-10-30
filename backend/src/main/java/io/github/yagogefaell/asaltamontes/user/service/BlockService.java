@@ -40,6 +40,7 @@ public class BlockService {
     private final UserAccountRepository userAccountRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserFollowRepository userFollowRepository;
+    private final io.github.yagogefaell.asaltamontes.user.repository.FollowRequestRepository followRequestRepository;
 
     /** Blocks {@code username} (idempotent) and removes the follows between both, fixing the counters. */
     @Transactional
@@ -54,6 +55,7 @@ public class BlockService {
         blockRepository.insertIfAbsent(blockerId, blocked.getId());
         removeFollow(blockerId, blocked.getId());
         removeFollow(blocked.getId(), blockerId);
+        followRequestRepository.deleteBetween(blockerId, blocked.getId());
     }
 
     @Transactional

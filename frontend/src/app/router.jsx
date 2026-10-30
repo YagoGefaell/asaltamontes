@@ -15,6 +15,7 @@ import Following from "../pages/profile/Following.jsx";
 import Search from "../pages/search/Search.jsx";
 import Messages from "../pages/messages/Messages.jsx";
 import Notifications from "../pages/notifications/Notifications.jsx";
+import FollowRequests from "../pages/notifications/FollowRequests.jsx";
 import Communities from "../pages/communities/Communities.jsx";
 import CommunityCreate from "../pages/communities/CommunityCreate.jsx";
 import CommunityProfileDetail from "../pages/communities/CommunityProfileDetail.jsx";
@@ -58,6 +59,7 @@ export function AppRouter() {
           <Route path="search" element={<Search />} />
           <Route path="messages" element={<Messages />} />
           <Route path="notifications" element={<Notifications />} />
+          <Route path="notifications/requests" element={<FollowRequests />} />
           <Route path="communities" element={<Communities />} />
           <Route path="communities/new" element={<CommunityCreate />} />
           <Route path="communities/:slug" element={<CommunityProfileDetail />} />

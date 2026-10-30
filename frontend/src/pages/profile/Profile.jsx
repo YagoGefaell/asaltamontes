@@ -1,10 +1,10 @@
 import "./Profile.css";
 import { useState, useEffect } from "react";
-import { FaCog, FaEllipsisH, FaCheckCircle, FaMapMarkerAlt } from "react-icons/fa";
+import { FaCog, FaEllipsisH, FaCheckCircle, FaMapMarkerAlt, FaLock } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
-import FollowUserButton from "../../shared/components/FollowUserButton";
+import ProfileFollowButton from "../../features/users/components/ProfileFollowButton";
 import Button from "../../shared/forms/Button";
 import Loading from "../../shared/components/Loading";
 import Avatar from "../../shared/ui/Avatar";
@@ -132,6 +132,9 @@ function Profile({
   };
 
   const isBlockedByMe = blockedOverride ?? Boolean(profileData.isBlockedByMe);
+  // Private profile she is not approved for: header only, no lists, events or communities (D-025)
+  const isLocked = !isOwnProfile && profileData.canViewContent === false;
+  const isPrivate = profileData.isPublicProfile === false;
   const base = isOwnProfile ? "/me" : `/users/${username}`;
   const tabs = [
     { id: "events", label: "Quedadas" },
@@ -159,11 +162,11 @@ function Profile({
       <section className="pf-top" aria-label="Datos del perfil">
         <Avatar src={profilePictureUrl} name={fullName || username} size="xl" />
         <div className="pf-stats">
-          <button type="button" className="pf-stat" onClick={() => navigate(`${base}/followers`)} aria-label="Ver seguidoras">
+          <button type="button" className="pf-stat" onClick={() => navigate(`${base}/followers`)} aria-label="Ver seguidoras" disabled={isLocked}>
             <span className="pf-stat__count">{displayFollowersCount}</span>
             <span className="pf-stat__label">Seguidoras</span>
           </button>
-          <button type="button" className="pf-stat" onClick={() => navigate(`${base}/following`)} aria-label="Ver a quién sigue">
+          <button type="button" className="pf-stat" onClick={() => navigate(`${base}/following`)} aria-label="Ver a quién sigue" disabled={isLocked}>
             <span className="pf-stat__count">{displayFollowingCount}</span>
             <span className="pf-stat__label">Siguiendo</span>
           </button>
@@ -173,6 +176,7 @@ function Profile({
       <div className="pf-info">
         <p className="pf-name">
           {fullName || username}
+          {isPrivate && <FaLock className="pf-lock" aria-label="Perfil privado" />}
           {isVerified && <FaCheckCircle className="pf-verified" aria-label="Cuenta verificada" />}
         </p>
         {bio && <p className="pf-bio">{bio}</p>}
@@ -198,9 +202,11 @@ function Profile({
         ) : (
           !isBlockedByMe && (
             <>
-              <FollowUserButton
-                userId={profileData.username}
-                initialIsFollowing={profileData.isFollowing || false}
+              <ProfileFollowButton
+                username={profileData.username}
+                isFollowing={profileData.isFollowing || false}
+                isFollowRequested={profileData.isFollowRequested || false}
+                isPrivate={isPrivate}
               />
               <Button
                 variant="secondary"
@@ -215,7 +221,15 @@ function Profile({
         )}
       </div>
 
-      {(isOwnProfile || !isBlockedByMe) && (
+      {isLocked && !isBlockedByMe && (
+        <div className="pf-locked">
+          <FaLock aria-hidden="true" />
+          <p className="pf-locked__title">Este perfil es privado</p>
+          <p className="pf-locked__text">Pide seguir a esta usuaria y, cuando te acepte, verás sus quedadas y comunidades.</p>
+        </div>
+      )}
+
+      {(isOwnProfile || !isBlockedByMe) && !isLocked && (
         <>
           <Tabs tabs={tabs} value={tab} onChange={setTab} label="Contenido del perfil" idPrefix="profile" className="pf-tabs" />
           {tab === "events"

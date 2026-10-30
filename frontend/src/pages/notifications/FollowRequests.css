@@ -1,0 +1,76 @@
+.follow-requests-page {
+  background: var(--background);
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding-bottom: 5rem;
+}
+
+.fr-error {
+  margin: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--error-border);
+  border-radius: var(--radius-md);
+  color: var(--error-text);
+}
+
+.fr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fr-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.fr-user {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--touch-min);
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fr-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.fr-name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fr-username {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.fr-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.fr-actions > * {
+  flex: 1;
+  min-height: var(--touch-min);
+}
+
+.fr-more {
+  display: block;
+  margin: var(--space-3) auto;
+}

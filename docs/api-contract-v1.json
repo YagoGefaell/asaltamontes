@@ -520,6 +520,8 @@
                     "runningLevel": { "type": "string", "example": "INTERMEDIATE" },
                     "isPublicProfile": { "type": "boolean", "example": true },
                     "isFollowing": { "type": "boolean", "example": false },
+                    "isFollowRequested": { "type": "boolean", "description": "T23a: the caller asked to follow this private profile and waits for approval", "example": false },
+                    "canViewContent": { "type": "boolean", "description": "T23a (D-025): false for a private profile the caller is not an accepted follower of (nor herself). The header, counters and Follow button are always visible; the followers/following lists, events she organizes, her communities and her posts come back empty", "example": true },
                     "isBlockedByMe": { "type": "boolean", "description": "T13: the caller has blocked this user", "example": false },
                     "followersCount": { "type": "integer", "example": 150 },
                     "followingCount": { "type": "integer", "example": 200 }
@@ -597,7 +599,12 @@
         ],
         "responses": {
           "200": {
-            "description": "User successfully followed"
+            "description": "Followed. Body: {\"status\": \"FOLLOWING\"}",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["FOLLOWING", "REQUESTED"] } } } } }
+          },
+          "202": {
+            "description": "T23a: the profile is private, so a follow request was created (or already existed: idempotent) and its owner is notified (FOLLOW_REQUEST, once per 24 h per pair). Body: {\"status\": \"REQUESTED\"}. Counters do not change until she approves",
+            "content": { "application/json": { "schema": { "type": "object", "properties": { "status": { "type": "string", "enum": ["FOLLOWING", "REQUESTED"] } } } } }
           },
           "400": {
             "description": "Cannot follow yourself or already following this user"
@@ -614,7 +621,7 @@
         }
       },
       "delete": {
-        "summary": "Unfollow a user",
+        "summary": "Unfollow a user, or withdraw a pending follow request (T23a)",
         "tags": ["Followers"],
         "security": [{ "bearerAuth": [] }],
         "parameters": [
@@ -636,6 +643,46 @@
           "404": {
             "description": "User not found or not following"
           }
+        }
+      }
+    },
+    "/api/users/me/follow-requests": {
+      "get": {
+        "summary": "Requests to follow my private profile (T23a)",
+        "description": "Paginated (default 20, max 50), newest first. Each item: username, fullName, profilePictureUrl, createdAt.",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Page of requests" },
+          "401": { "description": "Not authenticated" }
+        }
+      }
+    },
+    "/api/users/me/follow-requests/{username}/approve": {
+      "post": {
+        "summary": "Approve a follow request (T23a)",
+        "description": "She becomes a follower (counters +1, once) and is notified (FOLLOW_REQUEST_APPROVED).",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "username", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "204": { "description": "Approved" },
+          "401": { "description": "Not authenticated" },
+          "404": { "description": "No such request (unknown, already decided, withdrawn or blocked: all look the same)" }
+        }
+      }
+    },
+    "/api/users/me/follow-requests/{username}/reject": {
+      "post": {
+        "summary": "Reject a follow request (T23a)",
+        "description": "Deletes the request without telling her; she may ask again.",
+        "tags": ["Followers"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "username", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "204": { "description": "Rejected" },
+          "401": { "description": "Not authenticated" },
+          "404": { "description": "No such request" }
         }
       }
     },

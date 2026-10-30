@@ -19,7 +19,7 @@ import jakarta.persistence.TypedQuery;
  * direction (D-022) and either
  * <ul>
  *   <li>it is in a community she is not banned from and that is public, or private and she is a member (D-025), or</li>
- *   <li>it is on a profile she may see ({@code PROFILE_VISIBLE}: every profile until T23).</li>
+ *   <li>it is on a profile she may see ({@code PROFILE_VISIBLE}: a public profile, herself or an accepted follower).</li>
  * </ul>
  * Each page is one query for the posts (author, community, like and delete flags included) and one for the photos
  * of those posts, whatever the page size: no N+1.
@@ -52,11 +52,13 @@ public class PostQueryRepository {
     }
 
     /**
-     * Who may see the posts on somebody's own profile (D-025). Until T23 every profile is public, so any viewer
-     * (blocks are excluded separately). T23a replaces this fragment, the single place that knows, with "public
-     * profile or accepted follower or the author herself"; {@code p} is the post and {@code :viewer} the viewer.
+     * Who may see the posts on somebody's own profile (D-025, T23a): a public profile, herself, or an accepted
+     * follower of a private one (blocks are excluded separately). {@code p} is the post, {@code pr} the profile of
+     * its author and {@code :viewer} the viewer; the single place that knows.
      */
-    private static final String PROFILE_VISIBLE = "1 = 1";
+    private static final String PROFILE_VISIBLE = """
+            pr.isPublicProfile = true OR p.authorId = :viewer
+                      OR EXISTS (SELECT 1 FROM UserFollow pf WHERE pf.follower.id = :viewer AND pf.following.id = p.authorId)""";
 
     /** The viewer is the owner or a moderator (not banned) of the community of the post {@code p}. */
     private static final String STAFF = """

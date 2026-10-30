@@ -198,3 +198,36 @@
   outline: var(--focus-outline);
   outline-offset: -2px;
 }
+
+.pf-lock {
+  margin-left: var(--space-1);
+  color: var(--text-muted);
+  font-size: 0.85em;
+  vertical-align: baseline;
+}
+
+.pf-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-6) var(--space-4);
+  background: var(--surface);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pf-locked__title {
+  margin: 0;
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.pf-locked__text {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.pf-stat:disabled {
+  cursor: default;
+}

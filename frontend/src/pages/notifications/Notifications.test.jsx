@@ -10,6 +10,10 @@ vi.mock('../../shared/components/FollowUserButton', () => ({
   ),
 }))
 
+vi.mock('../../features/users/services/users.service', () => ({
+  getFollowRequestsRequest: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
+}))
+
 const actions = { loadMore: vi.fn(), refresh: vi.fn(), markRead: vi.fn(), markAllRead: vi.fn() }
 
 function renderPage(value) {

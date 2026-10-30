@@ -144,3 +144,16 @@
     max-width: 600px;
   }
 }
+
+.notif-requests-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--touch-min);
+  padding: 0 var(--space-4);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}

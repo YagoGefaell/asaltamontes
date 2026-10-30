@@ -82,6 +82,29 @@ export async function followUserRequest(username) {
   }
 }
 
+// ---------------- FOLLOW REQUESTS OF A PRIVATE PROFILE (T23a) ----------------
+export async function getFollowRequestsRequest({ page = 0, size = 20 } = {}) {
+  try {
+    const response = await apiClient.get(`/api/users/me/follow-requests?page=${page}&size=${size}`)
+    return {
+      items: Array.isArray(response?.content) ? response.content : [],
+      hasMore: response?.last === false,
+    }
+  } catch (error) {
+    throw new Error(error.message || "Error obteniendo las solicitudes")
+  }
+}
+
+export async function decideFollowRequest(username, decision) {
+  try {
+    await apiClient.post(`/api/users/me/follow-requests/${encodeURIComponent(username)}/${decision}`)
+  } catch (error) {
+    // 404: already decided or withdrawn; the list just drops it
+    if (error.status === 404) return
+    throw new Error(error.message || "No se ha podido completar la acción")
+  }
+}
+
 export async function unfollowUserRequest(username) {
   try {
     const result = await apiClient.delete(`/api/users/follow/${username}`)

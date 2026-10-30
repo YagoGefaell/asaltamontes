@@ -26,13 +26,14 @@ class DevDataSeederIT extends AbstractIntegrationTest {
 
     @Autowired private UserAccountRepository userAccountRepository;
     @Autowired private UserService userService;
+    @Autowired private io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository userProfileRepository;
     @Autowired private FollowService followService;
     @Autowired private CommunityService communityService;
     @Autowired private MessageService messageService;
 
     @Test
     void seedsADemoYouCanLogInto_andIsIdempotent() throws Exception {
-        DevDataSeeder seeder = new DevDataSeeder(userAccountRepository, userService, followService, communityService, messageService);
+        DevDataSeeder seeder = new DevDataSeeder(userAccountRepository, userService, userProfileRepository, followService, communityService, messageService);
         ReflectionTestUtils.setField(seeder, "force", true);
 
         seeder.run();

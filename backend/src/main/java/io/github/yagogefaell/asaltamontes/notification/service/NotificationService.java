@@ -94,10 +94,11 @@ public class NotificationService {
         if (!recipients.isEmpty()) {
             recipients.removeAll(preferenceRepository.findUserIdsWithTypeDisabled(notification.type(), recipients));
         }
-        if (notification.type() == NotificationType.NEW_FOLLOWER && notification.actorId() != null && !recipients.isEmpty()) {
+        if ((notification.type() == NotificationType.NEW_FOLLOWER || notification.type() == NotificationType.FOLLOW_REQUEST)
+                && notification.actorId() != null && !recipients.isEmpty()) {
             // Follow, read, unfollow, follow again must not become a way to ping someone over and over
             recipients.removeAll(notificationRepository.findRecipientsNotifiedBy(notification.actorId(),
-                    NotificationType.NEW_FOLLOWER, recipients, Instant.now().minus(FOLLOW_COOLDOWN)));
+                    notification.type(), recipients, Instant.now().minus(FOLLOW_COOLDOWN)));
         }
         if (recipients.isEmpty()) {
             return List.of();
