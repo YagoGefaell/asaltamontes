@@ -100,7 +100,8 @@ public class UserAccount implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return isVerified;
+        // An unverified email does not stop her from logging in; what she can do is decided by VerifiedGuard (BUG-025)
+        return true;
     }
 
     // Identity by primary key (Hibernate's recommended pattern): no lazy relations in equals/hashCode/toString,

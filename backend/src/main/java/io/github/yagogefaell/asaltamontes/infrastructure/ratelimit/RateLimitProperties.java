@@ -38,6 +38,10 @@ public class RateLimitProperties {
     private int postsPerDay = 20;
     /** Per user: likes and unlikes (T22a2). */
     private int postLikesPerHour = 200;
+    /** Per IP: POST /auth/verify-email (T24a). */
+    private int verifyEmailPerMinute = 10;
+    /** Per user: verification emails requested with "Resend" (T24a). */
+    private int verificationEmailsPerHour = 5;
     /** Per user: comments written (T22a2). */
     private int postCommentsPerHour = 60;
 }

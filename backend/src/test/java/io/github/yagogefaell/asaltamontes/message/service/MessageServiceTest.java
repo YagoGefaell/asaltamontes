@@ -49,6 +49,8 @@ class MessageServiceTest {
     @Mock
     private io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter limiter;
     @Mock
+    private io.github.yagogefaell.asaltamontes.auth.service.VerifiedGuard verifiedGuard;
+    @Mock
     private CommunityChatService communityChat;
     @Mock
     private EventChatService eventChat;
@@ -60,7 +62,7 @@ class MessageServiceTest {
     @BeforeEach
     void setUp() {
         messageService = new MessageService(messageRepository, conversationRepository, participantRepository,
-                userService, blockService, eventPublisher, mediaReferences, limiter, communityChat, eventChat, 100);
+                userService, blockService, eventPublisher, mediaReferences, limiter, verifiedGuard, communityChat, eventChat, 100);
     }
 
     @Test

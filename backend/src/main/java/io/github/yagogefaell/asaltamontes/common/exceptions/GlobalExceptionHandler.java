@@ -100,6 +100,13 @@ public class GlobalExceptionHandler {
         return buildProblem(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage(), req, null);
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ProblemDetail handleEmailNotVerified(EmailNotVerifiedException ex, HttpServletRequest req) {
+        ProblemDetail problem = buildProblem(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), req, null);
+        problem.setProperty("code", "EMAIL_NOT_VERIFIED");
+        return problem;
+    }
+
     @ExceptionHandler(ForbiddenException.class)
     public ProblemDetail handleForbidden(ForbiddenException ex, HttpServletRequest req) {
         return buildProblem(HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage(), req, null);

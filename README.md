@@ -119,6 +119,19 @@ Every push to `main` runs `.github/workflows/deploy.yml` on the server: it build
 - **PostgreSQL 17** (since T08) on the `postgres17_data` volume. The 13 → 17 move is a manual, guided step done once before deploying T08: `ENV_FILE=/etc/github-runner.env scripts/db/upgrade-13-to-17.sh` copies the data into the new volume and compares row counts table by table. The old `postgres_data` volume stays untouched for rollback (point `db` back to `postgres:13` + `postgres_data`).
 - Test stack on the same server, never touching production: `docker compose -p asaltamontes-dev -f docker-compose.yml -f docker-compose.dev.yml --env-file <file> up -d --build` (app on `:8081`, backend `127.0.0.1:8091`, DB `127.0.0.1:5434`).
 
+### Email (T24a)
+
+The backend sends emails (for now the "verify your email" link) through any SMTP server, configured with `MAIL_*` in the `.env` (see `.env.example`). **With `MAIL_HOST` empty (the default) nothing is sent: each email is written to the backend log** (`docker compose logs backend | grep "email NOT sent"`), links included, so the demo works without a provider. That also means the log holds valid links: only use this mode on a private server.
+
+Setting up [Resend](https://resend.com) (free plan, sends through SMTP):
+
+1. Create an account and add your domain in *Domains*. Resend shows the DNS records to create at your registrar (SPF `TXT`, DKIM `TXT`/`CNAME` and optionally DMARC); wait until the domain shows *Verified*. Without a verified domain Resend only delivers to your own address.
+2. In *API Keys* create a key with the *Sending access* permission for that domain.
+3. In the `.env` (and `/etc/github-runner.env` on the server): `MAIL_HOST=smtp.resend.com`, `MAIL_PORT=587`, `MAIL_USER=resend`, `MAIL_PASSWORD=<the API key>`, `MAIL_FROM=Asaltamontes Female <hola@yourdomain.com>` (an address of the verified domain) and `APP_BASE_URL=<the public URL of the app>` (e.g. the Tailscale URL), which the links use.
+4. Redeploy. Registering a user should now deliver the email.
+
+`VERIFICATION_ENFORCE` (default `false`): when `true`, accounts with an unverified email cannot create communities or events, publish, or open new chats (they get `403` with `code: EMAIL_NOT_VERIFIED`). Turn it on only once emails really arrive, or nobody could verify. Google accounts are verified on creation. Existing accounts stay unverified until they use the link ("Resend" in the banner / `POST /api/users/me/verification-email`).
+
 ### Demo data (seed)
 
 Fictional data for local work, the test stack or a demo (T02b): 24 users, 6 communities with members, follows, private chats and a group chat. No real personal data.

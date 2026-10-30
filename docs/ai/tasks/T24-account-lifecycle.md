@@ -1,6 +1,6 @@
 # T24 — Verificación de email, reset de contraseña y borrar/exportar cuenta
 
-- **Estado:** pendiente (spec refinada; se divide en T24a–T24d)
+- **Estado:** en curso — T24a (backend) hecho en su PR; pendiente T24a2 (front), T24b, T24c y T24d
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T06
 - **Rama sugerida:** `feat/T24-account-lifecycle`
@@ -24,10 +24,20 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 ### División
 | PR | Contenido | Depende de |
 |---|---|---|
-| **T24a** | Infra de correo (`MailSender` tras una interfaz, SMTP configurable, perfil `dev` con log en vez de envío), tabla `account_tokens`, verificación de email (BUG-025) | — |
+| **T24a** (hecho, backend) | Infra de correo (`MailSender` tras una interfaz, SMTP configurable, perfil `dev` con log en vez de envío), tabla `account_tokens`, verificación de email (BUG-025) | — |
 | **T24b** | Reset de contraseña (olvidé la contraseña) y cambio de email con verificación del nuevo (BUG-042) | T24a |
 | **T24c** | Borrar cuenta (confirmación con contraseña; Google: reautenticación reciente) y resolución de BUG-065/068 | T23c (destino de datos) |
 | **T24d** | Exportar datos (JSON) | T22a |
+
+| **T24a2** | Front de la verificación: banner «Verifica tu email» con «Reenviar» (cooldown, `POST /api/users/me/verification-email`), página pública `/verify-email?token=` (`POST /auth/verify-email`) y mensaje del error `403 code=EMAIL_NOT_VERIFIED`. Con `/ui-review` | T24a |
+
+### Como quedó T24a (2026-10-30)
+- `infrastructure/mail`: `MailSender` (interfaz), `SmtpMailSender` (asíncrono, activo con `MAIL_HOST`), `LoggingMailSender` (por defecto). Variables `MAIL_HOST/PORT/USER/PASSWORD/FROM`, `MAIL_STARTTLS`, `MAIL_SSL`, `APP_BASE_URL`, `VERIFICATION_ENFORCE`; README: alta de Resend.
+- Migración `V21__account_tokens.sql` (numerada tras la `V20` de #157: **mergear #157 antes**). Un token vivo por (usuaria, propósito); se guarda solo el SHA-256; se borra al usarse o sustituirse (`DELETE ... RETURNING`, atómico).
+- `POST /auth/verify-email` (público, límite por IP, 400 uniforme) y `POST /api/users/me/verification-email` (reenvío: 1/min y 5/h por usuaria, 409 si ya está verificada). El registro envía el enlace.
+- `VerifiedGuard` (una sola comprobación) aplicado a crear comunidad, evento, publicación, grupo y DM **nuevo**; apagado por defecto (`asaltamontes.verification.enforce=false`). Error `403` con `code=EMAIL_NOT_VERIFIED`.
+- Google: las cuentas nuevas nacen verificadas. `UserAccount.isEnabled()` ya no depende de `isVerified` (BUG-025).
+- Deuda registrada: BUG-083 (pre-registro con el email ajeno).
 
 ### Decisiones propuestas (Yago confirma)
 - Proveedor de correo: **SMTP genérico** configurable por variables (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`); para la demo, Brevo o Resend en plan gratuito. Variables nuevas → `.env.example`, `docker-compose.yml`, README.

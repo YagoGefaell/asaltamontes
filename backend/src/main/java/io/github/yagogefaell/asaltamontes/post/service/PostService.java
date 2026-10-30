@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.yagogefaell.asaltamontes.auth.service.VerifiedGuard;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
@@ -80,11 +81,13 @@ public class PostService {
     private final MediaCleanupService mediaCleanup;
     private final MediaStorage storage;
     private final UserActionLimiter limiter;
+    private final VerifiedGuard verifiedGuard;
     private final PostCommentRepository commentRepository;
     private final ApplicationEventPublisher events;
 
     @Transactional
     public PostDto create(UserAccount user, CreatePostDto dto) {
+        verifiedGuard.require(user);
         // Every attempt counts, also the ones that end in an error
         limiter.postCreate(user.getId());
         String body = dto.body() == null ? "" : dto.body().strip();

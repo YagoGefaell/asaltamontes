@@ -2,6 +2,7 @@ package io.github.yagogefaell.asaltamontes.message.service;
 
 import io.github.yagogefaell.asaltamontes.media.domain.MediaPurpose;
 import io.github.yagogefaell.asaltamontes.media.service.MediaReferenceService;
+import io.github.yagogefaell.asaltamontes.auth.service.VerifiedGuard;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
@@ -52,6 +53,7 @@ public class MessageService {
     private final ApplicationEventPublisher eventPublisher;
     private final MediaReferenceService mediaReferences;
     private final UserActionLimiter limiter;
+    private final VerifiedGuard verifiedGuard;
     private final CommunityChatService communityChat;
     private final EventChatService eventChat;
     private final int maxGroupSize;
@@ -70,6 +72,7 @@ public class MessageService {
                           ApplicationEventPublisher eventPublisher,
                           MediaReferenceService mediaReferences,
                           UserActionLimiter limiter,
+                          VerifiedGuard verifiedGuard,
                           CommunityChatService communityChat,
                           EventChatService eventChat,
                           @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
@@ -81,6 +84,7 @@ public class MessageService {
         this.eventPublisher = eventPublisher;
         this.mediaReferences = mediaReferences;
         this.limiter = limiter;
+        this.verifiedGuard = verifiedGuard;
         this.communityChat = communityChat;
         this.eventChat = eventChat;
         this.maxGroupSize = maxGroupSize;
@@ -211,6 +215,8 @@ public class MessageService {
             return existingChat.get();
         }
 
+        // Opening a new chat needs a verified email; an existing one keeps working
+        verifiedGuard.require(me);
         blockService.requireCanStartPrivateChat(me.getId(), other.getId());
 
         Conversation newConv = createPrivateConversation(me, other);
@@ -221,6 +227,7 @@ public class MessageService {
     public ChatResponseDto createGroupConversation(String currentUsername, String groupName, String groupImage,
                                                    UUID groupMediaId, List<String> users) {
         UserAccount creator = (UserAccount) userService.loadUserByUsername(currentUsername);
+        verifiedGuard.require(creator);
         limiter.groupCreate(creator.getId());
         // The creator administers the new group, so she may set its image; the image must be hers
         MediaReferenceService.Linked image = mediaReferences.link(groupMediaId, groupImage, MediaPurpose.GROUP_IMAGE,

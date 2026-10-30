@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({TestDataFactory.class, AuthTestHelper.class})
+@Import({TestDataFactory.class, AuthTestHelper.class, RecordingMailSender.class})
 public abstract class AbstractIntegrationTest {
 
     @ServiceConnection
@@ -41,6 +41,9 @@ public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected AuthTestHelper auth;
+
+    @Autowired
+    protected RecordingMailSender mail;
 
     protected String json(Object body) throws Exception {
         return objectMapper.writeValueAsString(body);

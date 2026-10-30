@@ -32,7 +32,8 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
         "asaltamontes.rate-limit.event-messages-per-minute=2",
         "asaltamontes.rate-limit.posts-per-day=2",
         "asaltamontes.rate-limit.post-likes-per-hour=3",
-        "asaltamontes.rate-limit.post-comments-per-hour=2"})
+        "asaltamontes.rate-limit.post-comments-per-hour=2",
+        "asaltamontes.rate-limit.verify-email-per-minute=3"})
 class RateLimitIT extends AbstractIntegrationTest {
 
     @org.springframework.beans.factory.annotation.Autowired
@@ -65,6 +66,30 @@ class RateLimitIT extends AbstractIntegrationTest {
         // Even with the right password: the account is locked for the rest of the minute
         mockMvc.perform(login(user.getUsername().toUpperCase(), TestDataFactory.DEFAULT_PASSWORD).with(from("10.0.1.99")))
                 .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void fourthVerifyEmailInAMinuteFromTheSameIp_isRejected() throws Exception {
+        String ip = "10.0.9.1";
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
+                    .content("{\"token\":\"nope\"}").with(from(ip))).andExpect(status().isBadRequest());
+        }
+
+        mockMvc.perform(post("/auth/verify-email").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"nope\"}").with(from(ip)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+    }
+
+    @Test
+    void secondVerificationResendInAMinute_isRejectedWithRetryAfter() throws Exception {
+        UserAccount user = testData.createUser();
+
+        mockMvc.perform(post("/api/users/me/verification-email").with(auth.bearer(user))).andExpect(status().isAccepted());
+        mockMvc.perform(post("/api/users/me/verification-email").with(auth.bearer(user)))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
     }
 
     @Test
