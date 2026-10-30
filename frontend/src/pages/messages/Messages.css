@@ -413,7 +413,7 @@ body.chat-open .bottom-nav {
   flex-shrink: 0;
 }
 
-.message-input input {
+.message-input textarea {
   flex: 1;
   padding: 10px 12px;
   border: 1px solid var(--border-color);
@@ -423,25 +423,50 @@ body.chat-open .bottom-nav {
   color: var(--text-color);
   font-family: inherit;
   min-height: var(--touch-min);
+  max-height: 120px;
+  resize: none;
+  line-height: 1.4;
   box-sizing: border-box;
   outline: none;
   transition: border-color 0.2s;
   -webkit-appearance: none;
 }
 
-.message-input input:focus-visible {
+.message-input textarea:focus-visible {
   border-color: var(--primary);
   box-shadow: var(--focus-ring);
 }
 
-.message-input input::placeholder {
+.message-input textarea::placeholder {
   color: var(--text-muted);
 }
 
-.btn.message-send-btn {
-  padding: 0 var(--space-4);
-  font-size: var(--text-sm);
+.message-send-btn {
   flex-shrink: 0;
+  align-self: flex-end;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.message-send-btn:disabled {
+  background: var(--border-color);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.message-send-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 @media (min-width: 600px) {
@@ -475,7 +500,7 @@ body.chat-open .bottom-nav {
     padding: 1rem;
   }
 
-  .message-input input {
+  .message-input textarea {
     padding: 10px 16px;
     font-size: var(--text-base);
   }
@@ -644,28 +669,29 @@ body.chat-open .bottom-nav {
   max-width: 100%;
 }
 
-.message-author {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  margin: 0 0.25rem 0.15rem;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
+/* Avatar of the first message of a block in a group (T29q) */
+.message-line--grouped {
+  align-items: flex-start;
+  gap: var(--space-2, 0.5rem);
 }
 
-.message-author__name {
-  overflow-wrap: anywhere;
+.message-avatar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
 }
 
-.message-role {
-  padding: 0 0.45rem;
-  border: 1px solid var(--primary);
-  border-radius: var(--radius-pill);
-  background: var(--primary-soft);
-  color: var(--text-color);
-  font-weight: 600;
-  line-height: 1.5;
+.message-avatar--spacer {
+  cursor: default;
+}
+
+.message-avatar:focus-visible {
+  outline: 2px solid var(--primary);
 }
 
 .messages-page__notice {

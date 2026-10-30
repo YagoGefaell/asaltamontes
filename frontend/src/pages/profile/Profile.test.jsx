@@ -15,6 +15,7 @@ vi.mock('../../features/users/components/ProfileFollowButton', () => ({
   default: ({ isPrivate, isFollowRequested }) => <button>{isFollowRequested ? 'Solicitado' : isPrivate ? 'Solicitar' : 'Seguir'}</button>,
 }))
 vi.mock('./ProfileTabs', () => ({
+  ProfilePosts: () => <div>tab-publicaciones</div>,
   ProfileEvents: () => <div>tab-eventos</div>,
   ProfileCommunities: () => <div>tab-comunidades</div>,
 }))
@@ -42,6 +43,8 @@ describe('Profile (own)', () => {
     expect(screen.getByText('Intermedia')).toBeTruthy()
     expect(screen.queryByText(/Aquí podrías/)).toBeNull()
     expect(screen.getByRole('button', { name: 'Editar perfil' })).toBeTruthy()
+    expect(screen.getByText('tab-publicaciones')).toBeTruthy()
+    fireEvent.click(screen.getByRole('tab', { name: 'Quedadas' }))
     expect(screen.getByText('tab-eventos')).toBeTruthy()
     fireEvent.click(screen.getByRole('tab', { name: 'Comunidades' }))
     expect(screen.getByText('tab-comunidades')).toBeTruthy()
@@ -54,6 +57,7 @@ describe('Profile (own)', () => {
     expect(navigate).toHaveBeenCalledWith('/me/followers')
     fireEvent.click(screen.getByRole('button', { name: 'Editar perfil' }))
     expect(navigate).toHaveBeenCalledWith('/settings/profile')
+    expect(screen.queryByRole('button', { name: 'Nueva publicación' })).toBeNull()
   })
 
   it('hides the bio line when she has none', () => {
@@ -69,7 +73,8 @@ describe('Profile (someone else)', () => {
     expect(screen.getByRole('button', { name: 'Seguir' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Mensaje' })).toBeTruthy()
     expect(screen.getByRole('tablist')).toBeTruthy()
-    expect(screen.getByText('tab-eventos')).toBeTruthy()
+    expect(screen.getByText('tab-publicaciones')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Nueva publicación' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Ver seguidoras' }))
     expect(navigate).toHaveBeenCalledWith('/users/ana/followers')
   })

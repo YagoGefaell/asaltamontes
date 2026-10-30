@@ -40,7 +40,7 @@ Principios, por orden:
 
 - **Barra inferior**: máximo **5 destinos** (como Instagram). Antes tenía 7 iconos; desde T29g (aprobada por Yago): **Inicio · Buscar · Quedadas · Comunidades · Perfil**, con **Notificaciones y Mensajes como iconos en la cabecera de Inicio** (arriba a la derecha, con su contador), igual que Instagram.
 - **Cabecera de pantalla**: una línea, 56 px como mucho: título (o logo en Inicio) a la izquierda, 1–2 iconos de acción a la derecha. En pantallas de detalle: flecha atrás + título. Nada de botones grandes rellenos en la cabecera ("Crear quedada" → icono `+` o botón flotante).
-- **Acción de crear** (Yago, 2026-10-29): **un `+` arriba a la derecha de la cabecera en Quedadas y Comunidades** que lleva directo a crear eso, nunca botón flotante ni botón ancho. **Inicio no lleva `+`** (Yago, 2026-10-29, revisión de la PR #143). Toda creación es una **pantalla aparte** (`/events/new`, `/communities/new`, `/posts/new`), nunca un panel dentro de la lista.
+- **Acción de crear** (Yago, 2026-10-29): **un `+` arriba a la derecha de la cabecera en Quedadas y Comunidades** que lleva directo a crear eso, nunca botón flotante ni botón ancho. **Inicio lleva un `+` que abre directamente `/posts/new`** (crear publicación; Yago, 2026-10-30, revisión de la PR #156), sin hoja de opciones: la hoja de crear que había en Inicio se quitó en #143 y no se restaura. La comunidad de una publicación se elige en el selector «Publicar en» del propio formulario; ni el perfil ni la comunidad llevan botón de publicar. Toda creación es una **pantalla aparte** (`/events/new`, `/communities/new`, `/posts/new`), nunca un panel dentro de la lista.
 - **Sin atajos de búsqueda** en las pestañas: buscar se hace solo desde la pestaña Buscar.
 - **Barra inferior solo con iconos**, sin etiquetas (Yago, 2026-10-29).
 - **Zona segura**: la barra inferior y los botones fijos respetan `env(safe-area-inset-bottom)`; el contenido deja hueco para la barra (no queda tapado el último elemento).
@@ -71,7 +71,7 @@ Principios, por orden:
 
 ### Perfil de comunidad
 - Mismo esqueleto que el perfil de usuaria: avatar a la izquierda, contadores (Miembros · Quedadas), descripción, ciudad, botones con el **mismo estilo** que Seguir/Mensaje (Unirse/Miembro + Chat).
-- Debajo, pestañas **Publicaciones · Quedadas · Miembros** (Publicaciones cuando exista T22). Miembros en filas (`UserCard`) con buscador si son muchas, nunca la cuadrícula completa de avatares en la portada.
+- Debajo, pestañas **Publicaciones · Quedadas · Miembros** (Publicaciones cuando exista T22). Los comentarios de una publicación se abren en una **hoja inferior** desde el botón de comentarios, no en otra pantalla. Miembros en filas (`UserCard`) con buscador si son muchas, nunca la cuadrícula completa de avatares en la portada.
 
 ### Detalle de quedada
 - Cabecera con el título de la quedada (no «Quedada»). Arriba, la foto de portada solo si la quedada tiene imagen; sin imagen no hay portada (ni fondo de color).

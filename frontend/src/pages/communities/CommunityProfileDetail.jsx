@@ -11,7 +11,7 @@ import Avatar from "../../shared/ui/Avatar";
 import Tabs from "../../shared/ui/Tabs";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
 import { getCommunityEventsRequest } from "../../features/events/services/events.service";
-import { CommunityEventsTab, CommunityMembersTab } from "./CommunityProfileTabs";
+import { CommunityPostsTab, CommunityEventsTab, CommunityMembersTab } from "./CommunityProfileTabs";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { communityPath } from "../../features/communities/utils/communityPath";
 import { isStaff } from "../../features/communities/utils/communityErrors";
@@ -24,7 +24,7 @@ function CommunityProfile() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { community, setCommunity, loading, error } = useCommunityDetail(slug);
-  const [tab, setTab] = useState("events");
+  const [tab, setTab] = useState("posts");
   // Shared by the "Quedadas" counter and the tab, so it is requested once
   const eventsSection = useSearchSection(
     (page) => getCommunityEventsRequest(community.slug || community.name, { page, size: 10 }),
@@ -76,6 +76,7 @@ function CommunityProfile() {
   }
 
   const tabs = [
+    { id: "posts", label: "Publicaciones" },
     { id: "events", label: "Quedadas" },
     { id: "members", label: "Miembros" },
   ];
@@ -145,11 +146,9 @@ function CommunityProfile() {
       </div>
 
       <Tabs tabs={tabs} value={tab} onChange={setTab} label="Contenido de la comunidad" idPrefix="community" className="pf-tabs" />
-      {tab === "events" ? (
-        <CommunityEventsTab community={community} section={eventsSection} />
-      ) : (
-        <CommunityMembersTab community={community} />
-      )}
+      {tab === "posts" && <CommunityPostsTab community={community} />}
+      {tab === "events" && <CommunityEventsTab community={community} section={eventsSection} />}
+      {tab === "members" && <CommunityMembersTab community={community} />}
     </div>
   );
 }

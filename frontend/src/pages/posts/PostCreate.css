@@ -1,0 +1,22 @@
+.post-create {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  background: var(--background);
+  color: var(--text-color);
+}
+
+.post-create__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+}
+
+.post-create__counter {
+  margin: var(--space-1) 0 0;
+  text-align: right;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}

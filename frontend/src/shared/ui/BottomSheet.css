@@ -62,3 +62,19 @@
     transition: none;
   }
 }
+
+/* Altura fija de media pantalla, con el contenido desplazable dentro (comentarios) */
+.bottom-sheet--half {
+  display: flex;
+  flex-direction: column;
+  height: 50vh;
+  height: 50dvh;
+  overflow: hidden;
+}
+
+.bottom-sheet--half .bottom-sheet__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}

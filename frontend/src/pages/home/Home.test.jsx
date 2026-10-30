@@ -63,9 +63,10 @@ describe('Home header', () => {
   })
 })
 
-describe('Home: sin botón de crear', () => {
-  it('has no + in the header: creating lives in Quedadas and Comunidades', () => {
+describe('Home: crear publicación', () => {
+  it('has a + in the header that opens the create screen, and no sheet of options', () => {
     renderHome()
+    expect(screen.getByRole('link', { name: 'Nueva publicación' })).toHaveAttribute('href', '/posts/new')
     expect(screen.queryByRole('button', { name: 'Crear' })).toBeNull()
   })
 })

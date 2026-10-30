@@ -23,6 +23,8 @@ import CommunitySettingsMenu from "../pages/communities/CommunitySettingsMenu.js
 import Events from "../pages/events/Events.jsx";
 import EventDetail from "../pages/events/EventDetail.jsx";
 import EventEditor from "../pages/events/EventEditor.jsx";
+import PostCreate from "../pages/posts/PostCreate.jsx";
+import PostDetail from "../pages/posts/PostDetail.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import PrivacySettings from "../pages/settings/PrivacySettings.jsx";
 import NotificationSettings from "../pages/settings/NotificationSettings.jsx";
@@ -63,6 +65,8 @@ export function AppRouter() {
           <Route path="communities" element={<Communities />} />
           <Route path="communities/new" element={<CommunityCreate />} />
           <Route path="communities/:slug" element={<CommunityProfileDetail />} />
+          <Route path="posts/new" element={<PostCreate />} />
+          <Route path="posts/:id" element={<PostDetail />} />
           <Route path="events" element={<Events />} />
           <Route path="events/new" element={<EventEditor />} />
           <Route path="events/:id" element={<EventDetail />} />

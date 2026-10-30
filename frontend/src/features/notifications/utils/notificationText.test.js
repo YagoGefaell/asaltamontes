@@ -79,6 +79,7 @@ describe('notificationText', () => {
 describe('notificationDestination', () => {
   it('maps each target type to a route', () => {
     expect(notificationDestination({ target: { type: 'EVENT', ref: 'u-1' } })).toEqual({ to: '/events/u-1' })
+    expect(notificationDestination({ type: 'POST_COMMENT', target: { type: 'POST', ref: 'p-1' } })).toEqual({ to: '/posts/p-1?comments=1' })
     expect(notificationDestination({ target: { type: 'COMMUNITY', ref: 'trail-vigo' } })).toEqual({ to: '/communities/trail-vigo' })
     expect(notificationDestination({ target: { type: 'USER', ref: 'ana' } })).toEqual({ to: '/users/ana' })
   })
