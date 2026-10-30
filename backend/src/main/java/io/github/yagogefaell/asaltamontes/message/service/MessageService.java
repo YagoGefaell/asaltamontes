@@ -127,7 +127,9 @@ public class MessageService {
                 conversationPublicId,
                 sender.getUsername(),
                 savedMessage.getContent(),
-                savedMessage.getSentAt()
+                savedMessage.getSentAt(),
+                sender.getProfile() == null ? null : sender.getProfile().getProfilePictureUrl(),
+                sender.getProfile() == null ? null : sender.getProfile().getFullName()
         ).withAuthorRole(communityChat.authorRole(conversationId, sender.getUsername()));
 
         eventPublisher.publishEvent(new MessageSentEvent(dto));
