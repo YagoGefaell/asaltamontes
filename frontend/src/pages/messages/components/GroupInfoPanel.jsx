@@ -1,10 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { FaCheck, FaChevronRight, FaPen, FaPlus, FaTimes, FaUsers } from "react-icons/fa";
 import Button from "../../../shared/forms/Button.jsx";
-import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
+import Avatar from "../../../shared/ui/Avatar.jsx";
+import BottomSheet from "../../../shared/ui/BottomSheet.jsx";
 import ConfirmSheet from "../../../shared/ui/ConfirmSheet.jsx";
-import ToggleSwitch from "../../../shared/ui/ToggleSwitch.jsx";
-import Skeleton from "../../../shared/ui/Skeleton.jsx";
+import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
 import PageHeader from "../../../shared/ui/PageHeader.jsx";
+import SearchField from "../../../shared/ui/SearchField.jsx";
+import Skeleton from "../../../shared/ui/Skeleton.jsx";
+import ToggleSwitch from "../../../shared/ui/ToggleSwitch.jsx";
 import { MEDIA_PURPOSE } from "../../../features/media/services/media.service.js";
 import { getUsersByUsername } from "../../../features/users/services/users.service.js";
 import {
@@ -15,14 +19,18 @@ import {
   removeParticipantRequest,
   updateGroupRequest,
 } from "../../../features/messages/services/messages.service.js";
+import "./GroupInfoPanel.css";
 
 const PAGE_SIZE = 20;
 
+const ORIGIN_LABEL = { COMMUNITY: "Chat de la comunidad", EVENT: "Chat de la quedada" };
+
 /**
- * "Info del grupo" (T12): participants (paged), and for admins: add, expel, change role, rename, image and the
- * history option. Hiding controls is only courtesy: the server decides who may do what.
+ * "Info del grupo" (T12, T29r): foto y nombre arriba (editables en el sitio por las administradoras), ajustes,
+ * participantes (las acciones salen en una hoja inferior al tocar la fila) y salir. Ocultar controles es solo
+ * cortesía: el servidor decide quién puede hacer qué.
  */
-const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft }) => {
+const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft, onOpenProfile, onSendMessage, onOpenOrigin }) => {
   const conversationId = chat.id;
   const [details, setDetails] = useState(null);
   const [participants, setParticipants] = useState([]);
@@ -31,16 +39,23 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
   const [loadingMore, setLoadingMore] = useState(false);
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState(null);
+  const [editingName, setEditingName] = useState(false);
   const [name, setName] = useState(chat.name || "");
+  const [adding, setAdding] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [selected, setSelected] = useState(null);
+  const [toExpel, setToExpel] = useState(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const nameInputRef = useRef(null);
 
   const isAdmin = details?.myRole === "ADMIN";
   const managed = Boolean(details?.managed);
+  const origin = details?.origin;
   const total = details?.participants?.totalElements ?? participants.length;
   const hasMore = participants.length < total;
+  const sheetOpen = Boolean(selected) || Boolean(toExpel) || confirmLeave;
 
   const applyDetails = useCallback((next) => {
     setDetails(next);
@@ -64,6 +79,10 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
     load();
   }, [load]);
 
+  useEffect(() => {
+    if (editingName) nameInputRef.current?.focus();
+  }, [editingName]);
+
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     setLoadingMore(true);
@@ -81,23 +100,28 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
     }
   };
 
-  // Runs a change and shows the server's reason if it is refused
+  // Runs a change and shows the server's reason if it is refused; resolves to whether it worked
   const run = async (action) => {
-    if (busy) return;
+    if (busy) return false;
     setBusy(true);
     setActionError(null);
     try {
       await action();
+      return true;
     } catch (error) {
       setActionError(error.message || "No se pudo completar la acción");
+      return false;
     } finally {
       setBusy(false);
     }
   };
 
+  // Reloads the group without going back to the skeleton
+  const refresh = async () => applyDetails(await getGroupDetailsRequest(conversationId, { page: 0, size: PAGE_SIZE }));
+
   useEffect(() => {
     const text = query.trim();
-    if (!isAdmin || text.length < 2) {
+    if (!adding || text.length < 2) {
       setResults([]);
       return undefined;
     }
@@ -122,7 +146,14 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
       cancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [query, isAdmin, participants, currentUsername]);
+  }, [query, adding, participants, currentUsername]);
+
+  const closeAdding = () => {
+    setAdding(false);
+    setQuery("");
+    setResults([]);
+    setActionError(null);
+  };
 
   const addMember = (user) => run(async () => {
     applyDetails(await addParticipantsRequest(conversationId, [user.username]));
@@ -130,21 +161,47 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
     setResults([]);
   });
 
-  const expel = (participant) => run(async () => {
-    await removeParticipantRequest(conversationId, participant.username);
-    await load();
-  });
+  const expel = async () => {
+    const participant = toExpel;
+    if (!participant) return;
+    const done = await run(async () => {
+      await removeParticipantRequest(conversationId, participant.username);
+      await refresh();
+    });
+    if (done) {
+      setToExpel(null);
+      setSelected(null);
+    }
+  };
 
-  const toggleRole = (participant) => run(async () => {
-    await changeParticipantRoleRequest(conversationId, participant.username, participant.role === "ADMIN" ? "MEMBER" : "ADMIN");
-    await load();
-  });
+  const toggleRole = async (participant) => {
+    const done = await run(async () => {
+      await changeParticipantRoleRequest(conversationId, participant.username, participant.role === "ADMIN" ? "MEMBER" : "ADMIN");
+      await refresh();
+    });
+    if (done) setSelected(null);
+  };
 
-  const rename = (event) => {
+  const startEditingName = () => {
+    setActionError(null);
+    setName(details.name || "");
+    setEditingName(true);
+  };
+
+  const cancelEditingName = () => {
+    setName(details.name || "");
+    setEditingName(false);
+  };
+
+  const saveName = async (event) => {
     event.preventDefault();
     const trimmed = name.trim();
-    if (!trimmed || trimmed === details.name) return;
-    run(async () => applyDetails(await updateGroupRequest(conversationId, { groupName: trimmed })));
+    if (!trimmed || trimmed === details.name) {
+      cancelEditingName();
+      return;
+    }
+    const done = await run(async () => applyDetails(await updateGroupRequest(conversationId, { groupName: trimmed })));
+    if (done) setEditingName(false);
   };
 
   const changeImage = (_url, mediaId) => run(async () => {
@@ -156,18 +213,66 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
     applyDetails(await updateGroupRequest(conversationId, { historyVisibleToNew: event.target.checked }));
   });
 
-  const leave = () => run(async () => {
-    await leaveGroupRequest(conversationId);
-    setConfirmLeave(false);
-    onLeft?.();
-  });
+  const leave = async () => {
+    const done = await run(async () => {
+      await leaveGroupRequest(conversationId);
+    });
+    if (done) {
+      setConfirmLeave(false);
+      onLeft?.();
+    }
+  };
+
+  const openActions = (participant) => {
+    setActionError(null);
+    setSelected(participant);
+  };
+
+  const closeActions = () => {
+    if (busy) return;
+    setSelected(null);
+    setActionError(null);
+  };
+
+  const pick = (callback) => {
+    const user = selected;
+    setSelected(null);
+    callback?.(user);
+  };
+
+  if (adding) {
+    return (
+      <div className="group-creator-page group-info" aria-label="Añadir participantes">
+        <PageHeader title="Añadir participantes" onBack={closeAdding} backLabel="Volver a la info del grupo" />
+        <div className="group-info__body">
+          <SearchField label="Buscar usuarias" value={query} onChange={setQuery} onClear={() => setQuery("")} />
+          {searching && <p className="group-info__hint" role="status">Buscando usuarias...</p>}
+          {actionError && <p className="group-info__error" role="alert">{actionError}</p>}
+          <ul className="group-info__list">
+            {results.map((user) => (
+              <li key={user.username}>
+                <button type="button" className="group-info__row" onClick={() => addMember(user)} disabled={busy}>
+                  <Avatar src={user.profilePictureUrl} name={user.fullName || user.username} size="md" />
+                  <span className="group-info__text">
+                    <span className="group-info__name">{user.fullName || user.username}</span>
+                    <span className="group-info__username">@{user.username}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group-creator-page group-info" aria-label="Info del grupo">
       <PageHeader title="Info del grupo" onBack={onClose} backLabel="Volver al chat" />
 
       {status === "loading" && (
-        <div className="group-creator-form" role="status" aria-label="Cargando el grupo">
+        <div className="group-info__body group-info__body--loading" role="status" aria-label="Cargando el grupo">
+          <Skeleton width="112px" height="112px" circle />
           <Skeleton width="60%" height="1.5rem" />
           <Skeleton width="100%" height="3rem" />
           <Skeleton width="100%" height="3rem" />
@@ -175,39 +280,16 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
       )}
 
       {status === "error" && (
-        <div className="group-creator-form">
-          <p className="group-creator-error" role="alert">No se pudo cargar el grupo.</p>
+        <div className="group-info__body">
+          <p className="group-info__error" role="alert">No se pudo cargar el grupo.</p>
           <Button variant="secondary" size="small" onClick={load}>Reintentar</Button>
         </div>
       )}
 
       {status === "loaded" && details && (
-        <div className="group-creator-form">
-          <h3 className="group-info-name">{details.name}</h3>
-          <p className="group-creator-hint">{details.participantCount} participantes</p>
-          {managed && (
-            <p className="group-creator-hint">Este grupo se gestiona automáticamente: no se pueden añadir ni expulsar participantes a mano.</p>
-          )}
-
-          {isAdmin && (
-            <>
-              <form className="group-info-rename" onSubmit={rename}>
-                <label className="group-creator-label" htmlFor="group-rename-input">Nombre del grupo</label>
-                <input
-                  id="group-rename-input"
-                  type="text"
-                  className="group-creator-input"
-                  value={name}
-                  onChange={(event) => setName(event.target.value)}
-                  maxLength={80}
-                  disabled={busy}
-                />
-                <Button type="submit" size="small" disabled={busy || !name.trim() || name.trim() === details.name}>
-                  Guardar nombre
-                </Button>
-              </form>
-
-              <span className="group-creator-label">Imagen del grupo</span>
+        <div className="group-info__body">
+          <section className="group-info__hero">
+            {isAdmin ? (
               <ImageUploader
                 value={details.imageUrl || ""}
                 onChange={changeImage}
@@ -216,110 +298,168 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
                 chooseLabel="Elegir imagen"
                 changeLabel="Cambiar imagen"
                 disabled={busy}
+                tapToChoose
+                emptyIcon={<FaUsers />}
               />
+            ) : (
+              <Avatar src={details.imageUrl} name={details.name} size={112} />
+            )}
 
-              {!managed && (
-                <ToggleSwitch
-                  checked={Boolean(details.historyVisibleToNew)}
-                  onChange={changeHistory}
-                  label="Las nuevas participantes ven los mensajes anteriores"
+            {editingName ? (
+              <form className="group-info__rename" onSubmit={saveName}>
+                <input
+                  ref={nameInputRef}
+                  type="text"
+                  className="group-info__rename-input"
+                  aria-label="Nombre del grupo"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  onKeyDown={(event) => event.key === "Escape" && cancelEditingName()}
+                  maxLength={80}
+                  disabled={busy}
                 />
-              )}
+                <button type="submit" className="group-info__icon-button" aria-label="Guardar nombre" disabled={busy || !name.trim()}>
+                  <FaCheck aria-hidden="true" />
+                </button>
+                <button type="button" className="group-info__icon-button" aria-label="Cancelar" onClick={cancelEditingName} disabled={busy}>
+                  <FaTimes aria-hidden="true" />
+                </button>
+              </form>
+            ) : (
+              <div className="group-info__title">
+                <h2 className="group-info__group-name">{details.name}</h2>
+                {isAdmin && (
+                  <button type="button" className="group-info__icon-button" aria-label="Editar nombre del grupo" onClick={startEditingName}>
+                    <FaPen aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            )}
+            <p className="group-info__hint">
+              Grupo · {details.participantCount} {details.participantCount === 1 ? "participante" : "participantes"}
+            </p>
+          </section>
 
-              {!managed && (
-                <>
-                  <label className="group-creator-label" htmlFor="group-add-input">Añadir participantes</label>
-                  <input
-                    id="group-add-input"
-                    type="text"
-                    className="group-creator-input"
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    autoComplete="off"
-                    disabled={busy}
-                  />
-                  {searching && <p className="group-creator-hint" role="status">Buscando usuarias...</p>}
-                  {results.length > 0 && (
-                    <div className="group-search-results">
-                      {results.map((user) => (
-                        <button
-                          key={user.username}
-                          type="button"
-                          className="group-search-result-item"
-                          onClick={() => addMember(user)}
-                          disabled={busy}
-                        >
-                          <span className="group-search-avatar" aria-hidden="true">
-                            {String(user.username).charAt(0).toUpperCase()}
-                          </span>
-                          <span className="group-search-main">{user.fullName || user.username}</span>
-                          <span className="group-search-username">@{user.username}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </>
-              )}
-            </>
+          {actionError && !sheetOpen && <p className="group-info__error" role="alert">{actionError}</p>}
+
+          {managed && origin && (
+            <button type="button" className="group-info__row group-info__row--card" onClick={() => onOpenOrigin?.(origin)}>
+              <span className="group-info__text">
+                <span className="group-info__name">{ORIGIN_LABEL[origin.type] || "Chat de"} {origin.name}</span>
+              </span>
+              <FaChevronRight className="group-info__chevron" aria-hidden="true" />
+            </button>
           )}
 
-          {actionError && <p className="group-creator-error" role="alert">{actionError}</p>}
+          {isAdmin && !managed && (
+            <div className="group-info__setting">
+              <ToggleSwitch
+                checked={Boolean(details.historyVisibleToNew)}
+                onChange={changeHistory}
+                label="Las nuevas participantes ven los mensajes anteriores"
+              />
+            </div>
+          )}
 
-          <h3 className="group-info-subtitle">Participantes</h3>
-          <ul className="group-info-members">
+          <h3 className="group-info__section">Participantes</h3>
+          <ul className="group-info__list">
+            {isAdmin && !managed && (
+              <li>
+                <button type="button" className="group-info__row" onClick={() => setAdding(true)} disabled={busy}>
+                  <span className="group-info__add-icon" aria-hidden="true"><FaPlus /></span>
+                  <span className="group-info__name">Añadir participantes</span>
+                </button>
+              </li>
+            )}
             {participants.map((participant) => {
               const isMe = participant.username === currentUsername;
+              const content = (
+                <>
+                  <Avatar src={participant.profilePictureUrl} name={participant.fullName || participant.username} size="md" />
+                  <span className="group-info__text">
+                    <span className="group-info__name">{participant.fullName || participant.username}</span>
+                    <span className="group-info__username">@{participant.username}{isMe ? " (tú)" : ""}</span>
+                  </span>
+                  {participant.role === "ADMIN" && <span className="group-info__badge">Admin</span>}
+                </>
+              );
               return (
-                <li key={participant.username} className="group-info-member">
-                  <span className="group-search-avatar" aria-hidden="true">
-                    {participant.profilePictureUrl ? (
-                      <img src={participant.profilePictureUrl} alt="" className="group-search-avatar-image" />
-                    ) : (
-                      String(participant.username).charAt(0).toUpperCase()
-                    )}
-                  </span>
-                  <span className="group-info-member-name">
-                    {participant.fullName || participant.username}
-                    <span className="group-search-username"> @{participant.username}{isMe ? " (tú)" : ""}</span>
-                  </span>
-                  {participant.role === "ADMIN" && <span className="group-info-badge">Administradora</span>}
-                  {isAdmin && !managed && !isMe && (
-                    <span className="group-info-member-actions">
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        onClick={() => toggleRole(participant)}
-                        disabled={busy}
-                        aria-label={`${participant.role === "ADMIN" ? "Quitar rol de administradora a" : "Hacer administradora a"} ${participant.username}`}
-                      >
-                        {participant.role === "ADMIN" ? "Quitar admin" : "Hacer admin"}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        onClick={() => expel(participant)}
-                        disabled={busy}
-                        aria-label={`Expulsar a ${participant.username}`}
-                      >
-                        Expulsar
-                      </Button>
-                    </span>
+                <li key={participant.username}>
+                  {isMe ? (
+                    <div className="group-info__row group-info__row--static">{content}</div>
+                  ) : (
+                    <button
+                      type="button"
+                      className="group-info__row"
+                      onClick={() => openActions(participant)}
+                      aria-label={`Opciones de ${participant.fullName || participant.username}`}
+                    >
+                      {content}
+                    </button>
                   )}
                 </li>
               );
             })}
           </ul>
           {hasMore && (
-            <Button variant="secondary" size="small" onClick={loadMore} disabled={loadingMore}>
+            <Button variant="ghost" size="small" onClick={loadMore} disabled={loadingMore}>
               {loadingMore ? "Cargando…" : "Cargar más"}
             </Button>
           )}
 
-          <Button variant="secondary" className="group-info-leave" onClick={() => setConfirmLeave(true)} disabled={busy}>
-            Salir del grupo
-          </Button>
+          {!managed && (
+            <button type="button" className="group-info__leave" onClick={() => setConfirmLeave(true)} disabled={busy}>
+              Salir del grupo
+            </button>
+          )}
         </div>
       )}
+
+      <BottomSheet open={Boolean(selected) && !toExpel} title={selected?.fullName || selected?.username || ""} onClose={closeActions}>
+        {selected && (
+          <div className="group-info__actions">
+            <button type="button" className="group-info__action" onClick={() => pick((user) => onOpenProfile?.(user.username))}>
+              Ver perfil
+            </button>
+            <button type="button" className="group-info__action" onClick={() => pick(onSendMessage)}>
+              Enviar mensaje
+            </button>
+            {isAdmin && !managed && (
+              <>
+                <button type="button" className="group-info__action" onClick={() => toggleRole(selected)} disabled={busy}>
+                  {selected.role === "ADMIN" ? "Quitar admin" : "Hacer admin"}
+                </button>
+                <button
+                  type="button"
+                  className="group-info__action group-info__action--danger"
+                  onClick={() => { setActionError(null); setToExpel(selected); }}
+                  disabled={busy}
+                >
+                  Expulsar
+                </button>
+              </>
+            )}
+            {actionError && <p className="group-info__error" role="alert">{actionError}</p>}
+          </div>
+        )}
+      </BottomSheet>
+
+      <ConfirmSheet
+        open={Boolean(toExpel)}
+        title={`¿Expulsar a ${toExpel?.fullName || toExpel?.username || ""}?`}
+        message="Dejará de recibir los mensajes del grupo y perderá el historial. No se puede deshacer: solo volverá si la añaden de nuevo."
+        confirmLabel="Expulsar"
+        destructive
+        loading={busy}
+        error={toExpel ? actionError || "" : ""}
+        onConfirm={expel}
+        onCancel={() => {
+          if (busy) return;
+          setToExpel(null);
+          setSelected(null);
+          setActionError(null);
+        }}
+      />
 
       <ConfirmSheet
         open={confirmLeave}
@@ -328,7 +468,7 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
         confirmLabel="Salir"
         destructive
         loading={busy}
-        error={actionError || ""}
+        error={confirmLeave ? actionError || "" : ""}
         onConfirm={leave}
         onCancel={() => !busy && setConfirmLeave(false)}
       />
