@@ -8,9 +8,9 @@ const CLOSE_THRESHOLD = 100; // px arrastrados hacia abajo para cerrar
 
 /**
  * Hoja inferior accesible: `aria-modal`, `Esc` cierra, foco atrapado y devuelto
- * a quien la abrió. Con `draggable` se cierra arrastrando el asa hacia abajo.
+ * a quien la abrió. Con `half` ocupa siempre la mitad de la pantalla (el cuerpo se desplaza por dentro). Con `draggable` se cierra arrastrando el asa hacia abajo.
  */
-export default function BottomSheet({ open, title, onClose, children, footer, draggable = true }) {
+export default function BottomSheet({ open, title, onClose, children, footer, draggable = true, half = false }) {
   const sheetRef = useRef(null);
   const onCloseRef = useRef(onClose);
   const startY = useRef(null);
@@ -79,7 +79,7 @@ export default function BottomSheet({ open, title, onClose, children, footer, dr
     <div className="bottom-sheet-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()}>
       <div
         ref={sheetRef}
-        className="bottom-sheet"
+        className={half ? "bottom-sheet bottom-sheet--half" : "bottom-sheet"}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}

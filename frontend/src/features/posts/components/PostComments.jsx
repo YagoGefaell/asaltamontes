@@ -66,6 +66,7 @@ export default function PostComments({ postId, onCountChange }) {
 
   return (
     <section className="post-comments" aria-label="Comentarios">
+      <div className="post-comments__scroll">
       {loading && (
         <div className="post-comments__skeletons" data-testid="comments-skeleton">
           <Skeleton height="48px" />
@@ -108,6 +109,7 @@ export default function PostComments({ postId, onCountChange }) {
       {!loading && !error && hasMore && (
         <Button variant="ghost" className="post-comments__more" onClick={loadMore} loading={loadingMore}>Cargar más comentarios</Button>
       )}
+      </div>
 
       <form className="post-comments__form" onSubmit={send}>
         <input

@@ -114,7 +114,7 @@ export default function PostCard({ post, openComments = false, onDeleted }) {
         {likeError && <span className="post-card__error" role="alert">{likeError}</span>}
       </footer>
 
-      <BottomSheet open={commentsOpen} title="Comentarios" onClose={() => setCommentsOpen(false)}>
+      <BottomSheet half open={commentsOpen} title="Comentarios" onClose={() => setCommentsOpen(false)}>
         <PostComments
           postId={post.id}
           onCountChange={(delta) => setCommentCount((count) => Math.max(0, count + delta))}

@@ -43,6 +43,8 @@ describe('PostCard', () => {
     expect(screen.queryByText('comentarios de p1')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '3 comentarios' }))
     expect(screen.getByRole('dialog')).toHaveTextContent('comentarios de p1')
+    // Always half the screen, with 1 comment or 30: the list scrolls inside
+    expect(screen.getByRole('dialog')).toHaveClass('bottom-sheet--half')
   })
 
   it('starts with the comments open when asked (notification link)', () => {
