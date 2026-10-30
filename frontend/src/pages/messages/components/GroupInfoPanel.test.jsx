@@ -62,6 +62,16 @@ describe('GroupInfoPanel (T12, T29r)', () => {
     expect(onOpenProfile).toHaveBeenCalledWith('ana')
   })
 
+  it('lets any participant report another one from the sheet', async () => {
+    service.getGroupDetailsRequest.mockResolvedValue(details('MEMBER'))
+    renderPanel()
+
+    fireEvent.click(await screen.findByLabelText('Opciones de cris'))
+    fireEvent.click(screen.getByText('Denunciar'))
+    expect(screen.getByRole('heading', { name: 'Denunciar a @cris' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Motivo')).toBeInTheDocument()
+  })
+
   it('lets an admin rename the group in place', async () => {
     service.getGroupDetailsRequest.mockResolvedValue(details('ADMIN'))
     service.updateGroupRequest.mockResolvedValue(details('ADMIN', { name: 'Montaña' }))

@@ -85,7 +85,7 @@ Principios, por orden:
 ### Chat
 - Burbujas: las mías a la derecha en el color principal; las de otras a la izquierda.
 - En grupos, los mensajes seguidos de la misma autora (< 5 min, sin separador de día ni mensaje del sistema por medio) forman un bloque con un **avatar pequeño a la izquierda de la primera burbuja, sin nombre ni @**. Al tocar el avatar se abre el perfil. Sin etiquetas de rol en el chat.
-- Denunciar (Yago, 2026-10-30): en un chat privado, desde el ⋯ de la cabecera («Denunciar a @usuaria»). Nunca un botón o ⋯ por mensaje: ocupa demasiado.
+- Denunciar y bloquear (Yago, 2026-10-30): solo donde ya hay una pantalla de info, nunca en la cabecera del chat ni por mensaje. Chat privado: tocar la cabecera abre el perfil, cuyo ⋯ tiene «Bloquear» y «Denunciar». Grupo: en la info del grupo, la hoja de cada participante tiene «Denunciar». Comunidad y quedada: el ⋯ de su pantalla de detalle. Si un sitio no tiene pantalla de info, no se añade nada.
 - Enviar: botón redondo con la flecha de enviar, apagado sin texto. El campo crece con el texto.
 - Cabecera: avatar + nombre; debajo, `@usuaria` (privado) o los participantes (grupo). Tocar la cabecera abre el perfil o la info. Nunca estados falsos («En línea» sin presencia real).
 - Info del grupo como WhatsApp: foto y nombre centrados y editables en el sitio, ajustes en filas, participantes con acciones en una hoja inferior al tocar la fila.

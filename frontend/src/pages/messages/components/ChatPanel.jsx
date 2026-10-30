@@ -6,7 +6,6 @@ import Button from "../../../shared/forms/Button";
 import PageHeader from "../../../shared/ui/PageHeader";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Skeleton from "../../../shared/ui/Skeleton";
-import ReportMenu from "../../../features/reports/components/ReportMenu";
 import { systemMessageText } from "../../../features/messages/utils/systemMessage";
 import { formatDayLabel, formatMessageTime, isSameDay, parseMessageDate } from "../../../features/messages/utils/messageDates";
 import { groupSubtitle } from "../../../features/messages/utils/groupSubtitle";
@@ -150,15 +149,6 @@ const ChatPane = ({
       <PageHeader
         onBack={onLeaveChat}
         backLabel="Volver"
-        actions={!isGroup && (
-          <ReportMenu
-            menuTitle={`@${selectedChat.name}`}
-            reportTitle={`Denunciar a @${selectedChat.name}`}
-            actionLabel={`Denunciar a @${selectedChat.name}`}
-            targetType="USER"
-            target={selectedChat.name}
-          />
-        )}
       >
         <div
           className="chat-title"
