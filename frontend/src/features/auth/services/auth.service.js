@@ -65,6 +65,17 @@ export async function registerRequest({ fullName, username, email, password, con
   }
 }
 
+// ---------------- EMAIL VERIFICATION (T24a2) ----------------
+// Public: the token of the emailed link is the proof. 400 = invalid, used, replaced or expired.
+export async function verifyEmailRequest(token) {
+  await authApiClient.post('/auth/verify-email', { token })
+}
+
+// Sends the link again. 409 = already verified; 429 = too soon (error.retryAfter, in seconds).
+export async function resendVerificationEmailRequest() {
+  await apiClient.post('/api/users/me/verification-email')
+}
+
 // ---------------- LOGOUT EVERYWHERE ----------------
 // Revokes every session of the user (all devices). The caller then runs the normal logout.
 export async function logoutEverywhereRequest() {

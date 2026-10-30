@@ -16,6 +16,7 @@ function submitError(error) {
     const minutes = error.retryAfter ? Math.ceil(error.retryAfter / 60) : null;
     return minutes ? `Has publicado mucho hoy. Inténtalo de nuevo en ${minutes} min.` : "Has publicado mucho hoy. Inténtalo más tarde.";
   }
+  if (error.code === "EMAIL_NOT_VERIFIED") return error.message;
   if (error.status === 403) return "Solo la propietaria y las moderadoras pueden publicar en esta comunidad.";
   return error.message;
 }

@@ -87,6 +87,16 @@ describe('ApiClient', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
+  it('exposes the ProblemDetail code, e.g. EMAIL_NOT_VERIFIED', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(403, { detail: 'Verifica tu email para poder hacer esto', code: 'EMAIL_NOT_VERIFIED' }))
+
+    const onNotVerified = vi.fn()
+    client.setEmailNotVerifiedCallback(onNotVerified)
+
+    await expect(client.post('/api/posts', {})).rejects.toMatchObject({ status: 403, code: 'EMAIL_NOT_VERIFIED' })
+    expect(onNotVerified).toHaveBeenCalledTimes(1)
+  })
+
   it('logs out and rejects when the refresh fails', async () => {
     const logout = vi.fn()
     client.setLogoutCallback(logout)
