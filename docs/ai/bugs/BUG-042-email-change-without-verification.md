@@ -1,6 +1,6 @@
 # BUG-042 — El email se puede cambiar sin verificar el nuevo ni confirmar con la contraseña
 
-- **Estado:** abierto
+- **Estado:** resuelto (T24b)
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/user

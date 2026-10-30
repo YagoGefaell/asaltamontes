@@ -42,13 +42,22 @@ public class AccountToken {
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
+    /** Data bound to the token (the new address of a CHANGE_EMAIL); null for the other purposes. */
+    @Column(length = 255)
+    private String payload;
+
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     public AccountToken(UserAccount user, AccountTokenPurpose purpose, String tokenHash, LocalDateTime expiresAt) {
+        this(user, purpose, tokenHash, expiresAt, null);
+    }
+
+    public AccountToken(UserAccount user, AccountTokenPurpose purpose, String tokenHash, LocalDateTime expiresAt, String payload) {
         this.user = user;
         this.purpose = purpose;
         this.tokenHash = tokenHash;
         this.expiresAt = expiresAt;
+        this.payload = payload;
     }
 }

@@ -81,6 +81,9 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
             }
             case "/auth/register" -> retryAfter = rateLimiter.tryAcquire("register:ip:" + ip, properties.getRegisterPerMinute(), PERIOD);
             case "/auth/verify-email" -> retryAfter = rateLimiter.tryAcquire("verify-email:ip:" + ip, properties.getVerifyEmailPerMinute(), PERIOD);
+            case "/auth/forgot-password" -> retryAfter = rateLimiter.tryAcquire("forgot-password:ip:" + ip, properties.getPasswordResetPerMinute(), PERIOD);
+            case "/auth/reset-password" -> retryAfter = rateLimiter.tryAcquire("reset-password:ip:" + ip, properties.getPasswordResetPerMinute(), PERIOD);
+            case "/auth/confirm-email-change" -> retryAfter = rateLimiter.tryAcquire("confirm-email:ip:" + ip, properties.getVerifyEmailPerMinute(), PERIOD);
             case "/auth/refresh" -> retryAfter = rateLimiter.tryAcquire("refresh:ip:" + ip, properties.getRefreshPerMinute(), PERIOD);
             default -> retryAfter = 0;
         }

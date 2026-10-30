@@ -65,6 +65,39 @@ public class UserActionLimiter {
         check("verification-email", userId, properties.getVerificationEmailsPerHour(), HOUR);
     }
 
+    /** "Forgot my password" for an address. Keyed on what was typed, not on whether the account exists, so the answer reveals nothing. */
+    public void passwordResetRequest(String email) {
+        check("password-reset", email.toLowerCase(java.util.Locale.ROOT), properties.getPasswordResetRequestsPerHour(), HOUR);
+    }
+
+    /** Email-change requests of a logged-in user (they check the current password, so they must not allow guessing it). */
+    public void emailChangeRequest(Long userId) {
+        check("email-change", userId, properties.getEmailChangeRequestsPerHour(), HOUR);
+    }
+
+    /**
+     * Whether one more account email may go to this address (BUG-084): a cap per hour and per day on the destination,
+     * whoever asks for it. False means "do not send"; callers stay silent so nothing is revealed.
+     */
+    public boolean mayEmail(String address) {
+        if (!properties.isEnabled()) {
+            return true;
+        }
+        String key = "mail-to:" + address.toLowerCase(java.util.Locale.ROOT);
+        return rateLimiter.tryAcquire(key + ":h", properties.getEmailsPerAddressPerHour(), HOUR) == 0
+                && rateLimiter.tryAcquire(key + ":d", properties.getEmailsPerAddressPerDay(), DAY) == 0;
+    }
+
+    private void check(String action, String key, int limit, Duration period) {
+        if (!properties.isEnabled()) {
+            return;
+        }
+        long retryAfter = rateLimiter.tryAcquire(action + ":key:" + key, limit, period);
+        if (retryAfter > 0) {
+            throw new TooManyRequestsException("Demasiadas peticiones. Vuelve a probar en " + retryAfter + " segundos", retryAfter);
+        }
+    }
+
     private void check(String action, Long userId, int limit, Duration period) {
         if (!properties.isEnabled()) {
             return;

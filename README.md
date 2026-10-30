@@ -121,7 +121,7 @@ Every push to `main` runs `.github/workflows/deploy.yml` on the server: it build
 
 ### Email (T24a)
 
-The backend sends emails (for now the "verify your email" link) through any SMTP server, configured with `MAIL_*` in the `.env` (see `.env.example`). **With `MAIL_HOST` empty (the default) nothing is sent: each email is written to the backend log** (`docker compose logs backend | grep "email NOT sent"`), links included, so the demo works without a provider. That also means the log holds valid links: only use this mode on a private server.
+The backend sends emails (for now the "verify your email" link) through any SMTP server, configured with `MAIL_*` in the `.env` (see `.env.example`). **With `MAIL_HOST` empty (the default) nothing is sent.** Only the subject of each email is logged; to also see its body, links included (so the demo works without a provider), set `MAIL_LOG_BODY=true` (`docker compose logs backend | grep -A8 "email NOT sent"`). Since T24b those links include password-reset ones, which log in as anyone: use `MAIL_LOG_BODY=true` only on a private server (BUG-084).
 
 Setting up [Resend](https://resend.com) (free plan, sends through SMTP):
 
