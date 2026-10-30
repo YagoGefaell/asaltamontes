@@ -63,6 +63,11 @@ public class UserActionLimiter {
         check("report-create", userId, properties.getReportsPerDay(), DAY);
     }
 
+    /** "Download my data" (T24d): heavy to build and full of personal data, so a couple per day. */
+    public void dataExport(Long userId) {
+        check("data-export", userId, properties.getDataExportsPerDay(), DAY);
+    }
+
     /** Verification emails: one per minute (cooldown of the "Resend" button) and a cap per hour. */
     public void verificationEmail(Long userId) {
         check("verification-email-cooldown", userId, 1, MINUTE);

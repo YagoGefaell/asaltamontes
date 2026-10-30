@@ -1,6 +1,6 @@
 # T24 — Verificación de email, reset de contraseña y borrar/exportar cuenta
 
-- **Estado:** en curso — T24a (backend), T24a2 (front de la verificación) y T24b (backend) y T24b2 (front del reset y del cambio de email) hechos en sus PRs; pendiente T24c y T24d
+- **Estado:** en curso — T24a (backend), T24a2 (front de la verificación) y T24b (backend) y T24b2 (front del reset y del cambio de email) hechos en sus PRs; pendiente T24c; T24d hecho (backend), falta T24d2 (front)
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T06
 - **Rama sugerida:** `feat/T24-account-lifecycle`
@@ -28,7 +28,8 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 | **T24b** (hecho, backend) | Reset de contraseña (olvidé la contraseña) y cambio de email con verificación del nuevo (BUG-042) | T24a |
 | **T24b2** | Front de T24b: páginas públicas `/forgot-password` (+ enlace en el login), `/reset-password?token=` y `/confirm-email-change?token=`; en Ajustes, «Cambiar email» (nuevo email + contraseña actual; aviso «te hemos enviado un enlace al nuevo email»). Errores: 400 enlace inválido, 403 contraseña incorrecta, 409 en uso/Google, 429 con `Retry-After`. Con `/ui-review` | T24b |
 | **T24c** | Borrar cuenta (confirmación con contraseña; Google: reautenticación reciente) y resolución de BUG-065/068 | T23c (destino de datos) |
-| **T24d** | Exportar datos (JSON) | T22a |
+| **T24d** (hecho, backend) | Exportar datos (JSON) | T22a |
+| **T24d2** | Front: Ajustes → Seguridad → «Descargar mis datos» (`GET /api/users/me/export` con el token, guardar el blob como archivo; errores 401/429 con `Retry-After`; texto que explique qué incluye). Con `/ui-review` | T24d |
 
 | **T24a2** | Front de la verificación: pantalla «Verifica tu email» a la que redirige el 403, con «Reenviar» (cooldown; también en Ajustes, `POST /api/users/me/verification-email`), página pública `/verify-email?token=` (`POST /auth/verify-email`) y mensaje del error `403 code=EMAIL_NOT_VERIFIED`. Con `/ui-review` | T24a |
 
@@ -59,6 +60,11 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 - `/verify-email?token=` (pública, `pages/access/VerifyEmail.jsx`): consume el token una sola vez (también bajo StrictMode); éxito → «Continuar»; 400/sin token → error en línea.
 - `api-client` expone `error.code` (ProblemDetail); `PostCreate` muestra «Verifica tu email…» ante `EMAIL_NOT_VERIFIED` (antes decía «Solo la propietaria…»). El resto de pantallas ya muestran `error.message`.
 - Deuda registrada: BUG-085 (`FormError` pinta en turquesa).
+
+### Como quedó T24d (2026-10-30)
+- `GET /api/users/me/export` (sin migración): descarga directa (no asíncrona ni por correo; el límite de filas acota el tiempo) de un JSON `asaltamontes-export-v1` con cuenta y perfil, preferencias de notificaciones, publicaciones, comentarios, likes, mensajes enviados por ella, quedadas organizadas y asistencias, comunidades, a quién sigue y a quién ha bloqueado (solo `username`) y denuncias presentadas (sin la copia del contenido denunciado ni notas de moderación). Solo identificadores públicos (D-021); nada de contenido ni correo ajeno.
+- Se escribe en la respuesta por páginas de 500 (keyset) sin cargar todo en memoria ni retener conexión; cada lista se corta en `asaltamontes.export.max-rows-per-section` (50000) y las cortadas aparecen en `truncatedSections`. Límite: 2 por usuaria y día (cada intento cuenta; la spec decía una: el segundo cubre una descarga fallida).
+- Deliberadamente **no** es `StreamingResponseBody`: corre en despacho asíncrono, que el filtro JWT sin estado no autentica (respuesta 403 ya comprometida); escribir en el `HttpServletResponse` evita tocar la autenticación (D-012).
 
 ### Decisiones propuestas (Yago confirma)
 - Proveedor de correo: **SMTP genérico** configurable por variables (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`); para la demo, Brevo o Resend en plan gratuito. Variables nuevas → `.env.example`, `docker-compose.yml`, README.
