@@ -142,6 +142,30 @@ class AccountSuspensionIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void suspendingAnAlreadySuspendedAccount_isAConflict_andNeverShortensIt() throws Exception {
+        UserAccount mod = staff("MODERATOR");
+        UserAccount bea = testData.createUser();
+        String first = fileReport(testData.createUser(), bea);
+        String second = fileReport(testData.createUser(), bea);
+        mockMvc.perform(post("/api/admin/reports/" + first + "/suspend-user").with(auth.bearer(mod)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"permanent\":true}")).andExpect(status().isOk());
+        mockMvc.perform(post("/api/admin/reports/" + second + "/suspend-user").with(auth.bearer(mod)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"days\":1}")).andExpect(status().isConflict());
+        assertThat(jdbc.queryForObject("SELECT suspended_permanently FROM users WHERE id = ?", Boolean.class, bea.getId())).isTrue();
+    }
+
+    @Test
+    void aModeratorCannotLiftTheSuspensionOfAnotherModerator() throws Exception {
+        UserAccount admin = staff("ADMIN");
+        UserAccount m1 = staff("MODERATOR");
+        String report = fileReport(testData.createUser(), m1);
+        mockMvc.perform(post("/api/admin/reports/" + report + "/suspend-user").with(auth.bearer(admin)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"days\":5}")).andExpect(status().isOk());
+        mockMvc.perform(post("/api/admin/users/" + m1.getUsername() + "/unsuspend").with(auth.bearer(staff("MODERATOR")))).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/users/" + m1.getUsername() + "/unsuspend").with(auth.bearer(admin))).andExpect(status().isNoContent());
+    }
+
+    @Test
     void unknownReport_is404() throws Exception {
         mockMvc.perform(post("/api/admin/reports/" + UUID.randomUUID() + "/suspend-user").with(auth.bearer(staff("ADMIN")))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"days\":1}")).andExpect(status().isNotFound());

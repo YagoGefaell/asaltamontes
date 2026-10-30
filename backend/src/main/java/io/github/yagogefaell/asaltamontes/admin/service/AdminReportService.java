@@ -156,6 +156,10 @@ public class AdminReportService {
                 || (target.getRole() == UserAccountRole.MODERATOR && actor.getRole() != UserAccountRole.ADMIN)) {
             throw new ForbiddenException("No puedes suspender a esta cuenta");
         }
+        if (target.isSuspended()) {
+            // Suspending again would overwrite (and could shorten) the one in force
+            throw new ConflictException("Esta cuenta ya está suspendida");
+        }
         String note = note(dto.resolution());
         claim(report, ReportStatus.ACTIONED, actor, note);
         if (report.getTargetType() == ReportTargetType.USER) {
@@ -180,9 +184,14 @@ public class AdminReportService {
         requireStaff(actor);
         UserAccount target = userRepository.findByUsernameIgnoreCase(username)
                 .filter(UserAccount::isSuspended).orElseThrow(() -> new NotFoundException("Cuenta no suspendida"));
+        if (target.getRole() == UserAccountRole.MODERATOR && actor.getRole() != UserAccountRole.ADMIN) {
+            throw new ForbiddenException("No puedes actuar sobre esta cuenta");
+        }
         target.setSuspendedPermanently(false);
         target.setSuspendedUntil(null);
         userRepository.save(target);
+        // Whatever session slipped in while she was being suspended does not come back to life
+        authService.revokeAllSessions(target.getId());
         AdminAuditLog entry = new AdminAuditLog();
         entry.setActorId(actor.getId());
         entry.setAction(AdminAction.USER_UNSUSPENDED);

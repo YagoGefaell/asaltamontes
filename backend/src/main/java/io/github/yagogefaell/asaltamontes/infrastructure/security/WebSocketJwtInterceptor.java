@@ -71,6 +71,14 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor {
             if (accessor.getUser() == null) {
                 throw new InvalidTokenException("No autenticado");
             }
+            // An open connection does not outlive her suspension (T23c2): the principal's name is her id
+            try {
+                if (userService.loadUserById(Long.parseLong(accessor.getUser().getName())).isSuspended()) {
+                    throw new InvalidTokenException("Token inválido");
+                }
+            } catch (NumberFormatException e) {
+                throw new InvalidTokenException("No autenticado");
+            }
 
             // Only the user's own queues can be subscribed to (/user/queue/messages, /user/queue/errors)
             String destination = accessor.getDestination();
