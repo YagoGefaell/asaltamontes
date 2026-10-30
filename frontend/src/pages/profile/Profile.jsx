@@ -13,6 +13,7 @@ import Tabs from "../../shared/ui/Tabs";
 import BottomSheet from "../../shared/ui/BottomSheet";
 import { ProfilePosts, ProfileEvents, ProfileCommunities } from "./ProfileTabs";
 import FormError from "../../shared/forms/FormError";
+import ReportSheet from "../../features/reports/components/ReportSheet";
 import { blockUserRequest, unblockUserRequest } from "../../features/users/services/users.service";
 
 function Profile({ 
@@ -29,6 +30,7 @@ function Profile({
   const [tab, setTab] = useState("posts");
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockError, setBlockError] = useState("");
+  const [reportOpen, setReportOpen] = useState(false);
   // Local override after (un)blocking; null = what the server said
   const [blockedOverride, setBlockedOverride] = useState(null);
 
@@ -244,7 +246,11 @@ function Profile({
         <button type="button" className="pf-sheet-action pf-sheet-action--danger" onClick={() => handleToggleBlock(isBlockedByMe)}>
           {isBlockedByMe ? "Desbloquear" : "Bloquear"}
         </button>
+        <button type="button" className="pf-sheet-action pf-sheet-action--danger" onClick={() => { setMenuOpen(false); setBlockError(""); setReportOpen(true); }}>
+          Denunciar
+        </button>
       </BottomSheet>
+      <ReportSheet open={reportOpen} title={`Denunciar a @${username}`} targetType="USER" target={username} onClose={() => setReportOpen(false)} />
     </div>
   );
 }

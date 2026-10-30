@@ -1,8 +1,10 @@
 import { useCallback, useState } from "react";
 import { Link } from "react-router-dom";
-import { FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaFlag, FaPaperPlane, FaTimes } from "react-icons/fa";
 import Button from "../../../shared/forms/Button";
 import Avatar from "../../../shared/ui/Avatar";
+import ReportSheet from "../../reports/components/ReportSheet";
+import { useAuth } from "../../auth/hooks/useAuth";
 import ConfirmSheet from "../../../shared/ui/ConfirmSheet";
 import Skeleton from "../../../shared/ui/Skeleton";
 import { useCursorList } from "../../communities/hooks/useCursorList";
@@ -24,6 +26,8 @@ function sendError(error) {
 export default function PostComments({ postId, onCountChange }) {
   const fetchPage = useCallback((after) => getCommentsRequest(postId, after), [postId]);
   const { items, setItems, loading, loadingMore, error, hasMore, loadMore, reload, removeItem } = useCursorList(fetchPage);
+  const { currentUser } = useAuth();
+  const [toReport, setToReport] = useState(null);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [formError, setFormError] = useState("");
@@ -96,6 +100,11 @@ export default function PostComments({ postId, onCountChange }) {
                   </p>
                   <span className="post-comment__age">{formatAge(comment.createdAt)}</span>
                 </div>
+                {Boolean(currentUser) && comment.author.username !== currentUser.username && (
+                  <button type="button" className="post-comment__delete" onClick={() => setToReport(comment)} aria-label="Denunciar comentario" aria-haspopup="dialog">
+                    <FaFlag aria-hidden="true" />
+                  </button>
+                )}
                 {comment.canDelete && (
                   <button type="button" className="post-comment__delete" onClick={() => { setDeleteError(""); setToDelete(comment); }} aria-label="Eliminar comentario">
                     <FaTimes aria-hidden="true" />
@@ -127,6 +136,7 @@ export default function PostComments({ postId, onCountChange }) {
       </form>
       {formError && <p className="post-comments__form-error" role="alert">{formError}</p>}
 
+      <ReportSheet open={Boolean(toReport)} title="Denunciar comentario" targetType="COMMENT" target={toReport?.id} onClose={() => setToReport(null)} />
       <ConfirmSheet
         open={Boolean(toDelete)}
         title="Eliminar comentario"

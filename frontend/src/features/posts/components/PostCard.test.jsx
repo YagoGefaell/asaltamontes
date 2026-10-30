@@ -4,6 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PostCard from './PostCard.jsx'
 import { deletePostRequest, likePostRequest, unlikePostRequest } from '../services/posts.service'
 
+const auth = vi.hoisted(() => ({ currentUser: { username: 'yo' } }))
+vi.mock('../../auth/hooks/useAuth', () => ({ useAuth: () => auth }))
 vi.mock('./PostComments', () => ({ default: ({ postId }) => <div>comentarios de {postId}</div> }))
 vi.mock('../services/posts.service', () => ({
   likePostRequest: vi.fn(),
@@ -70,8 +72,8 @@ describe('PostCard', () => {
     expect(screen.getByRole('button', { name: 'Me gusta' })).toHaveTextContent('2')
   })
 
-  it('offers no options when she cannot delete', () => {
-    renderCard()
+  it('offers no options on her own post when she cannot delete', () => {
+    renderCard({ author: { ...post.author, username: 'yo' } })
     expect(screen.queryByRole('button', { name: 'Más opciones' })).toBeNull()
   })
 
@@ -85,5 +87,12 @@ describe('PostCard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }))
     await waitFor(() => expect(onDeleted).toHaveBeenCalled())
     expect(deletePostRequest).toHaveBeenCalledWith('p1')
+  })
+
+  it('offers «Denunciar publicación» on another author\'s post and not on her own', () => {
+    renderCard()
+    fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+    expect(screen.getByRole('button', { name: 'Denunciar publicación' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Eliminar publicación' })).toBeNull()
   })
 })

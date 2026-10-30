@@ -17,6 +17,7 @@ import { communityPath } from "../../features/communities/utils/communityPath";
 import { isStaff } from "../../features/communities/utils/communityErrors";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import CommunityChatButton from "../../features/communities/components/CommunityChatButton";
+import ReportMenu from "../../features/reports/components/ReportMenu";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 function CommunityProfile() {
@@ -90,10 +91,23 @@ function CommunityProfile() {
       <PageHeader
         title={community.name}
         onBack={() => navigate(-1)}
-        actions={canManage && (
-          <button type="button" onClick={() => navigate(communityPath(community, "/settings"))} aria-label="Ir a ajustes de comunidad" title="Ajustes de la comunidad">
-            <FaCog aria-hidden="true" />
-          </button>
+        actions={(
+          <>
+            {canManage && (
+              <button type="button" onClick={() => navigate(communityPath(community, "/settings"))} aria-label="Ir a ajustes de comunidad" title="Ajustes de la comunidad">
+                <FaCog aria-hidden="true" />
+              </button>
+            )}
+            {community.role !== "OWNER" && (
+              <ReportMenu
+                menuTitle={community.name}
+                reportTitle="Denunciar comunidad"
+                actionLabel="Denunciar comunidad"
+                targetType="COMMUNITY"
+                target={community.slug || community.name}
+              />
+            )}
+          </>
         )}
       />
 

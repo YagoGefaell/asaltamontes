@@ -23,6 +23,12 @@ function renderPanel(props = {}) {
 }
 
 describe('ChatPanel', () => {
+  it('has no report menu in the header: reporting lives in the profile and the group info', () => {
+    renderPanel()
+
+    expect(screen.queryByRole('button', { name: 'Más opciones' })).not.toBeInTheDocument()
+  })
+
   it('limits the input to the backend maximum of 2000 characters', () => {
     renderPanel()
 

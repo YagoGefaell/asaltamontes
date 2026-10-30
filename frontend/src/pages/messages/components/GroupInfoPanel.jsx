@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { FaCheck, FaChevronRight, FaPen, FaPlus, FaTimes, FaUsers } from "react-icons/fa";
 import Button from "../../../shared/forms/Button.jsx";
 import Avatar from "../../../shared/ui/Avatar.jsx";
+import ReportSheet from "../../../features/reports/components/ReportSheet.jsx";
 import BottomSheet from "../../../shared/ui/BottomSheet.jsx";
 import ConfirmSheet from "../../../shared/ui/ConfirmSheet.jsx";
 import ImageUploader from "../../../shared/ui/ImageUploader.jsx";
@@ -34,6 +35,7 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
   const conversationId = chat.id;
   const [details, setDetails] = useState(null);
   const [participants, setParticipants] = useState([]);
+  const [toReport, setToReport] = useState(null);
   const [page, setPage] = useState(0);
   const [status, setStatus] = useState("loading");
   const [loadingMore, setLoadingMore] = useState(false);
@@ -424,6 +426,9 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
             <button type="button" className="group-info__action" onClick={() => pick(onSendMessage)}>
               Enviar mensaje
             </button>
+            <button type="button" className="group-info__action group-info__action--danger" onClick={() => pick(setToReport)}>
+              Denunciar
+            </button>
             {isAdmin && !managed && (
               <>
                 <button type="button" className="group-info__action" onClick={() => toggleRole(selected)} disabled={busy}>
@@ -443,6 +448,14 @@ const GroupInfoPanel = ({ chat, currentUsername, onClose, onGroupChanged, onLeft
           </div>
         )}
       </BottomSheet>
+
+      <ReportSheet
+        open={Boolean(toReport)}
+        title={`Denunciar a @${toReport?.username ?? ""}`}
+        targetType="USER"
+        target={toReport?.username}
+        onClose={() => setToReport(null)}
+      />
 
       <ConfirmSheet
         open={Boolean(toExpel)}
