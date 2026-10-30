@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { FaPen } from 'react-icons/fa'
+import { FaPen, FaRegMap } from 'react-icons/fa'
 import { useAuth } from '../../features/auth/hooks/useAuth.js'
 import { useEvent } from '../../features/events/hooks/useEvent.js'
 import { useEventAttendance } from '../../features/events/hooks/useEventAttendance.js'
@@ -8,6 +8,7 @@ import { getEventAttendeesRequest } from '../../features/events/services/events.
 import AttendButton from '../../features/events/components/AttendButton.jsx'
 import AddToCalendarButton from '../../features/events/components/AddToCalendarButton.jsx'
 import EventChatButton from '../../features/events/components/EventChatButton.jsx'
+import ShareEventButton from '../../features/events/components/ShareEventButton.jsx'
 import {
   EVENT_LEVELS, EVENT_TYPES, directionsUrl, formatDistance, formatEventDateTime, formatPlaces, formatViewerDateTime,
 } from '../../features/events/utils/eventFormat.js'
@@ -18,12 +19,13 @@ import Button from '../../shared/forms/Button.jsx'
 import PageHeader from '../../shared/ui/PageHeader.jsx'
 import FormError from '../../shared/forms/FormError.jsx'
 import { communityPath } from '../../features/communities/utils/communityPath.js'
+import '../../features/events/components/EventActions.css'
 import './EventDetail.css'
 
 // Leaflet only downloads when an event with coordinates is opened
 const EventMap = lazy(() => import('../../features/events/components/EventMap.jsx'))
 
-const ATTENDEES_PREVIEW = 8
+const ATTENDEES_PREVIEW = 5
 
 function Attendees({ eventId, count, refreshKey }) {
   const [people, setPeople] = useState([])
@@ -64,11 +66,22 @@ function Attendees({ eventId, count, refreshKey }) {
 
   if (count === 0) return <p className="event-detail__muted">Todavía no se ha apuntado nadie.</p>
 
-  const shown = expanded ? people : people.slice(0, ATTENDEES_PREVIEW)
+  if (!expanded) {
+    return (
+      <div className="event-detail__stack-row">
+        <span className="event-detail__stack" aria-hidden="true">
+          {people.slice(0, ATTENDEES_PREVIEW).map((person) => (
+            <Avatar key={person.username} src={person.profilePictureUrl} name={person.fullName || person.username} size="md" className="event-detail__stack-avatar" />
+          ))}
+        </span>
+        <Button variant="ghost" onClick={() => setExpanded(true)} aria-label={`Ver todas las asistentes (${count})`}>Ver todas ({count})</Button>
+      </div>
+    )
+  }
   return (
     <>
       <ul className="event-detail__attendees">
-        {shown.map((person) => (
+        {people.map((person) => (
           <li key={person.username}>
             <Link to={`/users/${person.username}`} className="event-detail__attendee">
               <Avatar src={person.profilePictureUrl} name={person.fullName || person.username} size="sm" />
@@ -77,10 +90,8 @@ function Attendees({ eventId, count, refreshKey }) {
           </li>
         ))}
       </ul>
-      {!expanded && (people.length > ATTENDEES_PREVIEW || hasMore) && (
-        <Button variant="ghost" onClick={() => setExpanded(true)}>Ver todas ({count})</Button>
-      )}
-      {expanded && hasMore && <Button variant="ghost" onClick={loadMore} loading={loadingMore}>Cargar más</Button>}
+      {hasMore && <Button variant="ghost" onClick={loadMore} loading={loadingMore}>Cargar más</Button>}
+      <Button variant="ghost" onClick={() => setExpanded(false)}>Ver menos</Button>
     </>
   )
 }
@@ -92,6 +103,7 @@ export default function EventDetail() {
   const { event, setEvent, loading, error, refetch } = useEvent(id)
   const [waitlistPosition, setWaitlistPosition] = useState(null)
   const [attendError, setAttendError] = useState('')
+  const [actionError, setActionError] = useState('')
   const { pending, join, leave } = useEventAttendance(event, setEvent, { onError: setAttendError })
   const attend = (action) => () => {
     setAttendError('')
@@ -153,7 +165,6 @@ export default function EventDetail() {
   return (
     <div className="event-detail">
       <PageHeader
-        title="Quedada"
         onBack={() => navigate('/events')}
         backLabel="Volver a las quedadas"
         actions={event.canEdit && event.status !== 'CANCELLED' && (
@@ -161,7 +172,11 @@ export default function EventDetail() {
             <FaPen aria-hidden="true" />
           </button>
         )}
-      />
+      >
+        <h1 className="event-detail__header-title">{event.title}</h1>
+      </PageHeader>
+
+      {event.imageUrl && <img className="event-detail__cover" src={event.imageUrl} alt="" />}
 
       <div className="event-detail__content">
         {event.status === 'CANCELLED' && (
@@ -170,51 +185,55 @@ export default function EventDetail() {
           </p>
         )}
 
-        <h2 className="event-detail__title">{event.title}</h2>
-        <p className="event-detail__when">{formatEventDateTime(event.startsAt, event.timezone)}</p>
-        {viewerTime && <p className="event-detail__viewer-time">Tu hora: {viewerTime}</p>}
-        <div className="event-detail__tags">
-          <span>{EVENT_TYPES[event.type] ?? event.type}</span>
-          {event.level && <span>{EVENT_LEVELS[event.level] ?? event.level}</span>}
-          {distance && <span>{distance}</span>}
-          <span>{formatPlaces(event.attendeeCount, event.capacity)}</span>
+        <div className="event-detail__title-row">
+          <p className="event-detail__when">{formatEventDateTime(event.startsAt, event.timezone)}</p>
+          {isOrganizer && <span className="event-detail__organizer-label">Eres la organizadora</span>}
         </div>
+        {viewerTime && <p className="event-detail__viewer-time">Tu hora: {viewerTime}</p>}
+        <p className="event-detail__meta">{[
+          EVENT_TYPES[event.type] ?? event.type,
+          event.level && (EVENT_LEVELS[event.level] ?? event.level),
+          distance,
+          formatPlaces(event.attendeeCount, event.capacity),
+        ].filter(Boolean).join(' · ')}</p>
 
         <FormError message={attendError} />
-        <div className="event-detail__action">
-          <AttendButton
-            event={event}
-            waitlistPosition={waitlistPosition}
-            isOrganizer={isOrganizer}
-            pending={pending}
-            onJoin={attend(join)}
-            onLeave={attend(leave)}
-          />
-          {myStatus === 'GOING' && <EventChatButton event={event} />}
-          <AddToCalendarButton event={event} />
-        </div>
-
+        {!isOrganizer && (
+          <div className="event-detail__action">
+            <AttendButton
+              event={event}
+              waitlistPosition={waitlistPosition}
+              isOrganizer={isOrganizer}
+              pending={pending}
+              onJoin={attend(join)}
+              onLeave={attend(leave)}
+            />
+          </div>
+        )}
         {event.description && <p className="event-detail__description">{event.description}</p>}
 
         <section className="event-detail__section">
           <h3>Punto de encuentro</h3>
           <p>{[event.meetingPointName, event.city].filter(Boolean).join(' · ') || 'Por confirmar'}</p>
           {hasPoint && (
-            <>
-              <Suspense fallback={<Skeleton height="220px" />}>
-                <EventMap latitude={event.latitude} longitude={event.longitude} label={event.meetingPointName} />
-              </Suspense>
-              <a
-                className="event-detail__directions"
-                href={directionsUrl(event.latitude, event.longitude)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Cómo llegar
-              </a>
-            </>
+            <Suspense fallback={<Skeleton height="220px" />}>
+              <EventMap latitude={event.latitude} longitude={event.longitude} label={event.meetingPointName} />
+            </Suspense>
           )}
         </section>
+
+        <div className="event-detail__actions" role="group" aria-label="Acciones de la quedada">
+          {myStatus === 'GOING' && <EventChatButton event={event} onError={setActionError} />}
+          <AddToCalendarButton event={event} onError={setActionError} />
+          <ShareEventButton event={event} onError={setActionError} />
+          {hasPoint && (
+            <a className="event-action" href={directionsUrl(event.latitude, event.longitude)} target="_blank" rel="noopener noreferrer">
+              <FaRegMap aria-hidden="true" />
+              <span>Cómo llegar</span>
+            </a>
+          )}
+        </div>
+        <FormError message={actionError} />
 
         <section className="event-detail__section">
           <h3>Organiza</h3>

@@ -74,8 +74,8 @@ Principios, por orden:
 - Debajo, pestañas **Publicaciones · Quedadas · Miembros** (Publicaciones cuando exista T22). Miembros en filas (`UserCard`) con buscador si son muchas, nunca la cuadrícula completa de avatares en la portada.
 
 ### Detalle de quedada
-- Cabecera con el título de la quedada (no «Quedada»). Arriba, foto de portada o, si no hay, un fondo con el color de quedadas.
-- **Un solo botón principal** (Apuntarme / Ya vas). Debajo, una fila de iconos con texto: Chat · Calendario · Compartir · Cómo llegar. «Eres la organizadora» es una etiqueta junto al título, nunca un botón deshabilitado.
+- Cabecera con el título de la quedada (no «Quedada»). Arriba, la foto de portada solo si la quedada tiene imagen; sin imagen no hay portada (ni fondo de color).
+- **Un solo botón principal** (Apuntarme / Ya vas). Una fila de iconos con texto **debajo del mapa** (Yago): Chat · Calendario · Compartir · Cómo llegar. «Eres la organizadora» es una etiqueta junto al título, nunca un botón deshabilitado.
 - Etiquetas (tipo, nivel, km · m+, plazas) en una sola línea de metadatos o una fila deslizable, sin saltar a una segunda línea.
 
 ### Notificaciones

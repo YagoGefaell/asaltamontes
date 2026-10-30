@@ -39,13 +39,16 @@ describe('AttendButton states', () => {
     expect(onJoin).toHaveBeenCalled()
   })
 
-  it('is disabled when cancelled, finished or she organizes it', () => {
+  it('is disabled when cancelled or finished', () => {
     button({}, { status: 'CANCELLED' })
     expect(screen.getByRole('button', { name: 'Cancelado' })).toBeDisabled()
     button({}, { status: 'FINISHED' })
     expect(screen.getByRole('button', { name: 'Finalizada' })).toBeDisabled()
+  })
+
+  it('renders no button for the organizer (the detail shows a label instead)', () => {
     button({ isOrganizer: true })
-    expect(screen.getByRole('button', { name: /organizadora/ })).toBeDisabled()
+    expect(screen.queryByRole('button')).toBeNull()
   })
 
   it('is disabled while a request is pending', () => {

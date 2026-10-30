@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const navigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => ({ ...(await importOriginal()), useNavigate: () => navigate }))
@@ -12,6 +12,7 @@ vi.mock('../services/events.service.js', () => ({
 import { getEventCalendarRequest, getEventChatRequest } from '../services/events.service.js'
 import AddToCalendarButton from './AddToCalendarButton.jsx'
 import EventChatButton from './EventChatButton.jsx'
+import ShareEventButton from './ShareEventButton.jsx'
 
 const event = { id: 'e-1', title: 'Trail nocturno', imageUrl: null }
 
@@ -34,11 +35,12 @@ describe('EventChatButton', () => {
 
   it('shows the error and stays where it is when the chat cannot be opened', async () => {
     getEventChatRequest.mockRejectedValue(new Error('Chat no encontrado'))
-    render(<MemoryRouter><EventChatButton event={event} /></MemoryRouter>)
+    const onError = vi.fn()
+    render(<MemoryRouter><EventChatButton event={event} onError={onError} /></MemoryRouter>)
 
     fireEvent.click(screen.getByRole('button', { name: 'Chat de la quedada' }))
 
-    expect(await screen.findByText('Chat no encontrado')).toBeTruthy()
+    await waitFor(() => expect(onError).toHaveBeenLastCalledWith('Chat no encontrado'))
     expect(navigate).not.toHaveBeenCalled()
   })
 })
@@ -62,10 +64,51 @@ describe('AddToCalendarButton', () => {
 
   it('shows the error when the file cannot be downloaded', async () => {
     getEventCalendarRequest.mockRejectedValue(new Error('Evento no encontrado'))
-    render(<AddToCalendarButton event={event} />)
+    const onError = vi.fn()
+    render(<AddToCalendarButton event={event} onError={onError} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Añadir al calendario' }))
 
-    expect(await screen.findByText('Evento no encontrado')).toBeTruthy()
+    await waitFor(() => expect(onError).toHaveBeenLastCalledWith('Evento no encontrado'))
+  })
+})
+
+describe('ShareEventButton', () => {
+  afterEach(() => {
+    delete navigator.share
+    delete navigator.clipboard
+  })
+
+  it('uses the Web Share API when the browser has it', async () => {
+    navigator.share = vi.fn().mockResolvedValue()
+    render(<ShareEventButton event={event} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir la quedada' }))
+
+    await waitFor(() => expect(navigator.share).toHaveBeenCalledWith({
+      title: 'Trail nocturno', url: `${window.location.origin}/events/e-1`,
+    }))
+  })
+
+  it('copies the link and says so in place when there is no Web Share API', async () => {
+    const writeText = vi.fn().mockResolvedValue()
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    render(<ShareEventButton event={event} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir la quedada' }))
+
+    expect(await screen.findByText('Enlace copiado')).toBeTruthy()
+    expect(writeText).toHaveBeenCalledWith(`${window.location.origin}/events/e-1`)
+  })
+
+  it('does not report an error when she closes the share sheet', async () => {
+    navigator.share = vi.fn().mockRejectedValue(Object.assign(new Error('x'), { name: 'AbortError' }))
+    const onError = vi.fn()
+    render(<ShareEventButton event={event} onError={onError} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartir la quedada' }))
+
+    await waitFor(() => expect(navigator.share).toHaveBeenCalled())
+    expect(onError).not.toHaveBeenCalledWith(expect.stringContaining('No se ha podido'))
   })
 })

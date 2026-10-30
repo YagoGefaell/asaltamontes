@@ -1,18 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import Button from '../../../shared/forms/Button.jsx'
-import FormError from '../../../shared/forms/FormError.jsx'
+import { FaRegComments } from 'react-icons/fa'
 import { getEventChatRequest } from '../services/events.service.js'
+import './EventActions.css'
 
 // Opens the chat of the quedada (T21) in the messages page. Only for people who are going.
-export default function EventChatButton({ event }) {
+// Icon-with-text action of the detail row (T29m); the error is shown by the parent through `onError`.
+export default function EventChatButton({ event, onError }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
   const handleOpen = async () => {
     setLoading(true)
-    setError('')
+    onError?.('')
     try {
       const chat = await getEventChatRequest(event.id)
       navigate('/messages', {
@@ -26,18 +26,16 @@ export default function EventChatButton({ event }) {
         },
       })
     } catch (err) {
-      setError(err.message)
+      onError?.(err.message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <>
-      <Button variant="outline" onClick={handleOpen} loading={loading}>
-        Chat de la quedada
-      </Button>
-      <FormError message={error} />
-    </>
+    <button type="button" className="event-action" onClick={handleOpen} disabled={loading} aria-label="Chat de la quedada">
+      <FaRegComments aria-hidden="true" />
+      <span>Chat</span>
+    </button>
   )
 }

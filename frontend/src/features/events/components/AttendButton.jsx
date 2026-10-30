@@ -12,9 +12,8 @@ export default function AttendButton({ event, waitlistPosition = null, isOrganiz
   if (event.status === 'FINISHED') {
     return <Button variant="secondary" disabled>Finalizada</Button>
   }
-  if (isOrganizer) {
-    return <Button variant="secondary" disabled>Eres la organizadora</Button>
-  }
+  // The organizer needs no button: the detail shows «Eres la organizadora» as a label next to the title
+  if (isOrganizer) return null
   if (event.myStatus === 'GOING') {
     return (
       <Button variant="outline" onClick={onLeave} disabled={pending} aria-label="Estás dentro. Pulsa para salir de la quedada">
