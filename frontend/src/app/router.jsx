@@ -25,6 +25,7 @@ import EventEditor from "../pages/events/EventEditor.jsx";
 import EditProfile from "../pages/settings/EditProfile.jsx";
 import PrivacySettings from "../pages/settings/PrivacySettings.jsx";
 import NotificationSettings from "../pages/settings/NotificationSettings.jsx";
+import SecuritySettings from "../pages/settings/SecuritySettings.jsx";
 import SettingsMenu from "../pages/settings/SettingsMenu.jsx";
 import SettingsPage from "../shared/layouts/SettingsPage.jsx";
 import CommunitySettingsSection from "../pages/communities/settings/CommunitySettingsSection.jsx";
@@ -86,7 +87,7 @@ export function AppRouter() {
         <Route
           path="/settings/profile"
           element={
-            <SettingsPage title="Ajustes" backTo="/settings">
+            <SettingsPage title="Editar perfil" backTo="/settings">
               <EditProfile />
             </SettingsPage>
           }
@@ -97,6 +98,15 @@ export function AppRouter() {
           element={
             <SettingsPage title="Privacidad" backTo="/settings">
               <PrivacySettings />
+            </SettingsPage>
+          }
+        />
+
+        <Route
+          path="/settings/security"
+          element={
+            <SettingsPage title="Seguridad" backTo="/settings">
+              <SecuritySettings />
             </SettingsPage>
           }
         />
