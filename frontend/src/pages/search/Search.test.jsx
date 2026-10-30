@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../../features/users/services/users.service', () => ({ getAllUsersRequest: vi.fn() }))
 vi.mock('../../features/communities/services/communities.service', () => ({ getCommunitiesRequest: vi.fn() }))
 vi.mock('../../features/events/services/events.service', () => ({ getEventsRequest: vi.fn() }))
+vi.mock('../../features/posts/services/posts.service', () => ({ getExplorePostsRequest: vi.fn() }))
 vi.mock('../../features/auth/hooks/useAuth', () => ({ useAuth: () => ({ currentUser: { username: 'yo' } }) }))
 vi.mock('../../shared/ui/UserCard', () => ({
   default: ({ username }) => <div data-testid="user-row">@{username}</div>,
@@ -20,6 +21,7 @@ import Search from './Search.jsx'
 import { getAllUsersRequest } from '../../features/users/services/users.service'
 import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
 import { getEventsRequest } from '../../features/events/services/events.service'
+import { getExplorePostsRequest } from '../../features/posts/services/posts.service'
 import { RECENT_KEY } from '../../features/search/hooks/useRecentSearches.js'
 
 const users = (n) => ({ content: Array.from({ length: n }, (_, i) => ({ username: `ana${i}` })), last: true })
@@ -39,15 +41,39 @@ describe('Search (T29d)', () => {
     getAllUsersRequest.mockResolvedValue(users(5))
     getCommunitiesRequest.mockResolvedValue(communities(5))
     getEventsRequest.mockResolvedValue(events(5))
+    getExplorePostsRequest.mockResolvedValue({ items: [], nextBefore: null })
   })
 
-  it('without text stays blank and asks for nothing', async () => {
+  it('without text asks only for the explore grid, not for people, communities or events', async () => {
     renderAt()
     await settle()
+    expect(getExplorePostsRequest).toHaveBeenCalled()
     expect(getAllUsersRequest).not.toHaveBeenCalled()
     expect(getCommunitiesRequest).not.toHaveBeenCalled()
     expect(getEventsRequest).not.toHaveBeenCalled()
     expect(screen.queryByRole('region')).not.toBeInTheDocument()
+  })
+
+  it('without text shows a 3-column grid of thumbnails that open the publication', async () => {
+    getExplorePostsRequest.mockResolvedValue({
+      items: [
+        { id: 'p1', author: { username: 'ana', fullName: 'Ana Gil' }, media: [{ thumb: '/t1.webp' }] },
+        { id: 'p2', author: { username: 'bea' }, media: [{ thumb: '/t2.webp' }] },
+      ],
+      nextBefore: null,
+    })
+    renderAt()
+    const link = await screen.findByRole('link', { name: 'Publicación de Ana Gil' })
+    expect(link).toHaveAttribute('href', '/posts/p1')
+    expect(link.querySelector('img')).toHaveAttribute('src', '/t1.webp')
+    expect(screen.getByRole('link', { name: 'Publicación de bea' })).toBeInTheDocument()
+  })
+
+  it('hides the grid once she searches', async () => {
+    getExplorePostsRequest.mockResolvedValue({ items: [{ id: 'p1', author: { username: 'ana' }, media: [{ thumb: '/t.webp' }] }], nextBefore: null })
+    renderAt('/search?q=ana')
+    await settle()
+    expect(screen.queryByRole('list', { name: 'Publicaciones para descubrir' })).not.toBeInTheDocument()
   })
 
   it('titles each kind of result in "Todo"', async () => {

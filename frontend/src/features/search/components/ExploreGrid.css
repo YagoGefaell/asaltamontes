@@ -1,0 +1,53 @@
+.explore-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.explore-grid__tile {
+  aspect-ratio: 1;
+  min-width: 0;
+}
+
+.explore-grid__link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--border-soft);
+}
+
+.explore-grid__link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.explore-grid__link img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.explore-more {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+.explore-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--error-text);
+  font-weight: 500;
+}
+
+.explore-error p {
+  margin: 0;
+}

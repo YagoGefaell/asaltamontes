@@ -1,6 +1,6 @@
 # T22 — Muro de comunidad y Home con feed real
 
-- **Estado:** pendiente (T22a1 y T22a2 mergeadas, T22b hecha; spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
+- **Estado:** hecho (T22a1, T22a2, T22b y T22c mergeadas o en PR; con T22c queda completa)
 - **Fase:** 2b — Comunidades
 - **Depende de:** T14, T17
 - **Rama sugerida:** `feat/T22-community-feed`
