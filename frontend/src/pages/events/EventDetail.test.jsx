@@ -79,6 +79,13 @@ describe('EventDetail (T29m)', () => {
     await waitFor(() => expect(getEventAttendeesRequest).toHaveBeenCalled())
   })
 
+  it('puts the action row below the map', async () => {
+    renderPage()
+    const map = await screen.findByTestId('map')
+    const actions = screen.getByRole('group', { name: 'Acciones de la quedada' })
+    expect(map.compareDocumentPosition(actions) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('lists the attendees as stacked avatars with "Ver todas"', async () => {
     renderPage()
     expect(await screen.findByRole('button', { name: /Ver todas las asistentes/ })).toBeInTheDocument()

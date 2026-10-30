@@ -210,6 +210,18 @@ export default function EventDetail() {
             />
           </div>
         )}
+        {event.description && <p className="event-detail__description">{event.description}</p>}
+
+        <section className="event-detail__section">
+          <h3>Punto de encuentro</h3>
+          <p>{[event.meetingPointName, event.city].filter(Boolean).join(' · ') || 'Por confirmar'}</p>
+          {hasPoint && (
+            <Suspense fallback={<Skeleton height="220px" />}>
+              <EventMap latitude={event.latitude} longitude={event.longitude} label={event.meetingPointName} />
+            </Suspense>
+          )}
+        </section>
+
         <div className="event-detail__actions" role="group" aria-label="Acciones de la quedada">
           {myStatus === 'GOING' && <EventChatButton event={event} onError={setActionError} />}
           <AddToCalendarButton event={event} onError={setActionError} />
@@ -222,18 +234,6 @@ export default function EventDetail() {
           )}
         </div>
         <FormError message={actionError} />
-
-        {event.description && <p className="event-detail__description">{event.description}</p>}
-
-        <section className="event-detail__section">
-          <h3>Punto de encuentro</h3>
-          <p>{[event.meetingPointName, event.city].filter(Boolean).join(' · ') || 'Por confirmar'}</p>
-          {hasPoint && (
-            <Suspense fallback={<Skeleton height="220px" />}>
-              <EventMap latitude={event.latitude} longitude={event.longitude} label={event.meetingPointName} />
-            </Suspense>
-          )}
-        </section>
 
         <section className="event-detail__section">
           <h3>Organiza</h3>

@@ -75,7 +75,7 @@ Principios, por orden:
 
 ### Detalle de quedada
 - Cabecera con el título de la quedada (no «Quedada»). Arriba, la foto de portada solo si la quedada tiene imagen; sin imagen no hay portada (ni fondo de color).
-- **Un solo botón principal** (Apuntarme / Ya vas). Debajo, una fila de iconos con texto: Chat · Calendario · Compartir · Cómo llegar. «Eres la organizadora» es una etiqueta junto al título, nunca un botón deshabilitado.
+- **Un solo botón principal** (Apuntarme / Ya vas). Una fila de iconos con texto **debajo del mapa** (Yago): Chat · Calendario · Compartir · Cómo llegar. «Eres la organizadora» es una etiqueta junto al título, nunca un botón deshabilitado.
 - Etiquetas (tipo, nivel, km · m+, plazas) en una sola línea de metadatos o una fila deslizable, sin saltar a una segunda línea.
 
 ### Notificaciones
