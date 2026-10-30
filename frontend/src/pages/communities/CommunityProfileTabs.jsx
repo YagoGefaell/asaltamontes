@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaLock, FaUsers } from "react-icons/fa";
 import Button from "../../shared/forms/Button";
 import EmptyState from "../../shared/ui/EmptyState";
 import SearchField from "../../shared/ui/SearchField";
 import Skeleton from "../../shared/ui/Skeleton";
+import PostsTab from "../../features/posts/components/PostsTab";
+import { getCommunityPostsRequest } from "../../features/posts/services/posts.service";
 import UserCard from "../../shared/ui/UserCard";
 import EventCard from "../../features/events/components/EventCard";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
@@ -30,6 +32,30 @@ function ErrorBox({ message, onRetry }) {
       <p>{message}</p>
       <Button variant="outline" size="small" onClick={onRetry}>Reintentar</Button>
     </div>
+  );
+}
+
+/** "Publicaciones" tab (T22b), first of the community. Only owner and moderators publish (D-025). */
+export function CommunityPostsTab({ community }) {
+  const navigate = useNavigate();
+  const slug = community.slug || community.name;
+  const fetchPage = useCallback((before) => getCommunityPostsRequest(slug, before), [slug]);
+  const canPublish = isStaff(community.role);
+  return (
+    <>
+      {canPublish && (
+        <div className="pf-item">
+          <Button size="small" onClick={() => navigate(`/posts/new?community=${encodeURIComponent(slug)}`)}>Publicar</Button>
+        </div>
+      )}
+      <PostsTab
+        panelId="community-panel-posts"
+        tabId="community-posts"
+        fetchPage={fetchPage}
+        emptyTitle="Todavía no hay publicaciones"
+        emptyDescription={canPublish ? "Publica la primera para tu comunidad." : undefined}
+      />
+    </>
   );
 }
 

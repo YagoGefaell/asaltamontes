@@ -1,6 +1,6 @@
 # T22 — Muro de comunidad y Home con feed real
 
-- **Estado:** pendiente (T22a1 mergeada, T22a2 en PR; spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
+- **Estado:** pendiente (T22a1 y T22a2 mergeadas, T22b hecha; spec refinada; se divide en T22a backend, T22b front de comunidad y perfil, T22c Inicio y Explorar)
 - **Fase:** 2b — Comunidades
 - **Depende de:** T14, T17
 - **Rama sugerida:** `feat/T22-community-feed`
@@ -71,7 +71,7 @@ Decisiones de Yago (2026-10-29, D-025) aplicadas en T22a1:
 - Explorar (T22a2): con D-025 el texto de una comunidad pública lo ve cualquier usuaria, así que la cuadrícula puede mostrar fotos de comunidades públicas y perfiles públicos sin filtrar nada privado.
 
 ### Frontend (T22b y T22c)
-- Crear publicación: pantalla aparte (`/posts/new`). Acceso: la opción «Publicación» de la hoja del `+` de Inicio (T29k) y, desde una comunidad, «Publicar» preseleccionando la comunidad (solo propietaria y moderadoras, D-025). No se añade pestaña a la barra inferior (DESIGN: 5 pestañas).
+- Crear publicación: pantalla aparte (`/posts/new`). Acceso (T22b, tras quitar el `+` de Inicio en #143): `+` en la cabecera del perfil propio y «Publicar» en el estado vacío de su pestaña; desde una comunidad, «Publicar» preseleccionando la comunidad (solo propietaria y moderadoras, D-025). Inicio no lleva `+` y no se añade pestaña a la barra inferior (DESIGN: 5 pestañas). Al publicar se entra en la publicación (`/posts/:id`, con sus comentarios; también es el destino de la notificación `POST_COMMENT`).
 - Selector de destino: «Mi perfil» o una de mis comunidades. Hasta 4 fotos con el flujo de `features/media`. Contador de caracteres.
 - Tarjeta de publicación (`shared/ui` o `features/posts`): cabecera autora + comunidad, texto, fotos, like y comentarios; menú con «Eliminar» según `canDelete`.
 - Pestaña «Publicaciones» en comunidad y en perfil (propio y ajeno). **Es la primera pestaña** (Yago, 2026-10-29): perfil Publicaciones · Quedadas · Comunidades; comunidad Publicaciones · Quedadas · Miembros (T29n). Se muestra en **lista** (publicación completa: texto, fotos, likes), no en cuadrícula.

@@ -97,6 +97,8 @@ export function notificationDestination(notification) {
       // Moderation staff land on the pending requests
       if (notification.type === 'COMMUNITY_JOIN_REQUEST') return { to: `/communities/${ref}/settings/requests` }
       return { to: `/communities/${ref}` }
+    case 'POST':
+      return { to: `/posts/${ref}` }
     case 'USER':
       return { to: `/users/${ref}` }
     case 'CONVERSATION':
