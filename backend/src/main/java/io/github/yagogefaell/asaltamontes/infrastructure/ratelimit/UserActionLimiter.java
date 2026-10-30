@@ -83,7 +83,8 @@ public class UserActionLimiter {
         if (!properties.isEnabled()) {
             return true;
         }
-        String key = "mail-to:" + address.toLowerCase(java.util.Locale.ROOT);
+        // "+tag" aliases land in the same mailbox
+        String key = "mail-to:" + address.toLowerCase(java.util.Locale.ROOT).replaceFirst("\\+[^@]*@", "@");
         return rateLimiter.tryAcquire(key + ":h", properties.getEmailsPerAddressPerHour(), HOUR) == 0
                 && rateLimiter.tryAcquire(key + ":d", properties.getEmailsPerAddressPerDay(), DAY) == 0;
     }

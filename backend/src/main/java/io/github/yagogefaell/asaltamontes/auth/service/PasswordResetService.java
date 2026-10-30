@@ -48,7 +48,8 @@ public class PasswordResetService {
         limiter.passwordResetRequest(email);
 
         UserAccount user = userRepository.findByEmailIgnoreCase(email).orElse(null);
-        if (user == null || !limiter.mayEmail(user.getEmail())) {
+        // Own cap (3/hour per typed address); not the shared per-address one, or verification emails could block a legitimate reset
+        if (user == null) {
             return;
         }
         try {
@@ -60,7 +61,7 @@ public class PasswordResetService {
             String link = baseUrl() + "/reset-password?token=" + token;
             mailSender.send(AccountEmails.resetPassword(user.getEmail(), link, TOKEN_TTL.toMinutes()));
         } catch (RuntimeException e) {
-            log.warn("Could not prepare the password reset email for user {}: {}", user.getId(), e.toString());
+            log.warn("Could not prepare the password reset email for user {}: {}", user.getId(), e.getClass().getSimpleName());
         }
     }
 

@@ -60,9 +60,16 @@ class AccountEmailLimitsIT extends AbstractIntegrationTest {
         verificationService.sendVerificationEmail(ana);
         assertThat(mail.sentTo(ana.getEmail())).hasSize(2);
 
-        // The reset stays silent (202) and sends nothing more to that mailbox
+        // Verification emails used up the shared cap, but a legitimate reset still goes out (own quota)
         forgot(ana.getEmail(), "10.5.0.1").andExpect(status().isAccepted());
-        assertThat(mail.sentTo(ana.getEmail())).hasSize(2);
+        assertThat(mail.sentTo(ana.getEmail())).hasSize(3);
+        // "+tag" aliases share the cap of the mailbox
+        UserAccount bea = testData.createUser();
+        String alias = bea.getEmail().replace("@", "+x@");
+        assertThat(alias).isNotEqualTo(bea.getEmail());
+        change(ana, alias).andExpect(status().isAccepted());
+        change(ana, bea.getEmail().replace("@", "+y@")).andExpect(status().isAccepted());
+        change(ana, bea.getEmail().replace("@", "+z@")).andExpect(status().isConflict());
     }
 
     @Test
