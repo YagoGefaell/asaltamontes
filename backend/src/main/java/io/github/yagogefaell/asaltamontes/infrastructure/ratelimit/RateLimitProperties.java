@@ -42,6 +42,8 @@ public class RateLimitProperties {
     private int verifyEmailPerMinute = 10;
     /** Per user: verification emails requested with "Resend" (T24a). */
     private int verificationEmailsPerHour = 5;
+    /** Per user: reports filed (T23b). */
+    private int reportsPerDay = 20;
     /** Per user: comments written (T22a2). */
     private int postCommentsPerHour = 60;
 }

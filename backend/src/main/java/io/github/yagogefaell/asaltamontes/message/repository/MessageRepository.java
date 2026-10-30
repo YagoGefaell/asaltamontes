@@ -26,6 +26,10 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("SELECT m FROM Message m LEFT JOIN FETCH m.sender WHERE m.publicId = :publicId AND m.conversation.id = :conversationId")
     Optional<Message> findByPublicIdAndConversationId(@Param("publicId") UUID publicId, @Param("conversationId") Long conversationId);
 
+    /** By public id alone (reports, T23b); the caller checks that the viewer takes part in the chat. */
+    @Query("SELECT m FROM Message m LEFT JOIN FETCH m.sender JOIN FETCH m.conversation WHERE m.publicId = :publicId")
+    Optional<Message> findByPublicId(@Param("publicId") UUID publicId);
+
     Optional<Message> findFirstByConversationIdOrderByIdDesc(Long conversationId);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
