@@ -11,6 +11,10 @@ import Home from "../pages/home/Home.jsx";
 import Login from "../pages/access/Login.jsx";
 import Register from "../pages/access/Register.jsx";
 import VerifyEmail from "../pages/access/VerifyEmail.jsx";
+import ForgotPassword from "../pages/access/ForgotPassword.jsx";
+import ResetPassword from "../pages/access/ResetPassword.jsx";
+import ConfirmEmailChange from "../pages/access/ConfirmEmailChange.jsx";
+import ChangeEmail from "../pages/settings/ChangeEmail.jsx";
 import VerifyEmailRequired from "../pages/access/VerifyEmailRequired.jsx";
 import VerifyEmailSettings from "../pages/settings/VerifyEmailSettings.jsx";
 import EmailVerificationRedirect from "./EmailVerificationRedirect.jsx";
@@ -50,10 +54,13 @@ export function AppRouter() {
         <Route path="/access" element={<Access />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
       </Route>
 
       {/* Pública a propósito: se abre desde el enlace del correo, con o sin sesión */}
       <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/confirm-email-change" element={<ConfirmEmailChange />} />
 
       {/* -------------------- PRIVADAS -------------------- */}
       <Route
@@ -131,6 +138,15 @@ export function AppRouter() {
           element={
             <SettingsPage title="Seguridad" backTo="/settings">
               <SecuritySettings />
+            </SettingsPage>
+          }
+        />
+
+        <Route
+          path="/settings/email"
+          element={
+            <SettingsPage title="Cambiar email" backTo="/settings/security">
+              <ChangeEmail />
             </SettingsPage>
           }
         />
