@@ -321,7 +321,7 @@ public class EventService {
      * false if it was already cancelled or does not exist.
      */
     @Transactional
-    public boolean cancelForModeration(Long eventId, Long actorId) {
+    public boolean cancelForModeration(Long eventId) {
         Event event = eventRepository.findById(eventId).orElse(null);
         if (event == null || event.getStatus() == EventStatus.CANCELLED) {
             return false;
@@ -330,8 +330,10 @@ public class EventService {
         event.setCancelledAt(Instant.now());
         event.setCancelReason("Retirada por la moderación");
         eventRepository.saveAndFlush(event);
-        eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason(), actorId));
-        eventChat.eventCancelled(event, actorId);
+        // The organizer figures as the actor: the identity of the moderation never reaches the attendees
+        Long organizerId = event.getOrganizer().getId();
+        eventPublisher.publishEvent(new EventCancelled(event.getId(), event.getCancelReason(), organizerId));
+        eventChat.eventCancelled(event, organizerId);
         return true;
     }
 

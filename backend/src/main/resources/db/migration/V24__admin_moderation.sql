@@ -5,7 +5,7 @@ DO $$
 DECLARE c record;
 BEGIN
     FOR c IN SELECT conname FROM pg_constraint
-             WHERE conrelid = 'users'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) ILIKE '%role%'
+             WHERE conrelid = 'users'::regclass AND contype = 'c' AND pg_get_constraintdef(oid) ILIKE '%role%USER%'
     LOOP
         EXECUTE format('ALTER TABLE users DROP CONSTRAINT %I', c.conname);
     END LOOP;

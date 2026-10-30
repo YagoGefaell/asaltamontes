@@ -137,8 +137,9 @@ class AdminReportIT extends AbstractIntegrationTest {
         UserAccount mod = staff("MODERATOR");
         UserAccount ana = testData.createUser();
         UserAccount bea = testData.createUser();
-        String mine = fileReport(ana, "USER", bea.getUsername());
-        String other = fileReport(testData.createUser(), "USER", bea.getUsername());
+        String post = createPost(bea, "dudoso");
+        String mine = fileReport(ana, "POST", post);
+        String other = fileReport(testData.createUser(), "POST", post);
 
         mockMvc.perform(post("/api/admin/reports/" + mine + "/dismiss").with(auth.bearer(mod)).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"resolution\":\"  sin motivo  \"}"))
@@ -150,13 +151,48 @@ class AdminReportIT extends AbstractIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM admin_audit_log WHERE actor_id = ? AND action = 'REPORT_DISMISSED' AND note = 'sin motivo'",
                 Integer.class, mod.getId())).isEqualTo(1);
 
-        // Already handled: 409, and no second audit row
         mockMvc.perform(post("/api/admin/reports/" + mine + "/dismiss").with(auth.bearer(mod))).andExpect(status().isConflict());
         assertThat(audit(mod)).isEqualTo(1);
 
-        // The cooldown: she cannot file the same thing again, somebody else can
-        reportRequest(ana, "USER", bea.getUsername(), "SPAM", null).andExpect(status().isConflict());
-        reportRequest(testData.createUser(), "USER", bea.getUsername(), "SPAM", null).andExpect(status().isCreated());
+        // The cooldown: she cannot file the same content again, somebody else can
+        reportRequest(ana, "POST", post, "SPAM", null).andExpect(status().isConflict());
+        reportRequest(testData.createUser(), "POST", post, "SPAM", null).andExpect(status().isCreated());
+    }
+
+    @Test
+    void dismissedReportOfAnAccount_doesNotBlockReportingAgain() throws Exception {
+        UserAccount mod = staff("MODERATOR");
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        String report = fileReport(ana, "USER", bea.getUsername());
+        mockMvc.perform(post("/api/admin/reports/" + report + "/dismiss").with(auth.bearer(mod))).andExpect(status().isOk());
+        reportRequest(ana, "USER", bea.getUsername(), "HARASSMENT", null).andExpect(status().isCreated());
+    }
+
+    @Test
+    void staffCannotResolveReportsAboutThemselves() throws Exception {
+        UserAccount mod = staff("MODERATOR");
+        String post = createPost(mod, "mi post");
+        String report = fileReport(testData.createUser(), "POST", post);
+        mockMvc.perform(post("/api/admin/reports/" + report + "/dismiss").with(auth.bearer(mod))).andExpect(status().isForbidden());
+        mockMvc.perform(post("/api/admin/reports/" + report + "/remove-content").with(auth.bearer(mod))).andExpect(status().isForbidden());
+        assertThat(statusOf(report)).isEqualTo("OPEN");
+        // Another member of the staff can
+        mockMvc.perform(post("/api/admin/reports/" + report + "/dismiss").with(auth.bearer(staff("ADMIN")))).andExpect(status().isOk());
+    }
+
+    @Test
+    void removeContentAlreadyGone_isAConflict_andNothingIsAudited() throws Exception {
+        UserAccount mod = staff("MODERATOR");
+        UserAccount bea = testData.createUser();
+        String post = createPost(bea, "efimero");
+        String report = fileReport(testData.createUser(), "POST", post);
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/posts/" + post).with(auth.bearer(bea)))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/admin/reports/" + report + "/remove-content").with(auth.bearer(mod))).andExpect(status().isConflict());
+        assertThat(statusOf(report)).isEqualTo("OPEN");
+        assertThat(audit(mod)).isZero();
     }
 
     @Test

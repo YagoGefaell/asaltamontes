@@ -88,6 +88,7 @@ public class AdminReportService {
         requireStaff(actor);
         Report report = load(reportId);
         String note = note(dto);
+        requireNotInvolved(actor, report);
         claim(report, ReportStatus.DISMISSED, actor, note);
         audit(actor, AdminAction.REPORT_DISMISSED, report, note);
         return detailAfter(reportId);
@@ -108,16 +109,21 @@ public class AdminReportService {
         if (report.getTargetType() == ReportTargetType.COMMUNITY && actor.getRole() != UserAccountRole.ADMIN) {
             throw new ForbiddenException("Solo una administradora puede borrar una comunidad");
         }
+        requireNotInvolved(actor, report);
         claim(report, ReportStatus.ACTIONED, actor, note);
         reportRepository.resolveOpenOnTarget(report.getTargetType(), report.getTargetId(), ReportStatus.ACTIONED, actor.getId(), Instant.now(), note);
         Long id = report.getTargetId();
-        switch (report.getTargetType()) {
+        boolean removed = switch (report.getTargetType()) {
             case POST -> postService.removeForModeration(id);
             case COMMENT -> postService.removeCommentForModeration(id);
             case MESSAGE -> messageService.removeForModeration(id);
-            case EVENT -> eventService.cancelForModeration(id, actor.getId());
+            case EVENT -> eventService.cancelForModeration(id);
             case COMMUNITY -> communityService.removeForModeration(id);
-            default -> throw new BadRequestException("Esta denuncia no se resuelve borrando contenido");
+            default -> throw new BadRequestException("Esto no se resuelve borrando contenido");
+        };
+        if (!removed) {
+            // Rolls back the claim: the audit log never says something was removed when it was not
+            throw new ConflictException("El contenido ya no existe. Descarta la denuncia");
         }
         audit(actor, AdminAction.CONTENT_REMOVED, report, note);
         return detailAfter(reportId);
@@ -133,6 +139,13 @@ public class AdminReportService {
     private void claim(Report report, ReportStatus status, UserAccount actor, String note) {
         if (reportRepository.resolve(report.getId(), status, actor.getId(), Instant.now(), note) == 0) {
             throw new ConflictException("Esta denuncia ya está resuelta");
+        }
+    }
+
+    /** Nobody resolves a report about herself or her own content: another member of the staff has to. */
+    private static void requireNotInvolved(UserAccount actor, Report report) {
+        if (actor.getId().equals(report.getReportedUserId())) {
+            throw new ForbiddenException("No puedes resolver una denuncia sobre ti");
         }
     }
 

@@ -12,6 +12,7 @@ import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import io.github.yagogefaell.asaltamontes.report.domain.Report;
 import io.github.yagogefaell.asaltamontes.report.domain.ReportReason;
+import io.github.yagogefaell.asaltamontes.report.domain.ReportTargetType;
 import io.github.yagogefaell.asaltamontes.report.dto.CreateReportDto;
 import io.github.yagogefaell.asaltamontes.report.dto.ReportDto;
 import io.github.yagogefaell.asaltamontes.report.repository.ReportRepository;
@@ -53,7 +54,9 @@ public class ReportService {
         }
 
         // Once the moderation has dismissed her report she cannot insist on the same target for a while
-        if (reportRepository.existsDismissedSince(reporter.getId(), dto.targetType(), target.targetId(), Instant.now().minus(DISMISSED_COOLDOWN))) {
+        // Not for accounts: a victim must be able to report again if the harassment goes on
+        if (dto.targetType() != ReportTargetType.USER
+                && reportRepository.existsDismissedSince(reporter.getId(), dto.targetType(), target.targetId(), Instant.now().minus(DISMISSED_COOLDOWN))) {
             throw new ConflictException("Ya revisamos tu denuncia sobre esto y no encontramos motivo para actuar");
         }
 
