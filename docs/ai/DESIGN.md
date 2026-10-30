@@ -40,7 +40,7 @@ Principios, por orden:
 
 - **Barra inferior**: máximo **5 destinos** (como Instagram). Antes tenía 7 iconos; desde T29g (aprobada por Yago): **Inicio · Buscar · Quedadas · Comunidades · Perfil**, con **Notificaciones y Mensajes como iconos en la cabecera de Inicio** (arriba a la derecha, con su contador), igual que Instagram.
 - **Cabecera de pantalla**: una línea, 56 px como mucho: título (o logo en Inicio) a la izquierda, 1–2 iconos de acción a la derecha. En pantallas de detalle: flecha atrás + título. Nada de botones grandes rellenos en la cabecera ("Crear quedada" → icono `+` o botón flotante).
-- **Acción de crear** (Yago, 2026-10-29): **siempre un `+` arriba a la derecha de la cabecera**, nunca botón flotante ni botón ancho. En Inicio, el `+` abre una hoja inferior con **Publicación · Quedada · Comunidad**; en Quedadas y Comunidades, el `+` lleva directo a crear eso. Toda creación es una **pantalla aparte** (`/events/new`, `/communities/new`, `/posts/new`), nunca un panel dentro de la lista.
+- **Acción de crear** (Yago, 2026-10-29): **un `+` arriba a la derecha de la cabecera en Quedadas y Comunidades** que lleva directo a crear eso, nunca botón flotante ni botón ancho. **Inicio no lleva `+`** (Yago, 2026-10-29, revisión de la PR #143). Toda creación es una **pantalla aparte** (`/events/new`, `/communities/new`, `/posts/new`), nunca un panel dentro de la lista.
 - **Sin atajos de búsqueda** en las pestañas: buscar se hace solo desde la pestaña Buscar.
 - **Barra inferior solo con iconos**, sin etiquetas (Yago, 2026-10-29).
 - **Zona segura**: la barra inferior y los botones fijos respetan `env(safe-area-inset-bottom)`; el contenido deja hueco para la barra (no queda tapado el último elemento).
@@ -117,7 +117,7 @@ Principios, por orden:
 
 ## 5. Componentes disponibles (`frontend/src/shared/`)
 
-Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, `Tabs`, `Chip`, `PageHeader`, `Fab`), créalo en `shared/ui/` con test, en su propia PR o en la primera que lo necesite, y úsalo en todas partes.
+Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, `Tabs`, `Chip`, `PageHeader`), créalo en `shared/ui/` con test, en su propia PR o en la primera que lo necesite, y úsalo en todas partes.
 
 | Componente | Para qué |
 |---|---|
@@ -130,7 +130,7 @@ Antes de crear uno, busca aquí. Si falta algo genérico (p. ej. `BottomSheet`, 
 | `ui/ToggleSwitch` | Interruptor en ajustes |
 | `ui/EmptyState`, `ui/Skeleton` | Vacío y carga |
 | `ui/BottomSheet` (confirmación) | Confirmar lo irreversible (ver «Diálogos y avisos»). `Modal`, `ConfirmModal` y `Toast` se retiran en T29s: no usarlos en pantallas nuevas |
-| `ui/PageHeader`, `ui/Tabs`, `ui/Chip` + `ChipRow`, `ui/BottomSheet`, `ui/Fab` | Cabecera de pantalla, pestañas, fila de chips, hoja inferior y botón flotante (T29c) |
+| `ui/PageHeader`, `ui/Tabs`, `ui/Chip` + `ChipRow`, `ui/BottomSheet` | Cabecera de pantalla, pestañas, fila de chips y hoja inferior (T29c; el botón flotante se retiró en T29k) |
 | `ui/ImageUploader`, `ui/AvatarUploader` | Subida de imágenes |
 | `ui/NavBar`, `layouts/MainLayout`, `layouts/SettingsLayout` | Estructura |
 

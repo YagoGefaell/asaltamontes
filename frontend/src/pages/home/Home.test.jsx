@@ -63,11 +63,18 @@ describe('Home header', () => {
   })
 })
 
+describe('Home: sin botón de crear', () => {
+  it('has no + in the header: creating lives in Quedadas and Comunidades', () => {
+    renderHome()
+    expect(screen.queryByRole('button', { name: 'Crear' })).toBeNull()
+  })
+})
+
 describe('Home content', () => {
-  it('is for posts: an empty feed with an action, no events and no made-up posts', async () => {
+  it('is for posts: an empty feed with no search shortcut, no events and no made-up posts', async () => {
     renderHome()
     expect(await screen.findByText('Aún no hay publicaciones')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Explorar comunidades' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Explorar comunidades' })).toBeNull()
     expect(screen.queryByText(/quedadas/i)).toBeNull()
     expect(document.querySelector('.stories, .post-card, .home-composer')).toBeNull()
   })

@@ -1,13 +1,12 @@
 import "./Home.css";
 import { useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { FaBell, FaComment, FaPen } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
-import Button from "../../shared/forms/Button";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
 import FollowUserButton from "../../shared/components/FollowUserButton";
 import { getSuggestionsRequest } from "../../features/users/services/users.service";
@@ -91,7 +90,6 @@ function SuggestedUsers({ items }) {
 // Home is for posts (T22), with suggestions between them. Until posts exist: an empty feed and
 // the suggestion rows. Events live in their own tab; creating a post will be its own screen.
 const Home = () => {
-  const navigate = useNavigate();
   const { totalUnreadCount } = useContext(ConversationsContext);
   const { unreadCount: unreadNotifications } = useNotifications();
 
@@ -124,7 +122,6 @@ const Home = () => {
         icon={<FaPen />}
         title="Aún no hay publicaciones"
         description="Aquí verás lo que comparten tus comunidades y las corredoras que sigues."
-        action={<Button variant="secondary" onClick={() => navigate("/search?tab=communities")}>Explorar comunidades</Button>}
       />
 
       {!people.loading && people.items.length > 0 && <SuggestedUsers items={people.items} />}

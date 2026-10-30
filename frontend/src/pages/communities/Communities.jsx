@@ -4,7 +4,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { FaChevronRight, FaPlus, FaRegComments } from "react-icons/fa";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
 import {
-  createCommunityRequest,
   getCommunitiesRequest,
   getMyCommunitiesRequest,
   getPendingCommunitiesRequest,
@@ -19,7 +18,6 @@ import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
 import Skeleton from "../../shared/ui/Skeleton";
-import CommunityCreatorPanel from "./components/CommunityCreatorPanel";
 
 const SKELETON_ROWS = 4;
 const SUGGESTIONS = 5;
@@ -159,8 +157,6 @@ const Communities = () => {
   const { userProfile } = useUserProfile();
   const mine = useSearchSection(useCallback((page) => getMyCommunitiesRequest({ page }), []), "mine");
   const [pending, setPending] = useState({ toApprove: [], mine: [] });
-  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
-  const [creatingCommunity, setCreatingCommunity] = useState(false);
 
   // Lo pendiente es un extra: si falla, la pantalla sigue mostrando las comunidades
   useEffect(() => {
@@ -170,27 +166,6 @@ const Communities = () => {
       .catch(() => {});
     return () => { cancelled = true; };
   }, []);
-
-  const openCreator = useCallback(() => setIsCreatorOpen(true), []);
-  const closeCreator = useCallback(() => {
-    if (creatingCommunity) return;
-    setIsCreatorOpen(false);
-  }, [creatingCommunity]);
-
-  const handleCreateCommunity = useCallback(
-    async (communityData) => {
-      if (creatingCommunity) return;
-      setCreatingCommunity(true);
-      try {
-        const created = await createCommunityRequest(communityData);
-        // Success needs no notice: she lands in the community she just created
-        navigate(communityPath(created));
-      } finally {
-        setCreatingCommunity(false);
-      }
-    },
-    [creatingCommunity, navigate]
-  );
 
   const openChat = useCallback(
     (community) => {
@@ -208,17 +183,6 @@ const Communities = () => {
     [navigate]
   );
 
-  if (isCreatorOpen) {
-    return (
-      <CommunityCreatorPanel
-        isOpen={isCreatorOpen}
-        creatingCommunity={creatingCommunity}
-        onClose={closeCreator}
-        onSubmitCommunity={handleCreateCommunity}
-      />
-    );
-  }
-
   const empty = !mine.loading && !mine.error && mine.items.length === 0;
 
   return (
@@ -226,9 +190,9 @@ const Communities = () => {
       <PageHeader
         title="Comunidades"
         actions={
-          <button type="button" aria-label="Crear comunidad" title="Crear comunidad" onClick={openCreator} disabled={creatingCommunity}>
+          <Link to="/communities/new" aria-label="Crear comunidad" title="Crear comunidad">
             <FaPlus aria-hidden="true" />
-          </button>
+          </Link>
         }
       />
 
@@ -278,17 +242,10 @@ const Communities = () => {
           className="communities-empty"
           title="Aún no estás en ninguna comunidad"
           description="Únete a una cercana o crea la tuya y reúne a tu grupo."
-          action={<Button onClick={openCreator}>Crear comunidad</Button>}
+          action={<Button onClick={() => navigate("/communities/new")}>Crear comunidad</Button>}
         />
       )}
       {empty && <Suggestions city={userProfile?.city?.trim() || ""} />}
-
-      {!mine.loading && !mine.error && (
-        <Link to="/search?tab=communities" className="communities-discover">
-          Descubrir comunidades cerca de ti
-          <FaChevronRight aria-hidden="true" />
-        </Link>
-      )}
     </div>
   );
 };
