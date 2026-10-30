@@ -100,7 +100,7 @@ describe('Profile (someone else)', () => {
   it('keeps the lock icon but opens the tabs for an approved follower', () => {
     renderProfile({ userData: { ...data, isPublicProfile: false, canViewContent: true, isFollowing: true }, isOwnProfile: false, onBack: vi.fn() })
     expect(screen.getByLabelText('Perfil privado')).toBeTruthy()
-    expect(screen.getByText('tab-eventos')).toBeTruthy()
+    expect(screen.getByText('tab-publicaciones')).toBeTruthy()
     expect(screen.queryByText('Este perfil es privado')).toBeNull()
   })
 
