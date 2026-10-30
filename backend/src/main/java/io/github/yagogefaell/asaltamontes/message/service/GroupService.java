@@ -36,7 +36,10 @@ import io.github.yagogefaell.asaltamontes.message.domain.MessageType;
 import io.github.yagogefaell.asaltamontes.message.domain.ParticipantRole;
 import io.github.yagogefaell.asaltamontes.community.domain.CommunityRole;
 import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRepository;
+import io.github.yagogefaell.asaltamontes.community.repository.CommunityRepository;
+import io.github.yagogefaell.asaltamontes.event.repository.EventRepository;
 import io.github.yagogefaell.asaltamontes.message.dto.GroupDetailsDto;
+import io.github.yagogefaell.asaltamontes.message.dto.GroupOriginDto;
 import io.github.yagogefaell.asaltamontes.message.dto.MessageDto;
 import io.github.yagogefaell.asaltamontes.message.dto.ParticipantDto;
 import io.github.yagogefaell.asaltamontes.message.dto.UpdateGroupDto;
@@ -72,6 +75,8 @@ public class GroupService {
     private final MediaReferenceService mediaReferences;
     private final ApplicationEventPublisher eventPublisher;
     private final CommunityMemberRepository communityMemberRepository;
+    private final CommunityRepository communityRepository;
+    private final EventRepository eventRepository;
     private final UserActionLimiter limiter;
     private final int maxGroupSize;
 
@@ -83,6 +88,8 @@ public class GroupService {
                         MediaReferenceService mediaReferences,
                         ApplicationEventPublisher eventPublisher,
                         CommunityMemberRepository communityMemberRepository,
+                        CommunityRepository communityRepository,
+                        EventRepository eventRepository,
                         UserActionLimiter limiter,
                         @Value("${asaltamontes.chat.max-group-size:100}") int maxGroupSize) {
         this.conversationRepository = conversationRepository;
@@ -93,6 +100,8 @@ public class GroupService {
         this.mediaReferences = mediaReferences;
         this.eventPublisher = eventPublisher;
         this.communityMemberRepository = communityMemberRepository;
+        this.communityRepository = communityRepository;
+        this.eventRepository = eventRepository;
         this.limiter = limiter;
         this.maxGroupSize = maxGroupSize;
     }
@@ -385,7 +394,21 @@ public class GroupService {
                 conversation.getManagedBy() != ManagedBy.NONE,
                 moderationRole != null,
                 moderationRole,
+                origin(conversation),
                 participants);
+    }
+
+    private GroupOriginDto origin(Conversation conversation) {
+        Long ref = conversation.getManagedRefId();
+        return switch (conversation.getManagedBy()) {
+            case COMMUNITY -> communityRepository.findById(ref)
+                    .map(community -> new GroupOriginDto(ManagedBy.COMMUNITY, community.getSlug(), null, community.getName()))
+                    .orElse(null);
+            case EVENT -> eventRepository.findById(ref)
+                    .map(event -> new GroupOriginDto(ManagedBy.EVENT, null, event.getPublicId(), event.getTitle()))
+                    .orElse(null);
+            case NONE -> null;
+        };
     }
 
     /** Owner or moderator of the community that manages the chat: the ones who may try to delete messages (T20d, T20e). */

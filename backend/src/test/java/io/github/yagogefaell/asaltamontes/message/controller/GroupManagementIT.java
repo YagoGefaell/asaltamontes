@@ -63,6 +63,7 @@ class GroupManagementIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.myRole").value("MEMBER"))
                 .andExpect(jsonPath("$.participantCount").value(2))
                 .andExpect(jsonPath("$.historyVisibleToNew").value(false))
+                .andExpect(jsonPath("$.origin").doesNotExist())
                 .andExpect(jsonPath("$.participants.content[0].username").value(ana.getUsername()))
                 .andExpect(jsonPath("$.participants.content[0].role").value("ADMIN"))
                 .andExpect(jsonPath("$.participants.content[1].role").value("MEMBER"));

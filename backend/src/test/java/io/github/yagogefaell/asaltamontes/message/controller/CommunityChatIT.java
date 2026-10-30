@@ -72,6 +72,9 @@ class CommunityChatIT extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(owner)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.managed").value(true))
+                .andExpect(jsonPath("$.origin.type").value("COMMUNITY"))
+                .andExpect(jsonPath("$.origin.slug").value(community.getSlug()))
+                .andExpect(jsonPath("$.origin.name").value(community.getName()))
                 .andExpect(jsonPath("$.participantCount").value(1));
 
         // Not a member: same 404 as a community that does not exist, and the chat is invisible to her
