@@ -72,6 +72,7 @@ const Messages = () => {
 
   // Owner or moderator of the community that manages the open chat (T20d): the server says it, with the group details
   const [moderationRole, setModerationRole] = useState(null);
+  const [groupParticipants, setGroupParticipants] = useState(null);
   const [messageToDelete, setMessageToDelete] = useState(null);
   const [deletingMessage, setDeletingMessage] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -111,16 +112,28 @@ const Messages = () => {
     navigate(`/users/${encodeURIComponent(chat.name)}`);
   }, [navigate]);
 
+  const handleOpenAuthorProfile = useCallback((username) => {
+    if (username) navigate(`/users/${encodeURIComponent(username)}`);
+  }, [navigate]);
+
   const selectedChatId = selectedChat?.id;
   const selectedChatIsGroup = selectedChat?.type === "GROUP";
   useEffect(() => {
     setModerationRole(null);
+    setGroupParticipants(null);
     setMessageToDelete(null);
     if (!selectedChatId || !selectedChatIsGroup) return undefined;
 
     let cancelled = false;
-    getGroupDetailsRequest(selectedChatId, { page: 0, size: 1 })
-      .then((details) => { if (!cancelled) setModerationRole(details?.canModerateMessages ? (details.moderationRole ?? "MODERATOR") : null); })
+    getGroupDetailsRequest(selectedChatId, { page: 0, size: 3 })
+      .then((details) => {
+        if (cancelled) return;
+        setModerationRole(details?.canModerateMessages ? (details.moderationRole ?? "MODERATOR") : null);
+        setGroupParticipants({
+          count: details?.participantCount ?? 0,
+          names: (details?.participants?.content ?? []).map((p) => (p.fullName || p.username || "").trim().split(" ")[0]),
+        });
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [selectedChatId, selectedChatIsGroup]);
@@ -468,6 +481,8 @@ const Messages = () => {
           onLeaveChat={handleLeaveChat}
           onOpenUserProfile={handleOpenUserProfile}
           onOpenGroupInfo={() => setIsGroupInfoOpen(true)}
+          onOpenAuthorProfile={handleOpenAuthorProfile}
+          groupParticipants={groupParticipants}
           moderationRole={moderationRole}
           onDeleteMessage={setMessageToDelete}
           onSelectedAvatarError={() => {

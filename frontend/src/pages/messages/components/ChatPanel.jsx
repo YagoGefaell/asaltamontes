@@ -1,16 +1,22 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { CHAT } from "../../../config/constants";
-import { FaInfoCircle } from "react-icons/fa";
+import { FaPaperPlane } from "react-icons/fa";
+import Avatar from "../../../shared/ui/Avatar";
 import Button from "../../../shared/forms/Button";
 import PageHeader from "../../../shared/ui/PageHeader";
 import EmptyState from "../../../shared/ui/EmptyState";
 import Skeleton from "../../../shared/ui/Skeleton";
 import { systemMessageText } from "../../../features/messages/utils/systemMessage";
 import { formatDayLabel, formatMessageTime, isSameDay, parseMessageDate } from "../../../features/messages/utils/messageDates";
-import { AUTHOR_ROLE_LABELS, canDeleteMessage } from "../../../features/messages/utils/messageModeration";
+import { groupSubtitle } from "../../../features/messages/utils/groupSubtitle";
+import { canDeleteMessage } from "../../../features/messages/utils/messageModeration";
 
 // Show the counter only when it matters
 const COUNTER_THRESHOLD = CHAT.MAX_MESSAGE_LENGTH - 200;
+
+// Consecutive messages of the same author closer than this form one block (T29q)
+const BLOCK_GAP_MS = 5 * 60 * 1000;
+const MAX_INPUT_HEIGHT_PX = 120; // ~5 lines
 
 // Shown above the input while the WebSocket is not connected (T11)
 const CONNECTION_NOTICES = {
@@ -36,6 +42,8 @@ const ChatPane = ({
   onLeaveChat,
   onOpenUserProfile,
   onOpenGroupInfo,
+  onOpenAuthorProfile,
+  groupParticipants = null,
   moderationRole = null,
   onDeleteMessage,
   onSelectedAvatarError,
@@ -48,6 +56,7 @@ const ChatPane = ({
   const topSentinelRef = useRef(null);
   // Scroll height before an older page is added, to keep the same messages on screen afterwards
   const heightBeforeLoadRef = useRef(null);
+  const inputRef = useRef(null);
   const oldestMessageId = currentMessages.length > 0 ? currentMessages[0].id : null;
 
   // Keep the latest callback in a ref so the observer is not recreated on every render
@@ -81,6 +90,39 @@ const ChatPane = ({
     heightBeforeLoadRef.current = null;
   }, [oldestMessageId]);
 
+  // The textarea grows with the text up to ~5 lines
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, MAX_INPUT_HEIGHT_PX)}px`;
+  }, [draftMessage]);
+
+  const handleInputKeyDown = (event) => {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent?.isComposing) return;
+    // Enter sends only with a mouse and keyboard; on touch screens it adds a new line
+    const isDesktop = typeof window.matchMedia === "function"
+      ? window.matchMedia("(hover: hover) and (pointer: fine)").matches
+      : true;
+    if (!isDesktop) return;
+    event.preventDefault();
+    onSendMessage();
+  };
+
+  // First message of a block: another author, a gap of 5 minutes or more, a new day or a system/deleted message before
+  const startsBlock = (messages, index) => {
+    if (index === 0) return true;
+    const message = messages[index];
+    const previous = messages[index - 1];
+    if (previous.type === "SYSTEM" || previous.deleted) return true;
+    if (previous.senderUsername !== message.senderUsername) return true;
+    if (dayLabelFor(messages, index)) return true;
+    const current = parseMessageDate(message.sentAt);
+    const before = parseMessageDate(previous.sentAt);
+    if (!current || !before) return true;
+    return current.getTime() - before.getTime() >= BLOCK_GAP_MS;
+  };
+
   const shouldRenderTimeMarker = (messages, index) => {
     if (index === 0) return true;
 
@@ -107,11 +149,6 @@ const ChatPane = ({
       <PageHeader
         onBack={onLeaveChat}
         backLabel="Volver"
-        actions={isGroup && onOpenGroupInfo && (
-          <button type="button" onClick={onOpenGroupInfo} aria-label="Info del grupo" title="Info del grupo">
-            <FaInfoCircle aria-hidden="true" />
-          </button>
-        )}
       >
         <div
           className="chat-title"
@@ -131,7 +168,11 @@ const ChatPane = ({
           </div>
           <div className="chat-title-text">
             <span className="chat-name">{selectedChat.name}</span>
-            <span className="chat-status">{isGroup ? "Toca para ver el grupo" : "En linea"}</span>
+            <span className="chat-status">
+              {isGroup
+                ? groupSubtitle(groupParticipants?.names, groupParticipants?.count)
+                : `@${selectedChat.name}`}
+            </span>
           </div>
         </div>
       </PageHeader>
@@ -182,6 +223,10 @@ const ChatPane = ({
           const markerLabel = formatMessageTime(message.sentAt);
           const dayLabel = dayLabelFor(currentMessages, index);
 
+          const showAuthor = isGroup && !isSent && !isSystem && !message.deleted && Boolean(message.senderUsername);
+          const blockStart = showAuthor && startsBlock(currentMessages, index);
+          const authorName = message.senderFullName || message.senderUsername;
+
           return (
             <div key={`${message.id}-${index}`} className="message-row">
               {dayLabel && (
@@ -200,18 +245,25 @@ const ChatPane = ({
                 // Deleted by the moderation (T20d): the message stays as a notice while the chat is open
                 <div className="message-system message-deleted">Mensaje eliminado por moderación</div>
               ) : (
-                <div className={`message-line ${isSent ? "sent" : "received"}`}>
+                <div
+                  className={`message-line ${isSent ? "sent" : "received"}${showAuthor ? " message-line--grouped" : ""}`}
+                  {...(blockStart && showAuthor ? { role: "group", "aria-label": authorName } : {})}
+                >
+                  {showAuthor && (
+                    blockStart ? (
+                      <button
+                        type="button"
+                        className="message-avatar"
+                        aria-label={`Ver perfil de ${authorName}`}
+                        onClick={() => onOpenAuthorProfile?.(message.senderUsername)}
+                      >
+                        <Avatar src={message.senderAvatarUrl} name={authorName} size={28} />
+                      </button>
+                    ) : (
+                      <span className="message-avatar message-avatar--spacer" aria-hidden="true" />
+                    )
+                  )}
                   <div className="message-body">
-                    {isGroup && !isSent && message.senderUsername && (
-                      <div className="message-author">
-                        <span className="message-author__name">@{message.senderUsername}</span>
-                        {AUTHOR_ROLE_LABELS[message.authorRole] && (
-                          <span className={`message-role message-role--${message.authorRole.toLowerCase()}`}>
-                            {AUTHOR_ROLE_LABELS[message.authorRole]}
-                          </span>
-                        )}
-                      </div>
-                    )}
                     <div className={`message ${isSent ? "sent" : "received"}`}>
                       {message.content}
                     </div>
@@ -245,31 +297,30 @@ const ChatPane = ({
         <p className="message-send-error" role="alert">{sendError}</p>
       )}
       <div className="message-input">
-        <input
-          type="text"
+        <textarea
+          ref={inputRef}
+          rows={1}
           placeholder="Escribe un mensaje..."
           maxLength={CHAT.MAX_MESSAGE_LENGTH}
           aria-label="Mensaje"
           value={draftMessage}
           onChange={(e) => onDraftChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              onSendMessage();
-            }
-          }}
+          onKeyDown={handleInputKeyDown}
         />
         {draftMessage.length >= COUNTER_THRESHOLD && (
           <span className="message-counter" aria-live="polite">
             {draftMessage.length}/{CHAT.MAX_MESSAGE_LENGTH}
           </span>
         )}
-        <Button
+        <button
+          type="button"
           className="message-send-btn"
           onClick={onSendMessage}
           disabled={!draftMessage.trim() || !websocketConnected}
+          aria-label="Enviar mensaje"
         >
-          Enviar
-        </Button>
+          <FaPaperPlane aria-hidden="true" />
+        </button>
       </div>
     </>
   );
