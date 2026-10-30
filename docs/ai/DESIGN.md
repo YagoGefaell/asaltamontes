@@ -93,7 +93,8 @@ Principios, por orden:
 **El estilo de referencia es el original de Yago**: `LoginForm`, `RegisterForm` y `EditProfile`, construidos con `shared/forms/Input` y `shared/forms/Button`.
 - Siempre `Input` (también `as="select"` y `as="textarea"`), con `label` visible encima del campo y el error debajo (`FormError`, ya incluido en `Input`). Nunca `<input>`/`<select>` con clases propias por pantalla (`community-creator-*`, `moderation-input`…).
 - Una columna en móvil. Como mucho dos campos cortos en la misma fila (fecha + hora); nunca tres.
-- Botón principal `Button` `primary` a todo el ancho al final del formulario (o fijo abajo si el formulario es largo). Un solo botón principal; el resto `secondary`/`ghost`.
+- Botón principal `Button` `primary` a todo el ancho **al final del formulario** (nunca fijo abajo: Yago, 2026-10-29). Un solo botón principal; el resto `secondary`/`ghost`.
+- Elegir entre opciones: con 4 o más, desplegable (`Input as="select"`), no chips. Los chips son para filtros de uso diario (§4 Buscar).
 - Teclados correctos: `type="email"`, `inputMode="numeric|decimal"`, `autoComplete`. Tamaño de letra de los campos ≥ 16 px (si no, iOS hace zoom).
 - Formularios largos (crear quedada): secciones con un título corto (`SectionCard` o `fieldset` con `legend`) y, si hace falta, pasos. Los opcionales, plegados en "Más opciones".
 - Validación al salir del campo y al enviar, con los mismos mensajes que el backend (`config/constants.js`).

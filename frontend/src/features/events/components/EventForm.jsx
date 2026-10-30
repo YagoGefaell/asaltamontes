@@ -102,6 +102,29 @@ export default function EventForm({
     <form className="event-form" onSubmit={handleSubmit} noValidate>
       <Input label="Título" aria-label="Título" maxLength={TITLE_MAX} placeholder="Ej.: Rodaje suave por la Casa de Campo" {...field('title')} />
 
+      {mode === 'create' && communities.length > 0 && (
+        <fieldset className="event-form__place">
+          <legend>Comunidad</legend>
+          <Input
+            as="select" label="Organizar en" aria-label="Comunidad" value={values.communityId} error={errors.communityId}
+            onChange={(e) => set({ communityId: e.target.value, visibility: e.target.value ? values.visibility : 'PUBLIC' })}
+          >
+            <option value="">Ninguna (quedada abierta)</option>
+            {communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </Input>
+          {values.communityId && (
+            <Input as="select" label="Quién puede verla" aria-label="Visibilidad" {...field('visibility')}>
+              <option value="PUBLIC">Todas</option>
+              <option value="COMMUNITY">Solo miembros de la comunidad</option>
+            </Input>
+          )}
+        </fieldset>
+      )}
+      {mode === 'edit' && communityName && (
+        <p className="event-form__hint">Comunidad: {communityName}. La comunidad y la visibilidad no se pueden cambiar.</p>
+      )}
+
+
       <div className="event-form__row">
         <Input as="select" label="Tipo" aria-label="Tipo" {...field('type')}>
           {Object.entries(EVENT_TYPES).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -143,6 +166,7 @@ export default function EventForm({
             longitude={values.longitude}
             onChange={(latitude, longitude) => set({ latitude, longitude })}
             focus={mapFocus}
+            center={homeArea ? [homeArea.latitude, homeArea.longitude] : null}
             onViewChange={setMapView}
           />
         </Suspense>
@@ -174,28 +198,6 @@ export default function EventForm({
           </p>
         </div>
       </details>
-
-      {mode === 'create' && communities.length > 0 && (
-        <fieldset className="event-form__place">
-          <legend>Comunidad</legend>
-          <Input
-            as="select" label="Organizar en" aria-label="Comunidad" value={values.communityId} error={errors.communityId}
-            onChange={(e) => set({ communityId: e.target.value, visibility: e.target.value ? values.visibility : 'PUBLIC' })}
-          >
-            <option value="">Ninguna (quedada abierta)</option>
-            {communities.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Input>
-          {values.communityId && (
-            <Input as="select" label="Quién puede verla" aria-label="Visibilidad" {...field('visibility')}>
-              <option value="PUBLIC">Todas</option>
-              <option value="COMMUNITY">Solo miembros de la comunidad</option>
-            </Input>
-          )}
-        </fieldset>
-      )}
-      {mode === 'edit' && communityName && (
-        <p className="event-form__hint">Comunidad: {communityName}. La comunidad y la visibilidad no se pueden cambiar.</p>
-      )}
 
       <FormError message={formError} />
       <Button type="submit" loading={submitting}>{submitLabel ?? (mode === 'edit' ? 'Guardar cambios' : 'Crear quedada')}</Button>
