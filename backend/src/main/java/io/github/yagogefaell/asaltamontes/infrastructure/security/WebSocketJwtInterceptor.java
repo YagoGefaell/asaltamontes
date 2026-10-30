@@ -49,6 +49,9 @@ public class WebSocketJwtInterceptor implements ChannelInterceptor {
 
                 Long id = jwtUtil.extractId(claims);
                 var userDetails = userService.loadUserById(id);
+                if (userDetails.isSuspended()) {
+                    throw new InvalidTokenException("Token inválido");
+                }
 
                 // The principal's name is the user id: messages are routed by id (/user/{id}/queue/...),
                 // so they keep arriving after a username change

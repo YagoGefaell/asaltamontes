@@ -60,6 +60,13 @@ public class UserAccount implements UserDetails {
     @Column(name = "last_connection")
     private LocalDateTime lastConnection;
 
+    /** Temporary suspension (T23c2): she cannot log in, refresh or use the API until then. Ignored when {@link #suspendedPermanently}. */
+    @Column(name = "suspended_until")
+    private LocalDateTime suspendedUntil;
+
+    @Column(name = "suspended_permanently", nullable = false)
+    private boolean suspendedPermanently;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private UserProfile profile;
 
@@ -90,7 +97,12 @@ public class UserAccount implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !isSuspended();
+    }
+
+    /** Suspended now: forever, or until a date that has not passed yet. A temporary suspension ends by itself. */
+    public boolean isSuspended() {
+        return suspendedPermanently || (suspendedUntil != null && suspendedUntil.isAfter(LocalDateTime.now()));
     }
 
     @Override
