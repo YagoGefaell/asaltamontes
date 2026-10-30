@@ -1,6 +1,6 @@
 # T24 — Verificación de email, reset de contraseña y borrar/exportar cuenta
 
-- **Estado:** en curso — T24a (backend) hecho en su PR; pendiente T24a2 (front), T24b, T24c y T24d
+- **Estado:** en curso — T24a (backend) hecho en su PR; T24a2 (front de la verificación) hecho en su PR; pendiente T24b, T24c y T24d
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T06
 - **Rama sugerida:** `feat/T24-account-lifecycle`
@@ -38,6 +38,12 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 - `VerifiedGuard` (una sola comprobación) aplicado a crear comunidad, evento, publicación, grupo y DM **nuevo**; apagado por defecto (`asaltamontes.verification.enforce=false`). Error `403` con `code=EMAIL_NOT_VERIFIED`.
 - Google: las cuentas nuevas nacen verificadas. `UserAccount.isEnabled()` ya no depende de `isVerified` (BUG-025).
 - Deuda registrada: BUG-083 (pre-registro con el email ajeno).
+
+### Como quedó T24a2 (2026-10-30)
+- `VerifyEmailBanner` (en `MainLayout`, solo si `currentUser.isVerified === false`): «Reenviar» con cooldown de 60 s, 429 y errores en línea; un 409 la marca como verificada.
+- `/verify-email?token=` (pública, `pages/access/VerifyEmail.jsx`): consume el token una sola vez (también bajo StrictMode); éxito → «Continuar»; 400/sin token → error en línea.
+- `api-client` expone `error.code` (ProblemDetail); `PostCreate` muestra «Verifica tu email…» ante `EMAIL_NOT_VERIFIED` (antes decía «Solo la propietaria…»). El resto de pantallas ya muestran `error.message`.
+- Deuda registrada: BUG-085 (`FormError` pinta en turquesa).
 
 ### Decisiones propuestas (Yago confirma)
 - Proveedor de correo: **SMTP genérico** configurable por variables (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`); para la demo, Brevo o Resend en plan gratuito. Variables nuevas → `.env.example`, `docker-compose.yml`, README.

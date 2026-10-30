@@ -177,12 +177,15 @@ class ApiClient {
 
     let errorMessage = 'An error occurred'
     let errors = null
+    let errorCode = null
 
     try {
       const errorData = await response.json()
       // ProblemDetail uses 'detail', but also support 'message' and 'error' for compatibility
       errorMessage = errorData.detail || errorData.message || errorData.error || errorMessage
       
+      errorCode = errorData.code
+
       // Extract individual field errors if present
       if (errorData.errors) {
         errors = errorData.errors
@@ -206,6 +209,8 @@ class ApiClient {
 
     const error = new Error(errorMessage)
     error.status = response.status
+    // Machine-readable ProblemDetail code, e.g. EMAIL_NOT_VERIFIED (T24a)
+    if (typeof errorCode === 'string') error.code = errorCode
 
     // 429 carries Retry-After in seconds (T19b); an HTTP date is not used by the backend
     const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)

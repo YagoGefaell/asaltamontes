@@ -7,6 +7,7 @@ import MainLayout from "../shared/layouts/MainLayout.jsx";
 import Home from "../pages/home/Home.jsx";
 import Login from "../pages/access/Login.jsx";
 import Register from "../pages/access/Register.jsx";
+import VerifyEmail from "../pages/access/VerifyEmail.jsx";
 import Access from "../pages/access/Access.jsx";
 import Profile from "../pages/profile/Profile.jsx";
 import UserProfile from "../pages/profile/UserProfile.jsx";
@@ -42,6 +43,9 @@ export function AppRouter() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Route>
+
+      {/* Pública a propósito: se abre desde el enlace del correo, con o sin sesión */}
+      <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* -------------------- PRIVADAS -------------------- */}
       <Route
