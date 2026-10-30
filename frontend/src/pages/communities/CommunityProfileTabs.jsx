@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaLock, FaUsers } from "react-icons/fa";
 import Button from "../../shared/forms/Button";
 import EmptyState from "../../shared/ui/EmptyState";
 import SearchField from "../../shared/ui/SearchField";
 import Skeleton from "../../shared/ui/Skeleton";
+import PostsTab from "../../features/posts/components/PostsTab";
+import { getCommunityPostsRequest } from "../../features/posts/services/posts.service";
 import UserCard from "../../shared/ui/UserCard";
 import EventCard from "../../features/events/components/EventCard";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
@@ -30,6 +32,20 @@ function ErrorBox({ message, onRetry }) {
       <p>{message}</p>
       <Button variant="outline" size="small" onClick={onRetry}>Reintentar</Button>
     </div>
+  );
+}
+
+/** "Publicaciones" tab (T22b), first of the community. Owner and moderators publish from the create screen (D-025). */
+export function CommunityPostsTab({ community }) {
+  const slug = community.slug || community.name;
+  const fetchPage = useCallback((before) => getCommunityPostsRequest(slug, before), [slug]);
+  return (
+    <PostsTab
+      panelId="community-panel-posts"
+      tabId="community-posts"
+      fetchPage={fetchPage}
+      emptyTitle="Todavía no hay publicaciones"
+    />
   );
 }
 

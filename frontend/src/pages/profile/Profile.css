@@ -150,6 +150,7 @@
 
 .pf-tabs .tabs__tab {
   flex: 1;
+  padding: 0 var(--space-2);
 }
 
 .pf-panel {

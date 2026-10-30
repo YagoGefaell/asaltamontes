@@ -1,0 +1,20 @@
+.post-detail {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding-bottom: calc(var(--space-8) + var(--space-8));
+  background: var(--background);
+  color: var(--text-color);
+}
+
+.post-detail__skeleton {
+  padding: var(--space-4);
+}
+
+.post-detail__error {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+}

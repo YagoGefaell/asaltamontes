@@ -58,5 +58,5 @@ export function useCursorList(fetchPage, getKey = (item) => item.id) {
 
   const removeItem = useCallback((predicate) => setItems((prev) => prev.filter((item) => !predicate(item))), [])
 
-  return { items, loading, loadingMore, error, hasMore: !!nextBefore, loadMore, reload, removeItem }
+  return { items, setItems, loading, loadingMore, error, hasMore: !!nextBefore, loadMore, reload, removeItem }
 }

@@ -1,9 +1,11 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaCalendarAlt, FaUsers } from "react-icons/fa";
 import EmptyState from "../../shared/ui/EmptyState";
 import Skeleton from "../../shared/ui/Skeleton";
 import Button from "../../shared/forms/Button";
+import PostsTab from "../../features/posts/components/PostsTab";
+import { getUserPostsRequest } from "../../features/posts/services/posts.service";
 import EventCard from "../../features/events/components/EventCard";
 import CommunityRow from "../../features/search/components/CommunityRow";
 import { useEvents } from "../../features/events/hooks/useEvents";
@@ -27,6 +29,20 @@ function ErrorBox({ message, onRetry }) {
       <p>{message}</p>
       <Button variant="outline" size="small" onClick={onRetry}>Reintentar</Button>
     </div>
+  );
+}
+
+/** "Publicaciones" tab (T22b), first of the profile: hers or another user's, as a list of full publications. */
+export function ProfilePosts({ username, isOwn = false }) {
+  const fetchPage = useCallback((before) => getUserPostsRequest(username, before), [username]);
+  return (
+    <PostsTab
+      panelId="profile-panel-posts"
+      tabId="profile-posts"
+      fetchPage={fetchPage}
+      emptyTitle={isOwn ? "Aún no has publicado nada" : "Aún no hay publicaciones"}
+      emptyDescription={isOwn ? "Lo que publiques desde Inicio aparecerá aquí." : "Cuando publique algo, aparecerá aquí."}
+    />
   );
 }
 

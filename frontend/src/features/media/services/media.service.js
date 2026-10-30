@@ -11,6 +11,7 @@ export const MEDIA_PURPOSE = {
   COMMUNITY_COVER: 'COMMUNITY_COVER',
   GROUP_IMAGE: 'GROUP_IMAGE',
   EVENT_IMAGE: 'EVENT_IMAGE',
+  POST_IMAGE: 'POST_IMAGE',
 }
 
 /** Client-side checks, so an obviously wrong file never hits the API. Returns an error message or null. */

@@ -11,7 +11,7 @@ import Avatar from "../../shared/ui/Avatar";
 import PageHeader from "../../shared/ui/PageHeader";
 import Tabs from "../../shared/ui/Tabs";
 import BottomSheet from "../../shared/ui/BottomSheet";
-import { ProfileEvents, ProfileCommunities } from "./ProfileTabs";
+import { ProfilePosts, ProfileEvents, ProfileCommunities } from "./ProfileTabs";
 import FormError from "../../shared/forms/FormError";
 import { blockUserRequest, unblockUserRequest } from "../../features/users/services/users.service";
 
@@ -26,7 +26,7 @@ function Profile({
   const { userProfile, loading: contextLoading } = useUserProfile();
   const navigate = useNavigate();
   const [openChatLoading, setOpenChatLoading] = useState(false);
-  const [tab, setTab] = useState("events");
+  const [tab, setTab] = useState("posts");
   const [menuOpen, setMenuOpen] = useState(false);
   const [blockError, setBlockError] = useState("");
   // Local override after (un)blocking; null = what the server said
@@ -134,6 +134,7 @@ function Profile({
   const isBlockedByMe = blockedOverride ?? Boolean(profileData.isBlockedByMe);
   const base = isOwnProfile ? "/me" : `/users/${username}`;
   const tabs = [
+    { id: "posts", label: "Publicaciones" },
     { id: "events", label: "Quedadas" },
     { id: "communities", label: "Comunidades" },
   ];
@@ -218,9 +219,9 @@ function Profile({
       {(isOwnProfile || !isBlockedByMe) && (
         <>
           <Tabs tabs={tabs} value={tab} onChange={setTab} label="Contenido del perfil" idPrefix="profile" className="pf-tabs" />
-          {tab === "events"
-            ? <ProfileEvents username={isOwnProfile ? null : username} />
-            : <ProfileCommunities username={isOwnProfile ? null : username} />}
+          {tab === "posts" && <ProfilePosts username={username} isOwn={isOwnProfile} />}
+          {tab === "events" && <ProfileEvents username={isOwnProfile ? null : username} />}
+          {tab === "communities" && <ProfileCommunities username={isOwnProfile ? null : username} />}
         </>
       )}
 

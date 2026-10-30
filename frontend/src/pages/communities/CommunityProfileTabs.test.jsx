@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { CommunityEventsTab, CommunityMembersTab } from './CommunityProfileTabs.jsx'
+import { CommunityPostsTab, CommunityEventsTab, CommunityMembersTab } from './CommunityProfileTabs.jsx'
 import { getCommunityMembersPageRequest } from '../../features/communities/services/communities.service'
 
 vi.mock('../../features/communities/services/communities.service', () => ({ getCommunityMembersPageRequest: vi.fn() }))
+vi.mock('../../features/posts/components/PostsTab', () => ({ default: ({ emptyTitle }) => <div>{emptyTitle}</div> }))
 vi.mock('../../features/events/components/EventCard', () => ({
   default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
 }))
@@ -19,6 +20,14 @@ const section = (over = {}) => ({
 })
 
 beforeEach(() => vi.clearAllMocks())
+
+describe('CommunityPostsTab', () => {
+  it('shows the posts tab with no publish button inside the community (creating is from Inicio)', () => {
+    renderIn(<CommunityPostsTab community={{ ...community, role: 'OWNER' }} />)
+    expect(screen.getByText('Todavía no hay publicaciones')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Publicar' })).toBeNull()
+  })
+})
 
 describe('CommunityEventsTab', () => {
   it('lists the events and lets staff create one', () => {
