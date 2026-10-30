@@ -162,6 +162,17 @@ class ReportIT extends AbstractIntegrationTest {
     }
 
     @Test
+    void whoBlockedHer_doesNotExistForHer_butSheCanReportWhoSheBlocked() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        mockMvc.perform(post("/api/users/{u}/block", ana.getUsername()).with(auth.bearer(bea))).andExpect(status().is2xxSuccessful());
+
+        // Bea blocked Ana: Ana gets the 404 of a missing user (no oracle); Bea can report Ana
+        report(ana, "USER", bea.getUsername(), "SPAM", null).andExpect(status().isNotFound());
+        report(bea, "USER", ana.getUsername(), "SPAM", null).andExpect(status().isCreated());
+    }
+
+    @Test
     void reportingYourself_isRejected() throws Exception {
         UserAccount ana = testData.createUser();
         report(ana, "USER", ana.getUsername(), "SPAM", null).andExpect(status().isBadRequest());

@@ -27,6 +27,7 @@ import io.github.yagogefaell.asaltamontes.post.repository.PostQueryRepository.Po
 import io.github.yagogefaell.asaltamontes.post.repository.PostRepository;
 import io.github.yagogefaell.asaltamontes.report.domain.ReportTargetType;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.service.BlockService;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +51,7 @@ public class ReportTargetResolver {
     private final EventService eventService;
     private final CommunityRepository communityRepository;
     private final CommunityMemberRepository memberRepository;
+    private final BlockService blockService;
 
     @Transactional(readOnly = true)
     public ResolvedTarget resolve(UserAccount reporter, ReportTargetType type, String target) {
@@ -65,6 +67,10 @@ public class ReportTargetResolver {
 
     private ResolvedTarget user(UserAccount reporter, String username) {
         UserAccount reported = userRepository.findByUsernameIgnoreCase(username).orElseThrow(() -> new NotFoundException(NOT_FOUND));
+        // Whoever blocked her does not exist for her (as in her profile): no oracle on who blocked whom
+        if (blockService.hasBlocked(reported.getId(), reporter.getId())) {
+            throw new NotFoundException(NOT_FOUND);
+        }
         notYourself(reporter, reported.getId());
         return new ResolvedTarget(reported.getId(), null, reported.getId(), null);
     }
@@ -80,7 +86,11 @@ public class ReportTargetResolver {
         PostComment comment = commentRepository.findLiveByPublicId(publicId).orElseThrow(() -> new NotFoundException(NOT_FOUND));
         Post post = postRepository.findById(comment.getPostId()).orElseThrow(() -> new NotFoundException(NOT_FOUND));
         // She must be able to see the post the comment hangs from
-        postQueries.one(reporter.getId(), post.getPublicId(), true).orElseThrow(() -> new NotFoundException(NOT_FOUND));
+        PostRow postRow = postQueries.one(reporter.getId(), post.getPublicId(), true).orElseThrow(() -> new NotFoundException(NOT_FOUND));
+        // A comment a block hides from her is hidden here too (the community staff see it, D-026)
+        if (!postRow.staff() && blockService.isBlockedEitherWay(reporter.getId(), comment.getAuthorId())) {
+            throw new NotFoundException(NOT_FOUND);
+        }
         notYourself(reporter, comment.getAuthorId());
         return new ResolvedTarget(comment.getId(), comment.getPublicId(), comment.getAuthorId(), comment.getBody());
     }

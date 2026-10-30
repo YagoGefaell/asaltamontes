@@ -58,7 +58,10 @@ public class ReportService {
         try {
             report = reportRepository.saveAndFlush(report);
         } catch (DataIntegrityViolationException e) {
-            // Lost the race against her own other request: the partial unique index let only one through
+            // Lost the race against her own other request (the partial unique index let only one through); anything else is not a duplicate
+            if (!reportRepository.existsOpen(reporter.getId(), dto.targetType(), target.targetId())) {
+                throw e;
+            }
             throw alreadyReported();
         }
         return new ReportDto(report.getPublicId(), report.getTargetType(), report.getReason(), report.getStatus(), report.getCreatedAt());
