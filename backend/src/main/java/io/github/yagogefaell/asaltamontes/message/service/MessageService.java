@@ -349,7 +349,7 @@ public class MessageService {
      * only what was sent since she joined, unless an admin made the history visible; chats managed by a community
      * or an event, and private chats, show everything.
      */
-    private LocalDateTime historyStart(Long conversationId, Long userId) {
+    public LocalDateTime historyStart(Long conversationId, Long userId) {
         ConversationParticipant participant = participantRepository.findByConversationIdAndUserId(conversationId, userId)
                 .orElseThrow(() -> new NotFoundException("Chat no encontrado"));
         Conversation conversation = participant.getConversation();
