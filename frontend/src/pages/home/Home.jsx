@@ -1,9 +1,15 @@
 import "./Home.css";
-import { useContext } from "react";
+import { Fragment, useContext } from "react";
 import { Link } from "react-router-dom";
 import { FaBell, FaComment, FaPen, FaPlus } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
+import Button from "../../shared/forms/Button";
+import Skeleton from "../../shared/ui/Skeleton";
+import PostCard from "../../features/posts/components/PostCard";
+import { getFeedRequest } from "../../features/posts/services/posts.service";
+import { useLoadMoreOnView } from "../../features/posts/hooks/useLoadMoreOnView";
+import { useCursorList } from "../../features/communities/hooks/useCursorList";
 import Avatar from "../../shared/ui/Avatar";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
@@ -19,6 +25,8 @@ import logo from "../../assets/logo01.png";
 const formatCount = (n) => (n > 9 ? "9+" : n);
 const SUGGESTED_COMMUNITIES = 10;
 const SUGGESTED_USERS = 10;
+// A suggestions row (users, then communities, alternating) after every this many posts
+const POSTS_PER_ROW = 5;
 
 function HeaderLink({ to, label, count, children }) {
   return (
@@ -87,8 +95,8 @@ function SuggestedUsers({ items }) {
   );
 }
 
-// Home is for posts (T22), with suggestions between them. Until posts exist: an empty feed and
-// the suggestion rows. Events live in their own tab; creating a post will be its own screen.
+// Home is the feed of posts (T22c) with a suggestions row every POSTS_PER_ROW posts. With fewer
+// posts than one row, the rows close the page. Events live in their own tab.
 const Home = () => {
   const { totalUnreadCount } = useContext(ConversationsContext);
   const { unreadCount: unreadNotifications } = useNotifications();
@@ -101,6 +109,22 @@ const Home = () => {
     },
     "suggested",
   );
+
+  const { items: posts, loading, loadingMore, error, hasMore, loadMore, reload, removeItem } = useCursorList(getFeedRequest);
+  const sentinelRef = useLoadMoreOnView(loadMore, hasMore && !loadingMore);
+  const hasPeople = !people.loading && people.items.length > 0;
+  const hasCommunities = !suggested.loading && suggested.items.length > 0;
+
+  // Rows go users, communities, users... ; if one kind is missing the other fills its turn
+  const rowAfter = (index) => {
+    if ((index + 1) % POSTS_PER_ROW !== 0) return null;
+    const usersTurn = (index + 1) / POSTS_PER_ROW % 2 === 1;
+    const showUsers = hasPeople && (usersTurn || !hasCommunities);
+    if (showUsers) return <SuggestedUsers items={people.items} />;
+    return hasCommunities ? <RecommendedCommunities items={suggested.items} /> : null;
+  };
+  const rowsInFeed = Math.floor(posts.length / POSTS_PER_ROW);
+  const closingRows = !loading && !error && !hasMore && rowsInFeed === 0;
 
   return (
     <div className="home-container">
@@ -121,14 +145,39 @@ const Home = () => {
         }
       />
 
-      <EmptyState
-        icon={<FaPen />}
-        title="Aún no hay publicaciones"
-        description="Aquí verás lo que comparten tus comunidades y las corredoras que sigues."
-      />
+      {loading && (
+        <div className="home-skeletons" data-testid="home-skeleton">
+          <Skeleton height="260px" />
+          <Skeleton height="260px" />
+        </div>
+      )}
+      {!loading && error && (
+        <div className="home-error" role="alert">
+          <p>{error.message || "No se ha podido cargar el inicio"}</p>
+          <Button variant="outline" size="small" onClick={reload}>Reintentar</Button>
+        </div>
+      )}
+      {!loading && !error && posts.length === 0 && (
+        <EmptyState
+          icon={<FaPen />}
+          title="Aún no hay publicaciones"
+          description="Aquí verás lo que comparten tus comunidades y las corredoras que sigues."
+        />
+      )}
+      {!loading && !error && posts.map((post, index) => (
+        <Fragment key={post.id}>
+          <PostCard post={post} onDeleted={(deleted) => removeItem((item) => item.id === deleted.id)} />
+          {rowAfter(index)}
+        </Fragment>
+      ))}
+      {!loading && !error && hasMore && (
+        <div ref={sentinelRef} className="home-more">
+          <Button variant="ghost" onClick={loadMore} loading={loadingMore}>Cargar más</Button>
+        </div>
+      )}
 
-      {!people.loading && people.items.length > 0 && <SuggestedUsers items={people.items} />}
-      {!suggested.loading && suggested.items.length > 0 && <RecommendedCommunities items={suggested.items} />}
+      {closingRows && hasPeople && <SuggestedUsers items={people.items} />}
+      {closingRows && hasCommunities && <RecommendedCommunities items={suggested.items} />}
     </div>
   );
 };

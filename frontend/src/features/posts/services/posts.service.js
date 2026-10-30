@@ -47,6 +47,16 @@ export const getUserPostsRequest = (username, before = null, limit = 10) =>
   call(() => apiClient.get(`/api/users/${encodeURIComponent(username)}/posts?${cursorQuery('before', before, limit)}`), 'No se han podido cargar las publicaciones')
     .then(toPage)
 
+/** Home: posts of her communities and of the people she follows, newest first. */
+export const getFeedRequest = (before = null, limit = 10) =>
+  call(() => apiClient.get(`/api/feed?${cursorQuery('before', before, limit)}`), 'No se ha podido cargar el inicio')
+    .then(toPage)
+
+/** Search grid: posts with a photo to discover what she does not follow. */
+export const getExplorePostsRequest = (before = null, limit = 21) =>
+  call(() => apiClient.get(`/api/explore/posts?${cursorQuery('before', before, limit)}`), 'No se han podido cargar las publicaciones')
+    .then(toPage)
+
 /** Idempotent: both answer { likedByMe, likeCount } as they are after the call. */
 export const likePostRequest = (id) =>
   call(() => apiClient.put(`/api/posts/${encodeURIComponent(id)}/like`, {}), 'No se ha podido dar me gusta')

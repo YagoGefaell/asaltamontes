@@ -1,16 +1,19 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.jsx'
 import { NotificationsContext } from '../../features/notifications/hooks/notifications.context'
 import { ConversationsContext } from '../../features/messages/hooks/conversations.context'
 import { getCommunitiesRequest } from '../../features/communities/services/communities.service'
+import { getFeedRequest } from '../../features/posts/services/posts.service'
 import { getSuggestionsRequest } from '../../features/users/services/users.service'
 
 vi.mock('../../features/communities/services/communities.service', () => ({
   getCommunitiesRequest: vi.fn(),
 }))
 vi.mock('../../features/users/services/users.service', () => ({ getSuggestionsRequest: vi.fn() }))
+vi.mock('../../features/posts/services/posts.service', () => ({ getFeedRequest: vi.fn() }))
+vi.mock('../../features/posts/components/PostCard', () => ({ default: ({ post }) => <article data-testid="post">{post.body}</article> }))
 vi.mock('../../shared/components/FollowUserButton', () => ({ default: () => <button>Seguir</button> }))
 vi.mock('../../shared/components/CommunityJoinButton', () => ({ default: () => <button>Unirse</button> }))
 vi.mock('../../shared/components/CommunityRequestButton', () => ({ default: () => <button>Solicitar</button> }))
@@ -21,6 +24,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   getCommunitiesRequest.mockResolvedValue(page([]))
   getSuggestionsRequest.mockResolvedValue(page([]))
+  getFeedRequest.mockResolvedValue({ items: [], nextBefore: null })
 })
 
 function renderHome({ notifications = 0, messages = 0 } = {}) {
@@ -93,5 +97,54 @@ describe('Home content', () => {
     expect(document.querySelectorAll('.home-rail')).toHaveLength(2)
     expect(screen.getByRole('heading', { name: 'Usuarias para seguir' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Comunidades recomendadas' })).toBeTruthy()
+  })
+})
+
+const posts = (from, to) => Array.from({ length: to - from }, (_, i) => ({ id: `p${from + i}`, body: `Post ${from + i}` }))
+
+describe('Home feed (T22c)', () => {
+  const rows = () => [...document.querySelectorAll('.home-section__title')].map((t) => t.textContent)
+
+  beforeEach(() => {
+    getSuggestionsRequest.mockResolvedValue(page([{ username: 'cris', fullName: 'Cris Gil' }]))
+    getCommunitiesRequest.mockResolvedValue(page([{ id: 'c2', name: 'Valkirias', slug: 'valkirias', role: null }]))
+  })
+
+  it('shows the posts and puts a suggestions row after every 5, users first and then communities', async () => {
+    getFeedRequest.mockResolvedValue({ items: posts(0, 11), nextBefore: null })
+    renderHome()
+    expect(await screen.findAllByTestId('post')).toHaveLength(11)
+    await screen.findByRole('link', { name: /Valkirias/ })
+    const children = [...document.querySelector('.home-container').children].map((el) => el.dataset.testid ?? el.className)
+    const layout = children.filter((c) => c === 'post' || c.includes('home-section')).join(' ')
+    expect(layout).toBe(['post', 'post', 'post', 'post', 'post', 'home-section', 'post', 'post', 'post', 'post', 'post', 'home-section', 'post'].join(' '))
+    expect(rows()).toEqual(['Usuarias para seguir', 'Comunidades recomendadas'])
+    expect(screen.queryByText('Aún no hay publicaciones')).toBeNull()
+  })
+
+  it('with fewer posts than one row, the rows close the page', async () => {
+    getFeedRequest.mockResolvedValue({ items: posts(0, 2), nextBefore: null })
+    renderHome()
+    expect(await screen.findAllByTestId('post')).toHaveLength(2)
+    expect(await screen.findByRole('heading', { name: 'Usuarias para seguir' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Comunidades recomendadas' })).toBeTruthy()
+  })
+
+  it('asks for the next page with the cursor on "Cargar más"', async () => {
+    getFeedRequest.mockResolvedValueOnce({ items: posts(0, 2), nextBefore: 'c1' })
+    getFeedRequest.mockResolvedValueOnce({ items: posts(2, 3), nextBefore: null })
+    renderHome()
+    fireEvent.click(await screen.findByRole('button', { name: 'Cargar más' }))
+    await waitFor(() => expect(screen.getAllByTestId('post')).toHaveLength(3))
+    expect(getFeedRequest).toHaveBeenLastCalledWith('c1')
+  })
+
+  it('offers to retry when the feed fails', async () => {
+    getFeedRequest.mockRejectedValueOnce(new Error('Sin conexión'))
+    getFeedRequest.mockResolvedValueOnce({ items: posts(0, 1), nextBefore: null })
+    renderHome()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sin conexión')
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(await screen.findByTestId('post')).toBeTruthy()
   })
 })

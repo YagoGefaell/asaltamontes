@@ -8,6 +8,7 @@ import { getEventsRequest } from "../../features/events/services/events.service"
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useRecentSearches } from "../../features/search/hooks/useRecentSearches";
 import { useSearchSection } from "../../features/search/hooks/useSearchSection";
+import ExploreGrid from "../../features/search/components/ExploreGrid";
 import CommunityRow from "../../features/search/components/CommunityRow";
 import EventCard from "../../features/events/components/EventCard";
 import UserCard from "../../shared/ui/UserCard";
@@ -257,7 +258,8 @@ const Search = () => {
       {!showRecents && (
         <div className="search-results" id={`search-tab-panel-${tab}`} role="tabpanel" aria-labelledby={`search-tab-${tab}`}
           onClick={searching ? rememberOnResultClick : undefined}>
-          {/* Without text the page stays blank; it will be the posts grid (Explore) with T22 */}
+          {/* Without text: the grid of posts to discover (Explore) */}
+          {!searching && <ExploreGrid />}
           {searching && (
             <>
               {wantsUsers && (
