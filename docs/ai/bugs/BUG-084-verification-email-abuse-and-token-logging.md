@@ -1,6 +1,6 @@
 # BUG-084 — El registro puede usarse para enviar correo a terceros y el modo log expone tokens
 
-- **Estado:** abierto
+- **Estado:** abierto (parcial: T24b arregla 1, 2 y el log del destinatario de 4; quedan 3, el captcha, `VerifiedGuard` y la carrera de `issue()`)
 - **Severidad:** media
 - **Confianza:** confirmado (revisión de seguridad de T24a)
 - **Área:** backend/auth, infra
@@ -18,6 +18,11 @@
 
 ## Cómo reproducir
 Registrar cuentas con emails ajenos desde IPs distintas / enviando `X-Forwarded-For` aleatorio.
+
+## Hecho en T24b
+- El cuerpo (con tokens) solo se escribe en el log con `MAIL_LOG_BODY=true`; por defecto solo el asunto. `SmtpMailSender` ya no registra el destinatario.
+- Tope por dirección destino (`UserActionLimiter.mayEmail`: 3/hora y 6/día, configurables) para verificación, reset y cambio de email, tanto si lo pide ella como otra persona.
+- Pendiente: punto 3 (nginx/`X-Forwarded-For`), captcha, tope global diario, `VerifiedGuard` y la carrera de `issue()`.
 
 ## Arreglo propuesto
 Registrar el cuerpo solo con opt-in (`MAIL_LOG_BODY=true`) o enmascarar el token fuera de dev; tope diario global y por dirección destino de correos de verificación; nginx con `proxy_set_header X-Forwarded-For $remote_addr` e `internal-proxies` en Tomcat; captcha más adelante.

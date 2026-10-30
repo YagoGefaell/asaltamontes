@@ -22,6 +22,11 @@ public class MailProperties {
     /** STARTTLS (port 587). For implicit TLS (port 465) set it to false and ssl to true. */
     private boolean starttls = true;
     private boolean ssl = false;
+    /**
+     * Only for the no-SMTP mode: also write the body (links with their tokens) in the log. Off by default (BUG-084): a
+     * forgotten MAIL_HOST must not leave valid reset links in the logs. Turn it on in a private demo (MAIL_LOG_BODY=true).
+     */
+    private boolean logBody = false;
     /** Public URL of the web app; the links in the emails are built from it. */
     private String appBaseUrl = "http://localhost";
 

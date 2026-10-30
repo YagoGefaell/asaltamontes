@@ -93,6 +93,7 @@ services:
       MAIL_USER: ${MAIL_USER:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-Asaltamontes Female <no-reply@localhost>}
+      MAIL_LOG_BODY: ${MAIL_LOG_BODY:-false}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
       VERIFICATION_ENFORCE: ${VERIFICATION_ENFORCE:-false}
     volumes:

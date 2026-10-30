@@ -30,6 +30,20 @@ public interface AccountTokenRepository extends JpaRepository<AccountToken, Long
         """, nativeQuery = true)
     Optional<Long> consume(@Param("hash") String hash, @Param("purpose") String purpose, @Param("now") LocalDateTime now);
 
+    /** Same as {@link #consume} but also returns the payload of the token. */
+    @Query(value = """
+        DELETE FROM account_tokens
+        WHERE token_hash = :hash AND purpose = :purpose AND expires_at > :now
+        RETURNING user_id AS userId, payload AS payload
+        """, nativeQuery = true)
+    Optional<ConsumedToken> consumeWithPayload(@Param("hash") String hash, @Param("purpose") String purpose, @Param("now") LocalDateTime now);
+
+    interface ConsumedToken {
+        Long getUserId();
+
+        String getPayload();
+    }
+
     @Modifying
     @Query("DELETE FROM AccountToken t WHERE t.expiresAt < :now")
     int deleteExpired(@Param("now") LocalDateTime now);
