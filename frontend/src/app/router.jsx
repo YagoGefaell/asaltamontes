@@ -1,6 +1,9 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthGuard from "./guards/AuthGuard.jsx";
 import PublicOnlyGuard from "./guards/PublicOnlyGuard.jsx";
+import { AdminGuard } from "./guards/adminGuard.jsx";
+import Admin from "../pages/admin/Admin.jsx";
+import AdminReportDetail from "../pages/admin/AdminReportDetail.jsx";
 
 import MainLayout from "../shared/layouts/MainLayout.jsx";
 
@@ -81,6 +84,12 @@ export function AppRouter() {
         </Route>
 
         <Route path="/verify-email/required" element={<VerifyEmailRequired />} />
+
+        {/* ---- Panel de moderación (ADMIN y MODERATOR; el backend manda) ---- */}
+        <Route element={<AdminGuard />}>
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/reports/:id" element={<AdminReportDetail />} />
+        </Route>
 
         {/* ---- Rutas de Followers/Following (sin navbar) ---- */}
         <Route path="/me/followers" element={<Followers />} />
