@@ -1,0 +1,3 @@
+[390-light] http://localhost:5173/verify-email?token=bad Failed to load resource: the server responded with a status of 400 (Bad Request)
+[390-dark] http://localhost:5173/verify-email?token=bad Failed to load resource: the server responded with a status of 400 (Bad Request)
+[360-light] http://localhost:5173/verify-email?token=bad Failed to load resource: the server responded with a status of 400 (Bad Request)
