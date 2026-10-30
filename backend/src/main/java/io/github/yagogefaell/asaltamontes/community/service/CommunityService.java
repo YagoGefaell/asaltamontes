@@ -268,6 +268,18 @@ public class CommunityService {
         communityRepository.deleteById(communityId);
     }
 
+    /** Removal by the moderation panel (T23c), after its permission check; the same steps as the owner deleting it. False if it is gone. */
+    @Transactional
+    public boolean removeForModeration(Long communityId) {
+        if (!communityRepository.existsById(communityId)) {
+            return false;
+        }
+        communityChat.deleteChat(communityId);
+        communityMemberRepository.deleteAllByCommunityId(communityId);
+        communityRepository.deleteById(communityId);
+        return true;
+    }
+
     /** Internal id of a community given by its public id (D-021); 404 if it does not exist. */
     private Long internalId(UUID communityPublicId) {
         return communityRepository.findIdByPublicId(communityPublicId)

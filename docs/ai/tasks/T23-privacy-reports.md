@@ -1,6 +1,6 @@
 # T23 — Privacidad de perfil, denuncias y panel de moderación
 
-- **Estado:** pendiente (spec refinada; se divide en T23a–T23d). **T23a hecho** (cierra BUG-034); **T23b hecho** (backend; el front de «Denunciar» queda como sub-tarea **T23b2**); quedan T23c y T23d.
+- **Estado:** pendiente (spec refinada; se divide en T23a–T23d). **T23a hecho** (cierra BUG-034); **T23b hecho** (backend; el front de «Denunciar» queda como sub-tarea **T23b2**); **T23c1 hecho** (cola, detalle, descartar, borrar contenido); quedan T23c2 (suspensión de cuentas), T23c3 (front del panel) y T23d.
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T13, T18
 - **Rama sugerida:** `feat/T23-privacy-reports`
@@ -29,7 +29,7 @@ Cumplir la promesa de espacio seguro: los perfiles privados lo son de verdad, cu
 |---|---|---|
 | **T23a** | Perfil privado de verdad: solicitudes de seguimiento (BUG-034) | — |
 | **T23b** | Denuncias: modelo, endpoint para denunciar, rate limit | T22a (para `POST`/`COMMENT`; el resto de tipos ya) |
-| **T23c** | Panel de administración: cola, acciones, suspensión de cuentas, rol `MODERATOR`; incluye BUG-065/068 si procede | T23b |
+| **T23c** | Panel de administración: cola, acciones, suspensión de cuentas, rol `MODERATOR`. Se parte en **T23c1** (backend: rol, cola, detalle, descartar, borrar contenido, auditoría), **T23c2** (backend: suspensión de cuentas) y **T23c3** (front `pages/admin`). BUG-065/068 quedan en T24c (borrar cuenta) | T23b |
 | **T23d** | Imágenes privadas: URLs firmadas o `auth_request` (requisito antes de producción) | T19, T22a |
 
 ### T23a — Perfil privado
@@ -53,6 +53,8 @@ Cumplir la promesa de espacio seguro: los perfiles privados lo son de verdad, cu
 - `GET /api/admin/reports` (filtro por estado y tipo, cursor), detalle con el contenido, acciones: descartar, borrar contenido, suspender (temporal con fecha / permanente). Suspendida: `UserAccount.suspendedUntil`; el login falla con mensaje neutro y se revocan sus `RefreshSession` (T06). Registro de auditoría de cada acción.
 - Front: `pages/admin` (ya existe `Admin.jsx`) con la cola y el detalle, solo visible a ADMIN/MODERATOR.
 - Aquí se decide el destino de los datos de cuentas borradas (BUG-065, BUG-068) con T24.
+
+**Implementación (T23c1, V24):** `MODERATOR` entra en el enum existente `UserAccountRole` y en el CHECK de `users.role` (localizado por definición, BUG-049); la autoridad `ROLE_MODERATOR` sale del `getAuthorities()` que ya había, sin tocar `JwtUtil`, `JwtAuthFilter` ni `AuthService`; el rol se lee de la BD en cada petición, así que quitarlo surte efecto al instante. No hay endpoint para cambiar roles (se asignan en la BD). `/api/admin/reports` (`@PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")` + comprobación en el servicio): lista con filtros `status`/`type` y cursor opaco (abiertas, las más antiguas primero), detalle (copia del texto, quién denuncia, a quién, otras denuncias abiertas del objetivo, si el contenido sigue existiendo), `dismiss` (solo esa denuncia) y `remove-content` (post/comentario: borrado lógico; mensaje: borrado; quedada: cancelada; comunidad: solo ADMIN; cierra todas las denuncias abiertas del objetivo; USER → 400). Cada acción escribe `admin_audit_log` en la misma transacción. Las del `security-reviewer` en T23b: copia también de usuaria/evento/comunidad (título + descripción, nombre + bio); cooldown de 7 días tras descartar una denuncia (mismo denunciante y objetivo → 409); `details` y la copia se sirven como texto plano (el front no debe interpretarlos como HTML); purga de `details` y copia a los 30 días de resolver (`asaltamontes.reports.retention-days`, tarea diaria 04:15).
 
 ### T23d — Imágenes privadas
 - Decisión técnica a tomar al implementar, con medición en la Pi: `auth_request` de nginx contra un endpoint interno del backend (un salto por imagen, cacheable unos segundos) frente a URLs firmadas HMAC con caducidad (sin salto, pero cambia los DTO y la caché del navegador). Recomendación inicial: URLs firmadas solo para imágenes de contenido privado (comunidades privadas, perfiles privados, fotos de publicaciones privadas); avatares públicos siguen igual.

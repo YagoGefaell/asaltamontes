@@ -72,7 +72,9 @@ public class ReportTargetResolver {
             throw new NotFoundException(NOT_FOUND);
         }
         notYourself(reporter, reported.getId());
-        return new ResolvedTarget(reported.getId(), null, reported.getId(), null);
+        String name = reported.getProfile() == null ? null : reported.getProfile().getFullName();
+        String bio = reported.getProfile() == null ? null : reported.getProfile().getBio();
+        return new ResolvedTarget(reported.getId(), null, reported.getId(), text(name, bio));
     }
 
     private ResolvedTarget post(UserAccount reporter, UUID publicId) {
@@ -124,7 +126,7 @@ public class ReportTargetResolver {
         }
         Long organizerId = event.getOrganizer().getId();
         notYourself(reporter, organizerId);
-        return new ResolvedTarget(event.getId(), event.getPublicId(), organizerId, null);
+        return new ResolvedTarget(event.getId(), event.getPublicId(), organizerId, text(event.getTitle(), event.getDescription()));
     }
 
     private ResolvedTarget community(UserAccount reporter, String slug) {
@@ -135,7 +137,15 @@ public class ReportTargetResolver {
             throw new NotFoundException(NOT_FOUND);
         }
         Community community = communityRepository.findById(communityId).orElseThrow(() -> new NotFoundException(NOT_FOUND));
-        return new ResolvedTarget(communityId, community.getPublicId(), null, null);
+        return new ResolvedTarget(communityId, community.getPublicId(), null, text(community.getName(), community.getDescription()));
+    }
+
+    /** Title and body of a profile, event or community as they were when reported (they can be edited afterwards). */
+    private static String text(String title, String body) {
+        String t = title == null ? "" : title.strip();
+        String b = body == null ? "" : body.strip();
+        String joined = t.isEmpty() ? b : b.isEmpty() ? t : t + "\n" + b;
+        return joined.isEmpty() ? null : joined;
     }
 
     private static void notYourself(UserAccount reporter, Long ownerId) {
