@@ -45,9 +45,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Two queries instead of "(:before IS NULL OR ...)" so PostgreSQL always gets a typed parameter.
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
-            m.publicId, m.conversation.publicId, s.username, m.content, m.sentAt, m.type, m.systemPayload
+            m.publicId, m.conversation.publicId, s.username, m.content, m.sentAt, m.type, m.systemPayload, pr.profilePictureUrl, pr.fullName
         )
-        FROM Message m LEFT JOIN m.sender s
+        FROM Message m LEFT JOIN m.sender s LEFT JOIN s.profile pr
         WHERE m.conversation.id = :conversationId AND m.sentAt >= :since
         ORDER BY m.id DESC
     """)
@@ -55,9 +55,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
-            m.publicId, m.conversation.publicId, s.username, m.content, m.sentAt, m.type, m.systemPayload
+            m.publicId, m.conversation.publicId, s.username, m.content, m.sentAt, m.type, m.systemPayload, pr.profilePictureUrl, pr.fullName
         )
-        FROM Message m LEFT JOIN m.sender s
+        FROM Message m LEFT JOIN m.sender s LEFT JOIN s.profile pr
         WHERE m.conversation.id = :conversationId AND m.sentAt >= :since AND m.id < :before
         ORDER BY m.id DESC
     """)
@@ -67,9 +67,9 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Messages newer than a known one, oldest first: catching up after a WebSocket reconnection (T11)
     @Query("""
         SELECT new io.github.yagogefaell.asaltamontes.message.dto.MessageDto(
-            m.publicId, m.conversation.publicId, s.username, m.content, m.sentAt, m.type, m.systemPayload
+            m.publicId, m.conversation.publicId, s.username, m.content, m.sentAt, m.type, m.systemPayload, pr.profilePictureUrl, pr.fullName
         )
-        FROM Message m LEFT JOIN m.sender s
+        FROM Message m LEFT JOIN m.sender s LEFT JOIN s.profile pr
         WHERE m.conversation.id = :conversationId AND m.sentAt >= :since AND m.id > :after
         ORDER BY m.id ASC
     """)

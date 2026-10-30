@@ -22,6 +22,7 @@ import io.github.yagogefaell.asaltamontes.message.repository.ConversationReposit
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 import io.github.yagogefaell.asaltamontes.support.AbstractIntegrationTest;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
+import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
 
 /**
  * T10: chat history by cursor.
@@ -36,6 +37,9 @@ class ChatHistoryIT extends AbstractIntegrationTest {
 
     @Autowired
     private ConversationRepository conversationRepository;
+
+    @Autowired
+    private UserProfileRepository profiles;
 
     @Autowired
     private TransactionTemplate transactionTemplate;
@@ -64,6 +68,31 @@ class ChatHistoryIT extends AbstractIntegrationTest {
         assertThat(all).hasSize(75).doesNotHaveDuplicates();
         assertThat(all.get(0)).isEqualTo("mensaje 1");
         assertThat(all.get(74)).isEqualTo("mensaje 75");
+    }
+
+    @Test
+    void messages_carryTheAuthorsCurrentAvatarAndFullName_inHistoryAndInTheSentFrame() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        var anaProfile = profiles.findByUserId(ana.getId()).orElseThrow();
+        anaProfile.setProfilePictureUrl("/media/ana.webp");
+        profiles.save(anaProfile);
+        String anaFullName = anaProfile.getFullName();
+        UUID conversationId = testData.createPrivateConversation(ana, bea);
+
+        MessageDto sent = messageService.processIncomingMessage(conversationId, ana.getId(), "hola");
+        messageService.processIncomingMessage(conversationId, bea.getId(), "buenas");
+
+        assertThat(sent.senderAvatarUrl()).isEqualTo("/media/ana.webp");
+        assertThat(sent.senderFullName()).isEqualTo(anaFullName);
+
+        List<MessageDto> items = fetch(history(conversationId), bea).items();
+        assertThat(items).hasSize(2);
+        assertThat(items.get(0).senderAvatarUrl()).isEqualTo("/media/ana.webp");
+        assertThat(items.get(0).senderFullName()).isEqualTo(anaFullName);
+        // Bea has no picture: null, but her name is there
+        assertThat(items.get(1).senderAvatarUrl()).isNull();
+        assertThat(items.get(1).senderFullName()).isNotBlank();
     }
 
     @Test

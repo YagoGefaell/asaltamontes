@@ -2513,7 +2513,9 @@
           "type": { "type": "string", "enum": ["USER", "SYSTEM"] },
           "systemPayload": { "type": "object", "nullable": true, "description": "SYSTEM messages (T12): { action: MEMBER_ADDED | MEMBER_REMOVED | MEMBER_LEFT | ROLE_CHANGED | ADMIN_ASSIGNED | GROUP_RENAMED | GROUP_IMAGE_CHANGED | HISTORY_VISIBILITY_CHANGED, actor?, targets?: [username], name?, role?, removed?, visible? }. Clients compose the text from it; `content` is a Spanish fallback.", "example": { "action": "MEMBER_ADDED", "actor": "ana", "targets": ["marta"] } },
           "cursor": { "type": "string", "description": "Opaque token of this message, to use as `before` / `after` in the history", "example": "bXwxNzc0MzQ..." },
-          "authorRole": { "type": "string", "nullable": true, "enum": ["OWNER", "MODERATOR"], "description": "T20e. Only in the chat that a community manages: the author is, today, the owner or a moderator of it. Null for plain members, other chats and SYSTEM messages. Public on purpose; also present in messages that arrive over the WebSocket." }
+          "authorRole": { "type": "string", "nullable": true, "enum": ["OWNER", "MODERATOR"], "description": "T20e. Only in the chat that a community manages: the author is, today, the owner or a moderator of it. Null for plain members, other chats and SYSTEM messages. Public on purpose; also present in messages that arrive over the WebSocket." },
+          "senderAvatarUrl": { "type": "string", "nullable": true, "description": "T29q. Current profile picture of the author; null when she has none and in SYSTEM messages. Also in the WebSocket frame." },
+          "senderFullName": { "type": "string", "nullable": true, "description": "T29q. Current display name of the author; null in SYSTEM messages. Also in the WebSocket frame." }
         }
       },
       "PrivateMessage": {
