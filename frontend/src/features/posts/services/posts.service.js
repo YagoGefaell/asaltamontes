@@ -12,6 +12,7 @@ async function call(request, fallback) {
     const wrapped = new Error(error.message || fallback)
     wrapped.status = error.status
     wrapped.retryAfter = error.retryAfter
+    wrapped.code = error.code
     wrapped.errors = error.errors
     throw wrapped
   }

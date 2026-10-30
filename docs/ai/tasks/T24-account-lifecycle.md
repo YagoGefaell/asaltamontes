@@ -1,6 +1,6 @@
 # T24 — Verificación de email, reset de contraseña y borrar/exportar cuenta
 
-- **Estado:** en curso — T24a (backend) y T24b (backend) hechos en sus PRs; pendiente T24a2 (front), T24b2 (front), T24c y T24d
+- **Estado:** en curso — T24a (backend), T24a2 (front de la verificación) y T24b (backend) hechos en sus PRs; pendiente T24b2 (front), T24c y T24d
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T06
 - **Rama sugerida:** `feat/T24-account-lifecycle`
@@ -30,7 +30,7 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 | **T24c** | Borrar cuenta (confirmación con contraseña; Google: reautenticación reciente) y resolución de BUG-065/068 | T23c (destino de datos) |
 | **T24d** | Exportar datos (JSON) | T22a |
 
-| **T24a2** | Front de la verificación: banner «Verifica tu email» con «Reenviar» (cooldown, `POST /api/users/me/verification-email`), página pública `/verify-email?token=` (`POST /auth/verify-email`) y mensaje del error `403 code=EMAIL_NOT_VERIFIED`. Con `/ui-review` | T24a |
+| **T24a2** | Front de la verificación: pantalla «Verifica tu email» a la que redirige el 403, con «Reenviar» (cooldown; también en Ajustes, `POST /api/users/me/verification-email`), página pública `/verify-email?token=` (`POST /auth/verify-email`) y mensaje del error `403 code=EMAIL_NOT_VERIFIED`. Con `/ui-review` | T24a |
 
 ### Como quedó T24a (2026-10-30)
 - `infrastructure/mail`: `MailSender` (interfaz), `SmtpMailSender` (asíncrono, activo con `MAIL_HOST`), `LoggingMailSender` (por defecto). Variables `MAIL_HOST/PORT/USER/PASSWORD/FROM`, `MAIL_STARTTLS`, `MAIL_SSL`, `APP_BASE_URL`, `VERIFICATION_ENFORCE`; README: alta de Resend.
@@ -45,6 +45,13 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 - `POST /api/users/me/email-change` (contraseña actual; límite 5/h por usuaria contando los fallos) guarda el nuevo email como `payload` del token `CHANGE_EMAIL` (migración **V23**, columna nullable: mergear **después de #161**, que usa V22) y avisa al email anterior; `POST /auth/confirm-email-change` lo aplica, verifica y avisa de nuevo. Un reset o un cambio invalidan los enlaces pendientes del otro. `PATCH /api/users/me` ya no cambia el email (BUG-042).
 - BUG-084: el log de correos sin SMTP ya no escribe el cuerpo salvo `MAIL_LOG_BODY=true`; tope de correos por dirección destino (3/h, 6/día).
 - Los access tokens ya emitidos siguen valiendo hasta 15 min tras un reset (solo se revocan los refresh).
+
+### Como quedó T24a2 (2026-10-30)
+- Sin aviso permanente (Yago, revisión de #160): cuando una acción devuelve `403 EMAIL_NOT_VERIFIED`, `EmailVerificationRedirect` (callback de `api-client`) lleva a `/verify-email/required` (autenticada) con la explicación y «Reenviar» (`VerifyEmailPanel`: cooldown de 60 s, 429 y errores en línea; un 409 la marca como verificada); «Volver» regresa a donde estaba. Las pantallas no se bloquean por adelantado porque el front no sabe si `VERIFICATION_ENFORCE` está activo.
+- Ajustes → «Verificar email» (`/settings/verify-email`): estado verificado/no verificado y «Reenviar».
+- `/verify-email?token=` (pública, `pages/access/VerifyEmail.jsx`): consume el token una sola vez (también bajo StrictMode); éxito → «Continuar»; 400/sin token → error en línea.
+- `api-client` expone `error.code` (ProblemDetail); `PostCreate` muestra «Verifica tu email…» ante `EMAIL_NOT_VERIFIED` (antes decía «Solo la propietaria…»). El resto de pantallas ya muestran `error.message`.
+- Deuda registrada: BUG-085 (`FormError` pinta en turquesa).
 
 ### Decisiones propuestas (Yago confirma)
 - Proveedor de correo: **SMTP genérico** configurable por variables (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`); para la demo, Brevo o Resend en plan gratuito. Variables nuevas → `.env.example`, `docker-compose.yml`, README.

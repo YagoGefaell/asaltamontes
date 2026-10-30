@@ -84,4 +84,13 @@ describe('PostCreate', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
     expect(await screen.findByText('Has publicado mucho hoy. Inténtalo de nuevo en 10 min.')).toBeInTheDocument()
   })
+
+  it('tells her to verify her email on EMAIL_NOT_VERIFIED, not the community message', async () => {
+    createPostRequest.mockRejectedValueOnce(
+      Object.assign(new Error('Verifica tu email para poder hacer esto'), { status: 403, code: 'EMAIL_NOT_VERIFIED' }))
+    renderAt('/posts/new')
+    fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'Hola' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
+    expect(await screen.findByText('Verifica tu email para poder hacer esto')).toBeInTheDocument()
+  })
 })
