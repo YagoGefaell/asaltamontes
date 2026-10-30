@@ -234,6 +234,18 @@
         }
       }
     },
+    "/api/users/me/export": {
+      "get": {
+        "summary": "Download my data as JSON (T24d, GDPR portability)",
+        "tags": ["Users"],
+        "description": "Attachment (application/json, Cache-Control: no-store) with only the caller's own data: account and profile, notification preferences, posts, comments, likes, messages she sent, events she organized, event attendance, communities, accounts she follows or blocked (public username only), reports she filed. No internal ids (public ids / slugs / usernames), no password hash, tokens, sessions or other people's content. Each list is streamed in pages and capped at asaltamontes.export.max-rows-per-section (50000); lists that were cut are named in truncatedSections. Limited to asaltamontes.rate-limit.data-exports-per-day (2) per user.",
+        "responses": {
+          "200": { "description": "JSON document: { format, exportedAt, account, notificationPreferences, posts, comments, likes, messages, eventsOrganized, eventAttendance, communities, following, blockedUsers, reportsFiled, truncatedSections }" },
+          "401": { "description": "Not authenticated" },
+          "429": { "description": "Too many downloads; see the Retry-After header" }
+        }
+      }
+    },
     "/auth/logout": {
       "post": {
         "summary": "User logout",

@@ -55,4 +55,6 @@ public class RateLimitProperties {
     private int reportsPerDay = 20;
     /** Per user: comments written (T22a2). */
     private int postCommentsPerHour = 60;
+    /** Per user: downloads of her own data (T24d); every attempt counts. */
+    private int dataExportsPerDay = 2;
 }
