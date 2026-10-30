@@ -104,7 +104,7 @@ class PostInteractionIT extends AbstractIntegrationTest {
         pool = Executors.newFixedThreadPool(6);
         try {
             List<Future<Integer>> results = new ArrayList<>();
-            for (int i = 0; i < 12; i++) {
+            for (int i = 0; i < 60; i++) {
                 boolean liking = i % 2 == 0;
                 Callable<Integer> call = () -> (liking ? like(racer, id) : unlike(racer, id)).andReturn().getResponse().getStatus();
                 results.add(pool.submit(call));

@@ -213,6 +213,8 @@ public class PostService {
 
     // ---------------------------------------------------------------- likes (T22a2)
 
+    private static final int LIKE_RETRIES = 3;
+
     /**
      * Idempotent. Members of the community (muted ones too) like; non-members only look (403). On a profile post,
      * whoever can see it. The counter moves only when the like row was really inserted, in the same transaction.
@@ -222,11 +224,21 @@ public class PostService {
         limiter.postLike(user.getId());
         PostRow row = interactable(user, publicId);
         requireMember(row, user, false);
-        if (postRepository.insertLike(row.postId(), user.getId()) == 1) {
-            postRepository.addToLikeCount(row.postId(), 1);
-        } else if (!postRepository.isLikedBy(row.postId(), user.getId())) {
-            // Not a duplicate: the statement refused it (she was banned a moment ago, or the post was just deleted)
-            throw new NotFoundException(POST_NOT_FOUND);
+        // ON CONFLICT DO NOTHING answers 0 both for "already liked" and for "refused". Under READ COMMITTED a racing
+        // unlike can commit between the insert and the check, so "not liked now" does not mean "refused": insert again
+        // (the statement itself re-checks that the post is alive and she is not banned) before answering 404.
+        for (int attempt = 0; ; attempt++) {
+            if (postRepository.insertLike(row.postId(), user.getId()) == 1) {
+                postRepository.addToLikeCount(row.postId(), 1);
+                break;
+            }
+            if (postRepository.isLikedBy(row.postId(), user.getId())) {
+                break;
+            }
+            if (attempt >= LIKE_RETRIES) {
+                // Not a duplicate: the statement refused it (she was banned a moment ago, or the post was just deleted)
+                throw new NotFoundException(POST_NOT_FOUND);
+            }
         }
         return new LikeStateDto(true, postRepository.likeCountOf(row.postId()));
     }
