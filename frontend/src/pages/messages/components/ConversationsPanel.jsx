@@ -81,7 +81,12 @@ const ConversationsPane = ({
               </div>
 
               <div className="contact-info">
-                <span className="contact-name">{chat.name}</span>
+                <span className="contact-name">
+                  {chat.name}
+                  {chat.type === "INDIVIDUAL" && chat.username && chat.username !== chat.name && (
+                    <span className="contact-username"> @{chat.username}</span>
+                  )}
+                </span>
                 <span className="contact-preview">{chat.lastMsg}</span>
               </div>
 
@@ -89,7 +94,11 @@ const ConversationsPane = ({
                 <span className="contact-time">{formatMessageTime(chat.lastMessageAt)}</span>
               )}
 
-              {chat.unreadCount > 0 && <span className="unread-dot" role="img" aria-label="Mensajes sin leer" />}
+              {chat.unreadCount > 0 && (
+                <span className="unread-count" role="img" aria-label={`${chat.unreadCount} mensajes sin leer`}>
+                  {chat.unreadCount > 99 ? "99+" : chat.unreadCount}
+                </span>
+              )}
             </button>
           );
         })}

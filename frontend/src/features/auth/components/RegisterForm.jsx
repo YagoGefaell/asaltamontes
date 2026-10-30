@@ -48,7 +48,7 @@ export default function RegisterForm({
       />
 
       <Input
-        label="Nombre de Usuario"
+        label="Nombre de usuaria"
         type="text"
         value={username}
         onChange={(e) => setUsername(e.target.value)}

@@ -9,7 +9,7 @@ export async function getMeRequest() {
     if (error.status === 401 || error.status === 403) {
       return null
     }
-    throw new Error("Error al cargar la información del usuario")
+    throw new Error("Error al cargar la información de la usuaria")
   }
 }
 
@@ -28,7 +28,7 @@ export async function getUsersByUsername(query) {
     const pagedUsers = await apiClient.get(`/api/users/search?query=${query}`)
     return pagedUsers.content || []
   } catch (error) {
-    throw new Error(error.message || "Error buscando usuarios")
+    throw new Error(error.message || "Error buscando usuarias")
   }
 }
 
@@ -42,7 +42,7 @@ export async function getAllUsersRequest(page = 0, size = 20, query = "") {
     const result = await apiClient.get(url)
     return result // Return the full Page object
   } catch (error) {
-    throw new Error(error.message || "Error obteniendo usuarios")
+    throw new Error(error.message || "Error obteniendo usuarias")
   }
 }
 
@@ -55,7 +55,7 @@ export async function getUserByUsername(username) {
     if (error.status === 404) {
       throw new Error("Usuario no encontrado")
     }
-    throw new Error(error.message || "Error obteniendo información del usuario")
+    throw new Error(error.message || "Error obteniendo información de la usuaria")
   }
 }
 
@@ -78,7 +78,7 @@ export async function followUserRequest(username) {
     const result = await apiClient.post(`/api/users/follow/${username}`)
     return result
   } catch {
-    throw "Error al seguir al usuario"
+    throw "Error al seguir a la usuaria"
   }
 }
 
@@ -87,7 +87,7 @@ export async function unfollowUserRequest(username) {
     const result = await apiClient.delete(`/api/users/follow/${username}`)
     return result
   } catch {
-    throw "Error al dejar de seguir al usuario"
+    throw "Error al dejar de seguir a la usuaria"
   }
 }
 
@@ -114,7 +114,7 @@ export async function getFollowersRequest(username = null, page = 0, size = 20) 
     const followers = await apiClient.get(`/api/users/followers/${username}?page=${page}&size=${size}`)
     return followers
   } catch (error) {
-    throw new Error(error.message || "Error obteniendo lista de seguidores")
+    throw new Error(error.message || "Error obteniendo lista de seguidoras")
   }
 }
 

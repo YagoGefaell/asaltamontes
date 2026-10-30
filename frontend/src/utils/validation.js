@@ -19,7 +19,7 @@ export const validators = {
    * Validate username
    */
   username: (username) => {
-    if (!username) return 'El nombre de usuario es requerido'
+    if (!username) return 'El nombre de usuaria es requerido'
     if (username.length < VALIDATION.USERNAME.MIN_LENGTH || username.length > VALIDATION.USERNAME.MAX_LENGTH) {
       return `Debe tener entre ${VALIDATION.USERNAME.MIN_LENGTH} y ${VALIDATION.USERNAME.MAX_LENGTH} caracteres`
     }

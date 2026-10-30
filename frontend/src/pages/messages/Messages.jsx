@@ -51,7 +51,7 @@ const Messages = () => {
     const username = selectedConversation.displayName
       || selectedConversation.username
       || selectedConversation.name
-      || "usuario";
+      || "usuaria";
 
     return {
       id: null,
@@ -313,7 +313,7 @@ const Messages = () => {
 
     setChats((prevChats) => {
       const isGroupChat = selectedChat?.type === "GROUP";
-      const senderLabel = isGroupChat ? (currentUser?.username || "usuario") : "Tu";
+      const senderLabel = isGroupChat ? (currentUser?.username || "usuaria") : "Tu";
       const myPreview = `${senderLabel}: ${content}`;
       const sentAt = new Date().toISOString();
 

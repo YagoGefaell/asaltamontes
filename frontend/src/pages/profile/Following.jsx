@@ -13,7 +13,7 @@ function Following() {
       username={username}
       emptyMessage={username ? `@${username} no sigue a nadie aún` : `No sigues a nadie aún`}
       searchPlaceholder="Buscar en siguiendo..."
-      resultsCountMessage={(count) => `Siguiendo a ${count} usuarios`}
+      resultsCountMessage={(count) => `Siguiendo a ${count} usuarias`}
     />
   );
 }

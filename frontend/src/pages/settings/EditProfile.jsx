@@ -129,7 +129,7 @@ export default function EditProfile() {
       />
 
       <Input
-        label="Nombre de usuario"
+        label="Nombre de usuaria"
         value={form.username}
         onChange={(e) => handleChange("username", e.target.value)}
         error={usernameError}

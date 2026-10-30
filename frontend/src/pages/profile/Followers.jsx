@@ -8,11 +8,11 @@ function Followers() {
   return (
     <FollowListPage
       type="followers"
-      title="Seguidores"
+      title="Seguidoras"
       fetchFunction={getFollowersRequest}
-      emptyMessage={username ? `@${username} no tiene seguidores aún`: `No tienes seguidores aún`}
-      searchPlaceholder="Buscar en seguidores..."
-      resultsCountMessage={(count) => `${count} seguidores`}
+      emptyMessage={username ? `@${username} no tiene seguidoras aún`: `No tienes seguidoras aún`}
+      searchPlaceholder="Buscar en seguidoras..."
+      resultsCountMessage={(count) => `${count} seguidoras`}
       username={username}
     />
   );

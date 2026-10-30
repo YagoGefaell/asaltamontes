@@ -10,7 +10,7 @@ function CommunityJoinButton({
   joinLabel = "Unirse",
   memberLabel = "Miembro",
   role = null,
-  ownerLabel = "Propietario"
+  ownerLabel = "Propietaria"
 }) {
   const isMember = role !== null
   const isOwner = role === 'OWNER'
@@ -63,7 +63,7 @@ function CommunityJoinButton({
     buttonText = ownerLabel
     buttonClass += ' owner'
   } else if (role === 'MODERATOR') {
-    buttonText = 'Moderador'
+    buttonText = 'Moderadora'
     buttonClass += ' moderator'
   } else if (state === true) {
     buttonText = memberLabel
@@ -81,7 +81,7 @@ function CommunityJoinButton({
         className={buttonClass}
         onClick={handleClick}
         disabled={isDisabled}
-        aria-label={isOwner ? 'Eres propietario de esta comunidad' : `${isMember ? 'Salir de' : 'Unirse a'} la comunidad`}
+        aria-label={isOwner ? 'Eres propietaria de esta comunidad' : `${isMember ? 'Salir de' : 'Unirse a'} la comunidad`}
       >
         {buttonText}
       </button>

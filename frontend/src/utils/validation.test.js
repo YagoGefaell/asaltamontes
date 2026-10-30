@@ -11,7 +11,7 @@ describe('validators', () => {
   it('username follows the backend rules: 3-30, letters, digits, dots and underscores', () => {
     expect(validators.username('ana_trail')).toBeNull()
     expect(validators.username('ana.trail')).toBeNull()
-    expect(validators.username('')).toBe('El nombre de usuario es requerido')
+    expect(validators.username('')).toBe('El nombre de usuaria es requerido')
     expect(validators.username('an')).toBe('Debe tener entre 3 y 30 caracteres')
     expect(validators.username('a'.repeat(31))).toBe('Debe tener entre 3 y 30 caracteres')
     expect(validators.username('ana trail')).toMatch(/Solo letras/)
