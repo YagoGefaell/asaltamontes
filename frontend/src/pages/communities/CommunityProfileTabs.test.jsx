@@ -5,7 +5,7 @@ import { CommunityPostsTab, CommunityEventsTab, CommunityMembersTab } from './Co
 import { getCommunityMembersPageRequest } from '../../features/communities/services/communities.service'
 
 vi.mock('../../features/communities/services/communities.service', () => ({ getCommunityMembersPageRequest: vi.fn() }))
-vi.mock('../../features/posts/components/PostsTab', () => ({ default: ({ emptyTitle }) => <div>{emptyTitle}</div> }))
+vi.mock('../../features/posts/components/PostsTab', () => ({ default: ({ emptyTitle, topAction }) => <div>{topAction}{emptyTitle}</div> }))
 vi.mock('../../features/events/components/EventCard', () => ({
   default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
 }))

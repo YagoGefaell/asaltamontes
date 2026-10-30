@@ -36,8 +36,10 @@
   gap: var(--space-3);
 }
 
-.post-comment .avatar {
+.post-comment > a {
+  display: flex;
   flex-shrink: 0;
+  text-decoration: none;
 }
 
 .post-comment__content {

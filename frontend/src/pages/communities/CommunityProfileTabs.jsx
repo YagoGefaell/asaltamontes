@@ -42,20 +42,16 @@ export function CommunityPostsTab({ community }) {
   const fetchPage = useCallback((before) => getCommunityPostsRequest(slug, before), [slug]);
   const canPublish = isStaff(community.role);
   return (
-    <>
-      {canPublish && (
-        <div className="pf-item">
-          <Button size="small" onClick={() => navigate(`/posts/new?community=${encodeURIComponent(slug)}`)}>Publicar</Button>
-        </div>
-      )}
-      <PostsTab
-        panelId="community-panel-posts"
-        tabId="community-posts"
-        fetchPage={fetchPage}
-        emptyTitle="Todavía no hay publicaciones"
-        emptyDescription={canPublish ? "Publica la primera para tu comunidad." : undefined}
-      />
-    </>
+    <PostsTab
+      panelId="community-panel-posts"
+      tabId="community-posts"
+      fetchPage={fetchPage}
+      topAction={canPublish
+        ? <Button size="small" onClick={() => navigate(`/posts/new?community=${encodeURIComponent(slug)}`)}>Publicar</Button>
+        : undefined}
+      emptyTitle="Todavía no hay publicaciones"
+      emptyDescription={canPublish ? "Publica la primera para tu comunidad." : undefined}
+    />
   );
 }
 
