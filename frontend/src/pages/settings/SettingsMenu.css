@@ -56,18 +56,17 @@
   opacity: 0.6;
 }
 
-/* Logout item styling */
-.logout-item {
-  background: var(--error-bg);
+/* Cerrar sesión: texto rojo, sin caja ni fondo */
+.logout-button {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--error);
-  border: 1px solid var(--error);
-}
-
-.logout-item:hover {
-  background: var(--error);
-  color: var(--on-primary);
-}
-
-.logout-item .arrow {
-  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
 }
