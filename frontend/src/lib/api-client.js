@@ -9,6 +9,7 @@ class ApiClient {
     this.isRefreshing = false
     this.refreshPromise = null
     this.logoutCallback = null
+    this.emailNotVerifiedCallback = null
   }
 
   async request(endpoint, options = {}) {
@@ -133,6 +134,11 @@ class ApiClient {
     this._handleLogout()
   }
 
+  /** Called when an action is refused with 403 EMAIL_NOT_VERIFIED (T24a2), so the app can send her to verify. */
+  setEmailNotVerifiedCallback(callback) {
+    this.emailNotVerifiedCallback = callback
+  }
+
   setLogoutCallback(callback) {
     this.logoutCallback = callback
   }
@@ -211,6 +217,7 @@ class ApiClient {
     error.status = response.status
     // Machine-readable ProblemDetail code, e.g. EMAIL_NOT_VERIFIED (T24a)
     if (typeof errorCode === 'string') error.code = errorCode
+    if (errorCode === 'EMAIL_NOT_VERIFIED') this.emailNotVerifiedCallback?.()
 
     // 429 carries Retry-After in seconds (T19b); an HTTP date is not used by the backend
     const retryAfter = Number.parseInt(response.headers.get('Retry-After') ?? '', 10)

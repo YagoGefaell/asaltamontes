@@ -8,6 +8,9 @@ import Home from "../pages/home/Home.jsx";
 import Login from "../pages/access/Login.jsx";
 import Register from "../pages/access/Register.jsx";
 import VerifyEmail from "../pages/access/VerifyEmail.jsx";
+import VerifyEmailRequired from "../pages/access/VerifyEmailRequired.jsx";
+import VerifyEmailSettings from "../pages/settings/VerifyEmailSettings.jsx";
+import EmailVerificationRedirect from "./EmailVerificationRedirect.jsx";
 import Access from "../pages/access/Access.jsx";
 import Profile from "../pages/profile/Profile.jsx";
 import UserProfile from "../pages/profile/UserProfile.jsx";
@@ -36,6 +39,8 @@ import CommunitySettingsPage from "../shared/layouts/CommunitySettingsPage.jsx";
 
 export function AppRouter() {
   return (
+    <>
+    <EmailVerificationRedirect />
     <Routes>
       {/* -------------------- PÚBLICAS -------------------- */}
       <Route element={<PublicOnlyGuard />}>
@@ -74,6 +79,8 @@ export function AppRouter() {
           <Route path="events/:id" element={<EventDetail />} />
           <Route path="events/:id/edit" element={<EventEditor />} />
         </Route>
+
+        <Route path="/verify-email/required" element={<VerifyEmailRequired />} />
 
         {/* ---- Rutas de Followers/Following (sin navbar) ---- */}
         <Route path="/me/followers" element={<Followers />} />
@@ -120,6 +127,15 @@ export function AppRouter() {
         />
 
         <Route
+          path="/settings/verify-email"
+          element={
+            <SettingsPage title="Verificar email" backTo="/settings">
+              <VerifyEmailSettings />
+            </SettingsPage>
+          }
+        />
+
+        <Route
           path="/settings/notifications"
           element={
             <SettingsPage title="Notificaciones" backTo="/settings">
@@ -150,5 +166,6 @@ export function AppRouter() {
       {/* -------------------- CATCH ALL -------------------- */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 }

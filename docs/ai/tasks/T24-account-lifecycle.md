@@ -29,7 +29,7 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 | **T24c** | Borrar cuenta (confirmación con contraseña; Google: reautenticación reciente) y resolución de BUG-065/068 | T23c (destino de datos) |
 | **T24d** | Exportar datos (JSON) | T22a |
 
-| **T24a2** | Front de la verificación: banner «Verifica tu email» con «Reenviar» (cooldown, `POST /api/users/me/verification-email`), página pública `/verify-email?token=` (`POST /auth/verify-email`) y mensaje del error `403 code=EMAIL_NOT_VERIFIED`. Con `/ui-review` | T24a |
+| **T24a2** | Front de la verificación: pantalla «Verifica tu email» a la que redirige el 403, con «Reenviar» (cooldown; también en Ajustes, `POST /api/users/me/verification-email`), página pública `/verify-email?token=` (`POST /auth/verify-email`) y mensaje del error `403 code=EMAIL_NOT_VERIFIED`. Con `/ui-review` | T24a |
 
 ### Como quedó T24a (2026-10-30)
 - `infrastructure/mail`: `MailSender` (interfaz), `SmtpMailSender` (asíncrono, activo con `MAIL_HOST`), `LoggingMailSender` (por defecto). Variables `MAIL_HOST/PORT/USER/PASSWORD/FROM`, `MAIL_STARTTLS`, `MAIL_SSL`, `APP_BASE_URL`, `VERIFICATION_ENFORCE`; README: alta de Resend.
@@ -40,7 +40,8 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 - Deuda registrada: BUG-083 (pre-registro con el email ajeno).
 
 ### Como quedó T24a2 (2026-10-30)
-- `VerifyEmailBanner` (en `MainLayout`, solo si `currentUser.isVerified === false`): «Reenviar» con cooldown de 60 s, 429 y errores en línea; un 409 la marca como verificada.
+- Sin aviso permanente (Yago, revisión de #160): cuando una acción devuelve `403 EMAIL_NOT_VERIFIED`, `EmailVerificationRedirect` (callback de `api-client`) lleva a `/verify-email/required` (autenticada) con la explicación y «Reenviar» (`VerifyEmailPanel`: cooldown de 60 s, 429 y errores en línea; un 409 la marca como verificada); «Volver» regresa a donde estaba. Las pantallas no se bloquean por adelantado porque el front no sabe si `VERIFICATION_ENFORCE` está activo.
+- Ajustes → «Verificar email» (`/settings/verify-email`): estado verificado/no verificado y «Reenviar».
 - `/verify-email?token=` (pública, `pages/access/VerifyEmail.jsx`): consume el token una sola vez (también bajo StrictMode); éxito → «Continuar»; 400/sin token → error en línea.
 - `api-client` expone `error.code` (ProblemDetail); `PostCreate` muestra «Verifica tu email…» ante `EMAIL_NOT_VERIFIED` (antes decía «Solo la propietaria…»). El resto de pantallas ya muestran `error.message`.
 - Deuda registrada: BUG-085 (`FormError` pinta en turquesa).

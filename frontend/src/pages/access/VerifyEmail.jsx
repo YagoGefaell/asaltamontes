@@ -6,7 +6,7 @@ import Button from "../../shared/forms/Button";
 import FormError from "../../shared/forms/FormError";
 import "./VerifyEmail.css";
 
-const INVALID_LINK = "El enlace no es válido o ha caducado. Pide uno nuevo desde el aviso «Verifica tu email».";
+const INVALID_LINK = "El enlace no es válido o ha caducado. Pide uno nuevo en Ajustes, en «Verificar email».";
 
 /** Destination of the emailed link (T24a2): public, consumes the one-time token by POST. */
 export default function VerifyEmail() {

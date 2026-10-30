@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth.js";
 import { resendVerificationEmailRequest } from "../services/auth.service.js";
 import Button from "../../../shared/forms/Button";
-import "./VerifyEmailBanner.css";
+import FormError from "../../../shared/forms/FormError";
+import "./VerifyEmailPanel.css";
 
 const COOLDOWN_SECONDS = 60;
 
@@ -15,8 +16,11 @@ function resendError(error) {
   return "No se ha podido enviar el enlace. Inténtalo de nuevo.";
 }
 
-/** Reminder shown while the email is unverified (T24a2), with «Reenviar» and a cooldown. Errors stay inline. */
-export default function VerifyEmailBanner() {
+/**
+ * Email verification status and «Reenviar» (T24a2), shared by the «Verifica tu email» screen and Ajustes.
+ * Cooldown and errors stay inline.
+ */
+export default function VerifyEmailPanel() {
   const { currentUser, setCurrentUser } = useAuth();
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
@@ -29,8 +33,13 @@ export default function VerifyEmailBanner() {
     return () => clearTimeout(timer);
   }, [cooldown]);
 
-  // Only when the server says so: a missing field (profile still loading) is not "unverified"
-  if (!currentUser || currentUser.isVerified !== false) return null;
+  if (!currentUser) return null;
+
+  if (currentUser.isVerified !== false) {
+    return (
+      <p className="verify-panel__verified">Tu email {currentUser.email} está verificado.</p>
+    );
+  }
 
   const resend = async () => {
     setSending(true);
@@ -54,24 +63,16 @@ export default function VerifyEmailBanner() {
   };
 
   return (
-    <section className="verify-banner" aria-label="Verifica tu email">
-      <div className="verify-banner__text">
-        <strong>Verifica tu email</strong>
-        <span>
-          {sent ? `Te hemos enviado el enlace a ${currentUser.email}.` : "Abre el enlace que te enviamos al registrarte."}
-        </span>
-        {error && <span className="verify-banner__error" role="alert">{error}</span>}
-      </div>
-      <Button
-        variant="outline"
-        size="small"
-        className="verify-banner__action"
-        onClick={resend}
-        loading={sending}
-        disabled={cooldown > 0}
-      >
-        {cooldown > 0 ? `Reenviar (${cooldown} s)` : "Reenviar"}
+    <div className="verify-panel">
+      <p className="verify-panel__text">
+        {sent
+          ? `Te hemos enviado el enlace a ${currentUser.email}. Ábrelo para verificarlo.`
+          : `Tu email ${currentUser.email} aún no está verificado. Abre el enlace que te enviamos al registrarte.`}
+      </p>
+      <FormError message={error} />
+      <Button onClick={resend} loading={sending} disabled={cooldown > 0}>
+        {cooldown > 0 ? `Reenviar (${cooldown} s)` : "Reenviar enlace"}
       </Button>
-    </section>
+    </div>
   );
 }

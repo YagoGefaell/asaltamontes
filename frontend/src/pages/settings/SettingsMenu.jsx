@@ -28,6 +28,7 @@ export default function SettingsMenu() {
         { label: "Notificaciones", path: "/settings/notifications" },
         { label: "Ajustes de privacidad", path: "/settings/privacy" },
         { label: "Seguridad", path: "/settings/security" },
+        { label: "Verificar email", path: "/settings/verify-email" },
       ],
     },
   ];
