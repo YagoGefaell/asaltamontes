@@ -474,7 +474,8 @@ public class EventService {
         }
     }
 
-    private Event findVisible(UUID eventPublicId, UserAccount user) {
+    /** The event if the user may see it; else the 404 of a missing one. */
+    public Event findVisible(UUID eventPublicId, UserAccount user) {
         Event event = eventRepository.findByPublicId(eventPublicId)
                 .orElseThrow(() -> new NotFoundException("Evento no encontrado"));
         if (!canView(event, user)) {

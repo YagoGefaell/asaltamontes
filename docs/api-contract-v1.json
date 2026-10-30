@@ -2326,6 +2326,32 @@
         }
       }
     },
+    "/api/reports": {
+      "post": {
+        "summary": "Report a user, message, post, comment, event or community (T23b)",
+        "description": "target is the username for USER, the slug for COMMUNITY and the public id (uuid) for MESSAGE, POST, COMMENT and EVENT. The reporter must be able to see the target: anything she cannot see is the same 404 as one that does not exist. Reporting your own content or account is a 400; MESSAGE is only reportable by a participant who can read it. reason OTHER requires details. A MESSAGE, POST or COMMENT is copied into the report at that moment (the original may be deleted). One open report per (reporter, target): a second one is a 409 (a new one is possible once the first is handled). The reported account is never told and the answer says nothing about it. Limit per user: asaltamontes.rate-limit.reports-per-day (20); every attempt counts. Requires a verified email when verification is enforced (T24a).",
+        "tags": ["Reports"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["targetType", "target", "reason"], "properties": {
+          "targetType": { "type": "string", "enum": ["USER", "MESSAGE", "POST", "COMMENT", "EVENT", "COMMUNITY"] },
+          "target": { "type": "string", "maxLength": 100 },
+          "reason": { "type": "string", "enum": ["SPAM", "HARASSMENT", "HATE", "INAPPROPRIATE", "DANGEROUS", "FAKE_ACCOUNT", "OTHER"] },
+          "details": { "type": "string", "maxLength": 1000, "nullable": true } } } } } },
+        "responses": {
+          "201": { "description": "Report filed", "content": { "application/json": { "schema": { "type": "object", "properties": {
+            "id": { "type": "string", "format": "uuid" },
+            "targetType": { "type": "string" },
+            "reason": { "type": "string" },
+            "status": { "type": "string", "enum": ["OPEN", "DISMISSED", "ACTIONED"] },
+            "createdAt": { "type": "string", "format": "date-time" } } } } } },
+          "400": { "description": "Invalid body, OTHER without details, system message, or reporting herself" },
+          "403": { "description": "Email not verified (when enforced)" },
+          "404": { "description": "The target does not exist or she cannot see it" },
+          "409": { "description": "She already has an open report on this target" },
+          "429": { "description": "Too many reports today. Retry-After in seconds" }
+        }
+      }
+    },
     "/api/posts/{postId}/comments": {
       "get": {
         "summary": "Comments of a post, oldest first (T22a2)",

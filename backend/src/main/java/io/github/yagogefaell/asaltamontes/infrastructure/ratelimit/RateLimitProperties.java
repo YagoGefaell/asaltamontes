@@ -51,6 +51,8 @@ public class RateLimitProperties {
     /** Per destination address: account emails (verification, reset, change) we are willing to send, so we cannot be used to flood someone (BUG-084). */
     private int emailsPerAddressPerHour = 3;
     private int emailsPerAddressPerDay = 6;
+    /** Per user: reports filed (T23b). */
+    private int reportsPerDay = 20;
     /** Per user: comments written (T22a2). */
     private int postCommentsPerHour = 60;
 }

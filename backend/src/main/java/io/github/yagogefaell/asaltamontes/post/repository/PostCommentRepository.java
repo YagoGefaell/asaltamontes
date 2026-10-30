@@ -17,6 +17,10 @@ public interface PostCommentRepository extends JpaRepository<PostComment, Long> 
     @Query("SELECT c FROM PostComment c WHERE c.publicId = :publicId AND c.postId = :postId AND c.deletedAt IS NULL")
     Optional<PostComment> findLive(@Param("publicId") UUID publicId, @Param("postId") Long postId);
 
+    /** A live comment by its public id (reports, T23b). */
+    @Query("SELECT c FROM PostComment c WHERE c.publicId = :publicId AND c.deletedAt IS NULL")
+    Optional<PostComment> findLiveByPublicId(@Param("publicId") UUID publicId);
+
     /** Only the request that flips the row gets 1, so the counter goes down once however many requests race. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE PostComment c SET c.deletedAt = :now WHERE c.id = :id AND c.deletedAt IS NULL")

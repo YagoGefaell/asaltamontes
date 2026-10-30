@@ -59,6 +59,10 @@ public class UserActionLimiter {
         check("post-comment", userId, properties.getPostCommentsPerHour(), HOUR);
     }
 
+    public void reportCreate(Long userId) {
+        check("report-create", userId, properties.getReportsPerDay(), DAY);
+    }
+
     /** Verification emails: one per minute (cooldown of the "Resend" button) and a cap per hour. */
     public void verificationEmail(Long userId) {
         check("verification-email-cooldown", userId, 1, MINUTE);
