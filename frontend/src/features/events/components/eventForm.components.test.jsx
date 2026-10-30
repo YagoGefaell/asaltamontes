@@ -7,8 +7,9 @@ import { locateCity, searchPlaces } from '../services/places.service.js'
 
 // Leaflet needs a real browser layout: the picker is replaced by a stub that "taps" a point
 vi.mock('./LocationPicker.jsx', () => ({
-  default: ({ onChange, focus }) => (
+  default: ({ onChange, focus, center }) => (
     <>
+      {center && <span>{`mapa abre en ${center[0]}, ${center[1]}`}</span>}
       <button type="button" onClick={() => onChange(40.5, -3.7)}>mapa</button>
       {focus && <span>{`mapa centrado en ${focus.latitude}, ${focus.longitude}`}</span>}
     </>
@@ -187,6 +188,24 @@ describe('EventForm', () => {
     expect(screen.queryByLabelText('Comunidad')).not.toBeInTheDocument()
     expect(screen.getByText(/no se pueden cambiar/)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeInTheDocument()
+  })
+
+  it('puts the community right after the title', async () => {
+    await renderForm({ communities: [{ id: 4, name: 'Trail Madrid' }] })
+    const community = screen.getByLabelText('Comunidad')
+    expect(screen.getByLabelText('Título').compareDocumentPosition(community) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(community.compareDocumentPosition(screen.getByLabelText('Tipo')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('opens the map on the city of her profile', async () => {
+    session.currentUser.city = 'Vigo'
+    locateCity.mockResolvedValue({ latitude: 42.23, longitude: -8.72 })
+    try {
+      await renderForm()
+      expect(await screen.findByText('mapa abre en 42.23, -8.72')).toBeInTheDocument()
+    } finally {
+      session.currentUser.city = ''
+    }
   })
 
   it('shows the field errors that come from the API', async () => {

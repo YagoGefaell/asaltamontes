@@ -19,6 +19,17 @@ function FollowFocus({ focus }) {
   return null
 }
 
+// Opens on the city of her profile once it is known, while there is no point yet
+function FollowCenter({ center, zoom }) {
+  const map = useMap()
+  const lat = center?.[0]
+  const lng = center?.[1]
+  useEffect(() => {
+    if (lat != null) map.setView([lat, lng], zoom)
+  }, [lat, lng, zoom, map])
+  return null
+}
+
 // Tells the form which area she is looking at, to rank the place suggestions near it
 function ReportView({ onViewChange }) {
   useMapEvents({
@@ -35,22 +46,23 @@ const FOCUS_ZOOM = 16
 
 /**
  * Map where she picks the meeting point: tap to place the marker, drag it to adjust.
- * `onChange(latitude, longitude)`. `focus` centres the map on a place picked elsewhere;
+ * `onChange(latitude, longitude)`. `focus` centres the map on a place picked elsewhere; `center` ([lat, lng]) is where it opens while there is no point;
  * `onViewChange({ latitude, longitude, zoom })` reports where she has moved it. Lazy-loaded with Leaflet.
  */
-export default function LocationPicker({ latitude, longitude, onChange, focus = null, onViewChange }) {
+export default function LocationPicker({ latitude, longitude, onChange, focus = null, center = null, centerZoom = 12, onViewChange }) {
   const hasPoint = latitude != null && longitude != null
   const set = (lat, lng) => onChange(roundCoordinate(lat), roundCoordinate(lng))
   return (
     <MapContainer
-      center={hasPoint ? [latitude, longitude] : DEFAULT_CENTER}
-      zoom={hasPoint ? 14 : DEFAULT_ZOOM}
+      center={hasPoint ? [latitude, longitude] : center ?? DEFAULT_CENTER}
+      zoom={hasPoint ? 14 : center ? centerZoom : DEFAULT_ZOOM}
       scrollWheelZoom={false}
       className="event-map event-map--picker"
     >
       <TileLayer attribution={OSM_ATTRIBUTION} url={OSM_TILES} />
       <ClickToPlace onChange={set} />
       <FollowFocus focus={focus} />
+      {!hasPoint && <FollowCenter center={center} zoom={centerZoom} />}
       {onViewChange && <ReportView onViewChange={onViewChange} />}
       {hasPoint && (
         <Marker
