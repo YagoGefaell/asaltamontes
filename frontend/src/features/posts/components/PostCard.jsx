@@ -4,6 +4,7 @@ import { FaEllipsisH, FaHeart, FaRegComment, FaRegHeart } from "react-icons/fa";
 import Avatar from "../../../shared/ui/Avatar";
 import BottomSheet from "../../../shared/ui/BottomSheet";
 import ConfirmSheet from "../../../shared/ui/ConfirmSheet";
+import PostComments from "./PostComments";
 import { communityPath } from "../../communities/utils/communityPath";
 import { deletePostRequest, likePostRequest, unlikePostRequest } from "../services/posts.service";
 import { formatAge } from "../../notifications/utils/notificationText";
@@ -11,9 +12,11 @@ import "./PostCard.css";
 
 /**
  * Publication (T22b): author and community, text, photos, like and comments. «Eliminar» only when
- * the API says `canDelete`. In the list, the comment button opens the post; in `detail` it is only a counter.
+ * the API says `canDelete`. The comment button opens the comments in a bottom sheet (`openComments`: already open).
  */
-export default function PostCard({ post, detail = false, onDeleted }) {
+export default function PostCard({ post, openComments = false, onDeleted }) {
+  const [commentCount, setCommentCount] = useState(post.commentCount);
+  const [commentsOpen, setCommentsOpen] = useState(openComments);
   const [likedByMe, setLikedByMe] = useState(post.likedByMe);
   const [likeCount, setLikeCount] = useState(post.likeCount);
   const [likeError, setLikeError] = useState("");
@@ -56,13 +59,7 @@ export default function PostCard({ post, detail = false, onDeleted }) {
     }
   };
 
-  const commentLabel = `${post.commentCount} ${post.commentCount === 1 ? "comentario" : "comentarios"}`;
-  const commentContent = (
-    <>
-      <FaRegComment aria-hidden="true" />
-      <span>{post.commentCount}</span>
-    </>
-  );
+  const commentLabel = `${commentCount} ${commentCount === 1 ? "comentario" : "comentarios"}`;
 
   return (
     <article className="post-card" aria-label={`Publicación de ${name}`}>
@@ -110,14 +107,19 @@ export default function PostCard({ post, detail = false, onDeleted }) {
           {likedByMe ? <FaHeart aria-hidden="true" /> : <FaRegHeart aria-hidden="true" />}
           <span>{likeCount}</span>
         </button>
-        {detail ? (
-          <span className="post-card__action post-card__action--static" aria-label={commentLabel}>{commentContent}</span>
-        ) : (
-          <Link to={`/posts/${post.id}`} className="post-card__action" aria-label={commentLabel}>{commentContent}</Link>
-        )}
+        <button type="button" className="post-card__action" onClick={() => setCommentsOpen(true)} aria-label={commentLabel} aria-haspopup="dialog">
+          <FaRegComment aria-hidden="true" />
+          <span>{commentCount}</span>
+        </button>
         {likeError && <span className="post-card__error" role="alert">{likeError}</span>}
       </footer>
 
+      <BottomSheet open={commentsOpen} title="Comentarios" onClose={() => setCommentsOpen(false)}>
+        <PostComments
+          postId={post.id}
+          onCountChange={(delta) => setCommentCount((count) => Math.max(0, count + delta))}
+        />
+      </BottomSheet>
       <BottomSheet open={menuOpen} title="Publicación" onClose={() => setMenuOpen(false)}>
         <button
           type="button"

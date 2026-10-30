@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import PostCard from './PostCard.jsx'
 import { deletePostRequest, likePostRequest, unlikePostRequest } from '../services/posts.service'
 
+vi.mock('./PostComments', () => ({ default: ({ postId }) => <div>comentarios de {postId}</div> }))
 vi.mock('../services/posts.service', () => ({
   likePostRequest: vi.fn(),
   unlikePostRequest: vi.fn(),
@@ -34,7 +35,19 @@ describe('PostCard', () => {
     expect(screen.getByRole('link', { name: 'Cabras' })).toHaveAttribute('href', '/communities/cabras')
     expect(screen.getByText('Salida larga por el Moncayo')).toBeInTheDocument()
     expect(document.querySelector('.post-card__media img')).toHaveAttribute('src', 'l1')
-    expect(screen.getByRole('link', { name: '3 comentarios' })).toHaveAttribute('href', '/posts/p1')
+    expect(screen.getByRole('button', { name: '3 comentarios' })).toBeInTheDocument()
+  })
+
+  it('opens the comments in a bottom sheet from the comment button', () => {
+    renderCard()
+    expect(screen.queryByText('comentarios de p1')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '3 comentarios' }))
+    expect(screen.getByRole('dialog')).toHaveTextContent('comentarios de p1')
+  })
+
+  it('starts with the comments open when asked (notification link)', () => {
+    renderCard({}, { openComments: true })
+    expect(screen.getByText('comentarios de p1')).toBeInTheDocument()
   })
 
   it('likes with the state the server answers and undoes it', async () => {

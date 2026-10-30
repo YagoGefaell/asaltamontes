@@ -43,11 +43,12 @@ describe('PostCreate', () => {
     expect(createPostRequest).toHaveBeenCalledWith({ communitySlug: null, body: 'Hola montaña', mediaIds: [] })
   })
 
-  it('preselects the community from the link and only lists those she moderates', async () => {
+  it('publishes in a community chosen in the form, listing only those she moderates', async () => {
     createPostRequest.mockResolvedValue({ id: 'p9' })
-    renderAt('/posts/new?community=cabras')
+    renderAt('/posts/new')
     await screen.findByRole('option', { name: 'Cabras' })
-    expect(screen.getByLabelText('Publicar en')).toHaveValue('cabras')
+    expect(screen.getByLabelText('Publicar en')).toHaveValue('')
+    fireEvent.change(screen.getByLabelText('Publicar en'), { target: { value: 'cabras' } })
     fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'Quedada del sábado' } })
     fireEvent.click(screen.getByRole('button', { name: 'Publicar' }))
     await waitFor(() => expect(createPostRequest).toHaveBeenCalledWith({ communitySlug: 'cabras', body: 'Quedada del sábado', mediaIds: [] }))

@@ -34,7 +34,6 @@ function ErrorBox({ message, onRetry }) {
 
 /** "Publicaciones" tab (T22b), first of the profile: hers or another user's, as a list of full publications. */
 export function ProfilePosts({ username, isOwn = false }) {
-  const navigate = useNavigate();
   const fetchPage = useCallback((before) => getUserPostsRequest(username, before), [username]);
   return (
     <PostsTab
@@ -42,8 +41,7 @@ export function ProfilePosts({ username, isOwn = false }) {
       tabId="profile-posts"
       fetchPage={fetchPage}
       emptyTitle={isOwn ? "Aún no has publicado nada" : "Aún no hay publicaciones"}
-      emptyDescription={isOwn ? "Comparte tus rutas y entrenos con quien te sigue." : "Cuando publique algo, aparecerá aquí."}
-      emptyAction={isOwn ? <Button variant="primary" onClick={() => navigate("/posts/new")}>Publicar</Button> : undefined}
+      emptyDescription={isOwn ? "Lo que publiques desde Inicio aparecerá aquí." : "Cuando publique algo, aparecerá aquí."}
     />
   );
 }

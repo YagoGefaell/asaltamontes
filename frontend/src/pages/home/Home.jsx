@@ -1,7 +1,7 @@
 import "./Home.css";
 import { useContext } from "react";
 import { Link } from "react-router-dom";
-import { FaBell, FaComment, FaPen } from "react-icons/fa";
+import { FaBell, FaComment, FaPen, FaPlus } from "react-icons/fa";
 import PageHeader from "../../shared/ui/PageHeader";
 import EmptyState from "../../shared/ui/EmptyState";
 import Avatar from "../../shared/ui/Avatar";
@@ -108,6 +108,9 @@ const Home = () => {
         title={<img className="home-header__logo" src={logo} alt="Asaltamontes Female" />}
         actions={
           <>
+            <HeaderLink to="/posts/new" label="Nueva publicación" count={0}>
+              <FaPlus aria-hidden="true" />
+            </HeaderLink>
             <HeaderLink to="/notifications" label="Notificaciones" count={unreadNotifications}>
               <FaBell aria-hidden="true" />
             </HeaderLink>

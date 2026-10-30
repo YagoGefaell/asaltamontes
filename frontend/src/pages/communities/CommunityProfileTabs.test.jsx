@@ -5,7 +5,7 @@ import { CommunityPostsTab, CommunityEventsTab, CommunityMembersTab } from './Co
 import { getCommunityMembersPageRequest } from '../../features/communities/services/communities.service'
 
 vi.mock('../../features/communities/services/communities.service', () => ({ getCommunityMembersPageRequest: vi.fn() }))
-vi.mock('../../features/posts/components/PostsTab', () => ({ default: ({ emptyTitle, topAction }) => <div>{topAction}{emptyTitle}</div> }))
+vi.mock('../../features/posts/components/PostsTab', () => ({ default: ({ emptyTitle }) => <div>{emptyTitle}</div> }))
 vi.mock('../../features/events/components/EventCard', () => ({
   default: ({ event }) => <div data-testid="event-card">{event.title}</div>,
 }))
@@ -22,13 +22,10 @@ const section = (over = {}) => ({
 beforeEach(() => vi.clearAllMocks())
 
 describe('CommunityPostsTab', () => {
-  it('shows «Publicar» only to the owner and the moderators (D-025)', () => {
-    const { unmount } = renderIn(<CommunityPostsTab community={{ ...community, role: 'MODERATOR' }} />)
-    expect(screen.getByRole('button', { name: 'Publicar' })).toBeInTheDocument()
-    unmount()
-    renderIn(<CommunityPostsTab community={community} />)
-    expect(screen.queryByRole('button', { name: 'Publicar' })).toBeNull()
+  it('shows the posts tab with no publish button inside the community (creating is from Inicio)', () => {
+    renderIn(<CommunityPostsTab community={{ ...community, role: 'OWNER' }} />)
     expect(screen.getByText('Todavía no hay publicaciones')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Publicar' })).toBeNull()
   })
 })
 

@@ -1,6 +1,6 @@
 import "./Profile.css";
 import { useState, useEffect } from "react";
-import { FaCog, FaPlus, FaEllipsisH, FaCheckCircle, FaMapMarkerAlt } from "react-icons/fa";
+import { FaCog, FaEllipsisH, FaCheckCircle, FaMapMarkerAlt } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useUserProfile } from "../../features/users/hooks/useUserProfile";
@@ -146,14 +146,9 @@ function Profile({
         onBack={isOwnProfile ? undefined : onBack}
         actions={
           isOwnProfile ? (
-            <>
-              <button type="button" onClick={() => navigate("/posts/new")} aria-label="Nueva publicación">
-                <FaPlus aria-hidden="true" />
-              </button>
-              <button type="button" onClick={() => navigate("/settings")} aria-label="Ir a ajustes">
-                <FaCog aria-hidden="true" />
-              </button>
-            </>
+            <button type="button" onClick={() => navigate("/settings")} aria-label="Ir a ajustes">
+              <FaCog aria-hidden="true" />
+            </button>
           ) : (
             <button type="button" onClick={() => setMenuOpen(true)} aria-label="Más opciones" aria-haspopup="dialog">
               <FaEllipsisH aria-hidden="true" />

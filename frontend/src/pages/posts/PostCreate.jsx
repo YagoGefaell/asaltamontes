@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Button from "../../shared/forms/Button";
 import FormError from "../../shared/forms/FormError";
 import Input from "../../shared/forms/Input";
@@ -23,9 +23,8 @@ function submitError(error) {
 /** Create a publication (T22b) on its own screen: where (her profile or a community she moderates), text and up to 4 photos. */
 export default function PostCreate() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [communities, setCommunities] = useState([]);
-  const [destination, setDestination] = useState(searchParams.get("community") ?? PROFILE);
+  const [destination, setDestination] = useState(PROFILE);
   const [body, setBody] = useState("");
   const [photos, setPhotos] = useState([]);
   const [uploading, setUploading] = useState(false);

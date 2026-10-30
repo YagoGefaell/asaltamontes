@@ -1,5 +1,5 @@
 .post-comments {
-  padding: var(--space-3) var(--space-4) var(--space-8);
+  padding: 0 0 var(--space-2);
 }
 
 .post-comments__list {

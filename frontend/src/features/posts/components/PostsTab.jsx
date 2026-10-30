@@ -9,12 +9,11 @@ import PostCard from "./PostCard";
  * «Publicaciones» tab of a profile or a community (T22b): the full publications as a list, with «Cargar más».
  * `fetchPage(before)` -> { items, nextBefore } must be stable (useCallback) or the list reloads on every render.
  */
-export default function PostsTab({ panelId, tabId, fetchPage, emptyTitle, emptyDescription, emptyAction, topAction }) {
+export default function PostsTab({ panelId, tabId, fetchPage, emptyTitle, emptyDescription, emptyAction }) {
   const { items, loading, loadingMore, error, hasMore, loadMore, reload, removeItem } = useCursorList(fetchPage);
 
   return (
     <div className="pf-panel" role="tabpanel" id={panelId} aria-labelledby={tabId} aria-busy={loading || undefined}>
-      {topAction && <div className="pf-item">{topAction}</div>}
       {loading && (
         <div className="pf-skeletons" data-testid="posts-skeleton">
           <Skeleton height="220px" />

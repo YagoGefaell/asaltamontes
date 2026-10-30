@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import Button from "../../shared/forms/Button";
 import PageHeader from "../../shared/ui/PageHeader";
 import Skeleton from "../../shared/ui/Skeleton";
 import PostCard from "../../features/posts/components/PostCard";
-import PostComments from "../../features/posts/components/PostComments";
 import { getPostRequest } from "../../features/posts/services/posts.service";
 import "./PostDetail.css";
 
-/** One publication with its comments (T22b). Reached after publishing, from the comment button and from the notification. */
+/** One publication (T22b). Reached after publishing and from the POST_COMMENT notification, which opens the comments. */
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,11 +31,6 @@ export default function PostDetail() {
 
   useEffect(() => { load(); }, [load]);
 
-  // The card keeps its own like state; the counter of comments lives here
-  const changeCommentCount = useCallback((delta) => {
-    setPost((prev) => (prev ? { ...prev, commentCount: Math.max(0, prev.commentCount + delta) } : prev));
-  }, []);
-
   const notFound = error?.status === 404 || error?.status === 400;
 
   return (
@@ -49,10 +44,7 @@ export default function PostDetail() {
         </div>
       )}
       {!loading && post && (
-        <>
-          <PostCard post={post} detail onDeleted={() => navigate(-1)} />
-          <PostComments postId={post.id} onCountChange={changeCommentCount} />
-        </>
+        <PostCard post={post} openComments={searchParams.get("comments") === "1"} onDeleted={() => navigate(-1)} />
       )}
     </div>
   );

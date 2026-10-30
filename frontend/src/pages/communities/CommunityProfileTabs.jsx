@@ -35,22 +35,16 @@ function ErrorBox({ message, onRetry }) {
   );
 }
 
-/** "Publicaciones" tab (T22b), first of the community. Only owner and moderators publish (D-025). */
+/** "Publicaciones" tab (T22b), first of the community. Owner and moderators publish from the create screen (D-025). */
 export function CommunityPostsTab({ community }) {
-  const navigate = useNavigate();
   const slug = community.slug || community.name;
   const fetchPage = useCallback((before) => getCommunityPostsRequest(slug, before), [slug]);
-  const canPublish = isStaff(community.role);
   return (
     <PostsTab
       panelId="community-panel-posts"
       tabId="community-posts"
       fetchPage={fetchPage}
-      topAction={canPublish
-        ? <Button size="small" onClick={() => navigate(`/posts/new?community=${encodeURIComponent(slug)}`)}>Publicar</Button>
-        : undefined}
       emptyTitle="Todavía no hay publicaciones"
-      emptyDescription={canPublish ? "Publica la primera para tu comunidad." : undefined}
     />
   );
 }

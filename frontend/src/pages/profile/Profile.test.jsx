@@ -55,8 +55,7 @@ describe('Profile (own)', () => {
     expect(navigate).toHaveBeenCalledWith('/me/followers')
     fireEvent.click(screen.getByRole('button', { name: 'Editar perfil' }))
     expect(navigate).toHaveBeenCalledWith('/settings/profile')
-    fireEvent.click(screen.getByRole('button', { name: 'Nueva publicación' }))
-    expect(navigate).toHaveBeenCalledWith('/posts/new')
+    expect(screen.queryByRole('button', { name: 'Nueva publicación' })).toBeNull()
   })
 
   it('hides the bio line when she has none', () => {

@@ -132,10 +132,6 @@
   color: var(--error);
 }
 
-.post-card__action--static {
-  cursor: default;
-}
-
 .post-card__error {
   font-size: var(--text-xs);
   color: var(--error-text);

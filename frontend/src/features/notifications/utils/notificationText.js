@@ -98,7 +98,7 @@ export function notificationDestination(notification) {
       if (notification.type === 'COMMUNITY_JOIN_REQUEST') return { to: `/communities/${ref}/settings/requests` }
       return { to: `/communities/${ref}` }
     case 'POST':
-      return { to: `/posts/${ref}` }
+      return { to: `/posts/${ref}?comments=1` }
     case 'USER':
       return { to: `/users/${ref}` }
     case 'CONVERSATION':
