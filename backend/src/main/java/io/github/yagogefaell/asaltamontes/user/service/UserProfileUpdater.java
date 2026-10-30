@@ -43,10 +43,7 @@ public class UserProfileUpdater {
         Optional.ofNullable(dto.dmPolicy())
                 .ifPresent(profile::setDmPolicy);
 
-        // EMAIL (si decides permitirlo)
-        Optional.ofNullable(dto.email())
-                .map(String::trim)
-                .ifPresent(user::setEmail);
+        // The email is NOT changed here: it needs the password and the confirmation of the new address (T24b, BUG-042)
 
         // RUNNING LEVEL (si lo añades al DTO en el futuro)
         //Optional.ofNullable(dto.runningLevel())

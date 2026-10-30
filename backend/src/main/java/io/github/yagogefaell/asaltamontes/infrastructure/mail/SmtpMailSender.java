@@ -35,7 +35,7 @@ public class SmtpMailSender implements MailSender {
             helper.setText(email.textBody(), email.htmlBody());
             javaMailSender.send(message);
         } catch (Exception e) {
-            log.warn("Could not send an email to {}: {}", email.to(), e.toString());
+            log.warn("Could not send an email (subject \"{}\"): {}", email.subject(), e.getClass().getSimpleName());
         }
     }
 }

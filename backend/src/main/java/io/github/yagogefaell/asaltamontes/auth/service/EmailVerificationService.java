@@ -36,11 +36,14 @@ public class EmailVerificationService {
             if (Boolean.TRUE.equals(user.getIsVerified())) {
                 return;
             }
+            if (!limiter.mayEmail(user.getEmail())) {
+                return;
+            }
             String token = tokens.issue(user, AccountTokenPurpose.VERIFY_EMAIL, properties.getTokenTtl());
             String link = baseUrl() + "/verify-email?token=" + token;
             mailSender.send(AccountEmails.verifyEmail(user.getEmail(), link, properties.getTokenTtl().toHours()));
         } catch (RuntimeException e) {
-            log.warn("Could not prepare the verification email for user {}: {}", user.getId(), e.toString());
+            log.warn("Could not prepare the verification email for user {}: {}", user.getId(), e.getClass().getSimpleName());
         }
     }
 

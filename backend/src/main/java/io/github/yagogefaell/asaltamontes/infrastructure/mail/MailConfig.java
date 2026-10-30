@@ -38,7 +38,7 @@ public class MailConfig {
     public MailSender mailSender(MailProperties properties) {
         if (!properties.isConfigured()) {
             log.warn("MAIL_HOST is empty: emails will be written to the log instead of being sent");
-            return new LoggingMailSender();
+            return new LoggingMailSender(properties.isLogBody());
         }
         boolean auth = !properties.getUsername().isBlank();
         JavaMailSenderImpl sender = new JavaMailSenderImpl();

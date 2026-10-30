@@ -42,6 +42,15 @@ public class RateLimitProperties {
     private int verifyEmailPerMinute = 10;
     /** Per user: verification emails requested with "Resend" (T24a). */
     private int verificationEmailsPerHour = 5;
+    /** Per IP: POST /auth/forgot-password and /auth/reset-password (T24b). */
+    private int passwordResetPerMinute = 5;
+    /** Per email address asked for in "forgot my password", whether or not it exists (T24b). */
+    private int passwordResetRequestsPerHour = 3;
+    /** Per user: email-change requests, each one checking the password (T24b). */
+    private int emailChangeRequestsPerHour = 5;
+    /** Per destination address: account emails (verification, reset, change) we are willing to send, so we cannot be used to flood someone (BUG-084). */
+    private int emailsPerAddressPerHour = 3;
+    private int emailsPerAddressPerDay = 6;
     /** Per user: reports filed (T23b). */
     private int reportsPerDay = 20;
     /** Per user: comments written (T22a2). */
