@@ -15,7 +15,9 @@ import io.github.yagogefaell.asaltamontes.auth.dto.GoogleLoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.LoginRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.RegisterRequest;
 import io.github.yagogefaell.asaltamontes.auth.dto.TokenPairs;
+import io.github.yagogefaell.asaltamontes.auth.dto.VerifyEmailRequest;
 import io.github.yagogefaell.asaltamontes.auth.service.AuthService;
+import io.github.yagogefaell.asaltamontes.auth.service.EmailVerificationService;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieProperties;
 import io.github.yagogefaell.asaltamontes.common.cookies.CookieUtil;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
@@ -29,6 +31,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final CookieProperties cookieProperties;
+    private final EmailVerificationService verificationService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
@@ -61,10 +64,18 @@ public class AuthController {
         UserAccount user = authService.register(request);
 
         TokenPairs tokens = authService.generateTokens(user);
+        verificationService.sendVerificationEmail(user);
 
         return ResponseEntity.status(HttpStatus.CREATED)
             .header(HttpHeaders.SET_COOKIE, CookieUtil.refreshToken(tokens.refreshToken(), cookieProperties).toString())
             .body(Map.of("accessToken", tokens.accessToken()));
+    }
+
+    /** The link of the verification email. Public: the token is the proof, and the user may open it in another browser. */
+    @PostMapping("/verify-email")
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+        verificationService.verify(request.token());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/google")

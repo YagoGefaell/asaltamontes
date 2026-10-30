@@ -133,6 +133,12 @@
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
 
+        <!-- Email (T24a): SMTP sender, only active when MAIL_HOST is set -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
         <!-- Health checks -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

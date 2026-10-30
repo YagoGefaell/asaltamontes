@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Asaltamontes API",
-    "version": "0.7.0",
+    "version": "0.8.0",
     "description": "API contract between frontend and backend for data exchange. Identifiers (D-021, T30a): events, conversations, messages and communities are identified by a public UUID v7 (`id`, `conversationId`, `communityId`...); the internal numeric keys never appear in paths, bodies, query parameters or WebSocket payloads. Users go by username and communities also by slug (GET /api/communities/{slug}); join, leave, members and delete of a community take its public UUID. A path or query id that is not a UUID is a 400; an unknown one is a 404. Pagination cursors (`before`, `after`, `nextBefore`, `MessageDto.cursor`) are opaque tokens (T30c): treat them as strings and send back exactly what the server gave; a malformed, tampered or foreign token is a 400 ProblemDetail."
   },
   "servers": [
@@ -249,6 +249,41 @@
               }
             }
           }
+        }
+      }
+    },
+    "/auth/verify-email": {
+      "post": {
+        "summary": "Verify the email with the token of the emailed link (T24a). Public: the token is the proof",
+        "tags": ["Authentication"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["token"],
+                "properties": { "token": { "type": "string", "maxLength": 128 } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "Email verified" },
+          "400": { "description": "The link is not valid or has expired (unknown, already used, replaced or expired: same answer)" },
+          "429": { "description": "Too many attempts (rate limiting); see the Retry-After header" }
+        }
+      }
+    },
+    "/api/users/me/verification-email": {
+      "post": {
+        "summary": "Resend the verification email (T24a). Limited to one per minute and 5 per hour",
+        "tags": ["Authentication"],
+        "responses": {
+          "202": { "description": "The email is on its way" },
+          "401": { "description": "Not authenticated" },
+          "409": { "description": "The email is already verified" },
+          "429": { "description": "Too many requests; see the Retry-After header" }
         }
       }
     },

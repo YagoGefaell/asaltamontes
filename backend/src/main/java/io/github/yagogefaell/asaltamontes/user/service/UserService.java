@@ -85,7 +85,8 @@ public class UserService implements UserDetailsService {
                 user.setUsername(usernameGenerator.generate(givenName != null ? givenName : fullName));
                 user.setPasswordHash(null);
                 user.setRole(UserAccountRole.USER);
-                user.setIsVerified(false);
+                // GoogleTokenVerifier/AuthService already checked email_verified (BUG-024)
+                user.setIsVerified(true);
                 
                 user = userAccountRepository.save(user);
 

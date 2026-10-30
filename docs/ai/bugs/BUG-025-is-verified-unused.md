@@ -1,6 +1,6 @@
 # BUG-025 — `isVerified` no tiene efecto y todas las cuentas quedan sin verificar
 
-- **Estado:** abierto
+- **Estado:** resuelto (T24a: `isEnabled()` ya no depende de `isVerified`; los límites los decide `VerifiedGuard`)
 - **Severidad:** baja
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/user

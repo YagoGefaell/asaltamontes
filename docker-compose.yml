@@ -87,6 +87,14 @@ services:
       JAVA_TOOL_OPTIONS: ${BACKEND_JAVA_OPTS:--Xms128m -Xmx512m}
       # Uploaded images (T17a): written here, served by nginx from the same volume
       MEDIA_DIR: ${MEDIA_DIR:-/data/media}
+      # Email (T24a): empty MAIL_HOST = emails go to the log
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-Asaltamontes Female <no-reply@localhost>}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost}
+      VERIFICATION_ENFORCE: ${VERIFICATION_ENFORCE:-false}
     volumes:
       - media_data:${MEDIA_DIR:-/data/media}
     # Not published on the LAN: browsers reach it through nginx (frontend). Localhost only, for debugging.

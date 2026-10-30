@@ -80,6 +80,7 @@ public class AuthRateLimitFilter extends OncePerRequestFilter {
                 }
             }
             case "/auth/register" -> retryAfter = rateLimiter.tryAcquire("register:ip:" + ip, properties.getRegisterPerMinute(), PERIOD);
+            case "/auth/verify-email" -> retryAfter = rateLimiter.tryAcquire("verify-email:ip:" + ip, properties.getVerifyEmailPerMinute(), PERIOD);
             case "/auth/refresh" -> retryAfter = rateLimiter.tryAcquire("refresh:ip:" + ip, properties.getRefreshPerMinute(), PERIOD);
             default -> retryAfter = 0;
         }

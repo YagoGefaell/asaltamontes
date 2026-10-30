@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.yagogefaell.asaltamontes.auth.service.VerifiedGuard;
 import io.github.yagogefaell.asaltamontes.common.exceptions.BadRequestException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
@@ -69,6 +70,7 @@ public class EventService {
     private final ApplicationEventPublisher eventPublisher;
     private final EntityManager entityManager;
     private final UserActionLimiter limiter;
+    private final VerifiedGuard verifiedGuard;
     private final BlockService blockService;
     private final ProfileAccess profileAccess;
     private final EventChatService eventChat;
@@ -76,6 +78,7 @@ public class EventService {
     /** Creates the event; the organizer is its first attendee (GOING). */
     @Transactional
     public EventDetailsDto create(CreateEventDto request, UserAccount organizer) {
+        verifiedGuard.require(organizer);
         Instant now = Instant.now();
         if (!request.startsAt().isAfter(now)) {
             throw new BadRequestException("El evento tiene que empezar en el futuro");

@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import io.github.yagogefaell.asaltamontes.auth.service.VerifiedGuard;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ConflictException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.ForbiddenException;
 import io.github.yagogefaell.asaltamontes.common.exceptions.NotFoundException;
@@ -56,6 +57,7 @@ public class CommunityService {
     private final Duration joinRequestCooldown;
     private final CommunityChatService communityChat;
     private final EventService eventService;
+    private final VerifiedGuard verifiedGuard;
 
     /** What joining did: she is a member now, or her request waits for the moderation (private communities). */
     public enum JoinResult { JOINED, REQUESTED }
@@ -65,6 +67,7 @@ public class CommunityService {
                             ApplicationEventPublisher eventPublisher,
                             CommunityModerationLogRepository moderationLogRepository,
                             CommunityChatService communityChat, EventService eventService,
+                            VerifiedGuard verifiedGuard,
                             @Value("${asaltamontes.community.join-request-cooldown:7d}") Duration joinRequestCooldown) {
         this.communityRepository = communityRepository;
         this.communityMemberRepository = communityMemberRepository;
@@ -74,11 +77,13 @@ public class CommunityService {
         this.moderationLogRepository = moderationLogRepository;
         this.communityChat = communityChat;
         this.eventService = eventService;
+        this.verifiedGuard = verifiedGuard;
         this.joinRequestCooldown = joinRequestCooldown;
     }
     
     @Transactional
     public Community create(CreateCommunityDto request, UserAccount currentUser) {
+        verifiedGuard.require(currentUser);
         String name = SlugGenerator.normalizeName(request.name());
         if (communityRepository.existsByNameIgnoreCase(name)) {
             throw new ConflictException("Ya existe una comunidad con ese nombre");
