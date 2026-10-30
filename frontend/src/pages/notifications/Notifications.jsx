@@ -1,38 +1,17 @@
 import "./Notifications.css";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { FaUserLock } from "react-icons/fa";
-import { getFollowRequestsRequest } from "../../features/users/services/users.service";
+import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../features/notifications/hooks/useNotifications";
 import {
   formatAge,
   notificationDestination,
   notificationText,
 } from "../../features/notifications/utils/notificationText";
+import FollowRequestActions from "../../features/users/components/FollowRequestActions";
 import FollowUserButton from "../../shared/components/FollowUserButton";
 import Avatar from "../../shared/ui/Avatar";
 import EmptyState from "../../shared/ui/EmptyState";
 import PageHeader from "../../shared/ui/PageHeader";
-
-/** Shown only to someone with pending requests (T23a): a row that opens the screen where she answers them. */
-function FollowRequestsLink() {
-  const [pending, setPending] = useState(false);
-  useEffect(() => {
-    let active = true;
-    getFollowRequestsRequest({ size: 1 })
-      .then((result) => active && setPending(result.items.length > 0))
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-  if (!pending) return null;
-  return (
-    <Link to="/notifications/requests" className="notif-requests-link">
-      <FaUserLock aria-hidden="true" /> Solicitudes de seguimiento
-    </Link>
-  );
-}
 
 const Notifications = () => {
   const navigate = useNavigate();
@@ -60,8 +39,6 @@ const Notifications = () => {
         onBack={() => navigate(-1)}
       />
 
-      <FollowRequestsLink />
-
       {error && (
         <div className="notif-error" role="alert">
           <p>{error}</p>
@@ -79,7 +56,7 @@ const Notifications = () => {
           const unread = fresh.has(notification.id) || !notification.readAt;
           const actor = notification.actor;
           return (
-            <li key={notification.id} className={`notification-item${unread ? " unread" : ""}`}>
+            <li key={notification.id} className={`notification-item${unread ? " unread" : ""}${notification.type === "FOLLOW_REQUEST" ? " notification-item--request" : ""}`}>
               <button type="button" className="notif-main" onClick={() => open(notification)}>
                 {actor ? (
                   <Avatar src={actor.profilePictureUrl} name={actor.fullName || actor.username} size="sm" />
@@ -93,6 +70,9 @@ const Notifications = () => {
                 </span>
                 {unread && <span className="notif-dot" aria-label="Nueva" />}
               </button>
+              {notification.type === "FOLLOW_REQUEST" && actor && !actor.followedByMe && (
+                <FollowRequestActions username={actor.username} />
+              )}
               {notification.type === "NEW_FOLLOWER" && actor && (
                 <div className="notif-action">
                   <FollowUserButton

@@ -10,10 +10,6 @@ vi.mock('../../shared/components/FollowUserButton', () => ({
   ),
 }))
 
-vi.mock('../../features/users/services/users.service', () => ({
-  getFollowRequestsRequest: vi.fn().mockResolvedValue({ items: [], hasMore: false }),
-}))
-
 const actions = { loadMore: vi.fn(), refresh: vi.fn(), markRead: vi.fn(), markAllRead: vi.fn() }
 
 function renderPage(value) {
@@ -55,6 +51,20 @@ describe('Notifications page', () => {
     expect(screen.getByText('«Trail» se ha cancelado').closest('li').className).not.toContain('unread')
     expect(actions.markAllRead).toHaveBeenCalledTimes(1)
     expect(screen.queryByRole('button', { name: 'Marcar todas como leídas' })).toBeNull()
+  })
+
+  it('answers a follow request inside its own row, and only while she is not a follower yet (T23a)', () => {
+    const request = {
+      id: 'n3', type: 'FOLLOW_REQUEST', actor: { username: 'bea', fullName: 'Bea Gil', followedByMe: false },
+      target: { type: 'USER', ref: 'bea' }, payload: {}, readAt: null, createdAt: new Date().toISOString(),
+    }
+    const decided = { ...request, id: 'n4', actor: { username: 'cris', fullName: 'Cris Sanz', followedByMe: true } }
+    renderPage({ items: [request, decided] })
+
+    expect(screen.getByText('Bea Gil quiere seguirte')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Aceptar la solicitud de bea' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Rechazar la solicitud de bea' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Aceptar la solicitud de cris' })).toBeNull()
   })
 
   it('does not mark anything when nothing is unread', () => {

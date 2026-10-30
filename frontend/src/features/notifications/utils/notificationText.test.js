@@ -17,7 +17,7 @@ describe('notificationText', () => {
     expect(notificationText({ type: 'FOLLOW_REQUEST_APPROVED', actor: ana, payload: {} }).text)
       .toBe('Ana Ruiz ha aceptado tu solicitud de seguimiento')
     const target = { type: 'USER', ref: 'ana' }
-    expect(notificationDestination({ type: 'FOLLOW_REQUEST', target }).to).toBe('/notifications/requests')
+    expect(notificationDestination({ type: 'FOLLOW_REQUEST', target }).to).toBe('/users/ana')
     expect(notificationDestination({ type: 'FOLLOW_REQUEST_APPROVED', target }).to).toBe('/users/ana')
   })
 

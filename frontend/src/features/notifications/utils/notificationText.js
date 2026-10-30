@@ -106,8 +106,6 @@ export function notificationDestination(notification) {
     case 'POST':
       return { to: `/posts/${ref}?comments=1` }
     case 'USER':
-      // The owner answers requests in one place
-      if (notification.type === 'FOLLOW_REQUEST') return { to: '/notifications/requests' }
       return { to: `/users/${ref}` }
     case 'CONVERSATION':
       // Messages opens the chat from this state
