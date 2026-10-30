@@ -53,6 +53,18 @@ describe('Notifications page', () => {
     expect(screen.queryByRole('button', { name: 'Marcar todas como leídas' })).toBeNull()
   })
 
+  it('answers a follow request inside its own row, even if she already follows the requester (T23a)', () => {
+    const request = {
+      id: 'n3', type: 'FOLLOW_REQUEST', actor: { username: 'bea', fullName: 'Bea Gil', followedByMe: true },
+      target: { type: 'USER', ref: 'bea' }, payload: {}, readAt: null, createdAt: new Date().toISOString(),
+    }
+    renderPage({ items: [request] })
+
+    expect(screen.getByText('Bea Gil quiere seguirte')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Aceptar la solicitud de bea' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Rechazar la solicitud de bea' })).toBeTruthy()
+  })
+
   it('does not mark anything when nothing is unread', () => {
     renderPage({ items: [cancelled] })
     expect(actions.markAllRead).not.toHaveBeenCalled()

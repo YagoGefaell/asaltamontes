@@ -1,6 +1,6 @@
 # T23 — Privacidad de perfil, denuncias y panel de moderación
 
-- **Estado:** pendiente (spec refinada; se divide en T23a–T23d)
+- **Estado:** pendiente (spec refinada; se divide en T23a–T23d). **T23a hecho** (cierra BUG-034); quedan T23b, T23c y T23d.
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T13, T18
 - **Rama sugerida:** `feat/T23-privacy-reports`
@@ -38,6 +38,8 @@ Cumplir la promesa de espacio seguro: los perfiles privados lo son de verdad, cu
 - Sin aprobación no se ven: listas de seguidores/seguidos, quedadas organizadas ni comunidades (D-023), publicaciones (T22). Sí se ven nombre de usuario, avatar, bio y recuentos (como Instagram). Revisar todos los endpoints de `user/` y `event/` por `username`.
 - Pasar un perfil de privado a público acepta las solicitudes pendientes; de público a privado no expulsa a las seguidoras actuales.
 - Front: botón «Solicitar», «Solicitado», pantalla de solicitudes (dentro de Notificaciones), perfil con candado.
+
+**Implementación (T23a, V20):** tabla aparte `follow_requests` (en vez de `status` en `user_follow`), así `user_follow` sigue significando «aceptada», los contadores y todas las consultas de seguimiento no cambian. Aprobar borra la solicitud y solo si la ha borrado esa llamada inserta el seguimiento y cuenta (a prueba de doble clic y de carreras). `ProfileAccess.canViewContent` es la regla única para listas, quedadas y comunidades; las publicaciones la aplican en JPQL (`PostQueryRepository.PROFILE_VISIBLE`). `GET /api/users/{u}` añade `isFollowRequested` y `canViewContent`. Quien no puede ver recibe páginas vacías (no 403). Rechazar no notifica. Bloquear borra las solicitudes entre ambas.
 
 ### T23b — Denuncias
 - `reports(id, public_id, reporter_id, target_type, target_public_id, reason enum, details ≤ 1000, status OPEN|DISMISSED|ACTIONED, handled_by, handled_at, resolution)`; única denuncia abierta por (reporter, target). Límite 20/día por usuaria (429 + `Retry-After`).

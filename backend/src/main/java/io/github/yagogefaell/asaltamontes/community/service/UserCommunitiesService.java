@@ -15,6 +15,7 @@ import io.github.yagogefaell.asaltamontes.community.repository.CommunityMemberRe
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.user.service.BlockService;
+import io.github.yagogefaell.asaltamontes.user.service.ProfileAccess;
 import lombok.RequiredArgsConstructor;
 
 /** Communities shown on another user's profile (T31b, D-023). */
@@ -29,6 +30,7 @@ public class UserCommunitiesService {
     private final CommunityMemberRepository memberRepository;
     private final UserAccountRepository userAccountRepository;
     private final BlockService blockService;
+    private final ProfileAccess profileAccess;
 
     /**
      * Only the PUBLIC communities she belongs to (not the ones she was banned from). Unknown or blocked in either
@@ -39,6 +41,10 @@ public class UserCommunitiesService {
         Long targetId = userAccountRepository.findByUsernameIgnoreCase(username)
                 .filter(u -> !blockService.isBlockedEitherWay(viewer.getId(), u.getId()))
                 .orElseThrow(() -> new UserNotFoundException(username)).getId();
+        if (!profileAccess.canViewContent(viewer.getId(), targetId)) {
+            // Private profile she is not approved for (T23a, D-025)
+            return Page.empty(pageable);
+        }
         Pageable page = PageRequest.of(pageable.getPageNumber(), Math.min(pageable.getPageSize(), MAX_PAGE),
                 pageable.getSort());
         return memberRepository.findPublicCommunitiesOf(targetId, viewer.getId(), SORT.apply(page));

@@ -32,6 +32,8 @@ import io.github.yagogefaell.asaltamontes.notification.service.NotificationServi
 import io.github.yagogefaell.asaltamontes.notification.service.NotificationService.NewNotification;
 import io.github.yagogefaell.asaltamontes.post.service.PostCommented;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import io.github.yagogefaell.asaltamontes.user.service.FollowRequestApproved;
+import io.github.yagogefaell.asaltamontes.user.service.FollowRequested;
 import io.github.yagogefaell.asaltamontes.user.service.UserFollowed;
 
 /**
@@ -73,6 +75,24 @@ public class NotificationListener {
             deliver(new NewNotification(NotificationType.NEW_FOLLOWER, event.followerId(), NotificationTargetType.USER,
                     username, Map.of()), List.of(event.followedId()));
         });
+    }
+
+    /** To the owner of the private profile; the requester is the actor, the target her own username (inbox). */
+    @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onFollowRequested(FollowRequested event) {
+        safely("FOLLOW_REQUEST", () -> userAccountRepository.findById(event.requesterId()).ifPresent(requester ->
+                deliver(new NewNotification(NotificationType.FOLLOW_REQUEST, event.requesterId(),
+                        NotificationTargetType.USER, requester.getUsername(), Map.of()), List.of(event.ownerId()))));
+    }
+
+    /** To the requester; the target is the profile she can now open. */
+    @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onFollowRequestApproved(FollowRequestApproved event) {
+        safely("FOLLOW_REQUEST_APPROVED", () -> userAccountRepository.findById(event.ownerId()).ifPresent(owner ->
+                deliver(new NewNotification(NotificationType.FOLLOW_REQUEST_APPROVED, event.ownerId(),
+                        NotificationTargetType.USER, owner.getUsername(), Map.of()), List.of(event.requesterId()))));
     }
 
     @Async(AsyncConfig.NOTIFICATIONS_EXECUTOR)

@@ -144,3 +144,15 @@
     max-width: 600px;
   }
 }
+
+/* A follow request has its Accept / Reject buttons on a second line, inside the row */
+.notification-item--request {
+  flex-wrap: wrap;
+}
+
+.notification-item--request > .fra,
+.notification-item--request > .fra-result {
+  flex: 0 0 100%;
+  box-sizing: border-box;
+  padding-right: 0;
+}

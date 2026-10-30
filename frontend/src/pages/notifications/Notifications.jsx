@@ -7,6 +7,7 @@ import {
   notificationDestination,
   notificationText,
 } from "../../features/notifications/utils/notificationText";
+import FollowRequestActions from "../../features/users/components/FollowRequestActions";
 import FollowUserButton from "../../shared/components/FollowUserButton";
 import Avatar from "../../shared/ui/Avatar";
 import EmptyState from "../../shared/ui/EmptyState";
@@ -55,7 +56,7 @@ const Notifications = () => {
           const unread = fresh.has(notification.id) || !notification.readAt;
           const actor = notification.actor;
           return (
-            <li key={notification.id} className={`notification-item${unread ? " unread" : ""}`}>
+            <li key={notification.id} className={`notification-item${unread ? " unread" : ""}${notification.type === "FOLLOW_REQUEST" ? " notification-item--request" : ""}`}>
               <button type="button" className="notif-main" onClick={() => open(notification)}>
                 {actor ? (
                   <Avatar src={actor.profilePictureUrl} name={actor.fullName || actor.username} size="sm" />
@@ -69,6 +70,9 @@ const Notifications = () => {
                 </span>
                 {unread && <span className="notif-dot" aria-label="Nueva" />}
               </button>
+              {notification.type === "FOLLOW_REQUEST" && actor && (
+                <FollowRequestActions username={actor.username} />
+              )}
               {notification.type === "NEW_FOLLOWER" && actor && (
                 <div className="notif-action">
                   <FollowUserButton

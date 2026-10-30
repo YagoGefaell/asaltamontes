@@ -29,17 +29,21 @@ public class UserAssembler {
         );
     }
 
-    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile, boolean isFollowing, boolean isBlockedByMe) {
+    public UserProfileDto toUserProfile(UserAccount user, UserProfile profile, boolean isFollowing, boolean isFollowRequested,
+                                        boolean canViewContent, boolean isBlockedByMe) {
         return new UserProfileDto(
                 user.getUsername(),
                 user.getIsVerified(),
                 safe(profile.getFullName()),
                 safe(profile.getBio()),
-                safe(profile.getCity()),
+                // D-025: a private profile she cannot view shows only name, picture, bio and counters
+                canViewContent ? safe(profile.getCity()) : "",
                 safe(profile.getProfilePictureUrl()),
-                profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
+                !canViewContent ? "" : profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
                 profile.getIsPublicProfile(),
                 isFollowing,
+                isFollowRequested,
+                canViewContent,
                 isBlockedByMe,
                 profile.getFollowersCount(),
                 profile.getFollowingCount()

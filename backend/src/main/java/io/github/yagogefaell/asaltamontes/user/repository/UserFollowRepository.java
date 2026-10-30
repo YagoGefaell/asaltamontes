@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import io.github.yagogefaell.asaltamontes.user.domain.UserFollow;
@@ -26,6 +27,15 @@ public interface UserFollowRepository extends JpaRepository<UserFollow, Long> {
     /** Among {@code ids}, those {@code userId} follows (one query). */
     @Query("SELECT f.following.id FROM UserFollow f WHERE f.follower.id = :userId AND f.following.id IN :ids")
     List<Long> findFollowingIdsAmong(Long userId, Collection<Long> ids);
+
+    /** Inserts the follows; returns only the followers whose row was really created (the others already followed). */
+    @Query(value = """
+            INSERT INTO user_follow (follower_id, following_id, created_at)
+            SELECT f, :ownerId, now() FROM unnest(CAST(:followerIds AS bigint[])) AS f
+            ON CONFLICT (follower_id, following_id) DO NOTHING
+            RETURNING follower_id
+            """, nativeQuery = true)
+    List<Long> insertFollowers(@Param("ownerId") Long ownerId, @Param("followerIds") Long[] followerIds);
 
     @Modifying
     @Transactional

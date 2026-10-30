@@ -1,6 +1,6 @@
 # BUG-034 — El perfil privado no se aplica en ningún endpoint
 
-- **Estado:** abierto
+- **Estado:** resuelto (T23a)
 - **Severidad:** media
 - **Confianza:** confirmado (lectura de código)
 - **Área:** backend/user

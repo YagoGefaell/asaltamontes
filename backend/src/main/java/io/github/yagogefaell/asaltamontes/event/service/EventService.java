@@ -42,6 +42,7 @@ import io.github.yagogefaell.asaltamontes.event.repository.EventAttendeeReposito
 import io.github.yagogefaell.asaltamontes.event.repository.EventRepository;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.service.BlockService;
+import io.github.yagogefaell.asaltamontes.user.service.ProfileAccess;
 import io.github.yagogefaell.asaltamontes.user.domain.UserProfile;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import jakarta.persistence.EntityManager;
@@ -69,6 +70,7 @@ public class EventService {
     private final EntityManager entityManager;
     private final UserActionLimiter limiter;
     private final BlockService blockService;
+    private final ProfileAccess profileAccess;
     private final EventChatService eventChat;
 
     /** Creates the event; the organizer is its first attendee (GOING). */
@@ -151,6 +153,10 @@ public class EventService {
         Long organizerId = userAccountRepository.findByUsernameIgnoreCase(username)
                 .filter(u -> !blockService.isBlockedEitherWay(user.getId(), u.getId()))
                 .orElseThrow(() -> new UserNotFoundException(username)).getId();
+        if (!profileAccess.canViewContent(user.getId(), organizerId)) {
+            // Private profile she is not approved for (T23a, D-025): not even the events she organizes
+            return Page.empty(pageable);
+        }
         EventFilter byOrganizer = new EventFilter(from, to, null, null, null, null, null, null, null, null, null, null,
                 false, false, null, false, organizerId);
         return search(user, byOrganizer, pageable);

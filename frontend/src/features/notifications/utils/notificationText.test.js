@@ -12,6 +12,15 @@ describe('notificationText', () => {
     })
   })
 
+  it('follow requests of a private profile (T23a)', () => {
+    expect(notificationText({ type: 'FOLLOW_REQUEST', actor: ana, payload: {} }).text).toBe('Ana Ruiz quiere seguirte')
+    expect(notificationText({ type: 'FOLLOW_REQUEST_APPROVED', actor: ana, payload: {} }).text)
+      .toBe('Ana Ruiz ha aceptado tu solicitud de seguimiento')
+    const target = { type: 'USER', ref: 'ana' }
+    expect(notificationDestination({ type: 'FOLLOW_REQUEST', target }).to).toBe('/users/ana')
+    expect(notificationDestination({ type: 'FOLLOW_REQUEST_APPROVED', target }).to).toBe('/users/ana')
+  })
+
   it('falls back to @username when there is no full name', () => {
     expect(notificationText({ type: 'NEW_FOLLOWER', actor: { username: 'ana' }, payload: {} }).text).toBe('@ana ha empezado a seguirte')
   })

@@ -11,7 +11,9 @@ vi.mock('../../features/auth/hooks/useAuth', () => ({
 vi.mock('../../features/users/hooks/useUserProfile', () => ({ useUserProfile: () => ({ userProfile: null, loading: false }) }))
 vi.mock('../../features/users/services/users.service', () => ({ blockUserRequest: vi.fn(), unblockUserRequest: vi.fn() }))
 import { blockUserRequest } from '../../features/users/services/users.service'
-vi.mock('../../shared/components/FollowUserButton', () => ({ default: () => <button>Seguir</button> }))
+vi.mock('../../features/users/components/ProfileFollowButton', () => ({
+  default: ({ isPrivate, isFollowRequested }) => <button>{isFollowRequested ? 'Solicitado' : isPrivate ? 'Solicitar' : 'Seguir'}</button>,
+}))
 vi.mock('./ProfileTabs', () => ({
   ProfilePosts: () => <div>tab-publicaciones</div>,
   ProfileEvents: () => <div>tab-eventos</div>,
@@ -75,6 +77,31 @@ describe('Profile (someone else)', () => {
     expect(screen.queryByRole('button', { name: 'Nueva publicación' })).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: 'Ver seguidoras' }))
     expect(navigate).toHaveBeenCalledWith('/users/ana/followers')
+  })
+
+  it('shows a private profile as locked: lock, request button, no tabs and no lists', () => {
+    renderProfile({ userData: { ...data, isPublicProfile: false, canViewContent: false }, isOwnProfile: false, onBack: vi.fn() })
+    expect(screen.getByLabelText('Perfil privado')).toBeTruthy()
+    expect(screen.getByText('Este perfil es privado')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Solicitar' })).toBeTruthy()
+    expect(screen.queryByRole('tablist')).toBeNull()
+    expect(screen.queryByText('tab-eventos')).toBeNull()
+    expect(screen.getByRole('button', { name: 'Ver seguidoras' }).disabled).toBe(true)
+    // The header stays: name and counters
+    expect(screen.getByText('Ana Pérez')).toBeTruthy()
+    expect(screen.getByText('12')).toBeTruthy()
+  })
+
+  it('shows "Solicitado" while the request waits', () => {
+    renderProfile({ userData: { ...data, isPublicProfile: false, canViewContent: false, isFollowRequested: true }, isOwnProfile: false, onBack: vi.fn() })
+    expect(screen.getByRole('button', { name: 'Solicitado' })).toBeTruthy()
+  })
+
+  it('keeps the lock icon but opens the tabs for an approved follower', () => {
+    renderProfile({ userData: { ...data, isPublicProfile: false, canViewContent: true, isFollowing: true }, isOwnProfile: false, onBack: vi.fn() })
+    expect(screen.getByLabelText('Perfil privado')).toBeTruthy()
+    expect(screen.getByText('tab-publicaciones')).toBeTruthy()
+    expect(screen.queryByText('Este perfil es privado')).toBeNull()
   })
 
   it('blocks at once from the options sheet, without asking, and shows the result in place', async () => {

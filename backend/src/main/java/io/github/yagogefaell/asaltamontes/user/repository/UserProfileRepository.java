@@ -77,6 +77,18 @@ public interface UserProfileRepository extends JpaRepository<UserProfile, Long> 
     """)
     Page<Long> findUserIds(Pageable pageable);
 
+    @Query("select p.isPublicProfile from UserProfile p where p.user.id = :userId")
+    Optional<Boolean> findIsPublicProfile(@Param("userId") Long userId);
+
+    /** Several follows approved at once (a profile turned public): one statement per counter, not one per follower. */
+    @Modifying
+    @Query("update UserProfile p set p.followersCount = p.followersCount + :n where p.user.id = :userId")
+    void addFollowers(@Param("userId") Long userId, @Param("n") long n);
+
+    @Modifying
+    @Query("update UserProfile p set p.followingCount = p.followingCount + 1 where p.user.id in :ids")
+    void incrementFollowingByIds(@Param("ids") java.util.Collection<Long> ids);
+
     @Query("select p.dmPolicy from UserProfile p where p.user.id = :userId")
     Optional<io.github.yagogefaell.asaltamontes.user.domain.DmPolicy> findDmPolicy(@Param("userId") Long userId);
 

@@ -3,6 +3,8 @@ import { formatEventDateTime, formatViewerDateTime } from '../../events/utils/ev
 /** Types in the order of the settings page, with the label of each switch. */
 export const NOTIFICATION_TYPE_LABELS = {
   NEW_FOLLOWER: 'Alguien empieza a seguirme',
+  FOLLOW_REQUEST: 'Alguien pide seguirme (perfil privado)',
+  FOLLOW_REQUEST_APPROVED: 'Aceptan mi solicitud de seguimiento',
   EVENT_JOINED: 'Alguien se apunta a una quedada mía',
   EVENT_UPDATED: 'Cambian la hora o el lugar de una quedada en la que estoy',
   EVENT_CANCELLED: 'Se cancela una quedada en la que estoy',
@@ -50,6 +52,10 @@ export function notificationText(notification, options = {}) {
   switch (notification?.type) {
     case 'NEW_FOLLOWER':
       return { text: `${actorName(notification)} ha empezado a seguirte`, detail: '' }
+    case 'FOLLOW_REQUEST':
+      return { text: `${actorName(notification)} quiere seguirte`, detail: '' }
+    case 'FOLLOW_REQUEST_APPROVED':
+      return { text: `${actorName(notification)} ha aceptado tu solicitud de seguimiento`, detail: '' }
     case 'EVENT_JOINED':
       return {
         text: payload.waitlisted

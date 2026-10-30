@@ -17,6 +17,7 @@ import io.github.yagogefaell.asaltamontes.community.service.CommunityService;
 import io.github.yagogefaell.asaltamontes.message.service.MessageService;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
+import io.github.yagogefaell.asaltamontes.user.repository.UserProfileRepository;
 import io.github.yagogefaell.asaltamontes.user.service.FollowService;
 import io.github.yagogefaell.asaltamontes.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -65,6 +66,7 @@ public class DevDataSeeder implements CommandLineRunner {
 
     private final UserAccountRepository userAccountRepository;
     private final UserService userService;
+    private final UserProfileRepository userProfileRepository;
     private final FollowService followService;
     private final CommunityService communityService;
     private final MessageService messageService;
@@ -86,8 +88,14 @@ public class DevDataSeeder implements CommandLineRunner {
         Random random = new Random(2026);
         List<UserAccount> users = new ArrayList<>();
         for (String[] person : PEOPLE) {
-            users.add(userService.registerUserWithProfile(
-                    person[1], person[0], person[0].replace('.', '_') + "@ejemplo.test", PASSWORD, PASSWORD));
+            UserAccount user = userService.registerUserWithProfile(
+                    person[1], person[0], person[0].replace('.', '_') + "@ejemplo.test", PASSWORD, PASSWORD);
+            // Public, so the demo follows below are immediate and not requests (T23a)
+            userProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
+                profile.setIsPublicProfile(true);
+                userProfileRepository.save(profile);
+            });
+            users.add(user);
         }
 
         // Each one follows 3 to 7 others
