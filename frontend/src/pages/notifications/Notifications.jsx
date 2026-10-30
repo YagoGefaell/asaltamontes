@@ -70,7 +70,7 @@ const Notifications = () => {
                 </span>
                 {unread && <span className="notif-dot" aria-label="Nueva" />}
               </button>
-              {notification.type === "FOLLOW_REQUEST" && actor && !actor.followedByMe && (
+              {notification.type === "FOLLOW_REQUEST" && actor && (
                 <FollowRequestActions username={actor.username} />
               )}
               {notification.type === "NEW_FOLLOWER" && actor && (
