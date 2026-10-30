@@ -1,6 +1,6 @@
 # T23 — Privacidad de perfil, denuncias y panel de moderación
 
->>>>>>> origin/main
+- **Estado:** pendiente (spec refinada; se divide en T23a–T23d). **T23a hecho** (cierra BUG-034); **T23b hecho** (backend; el front de «Denunciar» el front de «Denunciar» es la sub-tarea **T23b2**, **hecha**); **T23c1 hecho** (cola, detalle, descartar, borrar contenido); **T23c3 hecho** (front del panel, sin suspensión); quedan T23c2 (suspensión de cuentas; su acción en el panel se añade con ella) y T23d.
 - **Rama sugerida:** `feat/T23-privacy-reports`
 - **Cierra bugs:** BUG-034
 - **Tamaño:** L
@@ -53,6 +53,8 @@ Cumplir la promesa de espacio seguro: los perfiles privados lo son de verdad, cu
 - Aquí se decide el destino de los datos de cuentas borradas (BUG-065, BUG-068) con T24.
 
 **Implementación (T23c1, V24):** `MODERATOR` entra en el enum existente `UserAccountRole` y en el CHECK de `users.role` (localizado por definición, BUG-049); la autoridad `ROLE_MODERATOR` sale del `getAuthorities()` que ya había, sin tocar `JwtUtil`, `JwtAuthFilter` ni `AuthService`; el rol se lee de la BD en cada petición, así que quitarlo surte efecto al instante. No hay endpoint para cambiar roles (se asignan en la BD). `/api/admin/reports` (`@PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")` + comprobación en el servicio): lista con filtros `status`/`type` y cursor opaco (abiertas, las más antiguas primero), detalle (copia del texto, quién denuncia, a quién, otras denuncias abiertas del objetivo, si el contenido sigue existiendo), `dismiss` (solo esa denuncia) y `remove-content` (post/comentario: borrado lógico; mensaje: borrado; quedada: cancelada; comunidad: solo ADMIN; cierra todas las denuncias abiertas del objetivo; USER → 400). Cada acción escribe `admin_audit_log` en la misma transacción. Las del `security-reviewer` en T23b: copia también de usuaria/evento/comunidad (título + descripción, nombre + bio); cooldown de 7 días tras descartar una denuncia (mismo denunciante y objetivo → 409); `details` y la copia se sirven como texto plano (el front no debe interpretarlos como HTML); purga de `details` y copia a los 30 días de resolver (`asaltamontes.reports.retention-days`, tarea diaria 04:15).
+
+**Implementación (T23c3, front):** `/admin` (cola: chips Abiertas/Descartadas/Resueltas + «Filtros» con el tipo en hoja inferior, «Cargar más» por cursor) y `/admin/reports/:id` (detalle; «Descartar denuncia» y «Borrar contenido» con nota opcional en `ConfirmSheet`, errores dentro de la hoja; sin «Borrar contenido» para USER). `AdminGuard` y la entrada «Moderación» de Ajustes preguntan al backend (`GET /api/admin/reports?limit=1`: 403 = no es staff), así no hace falta exponer el rol en `UserSelfDto`. `details`, la copia y la nota se pintan como nodos de texto de React (nunca HTML). Pendiente: la acción de suspender cuenta, con T23c2 (#165).
 
 ### T23d — Imágenes privadas
 - Decisión técnica a tomar al implementar, con medición en la Pi: `auth_request` de nginx contra un endpoint interno del backend (un salto por imagen, cacheable unos segundos) frente a URLs firmadas HMAC con caducidad (sin salto, pero cambia los DTO y la caché del navegador). Recomendación inicial: URLs firmadas solo para imágenes de contenido privado (comunidades privadas, perfiles privados, fotos de publicaciones privadas); avatares públicos siguen igual.

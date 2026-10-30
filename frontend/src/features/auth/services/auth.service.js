@@ -76,6 +76,27 @@ export async function resendVerificationEmailRequest() {
   await apiClient.post('/api/users/me/verification-email')
 }
 
+// ---------------- PASSWORD RESET AND EMAIL CHANGE (T24b2) ----------------
+// Always 202, whether or not the address has an account. 429 carries error.retryAfter.
+export async function forgotPasswordRequest(email) {
+  await authApiClient.post('/auth/forgot-password', { email })
+}
+
+// 400 = invalid link (or password), 409 = the two passwords differ, 429 = too many attempts.
+export async function resetPasswordRequest({ token, password, confirmPassword }) {
+  await authApiClient.post('/auth/reset-password', { token, password, confirmPassword })
+}
+
+// Needs the current password. 403 = wrong password, 409 = in use / same / Google account, 429 = too many.
+export async function requestEmailChangeRequest({ newEmail, currentPassword }) {
+  await apiClient.post('/api/users/me/email-change', { newEmail, currentPassword })
+}
+
+// Public: the token of the link sent to the new address. 400 = invalid or expired.
+export async function confirmEmailChangeRequest(token) {
+  await authApiClient.post('/auth/confirm-email-change', { token })
+}
+
 // ---------------- LOGOUT EVERYWHERE ----------------
 // Revokes every session of the user (all devices). The caller then runs the normal logout.
 export async function logoutEverywhereRequest() {

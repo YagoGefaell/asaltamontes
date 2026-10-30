@@ -2,12 +2,14 @@ import "./SettingsMenu.css";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useIsStaff } from "../../features/admin/hooks/useIsStaff";
 import FormError from "../../shared/forms/FormError";
 
 export default function SettingsMenu() {
   const navigate = useNavigate();
   const { logout } = useAuth();
   const [error, setError] = useState("");
+  const isStaff = useIsStaff();
 
   const handleLogout = async () => {
     setError("");
@@ -31,6 +33,9 @@ export default function SettingsMenu() {
         { label: "Verificar email", path: "/settings/verify-email" },
       ],
     },
+    ...(isStaff === "staff"
+      ? [{ title: "Moderación", items: [{ label: "Denuncias", path: "/admin" }] }]
+      : []),
   ];
 
   return (
