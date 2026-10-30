@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import ChatPane from './ChatPanel.jsx'
+import { groupSubtitle } from '../../../features/messages/utils/groupSubtitle'
 
 function renderPanel(props = {}) {
   return render(
@@ -97,10 +98,10 @@ describe('ChatPanel', () => {
     expect(screen.getAllByRole('separator')).toHaveLength(2)
   })
 
-  it('disables the send button without text or connection and uses the shared Button', () => {
+  it('disables the send button without text or connection and is a round icon button', () => {
     const { rerender } = renderPanel({ draftMessage: '' })
-    expect(screen.getByRole('button', { name: 'Enviar' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Enviar' })).toHaveClass('btn')
+    expect(screen.getByRole('button', { name: 'Enviar mensaje' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Enviar mensaje' })).toHaveClass('message-send-btn')
 
     rerender(
       <ChatPane
@@ -117,7 +118,7 @@ describe('ChatPanel', () => {
         messagesEndRef={{ current: null }}
       />,
     )
-    expect(screen.getByRole('button', { name: 'Enviar' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Enviar mensaje' })).toBeEnabled()
   })
 
   it("formats message times with the viewer's locale and time zone, not a fixed one (BUG-063, D-019)", () => {
@@ -145,13 +146,97 @@ describe('ChatPanel', () => {
     expect(screen.queryByText('respaldo')).not.toBeInTheDocument()
   })
 
-  it('opens the group info from the header of a group (T12)', () => {
+  it('opens the group info from the header name, with the participants below and no fake status or info icon (T29q)', () => {
     const onOpenGroupInfo = vi.fn()
-    renderPanel({ selectedChat: { id: 1, name: 'Trail', type: 'GROUP' }, onOpenGroupInfo })
+    renderPanel({
+      selectedChat: { id: 1, name: 'Trail', type: 'GROUP' },
+      onOpenGroupInfo,
+      groupParticipants: { count: 7, names: ['Ana', 'Lucía', 'Marta'] },
+    })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Info del grupo' }))
+    expect(screen.getByText('Ana, Lucía, Marta y 4 más')).toBeInTheDocument()
+    expect(screen.queryByText('Toca para ver el grupo')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Info del grupo' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('Trail'))
 
     expect(onOpenGroupInfo).toHaveBeenCalled()
+  })
+
+  it('shows @username instead of a fake "En linea" in private chats (T29q)', () => {
+    renderPanel()
+
+    expect(screen.getByText('@Bea')).toBeInTheDocument()
+    expect(screen.queryByText('En linea')).not.toBeInTheDocument()
+  })
+
+  it('builds the group subtitle (T29q)', () => {
+    expect(groupSubtitle(['Ana', 'Lucía', 'Marta'], 7)).toBe('Ana, Lucía, Marta y 4 más')
+    expect(groupSubtitle(['Ana', 'Lucía'], 2)).toBe('Ana y Lucía')
+    expect(groupSubtitle([], 7)).toBe('7 participantes')
+    expect(groupSubtitle(null, 0)).toBe('')
+  })
+
+  it('sends with Enter on desktop but not with Shift+Enter (T29q)', () => {
+    const onSendMessage = vi.fn()
+    window.matchMedia = vi.fn().mockReturnValue({ matches: true })
+    renderPanel({ draftMessage: 'hola', onSendMessage })
+    const input = screen.getByLabelText('Mensaje')
+
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })
+    expect(onSendMessage).not.toHaveBeenCalled()
+    fireEvent.keyDown(input, { key: 'Enter' })
+    expect(onSendMessage).toHaveBeenCalledTimes(1)
+    delete window.matchMedia
+  })
+
+  describe('author blocks in groups (T29q)', () => {
+    const group = { id: 1, name: 'Trail', type: 'GROUP' }
+    const msg = (id, user, time, extra = {}) => ({
+      id, senderUsername: user, senderFullName: `${user} Pérez`, senderAvatarUrl: null,
+      content: `m${id}`, sentAt: `2026-10-22T${time}`, ...extra,
+    })
+
+    it('shows one avatar per block, no name or @, and opens the profile', () => {
+      const onOpenAuthorProfile = vi.fn()
+      renderPanel({
+        selectedChat: group,
+        onOpenAuthorProfile,
+        currentMessages: [
+          msg(1, 'bea', '10:00:00Z'),
+          msg(2, 'bea', '10:02:00Z'),
+          msg(3, 'bea', '10:08:00Z'), // 6 minutes later: new block
+          msg(4, 'cris', '10:09:00Z'),
+        ],
+      })
+
+      expect(screen.getAllByRole('button', { name: /Ver perfil de/ })).toHaveLength(3)
+      expect(screen.queryByText('@bea')).not.toBeInTheDocument()
+      expect(screen.queryByText('Propietaria')).not.toBeInTheDocument()
+      expect(screen.getAllByRole('group', { name: 'bea Pérez' })).toHaveLength(2)
+      fireEvent.click(screen.getAllByRole('button', { name: 'Ver perfil de cris Pérez' })[0])
+      expect(onOpenAuthorProfile).toHaveBeenCalledWith('cris')
+    })
+
+    it('breaks the block at a system message and does not show avatars on my messages', () => {
+      renderPanel({
+        selectedChat: group,
+        currentMessages: [
+          msg(1, 'bea', '10:00:00Z'),
+          { id: 2, type: 'SYSTEM', senderUsername: null, content: 'x', sentAt: '2026-10-22T10:01:00Z', systemPayload: { action: 'MEMBER_ADDED', actor: 'bea', targets: ['cris'] } },
+          msg(3, 'bea', '10:02:00Z'),
+          msg(4, 'ana', '10:03:00Z'),
+        ],
+      })
+
+      expect(screen.getAllByRole('button', { name: 'Ver perfil de bea Pérez' })).toHaveLength(2)
+      expect(screen.queryByRole('button', { name: 'Ver perfil de ana Pérez' })).not.toBeInTheDocument()
+    })
+
+    it('shows no avatars in private chats', () => {
+      renderPanel({ currentMessages: [msg(1, 'bea', '10:00:00Z')] })
+
+      expect(screen.queryByRole('button', { name: /Ver perfil de/ })).not.toBeInTheDocument()
+    })
   })
 
   describe('moderation delete (T20d)', () => {
@@ -175,7 +260,7 @@ describe('ChatPanel', () => {
       expect(screen.getAllByRole('button', { name: /Eliminar mensaje/ })).toHaveLength(1)
     })
 
-    it('labels owner and moderators next to the name, and hides the delete action where the server would refuse (T20e)', () => {
+    it('shows no role labels and hides the delete action where the server would refuse (T20e)', () => {
       const staff = [
         { id: 'm1', senderUsername: 'bea', content: 'hola', authorRole: 'OWNER', sentAt: '2026-10-22T10:00:00Z' },
         { id: 'm2', senderUsername: 'cris', content: 'ey', authorRole: 'MODERATOR', sentAt: '2026-10-22T10:01:00Z' },
@@ -183,8 +268,8 @@ describe('ChatPanel', () => {
       ]
       renderPanel({ selectedChat: group, currentMessages: staff, moderationRole: 'MODERATOR', onDeleteMessage: vi.fn() })
 
-      expect(screen.getByText('Propietaria')).toBeInTheDocument()
-      expect(screen.getByText('Moderadora')).toBeInTheDocument()
+      expect(screen.queryByText('Propietaria')).not.toBeInTheDocument()
+      expect(screen.queryByText('Moderadora')).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Eliminar mensaje de bea' })).not.toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Eliminar mensaje de cris' })).not.toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Eliminar mensaje de dani' })).toBeInTheDocument()
