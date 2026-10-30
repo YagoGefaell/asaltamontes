@@ -1,6 +1,6 @@
 # T24 — Verificación de email, reset de contraseña y borrar/exportar cuenta
 
-- **Estado:** en curso — T24a (backend), T24a2 (front de la verificación) y T24b (backend) hechos en sus PRs; pendiente T24b2 (front), T24c y T24d
+- **Estado:** en curso — T24a (backend), T24a2 (front de la verificación) y T24b (backend) y T24b2 (front del reset y del cambio de email) hechos en sus PRs; pendiente T24c y T24d
 - **Fase:** 4 — Seguridad y cuentas
 - **Depende de:** T06
 - **Rama sugerida:** `feat/T24-account-lifecycle`
@@ -45,6 +45,13 @@ El ciclo de vida completo de una cuenta, con lo que exige el RGPD: verificar el 
 - `POST /api/users/me/email-change` (contraseña actual; límite 5/h por usuaria contando los fallos) guarda el nuevo email como `payload` del token `CHANGE_EMAIL` (migración **V23**, columna nullable: mergear **después de #161**, que usa V22) y avisa al email anterior; `POST /auth/confirm-email-change` lo aplica, verifica y avisa de nuevo. Un reset o un cambio invalidan los enlaces pendientes del otro. `PATCH /api/users/me` ya no cambia el email (BUG-042).
 - BUG-084: el log de correos sin SMTP ya no escribe el cuerpo salvo `MAIL_LOG_BODY=true`; tope de correos por dirección destino (3/h, 6/día).
 - Los access tokens ya emitidos siguen valiendo hasta 15 min tras un reset (solo se revocan los refresh).
+
+### Como quedó T24b2 (2026-10-30)
+- Login: enlace «¿Olvidaste tu contraseña?» → `/forgot-password` (pública solo para no autenticadas): email → mensaje único «Si hay una cuenta con ese email…» (202 siempre), 429 con `Retry-After` en línea.
+- `/reset-password?token=` (pública, con o sin sesión): validación local de longitud y coincidencia antes de gastar el token; 400 → pantalla «Enlace no válido» con «Pedir un enlace nuevo»; éxito → «Iniciar sesión» (todas las sesiones quedaron revocadas).
+- Ajustes → Seguridad → «Cambiar email» (`/settings/email`): email nuevo + contraseña actual; 403 marca el campo de contraseña, 409 mensaje genérico («No se puede usar ese email», cubre en uso, mismo email y cuenta solo-Google sin revelar más), 429 con minutos. Éxito: texto «Te hemos enviado un enlace a …» (sin pop-up).
+- `/confirm-email-change?token=` (pública): consume el token una vez (también bajo StrictMode); 400 → error en línea.
+- Limitación: el front aún no sabe si la cuenta es solo-Google, así que esas usuarias ven el 409 genérico al pedir el cambio (hace falta un campo `hasPassword` en `/api/users/me`; no se ha añadido para no tocar el backend en esta PR). Tras confirmar el cambio, el email de Ajustes se actualiza en la siguiente carga de sesión.
 
 ### Como quedó T24a2 (2026-10-30)
 - Sin aviso permanente (Yago, revisión de #160): cuando una acción devuelve `403 EMAIL_NOT_VERIFIED`, `EmailVerificationRedirect` (callback de `api-client`) lleva a `/verify-email/required` (autenticada) con la explicación y «Reenviar» (`VerifyEmailPanel`: cooldown de 60 s, 429 y errores en línea; un 409 la marca como verificada); «Volver» regresa a donde estaba. Las pantallas no se bloquean por adelantado porque el front no sabe si `VERIFICATION_ENFORCE` está activo.

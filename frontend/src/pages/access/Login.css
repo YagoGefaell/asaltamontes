@@ -78,3 +78,18 @@
   display: flex;
   justify-content: center;
 }
+/* --- ¿OLVIDASTE TU CONTRASEÑA? --- */
+.login-forgot {
+  margin: var(--space-3) 0 0;
+  text-align: center;
+  font-size: var(--text-sm);
+}
+
+.login-forgot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
