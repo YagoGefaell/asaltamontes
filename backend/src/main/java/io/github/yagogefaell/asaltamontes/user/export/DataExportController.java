@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.github.yagogefaell.asaltamontes.common.exceptions.TooManyRequestsException;
 import io.github.yagogefaell.asaltamontes.infrastructure.ratelimit.UserActionLimiter;
 import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,6 +26,8 @@ public class DataExportController {
 
     private final DataExportService exportService;
     private final UserActionLimiter limiter;
+    /** Each export holds a request thread while the client reads, so only a few run at once on the whole server. */
+    private final java.util.concurrent.Semaphore running = new java.util.concurrent.Semaphore(2);
 
     /**
      * Written straight to the servlet response on the request thread. Not a StreamingResponseBody on purpose: that
@@ -36,10 +39,17 @@ public class DataExportController {
         Long userId = currentUser.getId();
         limiter.dataExport(userId);
         String filename = "asaltamontes-datos-" + currentUser.getUsername() + "-" + LocalDate.now() + ".json";
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.setHeader(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(filename).build().toString());
-        response.setHeader(HttpHeaders.CACHE_CONTROL, CacheControl.noStore().getHeaderValue());
-        exportService.write(userId, response.getOutputStream());
+        if (!running.tryAcquire()) {
+            throw new TooManyRequestsException("Hay otras descargas en curso. Vuelve a probar en un minuto", 60);
+        }
+        try {
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.setCharacterEncoding("UTF-8");
+            response.setHeader(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(filename).build().toString());
+            response.setHeader(HttpHeaders.CACHE_CONTROL, CacheControl.noStore().getHeaderValue());
+            exportService.write(userId, response.getOutputStream());
+        } finally {
+            running.release();
+        }
     }
 }
