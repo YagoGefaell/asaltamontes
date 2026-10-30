@@ -198,7 +198,7 @@ class ApiClient {
       } else if (response.status === 404) {
         errorMessage = 'Recurso no encontrado'
       } else if (response.status === 409) {
-        errorMessage = 'El usuario ya existe'
+        errorMessage = 'La usuaria ya existe'
       } else {
         errorMessage = response.statusText || errorMessage
       }

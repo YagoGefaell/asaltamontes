@@ -32,7 +32,7 @@ function HeaderLink({ to, label, count, children }) {
 }
 
 // Between Avatar's lg (64) and xl (96): the picture leads the card without filling it
-const SUGGESTION_AVATAR = 80;
+const SUGGESTION_AVATAR = 64;
 
 function Section({ title, children }) {
   return (

@@ -5,6 +5,7 @@
 .communities-page {
   background: var(--background);
   min-height: 100vh;
+  box-sizing: border-box;
   padding-bottom: 5rem;
 }
 

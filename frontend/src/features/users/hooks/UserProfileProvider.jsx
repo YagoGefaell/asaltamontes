@@ -53,7 +53,7 @@ export function UserProfileProvider({ children }) {
         return users;
       } catch {
         setLoading(false);
-        throw "Error al buscar usuarios";
+        throw "Error al buscar usuarias";
       }
     };
 
@@ -62,7 +62,7 @@ export function UserProfileProvider({ children }) {
         const user = await getUserByUsername(username);
         return user;
       } catch {
-        throw "Error al obtener información del usuario";
+        throw "Error al obtener información de la usuaria";
       }
     };
 

@@ -3,6 +3,7 @@
   max-width: 600px;
   margin: 0 auto;
   min-height: 100vh;
+  box-sizing: border-box;
   padding-bottom: calc(var(--space-8) + var(--space-8));
   background: var(--background);
   color: var(--text-color);

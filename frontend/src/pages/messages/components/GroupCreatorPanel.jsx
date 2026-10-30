@@ -192,7 +192,7 @@ const GroupCreatorPanel = ({
             autoComplete="off"
           />
 
-          {participantSearchLoading && <p className="group-creator-hint" role="status">Buscando usuarios...</p>}
+          {participantSearchLoading && <p className="group-creator-hint" role="status">Buscando usuarias...</p>}
           {!participantSearchLoading && participantSearchError && (
             <p className="group-creator-error" role="alert">{participantSearchError}</p>
           )}

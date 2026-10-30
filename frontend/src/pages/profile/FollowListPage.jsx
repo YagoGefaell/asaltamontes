@@ -138,7 +138,7 @@ function FollowListPage({
             ) : (
               <p className="no-results">
                 {searchTerm ? 
-                  `No se encontraron usuarios que coincidan con "${searchTerm}"` :
+                  `No se encontraron usuarias que coincidan con "${searchTerm}"` :
                   emptyMessage
                 }
               </p>

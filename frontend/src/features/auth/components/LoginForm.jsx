@@ -15,7 +15,7 @@ function LoginForm({ onSubmit, errorMessage }) {
   return (
     <form className="form" onSubmit={handleSubmit} noValidate>
       <Input
-        label="Nombre de Usuario"
+        label="Nombre de usuaria"
         type="text"
         value={username}
         onChange={(e) => setUsername(e.target.value.toLowerCase())}

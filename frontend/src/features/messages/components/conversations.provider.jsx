@@ -113,13 +113,14 @@ export const ConversationsProvider = ({ children }) => {
   }, [buildPreviewPrefix]);
 
   const mapConversationToChat = useCallback((conversation) => {
-    const username = conversation?.displayName || conversation?.username || "usuario";
+    const username = conversation?.displayName || conversation?.username || "usuaria";
     const firstChar = username.trim().charAt(0).toUpperCase();
 
     return {
       id: conversation?.conversationId || conversation?.id,
       type: conversation?.type || "INDIVIDUAL",
       name: username,
+      username: conversation?.username || null,
       avatar: firstChar || "?",
       avatarUrl: conversation?.displayImage || conversation?.avatarUrl || null,
       unreadCount: Number(conversation?.unreadCount || 0),
@@ -276,7 +277,7 @@ export const ConversationsProvider = ({ children }) => {
       : [];
 
     if (normalizedUsers.length === 0) {
-      throw new Error("Debes indicar al menos un usuario para crear el grupo");
+      throw new Error("Debes indicar al menos una usuaria para crear el grupo");
     }
 
     const createdConversation = await createGroupConversationRequest({
@@ -532,7 +533,7 @@ export const ConversationsProvider = ({ children }) => {
       );
 
       if (!existing) {
-        const fallbackUsername = payload?.senderUsername || payload?.receiverUsername || "usuario";
+        const fallbackUsername = payload?.senderUsername || payload?.receiverUsername || "usuaria";
         const firstChar = fallbackUsername.trim().charAt(0).toUpperCase();
         const fallbackType = "INDIVIDUAL";
         const messageTimestamp = payload?.sentAt || new Date().toISOString();
