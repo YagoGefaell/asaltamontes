@@ -1,11 +1,8 @@
 import { useState } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EventForm from './EventForm.jsx'
-import CommunityEvents from './CommunityEvents.jsx'
 import { EMPTY_FORM } from '../utils/eventForm.js'
-import { getCommunityEventsRequest } from '../services/events.service.js'
 import { locateCity, searchPlaces } from '../services/places.service.js'
 
 // Leaflet needs a real browser layout: the picker is replaced by a stub that "taps" a point
@@ -17,7 +14,6 @@ vi.mock('./LocationPicker.jsx', () => ({
     </>
   ),
 }))
-vi.mock('../services/events.service.js', () => ({ getCommunityEventsRequest: vi.fn() }))
 vi.mock('../services/places.service.js', () => ({ searchPlaces: vi.fn(), locateCity: vi.fn() }))
 const session = vi.hoisted(() => ({ currentUser: { username: 'yo', city: '' } }))
 vi.mock('../../auth/hooks/useAuth', () => ({ useAuth: () => session }))
@@ -196,37 +192,5 @@ describe('EventForm', () => {
   it('shows the field errors that come from the API', async () => {
     await renderForm({ serverErrors: { title: 'El título ya existe' } })
     expect(screen.getByText('El título ya existe')).toBeInTheDocument()
-  })
-})
-
-describe('CommunityEvents', () => {
-  beforeEach(() => vi.clearAllMocks())
-  const community = { id: 4, slug: 'trail-madrid', name: 'Trail Madrid', role: 'MODERATOR' }
-  const event = {
-    id: 9, title: 'Rodaje', type: 'MEETUP', startsAt: '2999-01-02T08:30:00Z', timezone: 'Europe/Madrid', attendeeCount: 1,
-  }
-  const show = (c = community) => render(<MemoryRouter><CommunityEvents community={c} /></MemoryRouter>)
-
-  it('lists the upcoming events and lets staff create one', async () => {
-    getCommunityEventsRequest.mockResolvedValue({ items: [event] })
-    show()
-    expect(await screen.findByText('Rodaje')).toBeInTheDocument()
-    expect(getCommunityEventsRequest).toHaveBeenCalledWith('trail-madrid', { size: 5 })
-    expect(screen.getByRole('button', { name: 'Crear quedada' })).toBeInTheDocument()
-  })
-
-  it('hides "Crear quedada" for plain members and explains when there are no events', async () => {
-    getCommunityEventsRequest.mockResolvedValue({ items: [] })
-    show({ ...community, role: 'MEMBER' })
-    expect(await screen.findByText('Todavía no hay quedadas programadas.')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Crear quedada' })).not.toBeInTheDocument()
-  })
-
-  it('shows the error and retries', async () => {
-    getCommunityEventsRequest.mockRejectedValueOnce(new Error('Sin conexión')).mockResolvedValueOnce({ items: [event] })
-    show()
-    expect(await screen.findByText(/Sin conexión/)).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
-    await waitFor(() => expect(screen.getByText('Rodaje')).toBeInTheDocument())
   })
 })

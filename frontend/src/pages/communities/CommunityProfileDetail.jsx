@@ -1,16 +1,19 @@
+import "../profile/Profile.css";
 import "./CommunityProfileDetail.css";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { FaCog } from "react-icons/fa";
+import { FaCog, FaMapMarkerAlt } from "react-icons/fa";
 import CommunityJoinButton from "../../shared/components/CommunityJoinButton";
 import Loading from "../../shared/components/Loading";
 import FormError from "../../shared/forms/FormError";
 import PageHeader from "../../shared/ui/PageHeader";
-import { formatters } from "../../utils/helpers";
-import { useCommunityMembers } from "../../features/communities/hooks/useCommunityMembers";
+import Avatar from "../../shared/ui/Avatar";
+import Tabs from "../../shared/ui/Tabs";
+import { useSearchSection } from "../../features/search/hooks/useSearchSection";
+import { getCommunityEventsRequest } from "../../features/events/services/events.service";
+import { CommunityEventsTab, CommunityMembersTab } from "./CommunityProfileTabs";
 import { useCommunityDetail } from "../../features/communities/hooks/useCommunityDetail";
 import { communityPath } from "../../features/communities/utils/communityPath";
-import CommunityEvents from "../../features/events/components/CommunityEvents";
 import { isStaff } from "../../features/communities/utils/communityErrors";
 import CommunityRequestButton from "../../shared/components/CommunityRequestButton";
 import CommunityChatButton from "../../features/communities/components/CommunityChatButton";
@@ -21,12 +24,13 @@ function CommunityProfile() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   const { community, setCommunity, loading, error } = useCommunityDetail(slug);
-  
-  // Only members get the list; the others see just the count
-  const { members } = useCommunityMembers(community?.id, !!community?.role);
-
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
-  const [memberAvatarErrors, setMemberAvatarErrors] = useState({});
+  const [tab, setTab] = useState("events");
+  // Shared by the "Quedadas" counter and the tab, so it is requested once
+  const eventsSection = useSearchSection(
+    (page) => getCommunityEventsRequest(community.slug || community.name, { page, size: 10 }),
+    `community-events:${community?.id}`,
+    Boolean(community),
+  );
 
   // Check if current user is the community owner
   // Owner and moderators manage the community (T19b)
@@ -71,8 +75,17 @@ function CommunityProfile() {
     );
   }
 
+  const tabs = [
+    { id: "events", label: "Quedadas" },
+    { id: "members", label: "Miembros" },
+  ];
+  const location = [community.city, community.province].filter(Boolean).join(", ");
+  const eventsCount = eventsSection.loading || eventsSection.error
+    ? "–"
+    : `${eventsSection.items.length}${eventsSection.hasMore ? "+" : ""}`;
+
   return (
-    <div className="community-profile-page">
+    <div className="profile-page community-profile-page">
       <PageHeader
         title={community.name}
         onBack={() => navigate(-1)}
@@ -83,95 +96,59 @@ function CommunityProfile() {
         )}
       />
 
-      <div className="profile-avatar-container">
-        {!avatarLoadError ? (
-          <img
-            src={formatters.avatar(community.imageUrl, community.name, community.name)}
-            alt={community.name}
-            className="profile-avatar"
-            onError={() => setAvatarLoadError(true)}
-          />
-        ) : (
-          <div className="profile-avatar profile-avatar-fallback" aria-hidden="true">
-            {formatters.getInitial(community.name, community.name)}
-          </div>
-        )}
-
-        <div className="profile-stats">
-          <div className="stat">
-            <strong>{community.memberCount || 0}</strong>
-            <span className="label">Miembros</span>
-          </div>
+      <section className="pf-top" aria-label="Datos de la comunidad">
+        <Avatar src={community.imageUrl} name={community.name} size="xl" />
+        <div className="pf-stats">
+          <button type="button" className="pf-stat" onClick={() => setTab("members")}>
+            <span className="pf-stat__count">{community.memberCount || 0}</span>
+            <span className="pf-stat__label">Miembros</span>
+          </button>
+          <button type="button" className="pf-stat" onClick={() => setTab("events")}>
+            <span className="pf-stat__count">{eventsCount}</span>
+            <span className="pf-stat__label">Quedadas</span>
+          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="profile-main">
-        {community.description && (
-          <p className="bio">{community.description}</p>
-        )}
-
-        {(community.visibility === "PRIVATE" || community.city || community.province) && (
-          <p className="community-meta">
-            {community.visibility === "PRIVATE" && "Comunidad privada"}
-            {community.visibility === "PRIVATE" && (community.city || community.province) && " · "}
-            {[community.city, community.province].filter(Boolean).join(", ")}
+      <div className="pf-info">
+        <p className="pf-name">{community.name}</p>
+        {community.description && <p className="pf-bio">{community.description}</p>}
+        {(community.visibility === "PRIVATE" || location) && (
+          <p className="pf-meta">
+            {community.visibility === "PRIVATE" && <span>Comunidad privada</span>}
+            {location && (
+              <span className="pf-city">
+                <FaMapMarkerAlt aria-hidden="true" /> {location}
+              </span>
+            )}
           </p>
         )}
-
-        <div className="profile-actions">
-          {community.visibility === "PRIVATE" && !community.role ? (
-            <CommunityRequestButton
-              communityId={community.id}
-              joinRequested={community.joinRequested}
-              onRequested={() => setCommunity((prev) => ({ ...prev, joinRequested: true }))}
-            />
-          ) : (
-            <CommunityJoinButton
-              communityId={community.id}
-              role={community.role}
-              joinLabel="Unirse"
-              memberLabel="Miembro"
-              onToggle={handleToggleCommunity}
-            />
-          )}
-          {community.role && <CommunityChatButton community={community} />}
-        </div>
       </div>
 
-      <div className="community-events-wrapper">
-        <CommunityEvents community={community} />
+      <div className="pf-actions">
+        {community.visibility === "PRIVATE" && !community.role ? (
+          <CommunityRequestButton
+            communityId={community.id}
+            joinRequested={community.joinRequested}
+            onRequested={() => setCommunity((prev) => ({ ...prev, joinRequested: true }))}
+          />
+        ) : (
+          <CommunityJoinButton
+            communityId={community.id}
+            role={community.role}
+            joinLabel="Unirse"
+            memberLabel="Miembro"
+            onToggle={handleToggleCommunity}
+          />
+        )}
+        {community.role && <CommunityChatButton community={community} />}
       </div>
 
-      {members.length > 0 && (
-        <div className="members-section">
-          <h3 className="members-title">Miembros ({community.memberCount || members.length})</h3>
-          
-          <div className="members-grid">
-            {members.map((member) => {
-              const memberAvatarUrl = formatters.avatar(member.profilePictureUrl, member.username, member.username);
-              const hasError = memberAvatarErrors[member.username];
-              
-              return (
-                <div key={member.username} className="member-card">
-                  <div className="member-avatar">
-                    {!hasError ? (
-                      <img 
-                        src={memberAvatarUrl} 
-                        alt={member.username}
-                        onError={() => setMemberAvatarErrors(prev => ({ ...prev, [member.username]: true }))}
-                      />
-                    ) : (
-                      <div className="member-avatar-placeholder" aria-hidden="true">
-                        {formatters.getInitial(member.username, member.username)}
-                      </div>
-                    )}
-                  </div>
-                  <p className="member-username">@{member.username}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+      <Tabs tabs={tabs} value={tab} onChange={setTab} label="Contenido de la comunidad" idPrefix="community" className="pf-tabs" />
+      {tab === "events" ? (
+        <CommunityEventsTab community={community} section={eventsSection} />
+      ) : (
+        <CommunityMembersTab community={community} />
       )}
     </div>
   );
