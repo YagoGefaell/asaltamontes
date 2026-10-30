@@ -59,6 +59,9 @@ class EventChatIT extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.items[0].conversationId").value(chat.toString()));
         mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(organizer)))
                 .andExpect(jsonPath("$.managed").value(true))
+                .andExpect(jsonPath("$.origin.type").value("EVENT"))
+                .andExpect(jsonPath("$.origin.id").value(event.toString()))
+                .andExpect(jsonPath("$.origin.name").isNotEmpty())
                 .andExpect(jsonPath("$.participantCount").value(1));
         // The waitlist and strangers get the same 404 as an event that does not exist
         chatRequest(waiting, event).andExpect(status().isNotFound());
@@ -142,7 +145,8 @@ class EventChatIT extends AbstractIntegrationTest {
         patchEvent(organizer, event, "{\"title\":\"Nuevo título\"}").andExpect(status().isOk());
 
         mockMvc.perform(get("/api/conversations/" + chat).with(auth.bearer(organizer)))
-                .andExpect(jsonPath("$.name").value("Nuevo título"));
+                .andExpect(jsonPath("$.name").value("Nuevo título"))
+                .andExpect(jsonPath("$.origin.name").value("Nuevo título"));
     }
 
     @Test
