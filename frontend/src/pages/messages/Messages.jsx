@@ -185,6 +185,32 @@ const Messages = () => {
     setChats((prevChats) => prevChats.map((chat) => (String(chat.id) === String(details.id) ? { ...chat, ...patch } : chat)));
   }, [setChats]);
 
+  // T29r: actions of the group info that leave it
+  const handleOpenParticipantProfile = useCallback((username) => {
+    navigate(`/users/${encodeURIComponent(username)}`);
+  }, [navigate]);
+
+  const handleMessageParticipant = useCallback((participant) => {
+    const existing = chats.find((chat) => chat.type === "INDIVIDUAL" && chat.name === participant.username);
+    setIsGroupInfoOpen(false);
+    if (existing) {
+      handleEnterChat(existing);
+      return;
+    }
+    setSelectedChat({
+      id: null,
+      name: participant.username,
+      avatar: participant.username.trim().charAt(0).toUpperCase() || "?",
+      avatarUrl: formatters.avatar(participant.profilePictureUrl, participant.fullName, participant.username),
+      unreadCount: 0,
+      lastMsg: "Empieza la conversacion",
+    });
+  }, [chats, handleEnterChat]);
+
+  const handleOpenGroupOrigin = useCallback((origin) => {
+    navigate(origin.type === "EVENT" ? `/events/${origin.id}` : `/communities/${encodeURIComponent(origin.slug)}`);
+  }, [navigate]);
+
   const handleLeftGroup = useCallback(() => {
     const leftId = selectedChat?.id;
     if (leftId) setChats((prevChats) => prevChats.filter((chat) => String(chat.id) !== String(leftId)));
@@ -418,6 +444,9 @@ const Messages = () => {
           onClose={() => setIsGroupInfoOpen(false)}
           onGroupChanged={handleGroupChanged}
           onLeft={handleLeftGroup}
+          onOpenProfile={handleOpenParticipantProfile}
+          onSendMessage={handleMessageParticipant}
+          onOpenOrigin={handleOpenGroupOrigin}
         />
       )}
 
