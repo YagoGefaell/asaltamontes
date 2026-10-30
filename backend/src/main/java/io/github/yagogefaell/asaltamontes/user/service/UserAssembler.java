@@ -36,9 +36,10 @@ public class UserAssembler {
                 user.getIsVerified(),
                 safe(profile.getFullName()),
                 safe(profile.getBio()),
-                safe(profile.getCity()),
+                // D-025: a private profile she cannot view shows only name, picture, bio and counters
+                canViewContent ? safe(profile.getCity()) : "",
                 safe(profile.getProfilePictureUrl()),
-                profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
+                !canViewContent ? "" : profile.getRunningLevel() != null ? profile.getRunningLevel().name() : "BEGINNER",
                 profile.getIsPublicProfile(),
                 isFollowing,
                 isFollowRequested,

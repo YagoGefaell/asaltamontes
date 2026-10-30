@@ -250,7 +250,9 @@ class PrivateProfileIT extends AbstractIntegrationTest {
 
         mockMvc.perform(get("/api/feed").with(auth.bearer(follower))).andExpect(jsonPath("$.items.length()").value(1));
         mockMvc.perform(get("/api/feed").with(auth.bearer(stranger))).andExpect(jsonPath("$.items.length()").value(0));
-        mockMvc.perform(get("/api/explore/posts").with(auth.bearer(stranger))).andExpect(jsonPath("$.items.length()").value(0));
+        // The database is shared with other tests: look only for her posts
+        mockMvc.perform(get("/api/explore/posts").param("limit", "50").with(auth.bearer(stranger)))
+                .andExpect(jsonPath("$.items[?(@.author.username == '" + secret.getUsername() + "')]").isEmpty());
     }
 
     // ---------------------------------------------------------------- changing the privacy

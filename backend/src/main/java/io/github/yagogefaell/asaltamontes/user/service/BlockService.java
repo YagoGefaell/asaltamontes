@@ -53,9 +53,10 @@ public class BlockService {
         lockPair(blockerId, blocked.getId());
 
         blockRepository.insertIfAbsent(blockerId, blocked.getId());
+        // Requests first: an approval racing with the block then fails on the missing request, not after our follows
+        followRequestRepository.deleteBetween(blockerId, blocked.getId());
         removeFollow(blockerId, blocked.getId());
         removeFollow(blocked.getId(), blockerId);
-        followRequestRepository.deleteBetween(blockerId, blocked.getId());
     }
 
     @Transactional
