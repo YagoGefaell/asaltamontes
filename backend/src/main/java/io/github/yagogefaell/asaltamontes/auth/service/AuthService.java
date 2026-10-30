@@ -66,6 +66,9 @@ public class AuthService {
                 (String) payload.get("picture"),
                 (String) payload.get("given_name")
         );
+        if (user.isSuspended()) {
+            throw new InvalidTokenException("No se ha podido iniciar sesión");
+        }
 
         return generateTokens(user);
     }
@@ -88,6 +91,11 @@ public class AuthService {
 
         Long id = jwtUtil.extractId(claims);
 
+        // A suspended account cannot get new access tokens; her sessions are also revoked when she is suspended
+        if (userService.loadUserById(id).isSuspended()) {
+            throw new InvalidTokenException("Sesión cerrada o caducada");
+        }
+
         return jwtUtil.generateAccessToken(id);
     }
 
@@ -101,7 +109,11 @@ public class AuthService {
 
         Long id = jwtUtil.extractId(claims);
 
-        return loadUserById(id);
+        UserAccount user = loadUserById(id);
+        if (user.isSuspended()) {
+            throw new InvalidTokenException("Token inválido");
+        }
+        return user;
     }
 
     private Claims validateToken(String token) {

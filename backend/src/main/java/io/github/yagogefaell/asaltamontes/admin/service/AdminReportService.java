@@ -14,6 +14,9 @@ import io.github.yagogefaell.asaltamontes.admin.domain.AdminAction;
 import io.github.yagogefaell.asaltamontes.admin.domain.AdminAuditLog;
 import io.github.yagogefaell.asaltamontes.admin.dto.AdminReportDto;
 import io.github.yagogefaell.asaltamontes.admin.dto.ResolveReportDto;
+import io.github.yagogefaell.asaltamontes.admin.dto.SuspendUserDto;
+import io.github.yagogefaell.asaltamontes.auth.service.AuthService;
+import io.github.yagogefaell.asaltamontes.user.repository.UserAccountRepository;
 import io.github.yagogefaell.asaltamontes.admin.repository.AdminAuditLogRepository;
 import io.github.yagogefaell.asaltamontes.admin.repository.AdminReportQueries;
 import io.github.yagogefaell.asaltamontes.admin.repository.AdminReportQueries.Row;
@@ -56,6 +59,8 @@ public class AdminReportService {
     private final EventService eventService;
     private final CommunityService communityService;
     private final JdbcTemplate jdbc;
+    private final UserAccountRepository userRepository;
+    private final AuthService authService;
 
     @Transactional(readOnly = true)
     public CursorPageDto<AdminReportDto> list(UserAccount actor, ReportStatus status, ReportTargetType type, String before, Integer limit) {
@@ -87,7 +92,7 @@ public class AdminReportService {
     public AdminReportDto dismiss(UserAccount actor, UUID reportId, ResolveReportDto dto) {
         requireStaff(actor);
         Report report = load(reportId);
-        String note = note(dto);
+        String note = note(dto == null ? null : dto.resolution());
         requireNotInvolved(actor, report);
         claim(report, ReportStatus.DISMISSED, actor, note);
         audit(actor, AdminAction.REPORT_DISMISSED, report, note);
@@ -102,7 +107,7 @@ public class AdminReportService {
     public AdminReportDto removeContent(UserAccount actor, UUID reportId, ResolveReportDto dto) {
         requireStaff(actor);
         Report report = load(reportId);
-        String note = note(dto);
+        String note = note(dto == null ? null : dto.resolution());
         if (report.getTargetType() == ReportTargetType.USER) {
             throw new BadRequestException("Una denuncia a una cuenta no se resuelve borrando contenido");
         }
@@ -127,6 +132,71 @@ public class AdminReportService {
         }
         audit(actor, AdminAction.CONTENT_REMOVED, report, note);
         return detailAfter(reportId);
+    }
+
+    /**
+     * Suspends the account the report is about (the reported account, or the author of the reported content), closes
+     * this report as ACTIONED (and, for a USER report, every open report about that account) and revokes her sessions.
+     * Nobody suspends an administrator; only an administrator suspends a moderator.
+     */
+    @Transactional
+    public AdminReportDto suspendUser(UserAccount actor, UUID reportId, SuspendUserDto dto) {
+        requireStaff(actor);
+        if (dto == null || dto.permanent() == (dto.days() != null)) {
+            throw new BadRequestException("Indica los días de suspensión o que sea permanente");
+        }
+        Report report = load(reportId);
+        if (report.getReportedUserId() == null) {
+            throw new BadRequestException("Esta denuncia no tiene una cuenta a la que suspender");
+        }
+        requireNotInvolved(actor, report);
+        UserAccount target = userRepository.findById(report.getReportedUserId())
+                .orElseThrow(() -> new BadRequestException("Esta denuncia no tiene una cuenta a la que suspender"));
+        if (target.getRole() == UserAccountRole.ADMIN
+                || (target.getRole() == UserAccountRole.MODERATOR && actor.getRole() != UserAccountRole.ADMIN)) {
+            throw new ForbiddenException("No puedes suspender a esta cuenta");
+        }
+        if (target.isSuspended()) {
+            // Suspending again would overwrite (and could shorten) the one in force
+            throw new ConflictException("Esta cuenta ya está suspendida");
+        }
+        String note = note(dto.resolution());
+        claim(report, ReportStatus.ACTIONED, actor, note);
+        if (report.getTargetType() == ReportTargetType.USER) {
+            reportRepository.resolveOpenOnTarget(ReportTargetType.USER, report.getTargetId(), ReportStatus.ACTIONED, actor.getId(), Instant.now(), note);
+        }
+        if (dto.permanent()) {
+            target.setSuspendedPermanently(true);
+            target.setSuspendedUntil(null);
+        } else {
+            target.setSuspendedPermanently(false);
+            target.setSuspendedUntil(LocalDateTime.now().plusDays(dto.days()));
+        }
+        userRepository.save(target);
+        authService.revokeAllSessions(target.getId());
+        audit(actor, AdminAction.USER_SUSPENDED, report, (dto.permanent() ? "permanent" : dto.days() + " days") + (note == null ? "" : ": " + note));
+        return detailAfter(reportId);
+    }
+
+    /** Lifts the suspension of an account. Audited; 404 if she is not suspended. */
+    @Transactional
+    public void unsuspend(UserAccount actor, String username) {
+        requireStaff(actor);
+        UserAccount target = userRepository.findByUsernameIgnoreCase(username)
+                .filter(UserAccount::isSuspended).orElseThrow(() -> new NotFoundException("Cuenta no suspendida"));
+        if (target.getRole() == UserAccountRole.MODERATOR && actor.getRole() != UserAccountRole.ADMIN) {
+            throw new ForbiddenException("No puedes actuar sobre esta cuenta");
+        }
+        target.setSuspendedPermanently(false);
+        target.setSuspendedUntil(null);
+        userRepository.save(target);
+        // Whatever session slipped in while she was being suspended does not come back to life
+        authService.revokeAllSessions(target.getId());
+        AdminAuditLog entry = new AdminAuditLog();
+        entry.setActorId(actor.getId());
+        entry.setAction(AdminAction.USER_UNSUSPENDED);
+        entry.setTargetUserId(target.getId());
+        auditLog.save(entry);
     }
 
     // ---------------------------------------------------------------- internals
@@ -171,8 +241,8 @@ public class AdminReportService {
         }
     }
 
-    private static String note(ResolveReportDto dto) {
-        String text = dto == null || dto.resolution() == null ? null : dto.resolution().strip();
+    private static String note(String resolution) {
+        String text = resolution == null ? null : resolution.strip();
         return text == null || text.isEmpty() ? null : text;
     }
 

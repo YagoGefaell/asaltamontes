@@ -2415,6 +2415,30 @@
         }
       }
     },
+    "/api/admin/reports/{id}/suspend-user": {
+      "post": {
+        "summary": "Suspend the account the report is about and close the report (T23c2)",
+        "description": "Body: either days (1 to 3650) or permanent=true, plus an optional resolution. The suspended account is the reported one (USER) or the author of the reported content. Her refresh sessions are revoked, her access token stops working at once, login and refresh fail with the same neutral answer as a wrong password (401). A temporary suspension ends by itself. Nobody suspends an ADMIN; only an ADMIN suspends a MODERATOR; nobody resolves a report about herself (403). Audited.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "The report, now ACTIONED", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AdminReport" } } } },
+          "400": { "description": "Neither or both of days and permanent, out of range, or the report has no account" },
+          "403": { "description": "Not staff, or protected account" },
+          "404": { "description": "Unknown report" },
+          "409": { "description": "Already resolved" }
+        }
+      }
+    },
+    "/api/admin/users/{username}/unsuspend": {
+      "post": {
+        "summary": "Lift the suspension of an account (T23c2)",
+        "description": "Audited. 404 if the account is not suspended.",
+        "tags": ["Admin"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": { "204": { "description": "Lifted" }, "403": { "description": "Not staff" }, "404": { "description": "Not suspended" } }
+      }
+    },
     "/api/posts/{postId}/comments": {
       "get": {
         "summary": "Comments of a post, oldest first (T22a2)",

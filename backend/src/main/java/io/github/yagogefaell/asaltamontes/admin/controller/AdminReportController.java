@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.github.yagogefaell.asaltamontes.admin.dto.AdminReportDto;
 import io.github.yagogefaell.asaltamontes.admin.dto.ResolveReportDto;
+import io.github.yagogefaell.asaltamontes.admin.dto.SuspendUserDto;
 import io.github.yagogefaell.asaltamontes.admin.service.AdminReportService;
 import io.github.yagogefaell.asaltamontes.community.dto.CursorPageDto;
 import io.github.yagogefaell.asaltamontes.report.domain.ReportStatus;
@@ -55,5 +56,11 @@ public class AdminReportController {
     public AdminReportDto removeContent(@AuthenticationPrincipal UserAccount actor, @PathVariable UUID id,
                                         @Valid @RequestBody(required = false) ResolveReportDto body) {
         return service.removeContent(actor, id, body);
+    }
+
+    @PostMapping("/{id}/suspend-user")
+    public AdminReportDto suspendUser(@AuthenticationPrincipal UserAccount actor, @PathVariable UUID id,
+                                      @Valid @RequestBody SuspendUserDto body) {
+        return service.suspendUser(actor, id, body);
     }
 }

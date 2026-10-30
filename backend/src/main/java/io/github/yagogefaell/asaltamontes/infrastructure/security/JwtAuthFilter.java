@@ -80,6 +80,13 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
                 UserAccount userDetails = userService.loadUserById(id);
 
+                // Suspended (T23c2): the access token she already holds stops working at once
+                if (userDetails.isSuspended()) {
+                    request.setAttribute(AUTH_ERROR_ATTRIBUTE, "Token inválido");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 var authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
