@@ -35,11 +35,11 @@ describe('SettingsMenu', () => {
 
   it('only lists entries that lead to an existing screen', () => {
     render(<MemoryRouter><SettingsMenu /></MemoryRouter>)
-    for (const label of ['Perfil', 'Notificaciones', 'Ajustes de privacidad', 'Seguridad']) {
+    for (const label of ['Perfil', 'Notificaciones', 'Ajustes de privacidad', 'Seguridad', 'Verificar email']) {
       fireEvent.click(screen.getByText(label))
     }
     expect(navigate.mock.calls.map(([path]) => path)).toEqual([
-      '/settings/profile', '/settings/notifications', '/settings/privacy', '/settings/security',
+      '/settings/profile', '/settings/notifications', '/settings/privacy', '/settings/security', '/settings/verify-email',
     ])
     for (const gone of ['Cursos', 'Score en LinkedIn', 'Duolingo for Schools', 'Escoge un plan', 'Centro de ayuda']) {
       expect(screen.queryByText(gone)).toBeNull()

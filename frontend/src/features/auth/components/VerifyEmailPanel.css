@@ -1,0 +1,12 @@
+.verify-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.verify-panel__text,
+.verify-panel__verified {
+  margin: 0;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
