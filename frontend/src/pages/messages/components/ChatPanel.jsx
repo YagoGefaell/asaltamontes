@@ -150,6 +150,15 @@ const ChatPane = ({
       <PageHeader
         onBack={onLeaveChat}
         backLabel="Volver"
+        actions={!isGroup && (
+          <ReportMenu
+            menuTitle={`@${selectedChat.name}`}
+            reportTitle={`Denunciar a @${selectedChat.name}`}
+            actionLabel={`Denunciar a @${selectedChat.name}`}
+            targetType="USER"
+            target={selectedChat.name}
+          />
+        )}
       >
         <div
           className="chat-title"
@@ -269,16 +278,6 @@ const ChatPane = ({
                       {message.content}
                     </div>
                   </div>
-                  {!isSent && Boolean(message.senderUsername) && (
-                    <ReportMenu
-                      className="message-delete-btn"
-                      menuTitle="Mensaje"
-                      reportTitle="Denunciar mensaje"
-                      actionLabel="Denunciar mensaje"
-                      targetType="MESSAGE"
-                      target={message.id}
-                    />
-                  )}
                   {onDeleteMessage && canDeleteMessage(message, { moderationRole, currentUsername }) && (
                     <button
                       type="button"

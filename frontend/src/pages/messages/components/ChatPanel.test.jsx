@@ -23,6 +23,20 @@ function renderPanel(props = {}) {
 }
 
 describe('ChatPanel', () => {
+  it('lets her report the other user from the header of a private chat, never one message', () => {
+    renderPanel({ currentMessages: [{ id: 'm1', senderUsername: 'Bea', content: 'hola', type: 'TEXT', sentAt: '2026-10-29T10:00:00' }] })
+
+    expect(screen.getAllByRole('button', { name: 'Más opciones' })).toHaveLength(1)
+    fireEvent.click(screen.getByRole('button', { name: 'Más opciones' }))
+    expect(screen.getByRole('button', { name: 'Denunciar a @Bea' })).toBeInTheDocument()
+  })
+
+  it('has no report menu in a group chat', () => {
+    renderPanel({ selectedChat: { id: 2, name: 'Grupo', type: 'GROUP' } })
+
+    expect(screen.queryByRole('button', { name: 'Más opciones' })).not.toBeInTheDocument()
+  })
+
   it('limits the input to the backend maximum of 2000 characters', () => {
     renderPanel()
 
