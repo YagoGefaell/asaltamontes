@@ -33,6 +33,7 @@ import io.github.yagogefaell.asaltamontes.user.domain.UserAccount;
         "asaltamontes.rate-limit.posts-per-day=2",
         "asaltamontes.rate-limit.post-likes-per-hour=3",
         "asaltamontes.rate-limit.post-comments-per-hour=2",
+        "asaltamontes.rate-limit.reports-per-day=2",
         "asaltamontes.rate-limit.verify-email-per-minute=3"})
 class RateLimitIT extends AbstractIntegrationTest {
 
@@ -242,6 +243,25 @@ class RateLimitIT extends AbstractIntegrationTest {
         publish(ana).andExpect(status().isTooManyRequests())
                 .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
         publish(bea).andExpect(status().isCreated());
+    }
+
+    @Test
+    void reporting_isLimitedPerUser_andFailedAttemptsCountToo() throws Exception {
+        UserAccount ana = testData.createUser();
+        UserAccount bea = testData.createUser();
+        UserAccount cris = testData.createUser();
+        // The first two are accepted and rejected (self-report) attempts; both use up the allowance
+        report(ana, bea.getUsername()).andExpect(status().isCreated());
+        report(ana, ana.getUsername()).andExpect(status().isBadRequest());
+
+        report(ana, cris.getUsername()).andExpect(status().isTooManyRequests())
+                .andExpect(header().string(HttpHeaders.RETRY_AFTER, matchesPattern("\\d+")));
+        report(bea, cris.getUsername()).andExpect(status().isCreated());
+    }
+
+    private org.springframework.test.web.servlet.ResultActions report(UserAccount reporter, String username) throws Exception {
+        return mockMvc.perform(post("/api/reports").with(auth.bearer(reporter)).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"targetType\":\"USER\",\"target\":\"" + username + "\",\"reason\":\"SPAM\"}"));
     }
 
     @Test
